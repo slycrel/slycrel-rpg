@@ -462,5 +462,51 @@ func reportMonsterSpread(out *os.File, t *gamedata.Tables) {
 	} else {
 		fmt.Fprintln(out, strings.Join(empty, ", "))
 	}
+
+	// The line above asks a global question and answers it reassuringly. The
+	// question that matters is local: biomeForLevel decides where a character
+	// of level N is expected to be fighting, and if *that* biome has nothing at
+	// level N then PickMonsters falls back to whatever is within three levels
+	// and the player spends the band beating up something junior.
+	//
+	// This is invisible everywhere else in the report. It shows up only as a
+	// level that looks suspiciously comfortable — which is exactly how it was
+	// found: level 7 fighters were managing ten fights on one rest, and the
+	// reason was that the swamp has nothing to fight at level 7.
+	fmt.Fprintf(out, "\nholes where the player is actually sent\n")
+	holes := 0
+	for l := 1; l <= maxLevel; l++ {
+		b := biomeForLevel(l)
+		n := 0
+		for _, d := range t.Monsters[b] {
+			if d.Level == l {
+				n++
+			}
+		}
+		if n > 0 {
+			continue
+		}
+		holes++
+		// Say what the player fights instead, since that is the actual effect.
+		lo, hi := maxLevel, 0
+		for _, d := range t.Monsters[b] {
+			if core.Abs(d.Level-l) <= 3 {
+				if d.Level < lo {
+					lo = d.Level
+				}
+				if d.Level > hi {
+					hi = d.Level
+				}
+			}
+		}
+		if hi == 0 {
+			fmt.Fprintf(out, "  level %-3d %-10s nothing within three levels either\n", l, b)
+			continue
+		}
+		fmt.Fprintf(out, "  level %-3d %-10s falls back to levels %d-%d\n", l, b, lo, hi)
+	}
+	if holes == 0 {
+		fmt.Fprintln(out, "  none")
+	}
 	fmt.Fprintln(out)
 }

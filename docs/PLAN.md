@@ -217,10 +217,14 @@ than by tests, became something a test can reach.
    - Attrition wins the stretch fights at levels 1 and 3; balanced wins 5
      through 13; duelist never wins but is never more than 5 points behind.
      So the shapes exist, and balanced is the safe default from level 5 on.
-   - One real hole: attrition drops 13.5 points at level 9. The weapon band
-     step is uneven — +2 into tier 2, then +5, +5, +4 — so at tier 3 attrition
-     is buying a +1 shield step with a -5 weapon step. Evening out the weapon
-     table would do more for arc viability than any new content.
+   - The one real hole has since been fixed. Attrition dropped 13.5 points at
+     level 9 because the weapon band steps ran +2, +5, +5, +4: at tier 3 it was
+     buying a +1 shield step with a -5 weapon step. The tops are now 5, 9, 13,
+     17, 21 — even +4 throughout, same endpoints — and the worst gap at any
+     level fell from 13.5 to 7.9, which flipped the verdict to "no build is
+     ever far behind and each wins somewhere". `TestWeaponBandsStepEvenly`
+     holds it. Armour is still uneven (+3, +4, +6, +4) and deliberately left
+     alone: nothing in the report blames it for anything yet.
    - A sidearm band is worth about a quarter of a main-gear band, which caps
      how different two builds can be. That is authored, not accidental:
      `TestShieldsStaySecondaryToArmour` holds a shield under half the body
@@ -240,6 +244,16 @@ than by tests, became something a test can reach.
 
    Still open, and the expensive half: making the content actively support the
    arcs. The report now says what would have to move, which is what it was for.
+
+   **Found on the way, and still open: four holes where the player is sent to a
+   biome that has nothing to fight at their level.** `biomeForLevel` puts levels
+   7-8 in the swamp and the swamp has no level 7 or 8 monsters, so
+   `PickMonsters` falls back within three levels and the band is spent beating
+   up juniors. Same at hills level 6 and mountain level 12. It shows up in the
+   report only as a level that looks suspiciously comfortable — level 7 fighters
+   managing ten fights on one rest — which is how it was found. The report now
+   lists these under "holes where the player is actually sent"; filling them is
+   authoring four or five monsters.
 
 5. **Day/night and weather.** The tileset collection includes a weather-effects
    pack. Changes encounter tables and which NPCs are out.

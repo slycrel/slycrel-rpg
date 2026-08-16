@@ -71,9 +71,9 @@
   },
   {
     "name": "Spear, Regrettably Long",
-    "strike": 7,
+    "strike": 9,
     "range": 3,
-    "cost": 82,
+    "cost": 96,
     "quality": 68,
     "verb": "skewer",
     "tier": 2,
@@ -81,7 +81,7 @@
   },
   {
     "name": "Warhammer 'Consequences'",
-    "strike": 9,
+    "strike": 10,
     "range": 0,
     "cost": 130,
     "quality": 80,
@@ -91,7 +91,7 @@
   },
   {
     "name": "Longsword of Adequate Repute",
-    "strike": 10,
+    "strike": 11,
     "range": 0,
     "cost": 165,
     "quality": 85,
@@ -101,7 +101,7 @@
   },
   {
     "name": "Glaive, Overcompensating",
-    "strike": 12,
+    "strike": 13,
     "range": 1,
     "cost": 240,
     "quality": 82,
@@ -111,7 +111,7 @@
   },
   {
     "name": "Flamberge 'The Apology'",
-    "strike": 14,
+    "strike": 15,
     "range": 0,
     "cost": 340,
     "quality": 90,

@@ -946,3 +946,51 @@ func TestEveryArchetypeArrivesDressed(t *testing.T) {
 		}
 	}
 }
+
+// The top of each gear band is what Equip buys, so those five numbers are the
+// ladder every archetype trades bands along. They have to climb evenly.
+//
+// They did not: the weapon tops ran 5, 7, 12, 17, 21 — a +2 step into tier 2
+// and +5 into tier 3 — which meant "a band behind on the weapon" cost two and a
+// half times as much at one tier as at the next, and any build paying in weapon
+// bands lurched in and out of viability by level. Evening it to 5, 9, 13, 17, 21
+// halved the worst gap in the ARCS section.
+//
+// Armour is deliberately not asserted here. Its steps are also uneven (+3, +4,
+// +6, +4) but nothing in the report currently blames it for anything, and
+// pinning a rule that has not earned itself is how a table ends up shaped by its
+// tests rather than by play.
+func TestWeaponBandsStepEvenly(t *testing.T) {
+	tables := load(t)
+
+	var tops []int
+	for tier := 1; tier <= 5; tier++ {
+		ws, _ := tables.StockFor(tier)
+		if len(ws) == 0 {
+			t.Fatalf("tier %d has no weapons at all", tier)
+		}
+		tops = append(tops, ws[len(ws)-1].Strike)
+	}
+
+	var steps []int
+	for i := 1; i < len(tops); i++ {
+		steps = append(steps, tops[i]-tops[i-1])
+	}
+	lo, hi := steps[0], steps[0]
+	for _, s := range steps {
+		if s < lo {
+			lo = s
+		}
+		if s > hi {
+			hi = s
+		}
+	}
+	if hi-lo > 1 {
+		t.Errorf("weapon band steps are %v across tops %v; the widest is %d and the "+
+			"narrowest %d, so a band behind means something different at every tier",
+			steps, tops, hi, lo)
+	}
+	if lo < 1 {
+		t.Errorf("weapon band steps are %v; a band that buys nothing is not a band", steps)
+	}
+}
