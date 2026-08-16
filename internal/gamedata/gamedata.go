@@ -55,16 +55,42 @@ type Text struct {
 	SignText    []string `json:"signText"`
 }
 
-// FindRoot locates the repository root by walking up from the working
-// directory looking for the data/ folder, so the game runs from anywhere.
+// FindRoot locates the game root — the folder holding data/ — by walking up
+// from the working directory, then from the executable's own directory.
+//
+// The working directory is tried first so `go run ./cmd/slycrel` picks up the
+// repository being edited rather than a stale build in $GOCACHE. The executable
+// path is the fallback that makes a distributed build work: a double-clicked
+// binary inherits a working directory of / or the user's home, which would
+// otherwise fail even though data/ sits right beside it.
 func FindRoot() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", err
+	var tried []string
+
+	if dir, err := os.Getwd(); err == nil {
+		if root, ok := walkUpForData(dir); ok {
+			return root, nil
+		}
+		tried = append(tried, dir)
 	}
+
+	if exe, err := os.Executable(); err == nil {
+		if exe, err := filepath.EvalSymlinks(exe); err == nil {
+			dir := filepath.Dir(exe)
+			if root, ok := walkUpForData(dir); ok {
+				return root, nil
+			}
+			tried = append(tried, dir)
+		}
+	}
+
+	return "", fmt.Errorf("could not find a data/ directory above any of %v", tried)
+}
+
+// walkUpForData climbs at most 8 levels from dir looking for a data/ folder.
+func walkUpForData(dir string) (string, bool) {
 	for i := 0; i < 8; i++ {
 		if fi, err := os.Stat(filepath.Join(dir, "data")); err == nil && fi.IsDir() {
-			return dir, nil
+			return dir, true
 		}
 		parent := filepath.Dir(dir)
 		if parent == dir {
@@ -72,7 +98,7 @@ func FindRoot() (string, error) {
 		}
 		dir = parent
 	}
-	return "", fmt.Errorf("could not find a data/ directory above %s", dir)
+	return "", false
 }
 
 // Load reads every table under root/data.

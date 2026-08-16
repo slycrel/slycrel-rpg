@@ -2,7 +2,8 @@
 #   go run ./cmd/assetpipe extract tier1
 assets-raw/
 
-# Build output
+# Build output. dist/ holds shareable builds, which DO contain the third-party
+# art and audio — shipping that in a game is licensed, committing it is not.
 /slycrel
 /dist/
 

@@ -567,6 +567,306 @@
       "frameH": 64
     },
     {
+      "key": "ground/autumn_darkgrass",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.06a - Autumn Forest/packaged/autumn sheets/autumn forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        32,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/autumn_deep",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.06a - Autumn Forest/packaged/autumn sheets/autumn forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        80,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/autumn_dirt",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.06a - Autumn Forest/packaged/autumn sheets/autumn forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        0,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/autumn_grass",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.06a - Autumn Forest/packaged/autumn sheets/autumn forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        16,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/autumn_shallow",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.06a - Autumn Forest/packaged/autumn sheets/autumn forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        64,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/autumn_stone",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.06a - Autumn Forest/packaged/autumn sheets/autumn forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        48,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/sand",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/23.03a - Desert Sands/packaged/desert sheets/desert sands v01.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        96,
+        0,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/spring_darkgrass",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.05c - Spring Forest/packaged/spring sheets/spring forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        32,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/spring_deep",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.05c - Spring Forest/packaged/spring sheets/spring forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        80,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/spring_dirt",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.05c - Spring Forest/packaged/spring sheets/spring forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        0,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/spring_grass",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.05c - Spring Forest/packaged/spring sheets/spring forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        16,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/spring_shallow",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.05c - Spring Forest/packaged/spring sheets/spring forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        64,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/spring_stone",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.05c - Spring Forest/packaged/spring sheets/spring forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        48,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/summer_darkgrass",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.04c - Summer Forest/packaged/summer sheets/summer forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        32,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/summer_deep",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.04c - Summer Forest/packaged/summer sheets/summer forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        80,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/summer_dirt",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.04c - Summer Forest/packaged/summer sheets/summer forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        0,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/summer_grass",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.04c - Summer Forest/packaged/summer sheets/summer forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        16,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/summer_shallow",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.04c - Summer Forest/packaged/summer sheets/summer forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        64,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/summer_stone",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.04c - Summer Forest/packaged/summer sheets/summer forest wang tiles.png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        48,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/winter_darkgrass",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.07a - Winter Forest/packaged/winter sheets/winter forest wang tiles (snowy).png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        32,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/winter_deep",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.07a - Winter Forest/packaged/winter sheets/winter forest wang tiles (snowy).png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        80,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/winter_dirt",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.07a - Winter Forest/packaged/winter sheets/winter forest wang tiles (snowy).png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        0,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/winter_grass",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.07a - Winter Forest/packaged/winter sheets/winter forest wang tiles (snowy).png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        16,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/winter_shallow",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.07a - Winter Forest/packaged/winter sheets/winter forest wang tiles (snowy).png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        64,
+        64,
+        16,
+        16
+      ]
+    },
+    {
+      "key": "ground/winter_stone",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.07a - Winter Forest/packaged/winter sheets/winter forest wang tiles (snowy).png",
+      "frameW": 16,
+      "frameH": 16,
+      "rect": [
+        48,
+        64,
+        16,
+        16
+      ]
+    },
+    {
       "key": "hero/druid/attack",
       "file": "assets-raw/pixelartrpgtopdowncharacters/Pixel Art Top-Down RPG Characters - AfGameAssets - V2 Walking 4 Directions/Druid/Druid_Attack_01.png",
       "frameW": 64,

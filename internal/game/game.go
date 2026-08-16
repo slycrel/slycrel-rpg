@@ -21,6 +21,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/gamedata"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/render"
+	"github.com/slycrel/slycrel-rpg/internal/tiles"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
@@ -53,6 +54,9 @@ type Game struct {
 
 	// Steps since the last encounter, so fights cannot chain immediately.
 	sinceFight int
+
+	// tiles is the terrain renderer, composed on first draw.
+	tiles *tiles.Renderer
 
 	stack []Scene
 	tick  int

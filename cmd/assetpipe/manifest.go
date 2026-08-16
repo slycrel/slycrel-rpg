@@ -16,6 +16,7 @@ type manifestEntry struct {
 	File   string `json:"file"`
 	FrameW int    `json:"frameW,omitempty"`
 	FrameH int    `json:"frameH,omitempty"`
+	Rect   []int  `json:"rect,omitempty"`
 }
 
 // buildManifest walks the extracted packs and writes assets/manifest.json.
@@ -103,6 +104,51 @@ func buildManifest() error {
 			}
 			add(fmt.Sprintf("foe/%s/%s", name, slug(anim)), f, 64, 64)
 		}
+	}
+
+	// Ground textures. Mana Seed's seasonal "wang tiles" sheets carry a legend
+	// strip of six flat, seamlessly tiling textures at a fixed offset. Those
+	// swatches are what the autotiler composites; its own corner masks handle
+	// the blending, so none of the packs' bespoke permutation layouts need to
+	// be decoded.
+	const wangLegendY = 64
+	seasons := map[string]string{
+		"summer": filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
+			"20.04c - Summer Forest", "packaged", "summer sheets", "summer forest wang tiles.png"),
+		"autumn": filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
+			"20.06a - Autumn Forest", "packaged", "autumn sheets", "autumn forest wang tiles.png"),
+		"winter": filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
+			"20.07a - Winter Forest", "packaged", "winter sheets", "winter forest wang tiles (snowy).png"),
+		"spring": filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
+			"20.05c - Spring Forest", "packaged", "spring sheets", "spring forest wang tiles.png"),
+	}
+	// Strip order within every legend: dirt, light grass, dark grass, stone,
+	// shallow water, deep water.
+	swatch := []string{"dirt", "grass", "darkgrass", "stone", "shallow", "deep"}
+	for season, file := range seasons {
+		for i, name := range swatch {
+			key := fmt.Sprintf("ground/%s_%s", season, name)
+			if _, err := os.Stat(file); err != nil {
+				continue
+			}
+			entries = append(entries, manifestEntry{
+				Key: key, File: file, FrameW: 16, FrameH: 16,
+				Rect: []int{i * 16, wangLegendY, 16, 16},
+			})
+		}
+	}
+
+	// The seasonal legends have no true sand, so it comes from the desert pack.
+	// This patch was picked by tiling candidates 4x4 and keeping the one with no
+	// visible repeating motif; most of that sheet is decorated with dune ripples
+	// that turn into an obvious grid when tiled.
+	desert := filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
+		"23.03a - Desert Sands", "packaged", "desert sheets", "desert sands v01.png")
+	if _, err := os.Stat(desert); err == nil {
+		entries = append(entries, manifestEntry{
+			Key: "ground/sand", File: desert, FrameW: 16, FrameH: 16,
+			Rect: []int{96, 0, 16, 16},
+		})
 	}
 
 	// Townspeople.

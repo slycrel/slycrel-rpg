@@ -172,10 +172,11 @@ func (s *overworldScene) Draw(g *Game, dst *ebiten.Image) {
 	x1 := x0 + render.ScreenW/ts + 3
 	y1 := y0 + render.ScreenH/ts + 3
 
+	ground := g.ground()
+	ox, oy := s.cam.Offset()
 	for ty := y0; ty <= y1; ty++ {
 		for tx := x0; tx <= x1; tx++ {
-			t := g.World.At(tx, ty)
-			ctx.Tile(g.Assets.Get(t.Info().Tile), 0, tx, ty)
+			ground.Draw(dst, float64(tx*ts)+ox, float64(ty*ts)+oy, tx, ty, g.materialAt)
 		}
 	}
 
@@ -200,9 +201,10 @@ func (s *overworldScene) Draw(g *Game, dst *ebiten.Image) {
 	s.drawHUD(g, dst)
 }
 
-// drawPOIMarker paints a small procedural icon for a location. These are
-// deliberately readable at a glance rather than pretty: silhouette first,
-// detail later when curated building art replaces them.
+// drawPOIMarker paints the icon for a location. These are drawn rather than
+// sourced: the building art in the bundle is 300-500px hero sprites meant for a
+// zoomed-in scene, and scaling one down to a 16px overworld cell is mush. At
+// this size a location wants a silhouette, not a portrait.
 func drawPOIMarker(ctx *render.Ctx, p *world.POI) {
 	const ts = assetsys.TileSize
 	ox, oy := ctx.Cam.Offset()
@@ -212,48 +214,72 @@ func drawPOIMarker(ctx *render.Ctx, p *world.POI) {
 	var body, roof color.RGBA
 	switch p.Kind {
 	case world.KindCapital:
-		body, roof = color.RGBA{0xD8, 0xC0, 0x90, 0xFF}, color.RGBA{0xC0, 0x50, 0x40, 0xFF}
+		body, roof = color.RGBA{0xE4, 0xCF, 0x9E, 0xFF}, color.RGBA{0xC8, 0x4A, 0x3C, 0xFF}
 	case world.KindTown:
-		body, roof = color.RGBA{0xC8, 0xB0, 0x84, 0xFF}, color.RGBA{0xA8, 0x48, 0x3C, 0xFF}
+		body, roof = color.RGBA{0xD4, 0xBC, 0x8C, 0xFF}, color.RGBA{0xB0, 0x42, 0x36, 0xFF}
 	case world.KindVillage:
-		body, roof = color.RGBA{0xB8, 0xA0, 0x78, 0xFF}, color.RGBA{0x8C, 0x5A, 0x38, 0xFF}
+		body, roof = color.RGBA{0xC0, 0xA8, 0x7C, 0xFF}, color.RGBA{0x94, 0x5E, 0x38, 0xFF}
 	case world.KindCastle:
-		body, roof = color.RGBA{0xB0, 0xB4, 0xC0, 0xFF}, color.RGBA{0x50, 0x58, 0x70, 0xFF}
+		body, roof = color.RGBA{0xBC, 0xC0, 0xCC, 0xFF}, color.RGBA{0x56, 0x5E, 0x78, 0xFF}
 	case world.KindTower:
-		body, roof = color.RGBA{0x9C, 0x94, 0xB4, 0xFF}, color.RGBA{0x44, 0x3C, 0x64, 0xFF}
+		body, roof = color.RGBA{0xA8, 0xA0, 0xC0, 0xFF}, color.RGBA{0x4A, 0x42, 0x6C, 0xFF}
 	case world.KindShrine:
-		body, roof = color.RGBA{0xE4, 0xDC, 0xB0, 0xFF}, color.RGBA{0xD0, 0xA8, 0x40, 0xFF}
+		body, roof = color.RGBA{0xEC, 0xE4, 0xB8, 0xFF}, color.RGBA{0xD8, 0xB0, 0x48, 0xFF}
 	case world.KindCamp:
-		body, roof = color.RGBA{0xA8, 0x8C, 0x60, 0xFF}, color.RGBA{0xE0, 0x80, 0x30, 0xFF}
+		body, roof = color.RGBA{0xB0, 0x94, 0x66, 0xFF}, color.RGBA{0xE8, 0x88, 0x34, 0xFF}
 	case world.KindRuin:
-		body, roof = color.RGBA{0x9C, 0x94, 0x84, 0xFF}, color.RGBA{0x60, 0x5C, 0x54, 0xFF}
+		body, roof = color.RGBA{0xA6, 0x9E, 0x8C, 0xFF}, color.RGBA{0x68, 0x64, 0x5C, 0xFF}
 	default: // dungeon, cave, oddity: a hole in the world
-		body, roof = color.RGBA{0x30, 0x28, 0x30, 0xFF}, color.RGBA{0x14, 0x10, 0x18, 0xFF}
+		body, roof = color.RGBA{0x3A, 0x30, 0x3A, 0xFF}, color.RGBA{0x12, 0x0E, 0x16, 0xFF}
 	}
+	shade := scale(body, 0.72)
+	outline := color.RGBA{0x1C, 0x16, 0x14, 0xC0}
+
+	// A contact shadow first, so the icon reads as standing on the terrain.
+	render.Rect(ctx.Dst, x+3, y+13, 10, 2, color.RGBA{0, 0, 0, 0x50})
 
 	switch p.Kind {
 	case world.KindDungeon, world.KindCave, world.KindOddity:
-		render.Rect(ctx.Dst, x+3, y+5, 10, 9, body)
-		render.Rect(ctx.Dst, x+5, y+7, 6, 7, roof)
+		render.Rect(ctx.Dst, x+2, y+5, 12, 9, body)
+		render.Rect(ctx.Dst, x+4, y+7, 8, 7, roof)
+		render.Frame(ctx.Dst, x+2, y+5, 12, 9, outline)
 	case world.KindTower:
-		render.Rect(ctx.Dst, x+5, y+2, 6, 12, body)
+		render.Rect(ctx.Dst, x+5, y+3, 6, 11, body)
+		render.Rect(ctx.Dst, x+8, y+3, 3, 11, shade)
 		render.Rect(ctx.Dst, x+4, y+1, 8, 3, roof)
+		render.Frame(ctx.Dst, x+5, y+3, 6, 11, outline)
 	case world.KindShrine:
-		render.Rect(ctx.Dst, x+6, y+4, 4, 10, body)
-		render.Rect(ctx.Dst, x+3, y+6, 10, 3, roof)
+		render.Rect(ctx.Dst, x+6, y+5, 4, 9, body)
+		render.Rect(ctx.Dst, x+3, y+3, 10, 3, roof)
+		render.Frame(ctx.Dst, x+3, y+3, 10, 3, outline)
 	case world.KindCamp:
-		render.Rect(ctx.Dst, x+3, y+10, 10, 3, body)
-		render.Rect(ctx.Dst, x+6, y+5, 4, 5, roof)
+		render.Rect(ctx.Dst, x+4, y+11, 8, 2, body)
+		render.Rect(ctx.Dst, x+6, y+4, 2, 8, roof)
+		render.Rect(ctx.Dst, x+8, y+6, 2, 6, shade)
 	case world.KindRuin:
-		render.Rect(ctx.Dst, x+2, y+7, 3, 7, body)
-		render.Rect(ctx.Dst, x+7, y+9, 3, 5, body)
-		render.Rect(ctx.Dst, x+11, y+6, 3, 8, roof)
-	default: // buildings
-		render.Rect(ctx.Dst, x+2, y+7, 12, 7, body)
-		render.Rect(ctx.Dst, x+1, y+3, 14, 4, roof)
-		render.Rect(ctx.Dst, x+6, y+10, 4, 4, color.RGBA{0x40, 0x2C, 0x20, 0xFF})
+		render.Rect(ctx.Dst, x+2, y+6, 3, 8, body)
+		render.Rect(ctx.Dst, x+7, y+9, 3, 5, shade)
+		render.Rect(ctx.Dst, x+11, y+5, 3, 9, roof)
+	default: // settlements: a gabled house
+		render.Rect(ctx.Dst, x+3, y+7, 10, 7, body)
+		render.Rect(ctx.Dst, x+9, y+7, 4, 7, shade) // sunlit from the left
+		render.Rect(ctx.Dst, x+2, y+3, 12, 4, roof)
+		render.Rect(ctx.Dst, x+2, y+3, 12, 1, scale(roof, 1.25))
+		render.Rect(ctx.Dst, x+7, y+10, 3, 4, color.RGBA{0x38, 0x26, 0x1C, 0xFF})
+		render.Frame(ctx.Dst, x+3, y+7, 10, 7, outline)
 	}
-	render.Frame(ctx.Dst, x+0, y+0, ts, ts, color.RGBA{0, 0, 0, 0x30})
+}
+
+// scale multiplies a colour's channels, clamping at full.
+func scale(c color.RGBA, f float64) color.RGBA {
+	ch := func(v uint8) uint8 {
+		n := float64(v) * f
+		if n > 255 {
+			n = 255
+		}
+		return uint8(n)
+	}
+	return color.RGBA{ch(c.R), ch(c.G), ch(c.B), c.A}
 }
 
 func (s *overworldScene) drawHUD(g *Game, dst *ebiten.Image) {

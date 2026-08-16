@@ -254,13 +254,20 @@ func (s *localScene) Draw(g *Game, dst *ebiten.Image) {
 	x1 := core.Min(l.W-1, x0+render.ScreenW/ts+2)
 	y1 := core.Min(l.H-1, y0+render.ScreenH/ts+2)
 
+	ground := g.ground()
+	ox, oy := s.cam.Offset()
 	for ty := y0; ty <= y1; ty++ {
 		for tx := x0; tx <= x1; tx++ {
 			t := l.At(tx, ty)
 			if t == world.LVoid {
 				continue
 			}
-			ctx.Tile(g.Assets.Get(t.Info().Tile), 0, tx, ty)
+			// Ground blends; structures are drawn flat on top of it.
+			if _, isGround := localMaterial[t]; isGround {
+				ground.Draw(dst, float64(tx*ts)+ox, float64(ty*ts)+oy, tx, ty, g.localMaterialAt)
+				continue
+			}
+			ctx.TileTinted(g.Assets.Get(structureTex[t]), 0, tx, ty, structureTint[t])
 		}
 	}
 
@@ -281,6 +288,20 @@ func (s *localScene) Draw(g *Game, dst *ebiten.Image) {
 
 	s.drawHUD(g, dst)
 }
+
+// Structures reuse ground swatches at a different value: a wall is cold stone
+// at half brightness, a roof is warm dirt pushed red. Cheaper than sourcing
+// separate art, and it keeps everything in one palette.
+var (
+	structureTex = map[world.LocalTile]string{
+		world.LWall: "ground/winter_stone",
+		world.LRoof: "ground/summer_dirt",
+	}
+	structureTint = map[world.LocalTile]color.Color{
+		world.LWall: color.RGBA{0x6E, 0x6E, 0x82, 0xFF},
+		world.LRoof: color.RGBA{0xD8, 0x6A, 0x50, 0xFF},
+	}
+)
 
 func drawEntity(g *Game, ctx *render.Ctx, e *world.Entity) {
 	const ts = assetsys.TileSize

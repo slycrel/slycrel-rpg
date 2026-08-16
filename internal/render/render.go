@@ -152,6 +152,21 @@ func (c *Ctx) Tile(sp *assetsys.Sprite, frame, tx, ty int) {
 	c.Dst.DrawImage(img, op)
 }
 
+// TileTinted draws a tile-sized sprite at tile coordinates under a colour
+// multiplier. Structures reuse the ground textures this way rather than needing
+// their own art: a wall is the stone swatch at half value.
+func (c *Ctx) TileTinted(sp *assetsys.Sprite, frame, tx, ty int, tint color.Color) {
+	img := sp.Frame(frame)
+	if img == nil {
+		return
+	}
+	ox, oy := c.Cam.Offset()
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(float64(tx*assetsys.TileSize)+ox, float64(ty*assetsys.TileSize)+oy)
+	op.ColorScale.ScaleWithColor(tint)
+	c.Dst.DrawImage(img, op)
+}
+
 // Screen draws a sprite frame at raw screen coordinates, top-left anchored,
 // optionally scaled. Used for portraits and interface art.
 func Screen(dst *ebiten.Image, sp *assetsys.Sprite, frame int, x, y, scale float64) {

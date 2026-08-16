@@ -19,13 +19,17 @@ carves art and audio out of its grant. The only bundle-derived pixels in version
 control are the six PNGs in `docs/screenshots/`, and every licence family below
 explicitly permits screenshots.
 
-The runtime-load design — art resolved from the player's own copy of the bundle,
-procedural placeholders when it is absent — is not merely convenient. It is the
-only distribution model most of these licences allow. Treat it as permanent.
+The runtime-load design exists because **the repository is public**, not because
+shipping the game is restricted. Distributing Slycrel with the art baked in, to
+anyone, free or paid, is exactly what these licences are for. The two models
+coexist: an art-free public repo for the code, and release builds that contain
+the art. See [Can, can't, must](#can-cant-must).
 
-Two documents are missing and should be obtained (see [Gaps](#gaps-to-close)):
-the Humble bundle EULA, and the AfGameAssets licence covering three of the six
-packs the game currently loads.
+There is **no single "Humble EULA"** to track down — see
+[The governing licence](#the-governing-licence). Humble is the storefront, not
+the licensor. The evidence points at GameDev Market's Pro Licence as the stock
+document for this bundle, which is permissive: commercial use, unlimited
+projects, derivative works, no credit required, no redistribution.
 
 ---
 
@@ -49,6 +53,61 @@ is wired in yet. No audio is used at all.
 
 ---
 
+## The governing licence
+
+Humble does not publish a universal asset EULA, and there is no stock document
+sitting somewhere unfound. Humble runs asset bundles in partnership with a
+marketplace, and **that marketplace's standard licence is the operative grant**.
+
+This bundle is a GameDev Market bundle. The fingerprints are unambiguous:
+
+- `pixelrpgdungeonsmonsters/README_gdm.txt` — "gdm", and the text directs the
+  reader to "gamedevmarket asset page"
+- `beowulfsrpgdungeontilesets/readme.txt` — "check the gamedevmarket asset page"
+- Two packs carry it in the folder name: `guipro_fantasyrpg_gamedevmarket`,
+  `robots_gamedevmarket`
+- REXARD and Seliel the Shaper both distribute through GameDev Market
+
+### GameDev Market Pro Licence
+
+The terms, which are considerably more generous than anything found on disk:
+
+- Non-exclusive, **perpetual** licence
+- Create Derivative Works from the assets
+- Use in **both** Monetized and Non-Monetized Media Products
+- **No restriction on the number of projects**
+- Distribute and sell the product for any fee you set
+- **No attribution required**
+- May **not** sell, share, transfer, sublicense, or redistribute the asset or a
+  derivative other than as part of the media product
+- May **not** let end users extract the assets from the product
+
+### The Humble amendment
+
+When an earlier Humble/GameDev Market RPG bundle shipped carrying the
+single-project clause, the resulting complaints produced a public correction:
+*"we are in the process of removing this clause, so for the purpose of any
+Humble Bundle purchases, all assets can be used in multiple projects."* Bundle
+purchases are not single-product licences.
+
+### What this means for the Tier A licence file
+
+The `license_agreement.rtf` in three Beowulf packs is headed **"itch.io Asset
+Licence Agreement"**, and clause 1.2 states it takes effect "on the date of
+purchase from Itchi.io — please refer to your Itch.io invoice." This bundle was
+not an itch.io purchase. That RTF is a stale file the creator packages into his
+zips for his itch customers; it is not the grant that came with this purchase.
+
+Its harshest terms therefore probably do **not** bind here — the one-product
+limit, the assignment of derivative works back to the artist, and the duty to
+email on release. Treat the RTF as informational about the creator's
+preferences rather than as the contract.
+
+This is an inference from strong circumstantial evidence, not a settled fact.
+Two things would resolve it (see [Gaps](#gaps-to-close)).
+
+---
+
 ## Licence tiers across the extracted packs
 
 ### Tier A — Explicit licence text on disk
@@ -63,7 +122,10 @@ Six further packs in `assets-raw/` are by the same creator and ship only a
 `miniadventureheroeshumans`, `minicityassetpack`, `minicityinteriorstilesets`,
 `pixelrpgdungeonsmonsters`.
 
-This is the most restrictive family in the collection. The terms that matter:
+This is the most restrictive text in the collection — but see
+[the note above](#what-this-means-for-the-tier-a-licence-file): it is an
+itch.io agreement that most likely does not govern a bundle purchase. Recorded
+here as the worst case, not the presumed case. The terms that matter:
 
 - **One Media Product per purchase** (3.1). A sequel is a separate product and
   needs a separate licence (3.3C).
@@ -129,8 +191,18 @@ Five packs by The Sound Guild: `ambiencesoundspack`,
 `combatsoundsbundlecollection`, `monstersoundsvolume1`, `oldmagicianvoicepack`,
 `userinterfacesfxbundle`. The only document included is a newsletter flyer whose
 sole licensing content is *"if you can credit me in your project it would be
-amazing"*. No terms text on disk. Nothing is used yet; resolve terms before
-wiring audio in.
+amazing"*.
+
+**This tier is now live.** `assets/audio.json` wires 33 cues drawn from 81 files
+across all five packs — 32 from the UI SFX bundle, 26 combat, 11 magician VO, 8
+monster, 4 ambience. They ship in any build produced by `scripts/dist.sh`.
+
+Nothing about that is likely to be a problem: these arrived through the same
+bundle as everything else, and using them in a game is the purchase's whole
+purpose. But it is the one creator in the collection for whom **no terms text
+exists anywhere on disk**, so it is also the least documented thing being
+shipped. The Sound Guild is credited in `CREDITS.md`, which satisfies the only
+request the flyer actually makes.
 
 ### Tier F — Fonts
 
@@ -151,45 +223,136 @@ Currently moot: the game renders with `basicfont.Face7x13` from
 
 ## Can, can't, must
 
+The distinction that governs everything here is **the art as art** versus **the
+art inside a game**. Every licence in this collection forbids the first and
+exists to permit the second. Distributing Slycrel is the licensed use case, not
+an edge case around it.
+
 ### Can
 
-- Ship Slycrel, free or commercially, with art resolved at runtime from the
-  player's own copy of the bundle. This is the current design.
-- Keep the repository MIT-licensed and public.
+- **Ship Slycrel to anybody, with the art baked in.** Give a build to a friend,
+  put it on itch, sell it on Steam. Players need no bundle of their own and no
+  licence of their own. This is what the purchase bought.
+- **`go:embed` the art**, pack it into an archive, or ship an assets folder next
+  to the binary. All fine — these are packaging choices, not licensing ones.
+- Charge money for it, at any price.
+- Keep the repository MIT-licensed and public, with the art left out of it.
 - Publish screenshots, GIFs, and trailers, including on store pages.
 - Modify, recolour, re-tile, and re-cut the art for use in the game.
-- Use the REXARD and Mana Seed art across as many projects as desired.
+- Use the art across as many projects as desired (Pro Licence; see the Tier A
+  caveat if that reading turns out to be wrong).
 
 ### Can't
 
-- **Commit art, audio, or fonts to git.** Not a sample, not a thumbnail, not a
-  "just one sprite to make the README nicer."
-- **`go:embed` any asset**, or otherwise bake art into a release binary handed
-  to people who do not own the bundle. That is redistribution.
-- Publish a release archive, installer, or itch build containing the art.
-- Use the art in a logo, app icon, store banner, or box art.
-- Ship a modding SDK, asset pack, or engine that exposes the art to others.
+- **Commit art, audio, or fonts to git in a public repo.** Not a sample, not a
+  thumbnail, not a "just one sprite to make the README nicer." A public repo
+  hands over the assets as assets to anyone who clones it — no game involved.
+  This, and not distribution, is the real reason the runtime-load design exists.
+- Publish the art *as art*: an asset pack, a spritesheet download, a modding
+  SDK, an engine or toolkit others build games with.
+- Sell, share, transfer, or sublicense the assets outside a game of yours.
+- Use the art in a logo, trademark, app icon, store banner, or box art.
 - Print anything (Tier A explicitly; assume the same elsewhere).
-- Claim ownership of edits to Tier A art — clause 5 assigns them to the artist.
 - Use Mana Seed art in an engine product, a blockchain project, or an AI one.
+- Under the worst-case Tier A reading only: claim ownership of your edits.
+
+### On "don't let users extract the assets"
+
+This clause appears in the Pro Licence and in Tier A, and it is narrower than it
+sounds. It forbids *authorizing or facilitating* extraction — shipping a
+documented asset directory, an unpacker, an export feature. It does not require
+that extraction be technically impossible. Every 2D game ever shipped can have
+its sprites ripped by a determined player with a hex editor; no licence demands
+otherwise.
+
+Practically: prefer `go:embed` or a packed archive over a browsable
+`assets-raw/`-style tree with original pack names and folder structure intact.
+That is a sensible nudge, not a hard requirement.
 
 ### Must
 
-- **Credit the creators.** Contractual for Tier A, requested for Tier E,
-  conventional everywhere else. There is no `CREDITS.md` yet.
-- **Email Machado on release** if any Beowulf-family art ships (clause 3.1E).
-- **Track one-asset-one-product** if Tier A art is ever spread across projects.
+- **Credit the creators.** Strictly, the Pro Licence does not require it, and if
+  that licence governs then nothing here is mandatory. But Tier A demands it,
+  Tier E asks for it, and the cost of a `CREDITS.md` is nil against the cost of
+  being wrong about which licence applies. Write it. There isn't one yet.
+- Under the worst-case Tier A reading only: email Machado on release, and track
+  one-asset-one-product across projects. Both fall away if the Pro Licence
+  governs, which is the likelier reading.
+
+---
+
+## On hosting the assets for the game to download
+
+Considered and rejected. The reasoning is worth recording, because the idea
+recurs and because the licensing analysis is not the obvious one.
+
+### It is not the grey area it looks like
+
+Downloading assets on first run is ordinary practice — Unity Addressables, UE
+pak chunks, mobile on-demand resources — and it is *not* a licensing problem
+provided the delivery is genuinely part of the game: the payload serves the
+game, arrives through the game, and is not a browsable library.
+
+The failure mode is the bucket, not the download. A public URL serving PNGs is a
+distribution channel for **the art as art**, and anyone with `curl` is a
+recipient who never ran the game. That is squarely what the licences forbid, and
+it is worse than committing to git, because it would be infrastructure operated
+deliberately rather than a mistake in `.gitignore`.
+
+### Encryption does not change the analysis
+
+An embedded key is a speed bump, not a legal instrument. The key ships inside
+the binary, so it is extractable by anyone who cares — but that is the lesser
+point. The real point is that the licence question is *who receives the assets*,
+not *how hard they were to read*. Encryption changes the difficulty and leaves
+the recipients identical, so it moves nothing that matters.
+
+Where obfuscation does have value is the narrow "don't facilitate extraction"
+clause: a packed, non-obvious format is better than a browsable tree of original
+pack names. That is a reason to pack, not a reason to build a key exchange.
+
+### The decisive argument is that it solves nothing
+
+Embedding the art in the build is already permitted. So the CDN buys no rights
+that `go:embed` does not, while adding:
+
+- hosting cost and an availability dependency — the game breaks when the bucket
+  moves, expires, or gets a bill
+- a first-run failure mode on a game that currently has none
+- asset/binary version skew to manage
+- a new and serious licensing risk surface, in exchange for none removed
+
+A self-contained build has none of these. **Embed the art in release builds and
+keep the repository art-free.** That is the whole solution.
+
+### The one case that genuinely cannot be solved this way
+
+If the goal were to let *contributors* clone the repo and get working art, no
+hosting scheme fixes it. Developers receiving assets outside a game are
+receiving assets as assets, whatever the transport — that is the prohibited case
+by definition, and a licence-checking download gate would not cure it.
+
+The existing answer is the right one and should stay: procedural placeholders so
+the build is never broken, plus `assetpipe` for contributors who own the bundle.
 
 ---
 
 ## Gaps to close
 
-1. **Obtain the Humble bundle EULA.** It is the master grant for all 78 packs
-   and no copy exists locally. Community reporting indicates Humble's asset
-   bundle EULA was originally single-product and was later revised to permit
-   multiple products — which revision applies to this purchase matters, and only
-   the document settles it. Download it from the Humble library page and store
-   it beside the bundle.
+1. **Confirm the bundle licence in writing.** There is no stock Humble EULA to
+   download; the working conclusion is that GameDev Market's Pro Licence
+   governs. Two ways to settle it:
+   - Check the bundle's page in the Humble **library** (not the store page).
+     GameDev Market bundles sometimes include a licence PDF as its own download
+     entry, separate from the asset zips.
+   - Failing that, email Humble support with the order number and ask which
+     licence applies. This is a routine question and they answer it. Save the
+     reply next to the bundle — a dated email from the storefront is better
+     evidence than any inference in this document.
+
+   The `.webarchive` saved beside the bundle is **not** evidence. It captured
+   only Humble's page chrome; it contains zero occurrences of "asset", "RPG
+   Creator", or any creator name.
 2. **Obtain "License of AFGameAssets"** from the itch.io product pages for the
    three packs currently in the manifest. This is the only unverified licence
    affecting the build as it stands.

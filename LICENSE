@@ -19,25 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-
---------------------------------------------------------------------------
-ART AND AUDIO ARE NOT COVERED BY THIS LICENSE
---------------------------------------------------------------------------
-
-This license covers the source code, the JSON content tables, and the
-documentation in this repository. It does not cover, and this repository does
-not redistribute, the art and audio the game loads.
-
-Those assets come from the Humble "Complete RPG Creator Bundle" and are
-licensed separately by their individual creators. They live outside version
-control in assets-raw/, which is gitignored and rebuilt from the purchased
-archives by cmd/assetpipe. docs/ASSET-INVENTORY.md is a catalogue of what the
-bundle contains, not a copy of it.
-
-The screenshots in docs/screenshots/ necessarily show that art in use. They are
-included for documentation only.
-
-To run the game with its intended art you need your own copy of the bundle.
-Without it the game still runs: every unresolved asset falls back to a
-procedurally generated placeholder.

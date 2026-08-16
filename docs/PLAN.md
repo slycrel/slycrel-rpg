@@ -42,6 +42,10 @@ Built and running:
 - Loot, XP, banked level-ups, shops (buy/sell, stock scaling with settlement
   size), inns, chests, altars
 - Character sheet and pack with out-of-combat item use
+- Terrain: quarter-tile corner autotiling over Mana Seed ground textures, with
+  per-tile texture and dither phase so long boundaries do not repeat; a
+  priority order that puts water under sand under soil under grass, with roads
+  laid over the lot
 - Sound: 33 cues over 81 source files — combat, interface, world and four
   ambience beds — with per-cue variant selection, a persisted volume/mute
   setting, and an audit pass that decodes every file
@@ -52,7 +56,7 @@ Built and running:
 - Asset pipeline: inventory, selective extraction, manifest generation, and an
   audit that reports which art keys still fall back to placeholders
 
-Deliberately not built yet: curated tile art.
+Deliberately not built yet: overworld decor (trees, rocks) and curated interior art.
 
 ## Architecture, and why
 
@@ -79,9 +83,10 @@ testable and a simulation harness is cheap to add later.
 
 ### Phase 1 — make it feel like a game *(save/load and audio done)*
 
-1. **Real overworld tiles.** Mana Seed ships 22 Tiled `.tmx` maps and 127 `.tsx`
-   tilesets on a 16px grid. Write a `.tsx` reader and an autotile/Wang lookup so
-   coast, forest edges and cliffs blend instead of tiling flat.
+1. **Overworld decor.** Terrain blends, but a forest is still flat dark grass.
+   Scatter tree, rock and shrub sprites deterministically over the tiles that
+   deserve them. The packs' trees are 80x112 — five tiles wide — so this wants
+   the small object sheets, or drawn motifs, not the hero art.
 2. **Icons everywhere.** 720 spell icons, 480 stat icons, 273 loot icons are
    extracted. Wire `Item.Icon`, `Weapon.Icon`, `Spell.Icon` through to the menus.
 
