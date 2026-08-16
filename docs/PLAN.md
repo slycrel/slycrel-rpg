@@ -42,6 +42,8 @@ Built and running:
 - Loot, XP, banked level-ups, shops (buy/sell, stock scaling with settlement
   size), inns, chests, altars
 - Character sheet and pack with out-of-combat item use
+- Quests: four kinds — fetch, cull, delve, deliver — generated from nearby
+  locations, biomes and drop tables, with a log, hand-in, and rewards
 - Balance: a simulator over the real rules, and a tuning pass that removed a
   damage cliff at level 5, made monsters scale with the encounter, and flattened
   endurance from 12-fights-then-3 to a steady 4-9 per rest
@@ -64,7 +66,7 @@ Built and running:
 - Asset pipeline: inventory, selective extraction, manifest generation, and an
   audit that reports which art keys still fall back to placeholders
 
-Deliberately not built yet: quests.
+Deliberately not built yet: party members, equipment slots, status effects.
 
 ## Architecture, and why
 
@@ -91,8 +93,8 @@ testable and a simulation harness is cheap to add later.
 
 ### Phase 1 — make it feel like a game *(save/load and audio done)*
 
-1. **Quests.** Generated from location pairs: someone in a town wants a thing
-   from a dungeon. The world already has everything a quest needs to point at.
+1. **Party members.** `model.Character` and the battle screen are both written
+   for one hero but structured for a slice. Recruitable from taverns.
 
 ### Phase 2 — depth
 

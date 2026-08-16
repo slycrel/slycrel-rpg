@@ -23,6 +23,7 @@ import (
 
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
+	"github.com/slycrel/slycrel-rpg/internal/quest"
 )
 
 // Version is the save format revision. Load refuses anything it does not know,
@@ -59,6 +60,11 @@ type File struct {
 	Fog string `json:"fog"`
 
 	SinceFight int `json:"sinceFight"`
+
+	// Quests are stored whole. They are a handful of indices and counters, so
+	// there is nothing to reconstruct and nothing that can drift out of step
+	// with a regenerated world.
+	Quests []*quest.Quest `json:"quests,omitempty"`
 }
 
 // Inside records a position within a location's interior.

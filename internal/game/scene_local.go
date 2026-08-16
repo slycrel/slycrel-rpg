@@ -40,6 +40,10 @@ func (s *localScene) Update(g *Game) error {
 		g.Push(newPauseScene(g))
 		return nil
 	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyJ) {
+		g.Push(newQuestScene(g))
+		return nil
+	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) || inpututil.IsKeyJustPressed(ebiten.KeyI) {
 		g.Push(newStatusScene(g))
 		return nil
@@ -128,7 +132,7 @@ func (g *Game) interact(e *world.Entity) {
 		g.Pop()
 
 	case world.ENPC:
-		g.Say(e.Name, e.Line)
+		g.talkTo(e)
 
 	case world.ESign:
 		g.Say(e.Name, e.Line)
@@ -195,6 +199,9 @@ func (g *Game) interact(e *world.Entity) {
 			m.HP = m.MaxHP
 			m.Name = "The " + m.Def.Name
 			g.Local.POI.Cleared = true
+			if idx := g.currentPOIIndex(); idx >= 0 {
+				g.noteQuestProgress(g.Quests.OnPOICleared(idx))
+			}
 		}
 		g.Push(newBattleScene(g, mons, g.Local.POI.Name))
 	}

@@ -155,6 +155,25 @@ func (w *Writer) LevelUpLine(g *core.RNG, level int) string {
 	return strings.ReplaceAll(core.Pick(g, w.t.LevelFlavor), "{L}", fmt.Sprint(level))
 }
 
+// QuestLine returns a template for a quest kind and part (ask / nag / thank).
+// Unknown combinations fall back to something neutral rather than an empty
+// speech bubble.
+func (w *Writer) QuestLine(g *core.RNG, kind, part string) string {
+	if byPart, ok := w.t.Quest[kind]; ok {
+		if lines := byPart[part]; len(lines) > 0 {
+			return core.Pick(g, lines)
+		}
+	}
+	switch part {
+	case "thank":
+		return "\"Well. That's that, then.\""
+	case "nag":
+		return "\"Still outstanding, that.\""
+	default:
+		return "\"I need a thing done. You look like a thing-doer.\""
+	}
+}
+
 // DispositionLine narrates the state of a fight, used between rounds so long
 // battles have a shape rather than a stream of numbers.
 func (w *Writer) DispositionLine(g *core.RNG, d rules.Disposition, target string) string {

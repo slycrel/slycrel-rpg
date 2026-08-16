@@ -568,6 +568,7 @@ func (b *battleScene) damageMonster(g *Game, idx, dmg int) {
 	if m.HP == 0 && !m.Dead {
 		m.Dead = true
 		g.Sound.Play("fight/die")
+		g.noteQuestProgress(g.Quests.OnMonsterKilled(m.Def.ID))
 		b.log.AddColor(render.ColGold, "%s", g.Write.Death(g.RNG, m))
 	}
 }
@@ -633,6 +634,7 @@ func (b *battleScene) awardSpoils(g *Game) {
 		g.Sound.Play("fight/levelup")
 		b.log.AddColor(render.ColHeal, "%s", g.Write.LevelUpLine(g.RNG, p.Level))
 	}
+	g.Quests.SyncFetch(p.Bag)
 }
 
 func (b *battleScene) finish(g *Game) {

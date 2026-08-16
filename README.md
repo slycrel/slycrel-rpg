@@ -22,8 +22,8 @@ tone-setting rule is that nobody in the world ever acknowledges the joke.
 | Town — generated from the location's seed | Dungeon — rooms, foes, chests, a boss |
 | ![A parchment map showing explored terrain](docs/screenshots/map.png) | ![The blacksmith's stock, each weapon with an icon](docs/screenshots/shop.png) |
 | The map — only what you have walked past | A shop, with icons |
-| ![The character sheet and pack](docs/screenshots/character.png) | |
-| Character sheet and pack | |
+| ![The character sheet and pack](docs/screenshots/character.png) | ![The quest log, showing an errand to clear a ruin](docs/screenshots/quests.png) |
+| Character sheet and pack | Errands, generated from the world |
 
 ## Running it
 
@@ -52,6 +52,7 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 | X, Esc | back out |
 | M | the map of everywhere you have been |
 | C or I | character sheet and pack |
+| J | the errands you agreed to |
 | Esc | pause: sound, save, load, abandon the run |
 | `\` or F12 | screenshot to `shots/` (F12 needs standard function keys on macOS) |
 
@@ -71,6 +72,11 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 - **54 monsters** across nine biomes, each with its own attack verbs, defensive
   flavour, taunts, death lines, and drop table.
 - **Shops, inns, chests, altars and townsfolk** who all have opinions.
+- **Quests** — generated from the world rather than written against it. Someone
+  in a town wants four pelts, or a cave cleared, or a parcel carried two days
+  east. The generator only ever names things it has checked exist, so an errand
+  is never impossible; a quest is a few indices and a counter, so it costs
+  nothing to save.
 - **Icons** — every item, weapon, suit of armour and technique carries one, in
   the bag, the shop and the battle menu. Reduced to 16px in the pipeline rather
   than scaled at draw time, because the engine samples nearest-neighbour and a

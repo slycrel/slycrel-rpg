@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/slycrel/slycrel-rpg/internal/quest"
+
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/world"
@@ -71,6 +73,14 @@ func buildDemoSteps() []demoStep {
 		{at: 180, do: func(g *Game) { g.demoOpenShop() }},
 		{at: 195, shot: "07-shop"},
 		{at: 200, do: func(g *Game) { g.dropOverlays() }},
+
+		// An errand from a townsperson, then the log it lands in.
+		{at: 204, do: func(g *Game) { g.demoTakeQuest() }},
+		{at: 214, shot: "07b-quest-offer"},
+		{at: 218, do: func(g *Game) { g.demoChoose(0) }},
+		{at: 222, do: func(g *Game) { g.Push(newQuestScene(g)) }},
+		{at: 232, shot: "07c-quest-log"},
+		{at: 236, do: func(g *Game) { g.dropOverlays() }},
 
 		// A battle, staged against a group so the multi-target layout shows.
 		{at: 210, do: func(g *Game) {
@@ -246,6 +256,51 @@ func (g *Game) demoOpenTechniques() {
 	}
 	b.menu.Index = 1 // Technique
 	b.chooseRoot(g)
+}
+
+// demoTakeQuest opens a conversation with someone who has something to ask.
+// The demo forces the case rather than waiting for it: whether a given
+// villager has an errand is a stable hash, so a scripted tour would otherwise
+// have to walk the whole town hoping.
+func (g *Game) demoTakeQuest() {
+	if g.Local == nil {
+		return
+	}
+	for _, e := range g.Local.Entities {
+		if e.Kind != world.ENPC {
+			continue
+		}
+		g.talkTo(e)
+		m, ok := g.Top().(*messageScene)
+		if !ok {
+			continue
+		}
+		// A plain conversation is also a message box; only an offer has
+		// choices attached to it.
+		if len(m.choices) > 0 {
+			return
+		}
+		g.Pop()
+	}
+	// Nobody in this town happened to be a giver; ask the generator directly
+	// so the capture still shows the interface.
+	if idx := g.currentPOIIndex(); idx >= 0 {
+		if q, ok := quest.Generate(g.RNG, g.World, g.Data, g.Write, idx, "Someone"); ok {
+			g.offerQuest(&world.Entity{Name: q.Giver}, q)
+		}
+	}
+}
+
+// demoChoose answers an open prompt, which is how the tour accepts a quest.
+func (g *Game) demoChoose(choice int) {
+	m, ok := g.Top().(*messageScene)
+	if !ok {
+		return
+	}
+	g.Pop()
+	if m.onChoose != nil {
+		m.onChoose(g, choice)
+	}
 }
 
 // demoBattleAdvance commits the player to an attack so the capture includes a

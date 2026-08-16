@@ -53,6 +53,9 @@ type Text struct {
 	IdleFlavor  []string `json:"idleFlavor"`
 	NpcLine     []string `json:"npcLine"`
 	SignText    []string `json:"signText"`
+
+	// Quest lines, keyed by quest kind then by part (ask / nag / thank).
+	Quest map[string]map[string][]string `json:"quest"`
 }
 
 // FindRoot locates the game root — the folder holding data/ — by walking up
@@ -219,6 +222,43 @@ func (t *Tables) StockFor(tier int) ([]model.Weapon, []model.Armor) {
 		}
 	}
 	return ws, as
+}
+
+// BiomeDrops lists the distinct items monsters of a biome can drop, which is
+// what a fetch quest is allowed to ask for. Asking for something nothing
+// nearby drops would be an errand that cannot be run.
+func (t *Tables) BiomeDrops(biome string) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, d := range t.Monsters[biome] {
+		for _, drop := range d.Loot {
+			if seen[drop.Item] {
+				continue
+			}
+			if _, ok := t.Items[drop.Item]; !ok {
+				continue // never name an item the game does not have
+			}
+			seen[drop.Item] = true
+			out = append(out, drop.Item)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+// BiomeMonsters lists a biome's creatures within reach of a level, so a cull
+// quest names something the player will actually run into.
+func (t *Tables) BiomeMonsters(biome string, level int) []*model.MonsterDef {
+	var out []*model.MonsterDef
+	for _, d := range t.Monsters[biome] {
+		if core.Abs(d.Level-level) <= 3 {
+			out = append(out, d)
+		}
+	}
+	if len(out) == 0 {
+		out = append(out, t.Monsters[biome]...)
+	}
+	return out
 }
 
 // PickMonsters chooses a plausible encounter group for a biome at a level,

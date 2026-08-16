@@ -20,6 +20,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/gamedata"
 	"github.com/slycrel/slycrel-rpg/internal/model"
+	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/tiles"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
@@ -51,6 +52,9 @@ type Game struct {
 	Walk      walker
 	Local     *world.LocalMap
 	LocalWalk walker
+
+	// Quests the player has taken on.
+	Quests quest.Log
 
 	// Steps since the last encounter, so fights cannot chain immediately.
 	sinceFight int

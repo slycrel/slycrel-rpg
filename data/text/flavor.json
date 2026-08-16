@@ -1,37 +1,124 @@
 {
   "givenNames": [
-    "Brannoch", "Wilhelmina Quist", "Old Ferret", "Sister Agatha Blunt", "Dregg",
-    "Marisol the Younger", "Halbert Pin", "Gutter Tam", "Yvane Sallow", "Bosk",
-    "Perpetua Crane", "Little Ott", "Hendrick Vole", "Saffron Bright", "Mud",
-    "Cassien Thorn", "The Widow Pemberly", "Grist", "Nolwenn Ash", "Barrow Jack",
-    "Ilsabet Dun", "Fenwick", "Auntie Sorrow", "Radomir Tack", "Peg the Elder",
-    "Corvin Slake", "Marigold Hex", "Ruddick", "Sable Vane", "Onager Flint"
+    "Brannoch",
+    "Wilhelmina Quist",
+    "Old Ferret",
+    "Sister Agatha Blunt",
+    "Dregg",
+    "Marisol the Younger",
+    "Halbert Pin",
+    "Gutter Tam",
+    "Yvane Sallow",
+    "Bosk",
+    "Perpetua Crane",
+    "Little Ott",
+    "Hendrick Vole",
+    "Saffron Bright",
+    "Mud",
+    "Cassien Thorn",
+    "The Widow Pemberly",
+    "Grist",
+    "Nolwenn Ash",
+    "Barrow Jack",
+    "Ilsabet Dun",
+    "Fenwick",
+    "Auntie Sorrow",
+    "Radomir Tack",
+    "Peg the Elder",
+    "Corvin Slake",
+    "Marigold Hex",
+    "Ruddick",
+    "Sable Vane",
+    "Onager Flint"
   ],
   "epithets": [
-    "the Regrettable", "the Barely Adequate", "the Recently Bathed", "the Unbanned",
-    "the Emotionally Available", "Who Owes Everyone", "the Structurally Unsound",
-    "of the Middling Reputation", "the Loud", "Two Drinks In", "the Unlicensed",
-    "the Fourth (There Were Three Before)", "the Persistent", "the Damp",
-    "Who Should Not Be Here", "the Ill-Advised", "the Well-Meaning Disaster",
-    "the Nearly Competent", "the Frequently Warned", "the Undeterred"
+    "the Regrettable",
+    "the Barely Adequate",
+    "the Recently Bathed",
+    "the Unbanned",
+    "the Emotionally Available",
+    "Who Owes Everyone",
+    "the Structurally Unsound",
+    "of the Middling Reputation",
+    "the Loud",
+    "Two Drinks In",
+    "the Unlicensed",
+    "the Fourth (There Were Three Before)",
+    "the Persistent",
+    "the Damp",
+    "Who Should Not Be Here",
+    "the Ill-Advised",
+    "the Well-Meaning Disaster",
+    "the Nearly Competent",
+    "the Frequently Warned",
+    "the Undeterred"
   ],
   "placePrefix": [
-    "Grim", "Mud", "Bell", "Crow", "Thistle", "Gallow", "Hollow", "Bitter", "Salt",
-    "Rook", "Ash", "Fen", "Bramble", "Cinder", "Wold", "Bone", "Ember", "Marrow",
-    "Drear", "Kettle", "Wicket", "Blight", "Tallow", "Gorse"
+    "Grim",
+    "Mud",
+    "Bell",
+    "Crow",
+    "Thistle",
+    "Gallow",
+    "Hollow",
+    "Bitter",
+    "Salt",
+    "Rook",
+    "Ash",
+    "Fen",
+    "Bramble",
+    "Cinder",
+    "Wold",
+    "Bone",
+    "Ember",
+    "Marrow",
+    "Drear",
+    "Kettle",
+    "Wicket",
+    "Blight",
+    "Tallow",
+    "Gorse"
   ],
   "placeSuffix": [
-    "hollow", "ford", "barrow", "mire", "reach", "gate", "cross", "hurst", "combe",
-    "moor", "wick", "stead", "burn", "fell", "gallow", "bottom", "thorpe", "haven",
-    "dell", "shanks"
+    "hollow",
+    "ford",
+    "barrow",
+    "mire",
+    "reach",
+    "gate",
+    "cross",
+    "hurst",
+    "combe",
+    "moor",
+    "wick",
+    "stead",
+    "burn",
+    "fell",
+    "gallow",
+    "bottom",
+    "thorpe",
+    "haven",
+    "dell",
+    "shanks"
   ],
   "placeOf": [
-    "Regrets", "the Third Attempt", "Unpaid Debts", "the Long Excuse", "Cold Soup",
-    "Bad Weather", "the Missing Bell", "Nine Widows", "the Wrong King", "Late Harvest",
-    "the Sunken Barge", "Quiet Screaming", "the Unread Letter", "Distant Relatives",
-    "the Broken Promise", "Two Winters"
+    "Regrets",
+    "the Third Attempt",
+    "Unpaid Debts",
+    "the Long Excuse",
+    "Cold Soup",
+    "Bad Weather",
+    "the Missing Bell",
+    "Nine Widows",
+    "the Wrong King",
+    "Late Harvest",
+    "the Sunken Barge",
+    "Quiet Screaming",
+    "the Unread Letter",
+    "Distant Relatives",
+    "the Broken Promise",
+    "Two Winters"
   ],
-
   "poiTagline": {
     "capital": [
       "The largest pile of people in the realm, and they all know it.",
@@ -86,7 +173,6 @@
       "The grass grows in a perfect circle and the birds route around it."
     ]
   },
-
   "poiRumor": {
     "dungeon": [
       "They say the bottom floor is furnished. Furnished, mind. Curtains and everything.",
@@ -105,11 +191,10 @@
       "It moved last spring. Two fields east. Nobody talks about it at market."
     ]
   },
-
   "hitFlavor": [
     "{A} {V} {T} for {D}.",
     "{A} {V} {T}. {D} damage, and a noise.",
-    "{A} {V} {T} — {D}. That will bruise in a shape.",
+    "{A} {V} {T} \u2014 {D}. That will bruise in a shape.",
     "{T} takes {D} and does not enjoy it.",
     "{A} {V} {T} for {D}. Somewhere, a bard is already lying about this.",
     "{D} damage. {T} reassesses.",
@@ -168,7 +253,7 @@
   "signText": [
     "NO ENTRY. THIS MEANS YOU. YES, YOU SPECIFICALLY.",
     "Beware of the dog. The dog is fine. Beware of what the dog is afraid of.",
-    "Turn back. — the management",
+    "Turn back. \u2014 the management",
     "Lost: one sword, sentimental value, answers to 'Gerald'.",
     "By order of the Crown, this place does not exist. Please do not tell it.",
     "Free to a good home. Or any home. Please.",
@@ -176,5 +261,67 @@
     "The bridge toll is one coin or one secret. Exact change appreciated.",
     "Here lies nobody. We checked. Twice.",
     "Do not read the next sign."
-  ]
+  ],
+  "quest": {
+    "fetch": {
+      "ask": [
+        "\"I need {N} {I}. Don't ask what for. Actually do ask, later, when I've had a drink.\"",
+        "\"Bring me {N} {I} and I'll make it worth your while. Modestly worth. Let's not oversell it.\"",
+        "\"{N} {I}. That's the order. My supplier was eaten, which is the third time this year.\""
+      ],
+      "nag": [
+        "\"Still {N} {I}. The number has not changed. I would have mentioned.\"",
+        "\"{I}. {N} of them. I'm not going anywhere, worse luck.\""
+      ],
+      "thank": [
+        "\"All {N}. You actually did it. I had a whole speech ready for if you didn't.\"",
+        "\"Lovely. Don't tell me where you got them. I mean it. Don't.\""
+      ]
+    },
+    "cull": {
+      "ask": [
+        "\"There's {M} out there. {N} of them, ideally fewer by supper.\"",
+        "\"Kill {N} {M}. I'd do it myself but I've got a bad back and a good excuse.\"",
+        "\"{N} {M}. They've been at the livestock, the washing, and once at my aunt.\""
+      ],
+      "nag": [
+        "\"{M}. {N} of them. They are not culling themselves, which we tried.\"",
+        "\"Still out there, then. The {M}. I can hear them from here.\""
+      ],
+      "thank": [
+        "\"That's the {M} dealt with. The village will be insufferable about it for weeks.\"",
+        "\"Done? Properly done? Right. I'll stop flinching at noises.\""
+      ]
+    },
+    "delve": {
+      "ask": [
+        "\"Somebody needs to go into {P} and put a stop to whatever is in there.\"",
+        "\"{P}. Nobody's come back from it. That's not a warning, that's a job opening.\"",
+        "\"Clear out {P}. My brother went in. I'd like the place emptied and, if convenient, him back.\""
+      ],
+      "nag": [
+        "\"{P} is still there. Still full. Still nobody's problem but yours, apparently.\"",
+        "\"Have you been to {P} yet? No? It hasn't improved.\""
+      ],
+      "thank": [
+        "\"{P} is quiet. First time in years. Feels wrong, honestly.\"",
+        "\"You went in and came out. That puts you ahead of everyone else who tried.\""
+      ]
+    },
+    "deliver": {
+      "ask": [
+        "\"Take this to {P}. Don't open it. Don't shake it. Don't listen to it.\"",
+        "\"A parcel for {P}. It's paid for. It's mostly legal. It's definitely paid for.\"",
+        "\"Get this to {P} before it goes off. I won't define 'off'.\""
+      ],
+      "nag": [
+        "\"{P}. The parcel. It is not improving in your bag.\"",
+        "\"Still carrying that? {P}. Any day now.\""
+      ],
+      "thank": [
+        "\"It arrived. Nobody's shouting. That's the best outcome I'd planned for.\"",
+        "\"Delivered, and you didn't open it. I can tell. You'd be different if you had.\""
+      ]
+    }
+  }
 }

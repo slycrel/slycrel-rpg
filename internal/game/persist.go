@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/slycrel/slycrel-rpg/internal/core"
+	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/save"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
@@ -20,6 +21,7 @@ func (g *Game) Snapshot() *save.File {
 		Fog:        save.PackFog(g.World.Explored),
 		SinceFight: g.sinceFight,
 		Summary:    g.summary(),
+		Quests:     g.Quests.Quests,
 	}
 
 	f.POIs = make([]save.POIState, len(g.World.POIs))
@@ -78,6 +80,7 @@ func (g *Game) Restore(f *save.File) error {
 	g.Player = f.Player
 	g.World = world.Generate(f.Seed, g.Write)
 	g.sinceFight = f.SinceFight
+	g.Quests = quest.Log{Quests: f.Quests}
 
 	// The location list is generated from the seed, so it is stable — but a
 	// save written by a build with a different world generator would not line
@@ -120,6 +123,8 @@ func (g *Game) Restore(f *save.File) error {
 		g.LocalWalk.dir = core.Dir(f.Inside.Facing)
 		g.Push(newLocalScene(g))
 	}
+
+	g.Quests.SyncFetch(g.Player.Bag)
 
 	g.Log.Clear()
 	g.Log.Add("Loaded: %s", f.Summary)

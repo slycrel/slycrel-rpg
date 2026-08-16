@@ -45,6 +45,10 @@ func (s *overworldScene) Update(g *Game) error {
 		g.Push(newPauseScene(g))
 		return nil
 	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyJ) {
+		g.Push(newQuestScene(g))
+		return nil
+	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) || inpututil.IsKeyJustPressed(ebiten.KeyI) {
 		g.Push(newStatusScene(g))
 		return nil
@@ -154,6 +158,9 @@ func (g *Game) enterPOI(poi *world.POI) {
 	g.LocalWalk = walker{dur: 7}
 	g.LocalWalk.Place(g.Local.Entry)
 	g.Sound.Play("world/enter")
+	if idx := g.poiIndex(poi); idx >= 0 {
+		g.noteQuestProgress(g.Quests.OnEnteredPOI(idx))
+	}
 	g.Push(newLocalScene(g))
 	g.Log.AddColor(render.ColGold, "You enter %s.", poi.Name)
 }

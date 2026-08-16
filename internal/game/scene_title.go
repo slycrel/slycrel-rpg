@@ -7,6 +7,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
+	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
 	"github.com/slycrel/slycrel-rpg/internal/save"
@@ -204,6 +205,7 @@ func (g *Game) startRun(name, epithet string, class model.Class) {
 	}
 
 	g.World = world.Generate(g.Seed, g.Write)
+	g.Quests = quest.Log{}
 	g.Walk = walker{dur: 9}
 	g.Walk.Place(g.World.Start)
 
