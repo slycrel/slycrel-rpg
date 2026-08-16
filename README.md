@@ -20,8 +20,10 @@ tone-setting rule is that nobody in the world ever acknowledges the joke.
 | Overworld — roads, terrain, points of interest | Battle — portraits, transcript, commands |
 | ![A town of red-roofed buildings along a paved street](docs/screenshots/town.png) | ![A dungeon of rooms and corridors with lurking creatures](docs/screenshots/dungeon.png) |
 | Town — generated from the location's seed | Dungeon — rooms, foes, chests, a boss |
-| ![A parchment map showing explored terrain](docs/screenshots/map.png) | ![The character sheet and pack](docs/screenshots/character.png) |
-| The map — only what you have walked past | Character sheet and pack |
+| ![A parchment map showing explored terrain](docs/screenshots/map.png) | ![The blacksmith's stock, each weapon with an icon](docs/screenshots/shop.png) |
+| The map — only what you have walked past | A shop, with icons |
+| ![The character sheet and pack](docs/screenshots/character.png) | |
+| Character sheet and pack | |
 
 ## Running it
 
@@ -69,6 +71,10 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 - **54 monsters** across nine biomes, each with its own attack verbs, defensive
   flavour, taunts, death lines, and drop table.
 - **Shops, inns, chests, altars and townsfolk** who all have opinions.
+- **Icons** — every item, weapon, suit of armour and technique carries one, in
+  the bag, the shop and the battle menu. Reduced to 16px in the pipeline rather
+  than scaled at draw time, because the engine samples nearest-neighbour and a
+  128px painted icon squeezed into a 16px box keeps every eighth pixel.
 - **Scenery** — trees, boulders, ferns, reeds and cacti scattered over the
   terrain that suits them, placed from a hash of position and world seed so a
   wood looks the same every time you walk back into it without a byte of it
@@ -123,6 +129,7 @@ go run ./cmd/assetpipe extract tier1    # the ~33 packs the game currently uses 
 go run ./cmd/assetpipe manifest         # index art into assets/manifest.json
 go run ./cmd/assetpipe audio            # index sound into assets/audio.json
 go run ./cmd/assetpipe props            # rewrite prop sheets with real translucent shadows
+go run ./cmd/assetpipe icons            # box-reduce the icon sets to 16px
 go run ./cmd/assetpipe find viking walk # locate a file in what is extracted
 ```
 

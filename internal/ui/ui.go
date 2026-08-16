@@ -9,6 +9,7 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/slycrel/slycrel-rpg/internal/assetsys"
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 )
@@ -84,16 +85,48 @@ func frac(a, b int) float64 {
 type MenuItem struct {
 	Label    string
 	Detail   string // right-aligned annotation: cost, count, price
+	Icon     string // asset key; blank rows simply have no icon
 	Disabled bool
 	Data     any // caller payload, e.g. the item or spell being chosen
 }
+
+// IconSource resolves an icon key to a drawable image, or nil when the key has
+// no real art behind it.
+type IconSource interface {
+	Icon(key string) *ebiten.Image
+}
+
+// IconSize is the drawn size of a menu icon. Sixteen is not arbitrary: the
+// pixel-art icon sets are 32px and the painted ability set is 128px, so both
+// land on an exact integer division and stay crisp.
+const IconSize = 16
 
 // Menu is a vertical cursor list with wraparound and a scrolling window.
 type Menu struct {
 	Items   []MenuItem
 	Index   int
 	Visible int // rows shown at once; 0 means all
-	top     int
+	// Icons resolves MenuItem.Icon. Leave nil for a text-only menu.
+	Icons IconSource
+	top   int
+}
+
+// rowH is the height of one row: taller when the menu carries icons, since an
+// icon is wider than the text leading.
+func (m *Menu) rowH() float64 {
+	if m.Icons != nil && m.hasIcons() {
+		return IconSize + 2
+	}
+	return render.LineH
+}
+
+func (m *Menu) hasIcons() bool {
+	for _, it := range m.Items {
+		if it.Icon != "" {
+			return true
+		}
+	}
+	return false
 }
 
 // SetItems replaces the contents, keeping the cursor in range and parked on an
@@ -174,30 +207,42 @@ func (m *Menu) Draw(dst *ebiten.Image, x, y, w float64) {
 			break
 		}
 		it := m.Items[i]
-		ly := y + float64(row)*render.LineH
+		ly := y + float64(row)*m.rowH()
 
 		col := render.ColInk
 		switch {
 		case it.Disabled:
 			col = render.ColInkFaint
 		case i == m.Index:
-			col = render.ColGold
-			render.Rect(dst, x-2, ly-1, w, render.LineH, render.ColSelect)
-			render.Text(dst, ">", x-8, ly, render.ColGold)
+			col = render.ColSelectInk
+			render.Rect(dst, x-2, ly-1, w, m.rowH(), render.ColSelect)
+			render.Text(dst, ">", x-8, ly+m.textOffset(), render.ColGold)
 		}
-		render.Text(dst, it.Label, x, ly, col)
+		// Icon first; the label indents past it so rows line up whether or not
+		// a given entry has art.
+		lx := x
+		if m.Icons != nil && m.hasIcons() {
+			lx += IconSize + 4
+			if img := m.Icons.Icon(it.Icon); img != nil {
+				render.ScreenFit(dst, &assetsys.Sprite{
+					Frames: []*ebiten.Image{img},
+					W:      img.Bounds().Dx(), H: img.Bounds().Dy(),
+				}, 0, x, ly-2, IconSize, IconSize, iconTint(it.Disabled))
+			}
+		}
+		render.Text(dst, it.Label, lx, ly+m.textOffset(), col)
 
 		// The detail column gets whatever the label leaves, minus a gap. Sizing
 		// it as a fixed fraction of the row instead is what let "Abandon the
 		// run" and "back to the title" draw through each other.
 		if it.Detail != "" {
-			avail := detailRight - (x + render.TextW(it.Label)) - 10
+			avail := detailRight - (lx + render.TextW(it.Label)) - 10
 			if avail >= 20 {
 				d := render.ColInkDim
 				if it.Disabled {
 					d = render.ColInkFaint
 				}
-				render.TextRight(dst, render.Trunc(it.Detail, avail), detailRight, ly, d)
+				render.TextRight(dst, render.Trunc(it.Detail, avail), detailRight, ly+m.textOffset(), d)
 			}
 		}
 	}
@@ -207,9 +252,25 @@ func (m *Menu) Draw(dst *ebiten.Image, x, y, w float64) {
 			render.Text(dst, "^", x+w-4, y, render.ColInkDim)
 		}
 		if m.top+m.Visible < len(m.Items) {
-			render.Text(dst, "v", x+w-4, y+float64(m.Visible-1)*render.LineH, render.ColInkDim)
+			render.Text(dst, "v", x+w-4, y+float64(m.Visible-1)*m.rowH(), render.ColInkDim)
 		}
 	}
+}
+
+// textOffset centres the label against a taller icon row.
+func (m *Menu) textOffset() float64 {
+	if h := m.rowH(); h > render.LineH {
+		return (h - render.LineH) / 2
+	}
+	return 0
+}
+
+// iconTint dims the icon on an unavailable row so it matches the label.
+func iconTint(disabled bool) color.Color {
+	if disabled {
+		return color.RGBA{0x80, 0x80, 0x80, 0xB0}
+	}
+	return nil
 }
 
 // Height returns the pixel height the menu will occupy.
@@ -218,7 +279,7 @@ func (m *Menu) Height() float64 {
 	if m.Visible > 0 && m.Visible < n {
 		n = m.Visible
 	}
-	return float64(n) * render.LineH
+	return float64(n) * m.rowH()
 }
 
 // Log is the rolling combat/event transcript.

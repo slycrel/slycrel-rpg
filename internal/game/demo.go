@@ -80,7 +80,14 @@ func buildDemoSteps() []demoStep {
 			}
 		}},
 		{at: 240, shot: "08-battle"},
-		{at: 245, do: func(g *Game) { g.demoBattleAdvance() }},
+		{at: 246, do: func(g *Game) { g.demoOpenTechniques() }},
+		{at: 258, shot: "08b-techniques"},
+		{at: 264, do: func(g *Game) {
+			if b, ok := g.Top().(*battleScene); ok {
+				b.setRootMenu(g)
+			}
+		}},
+		{at: 270, do: func(g *Game) { g.demoBattleAdvance() }},
 		{at: 300, shot: "09-battle-resolving"},
 
 		// A level-1 fighter against three of anything is a staged fight, not a
@@ -229,6 +236,16 @@ func (g *Game) demoLoot() {
 			g.dropOverlays() // openChest pushes a message box
 		}
 	}
+}
+
+// demoOpenTechniques drops into the spell list so a capture shows the icons.
+func (g *Game) demoOpenTechniques() {
+	b, ok := g.Top().(*battleScene)
+	if !ok {
+		return
+	}
+	b.menu.Index = 1 // Technique
+	b.chooseRoot(g)
 }
 
 // demoBattleAdvance commits the player to an attack so the capture includes a

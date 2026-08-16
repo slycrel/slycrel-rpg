@@ -135,6 +135,16 @@ func (r *Registry) Get(key string) *Sprite {
 	return s
 }
 
+// Icon returns the image for a key, but only when it resolves to real art.
+// Unknown keys return nil rather than the magenta placeholder: a missing icon
+// should leave a gap in a menu, not a marker sitting next to every row.
+func (r *Registry) Icon(key string) *ebiten.Image {
+	if key == "" || !r.Has(key) {
+		return nil
+	}
+	return r.Get(key).Frame(0)
+}
+
 // Has reports whether a key is declared in the manifest and its file exists.
 // Used by the audit pass to find art that will silently fall back.
 func (r *Registry) Has(key string) bool {

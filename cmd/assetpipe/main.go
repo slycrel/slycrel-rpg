@@ -7,6 +7,7 @@
 //	assetpipe manifest             regenerate assets/manifest.json from what is extracted
 //	assetpipe audio                regenerate assets/audio.json from the extracted sound packs
 //	assetpipe props                rewrite prop sheets with translucent shadows
+//	assetpipe icons                box-reduce every icon set to 16px
 //	assetpipe extract all          extract everything (the bundle is 16.7 GB; budget disk)
 //	assetpipe find <substr>...     grep extracted filenames
 //
@@ -106,6 +107,8 @@ func main() {
 		must(buildAudioManifest())
 	case "props":
 		must(buildProps())
+	case "icons":
+		must(buildIcons())
 	case "find":
 		if len(os.Args) < 3 {
 			usage()
@@ -117,7 +120,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: assetpipe inventory | extract <tier1|all|pack...> | manifest | audio | props | find <substr...>")
+	fmt.Fprintln(os.Stderr, "usage: assetpipe inventory | extract <tier1|all|pack...> | manifest | audio | props | icons | find <substr...>")
 	os.Exit(2)
 }
 

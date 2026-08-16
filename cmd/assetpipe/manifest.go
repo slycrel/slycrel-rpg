@@ -167,6 +167,41 @@ func buildManifest() error {
 	add("prop/desert16", filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
 		"23.03a - Desert Sands", "packaged", "desert sheets", "desert 16x16.png"), 16, 16)
 
+	// Icons. Two pixel-art sets at 32px — loot and runes — which is exactly UI
+	// scale, plus the painted ability set for weapons, where 128px divides
+	// cleanly by four. Loot filenames carry the thing they depict
+	// ("monloot_57_water_lilly_x"), so keys stay semantic rather than numeric.
+	// Icons are read from the reduced copies written by `assetpipe icons`,
+	// which box-averages them down to 16px. Falling back to the originals keeps
+	// the manifest usable before that step has run, just blurrier on screen.
+	for _, set := range []struct {
+		prefix   string
+		original []string
+	}{
+		{"loot", []string{"beowulfsrpgmonsterloots", "Beowulf_RPG_Monsters_Loot", "monster_loots_size_32x32"}},
+		{"rune", []string{"magicrunespixelartassetpack", "Beowulf's_Magic_Runes", "runes_size_x_32x32"}},
+		{"ab", []string{"spellsandabilityicons_windows", "png", "128x128"}},
+	} {
+		reduced := filepath.Join(genRoot, "icons", set.prefix)
+		if files := pngsIn(reduced); len(files) > 0 {
+			for _, f := range files {
+				add("icon/"+set.prefix+"/"+base(f), f, 0, 0)
+			}
+			continue
+		}
+		for _, f := range pngsIn(filepath.Join(append([]string{rawRoot}, set.original...)...)) {
+			add("icon/"+set.prefix+"/"+iconName(set.prefix, f), f, 0, 0)
+		}
+	}
+	// The loot pack misspells one 32px file as "whetstonel_x.png"; alias it so
+	// content can refer to the thing by its name rather than the typo.
+	for _, e := range entries {
+		if e.Key == "icon/loot/whetstonel" {
+			add("icon/loot/whetstone", e.File, 0, 0)
+			break
+		}
+	}
+
 	// Townspeople.
 	npcRoot := filepath.Join(rawRoot, "pixelartrpgnpc", "Pixel Art Top-Down RPG NPC - AfGameAssets - V1")
 	for _, f := range pngsIn(npcRoot) {

@@ -1035,6 +1035,922 @@
       "frameH": 64
     },
     {
+      "key": "icon/ab/1_arrows_1",
+      "file": "assets-raw/_generated/icons/ab/1_arrows_1.png"
+    },
+    {
+      "key": "icon/ab/1_arrows_2",
+      "file": "assets-raw/_generated/icons/ab/1_arrows_2.png"
+    },
+    {
+      "key": "icon/ab/1_arrows_3",
+      "file": "assets-raw/_generated/icons/ab/1_arrows_3.png"
+    },
+    {
+      "key": "icon/ab/1_fire_1",
+      "file": "assets-raw/_generated/icons/ab/1_fire_1.png"
+    },
+    {
+      "key": "icon/ab/1_fire_2",
+      "file": "assets-raw/_generated/icons/ab/1_fire_2.png"
+    },
+    {
+      "key": "icon/ab/1_fire_3",
+      "file": "assets-raw/_generated/icons/ab/1_fire_3.png"
+    },
+    {
+      "key": "icon/ab/1_ice_1",
+      "file": "assets-raw/_generated/icons/ab/1_ice_1.png"
+    },
+    {
+      "key": "icon/ab/1_ice_2",
+      "file": "assets-raw/_generated/icons/ab/1_ice_2.png"
+    },
+    {
+      "key": "icon/ab/1_ice_3",
+      "file": "assets-raw/_generated/icons/ab/1_ice_3.png"
+    },
+    {
+      "key": "icon/ab/1_lightning_1",
+      "file": "assets-raw/_generated/icons/ab/1_lightning_1.png"
+    },
+    {
+      "key": "icon/ab/1_lightning_2",
+      "file": "assets-raw/_generated/icons/ab/1_lightning_2.png"
+    },
+    {
+      "key": "icon/ab/1_lightning_3",
+      "file": "assets-raw/_generated/icons/ab/1_lightning_3.png"
+    },
+    {
+      "key": "icon/ab/1_throwing_1",
+      "file": "assets-raw/_generated/icons/ab/1_throwing_1.png"
+    },
+    {
+      "key": "icon/ab/1_throwing_2",
+      "file": "assets-raw/_generated/icons/ab/1_throwing_2.png"
+    },
+    {
+      "key": "icon/ab/1_throwing_3",
+      "file": "assets-raw/_generated/icons/ab/1_throwing_3.png"
+    },
+    {
+      "key": "icon/ab/1_weapon_axe",
+      "file": "assets-raw/_generated/icons/ab/1_weapon_axe.png"
+    },
+    {
+      "key": "icon/ab/1_weapon_hammer",
+      "file": "assets-raw/_generated/icons/ab/1_weapon_hammer.png"
+    },
+    {
+      "key": "icon/ab/1_weapon_sword",
+      "file": "assets-raw/_generated/icons/ab/1_weapon_sword.png"
+    },
+    {
+      "key": "icon/ab/2_arrows_1",
+      "file": "assets-raw/_generated/icons/ab/2_arrows_1.png"
+    },
+    {
+      "key": "icon/ab/2_arrows_2",
+      "file": "assets-raw/_generated/icons/ab/2_arrows_2.png"
+    },
+    {
+      "key": "icon/ab/2_arrows_3",
+      "file": "assets-raw/_generated/icons/ab/2_arrows_3.png"
+    },
+    {
+      "key": "icon/ab/2_fire_1",
+      "file": "assets-raw/_generated/icons/ab/2_fire_1.png"
+    },
+    {
+      "key": "icon/ab/2_fire_2",
+      "file": "assets-raw/_generated/icons/ab/2_fire_2.png"
+    },
+    {
+      "key": "icon/ab/2_fire_3",
+      "file": "assets-raw/_generated/icons/ab/2_fire_3.png"
+    },
+    {
+      "key": "icon/ab/2_ice_1",
+      "file": "assets-raw/_generated/icons/ab/2_ice_1.png"
+    },
+    {
+      "key": "icon/ab/2_ice_2",
+      "file": "assets-raw/_generated/icons/ab/2_ice_2.png"
+    },
+    {
+      "key": "icon/ab/2_ice_3",
+      "file": "assets-raw/_generated/icons/ab/2_ice_3.png"
+    },
+    {
+      "key": "icon/ab/2_lightning_1",
+      "file": "assets-raw/_generated/icons/ab/2_lightning_1.png"
+    },
+    {
+      "key": "icon/ab/2_lightning_2",
+      "file": "assets-raw/_generated/icons/ab/2_lightning_2.png"
+    },
+    {
+      "key": "icon/ab/2_lightning_3",
+      "file": "assets-raw/_generated/icons/ab/2_lightning_3.png"
+    },
+    {
+      "key": "icon/ab/2_throwing_1",
+      "file": "assets-raw/_generated/icons/ab/2_throwing_1.png"
+    },
+    {
+      "key": "icon/ab/2_throwing_2",
+      "file": "assets-raw/_generated/icons/ab/2_throwing_2.png"
+    },
+    {
+      "key": "icon/ab/2_throwing_3",
+      "file": "assets-raw/_generated/icons/ab/2_throwing_3.png"
+    },
+    {
+      "key": "icon/ab/2_weapon_axe",
+      "file": "assets-raw/_generated/icons/ab/2_weapon_axe.png"
+    },
+    {
+      "key": "icon/ab/2_weapon_hammer",
+      "file": "assets-raw/_generated/icons/ab/2_weapon_hammer.png"
+    },
+    {
+      "key": "icon/ab/2_weapon_sword",
+      "file": "assets-raw/_generated/icons/ab/2_weapon_sword.png"
+    },
+    {
+      "key": "icon/ab/3_arrows_1",
+      "file": "assets-raw/_generated/icons/ab/3_arrows_1.png"
+    },
+    {
+      "key": "icon/ab/3_arrows_2",
+      "file": "assets-raw/_generated/icons/ab/3_arrows_2.png"
+    },
+    {
+      "key": "icon/ab/3_arrows_3",
+      "file": "assets-raw/_generated/icons/ab/3_arrows_3.png"
+    },
+    {
+      "key": "icon/ab/3_fire_1",
+      "file": "assets-raw/_generated/icons/ab/3_fire_1.png"
+    },
+    {
+      "key": "icon/ab/3_fire_2",
+      "file": "assets-raw/_generated/icons/ab/3_fire_2.png"
+    },
+    {
+      "key": "icon/ab/3_fire_3",
+      "file": "assets-raw/_generated/icons/ab/3_fire_3.png"
+    },
+    {
+      "key": "icon/ab/3_ice_1",
+      "file": "assets-raw/_generated/icons/ab/3_ice_1.png"
+    },
+    {
+      "key": "icon/ab/3_ice_2",
+      "file": "assets-raw/_generated/icons/ab/3_ice_2.png"
+    },
+    {
+      "key": "icon/ab/3_ice_3",
+      "file": "assets-raw/_generated/icons/ab/3_ice_3.png"
+    },
+    {
+      "key": "icon/ab/3_lightning_1",
+      "file": "assets-raw/_generated/icons/ab/3_lightning_1.png"
+    },
+    {
+      "key": "icon/ab/3_lightning_2",
+      "file": "assets-raw/_generated/icons/ab/3_lightning_2.png"
+    },
+    {
+      "key": "icon/ab/3_lightning_3",
+      "file": "assets-raw/_generated/icons/ab/3_lightning_3.png"
+    },
+    {
+      "key": "icon/ab/3_throwing_1",
+      "file": "assets-raw/_generated/icons/ab/3_throwing_1.png"
+    },
+    {
+      "key": "icon/ab/3_throwing_2",
+      "file": "assets-raw/_generated/icons/ab/3_throwing_2.png"
+    },
+    {
+      "key": "icon/ab/3_throwing_3",
+      "file": "assets-raw/_generated/icons/ab/3_throwing_3.png"
+    },
+    {
+      "key": "icon/ab/3_weapon_axe",
+      "file": "assets-raw/_generated/icons/ab/3_weapon_axe.png"
+    },
+    {
+      "key": "icon/ab/3_weapon_hammer",
+      "file": "assets-raw/_generated/icons/ab/3_weapon_hammer.png"
+    },
+    {
+      "key": "icon/ab/3_weapon_sword",
+      "file": "assets-raw/_generated/icons/ab/3_weapon_sword.png"
+    },
+    {
+      "key": "icon/ab/4_arrows_1",
+      "file": "assets-raw/_generated/icons/ab/4_arrows_1.png"
+    },
+    {
+      "key": "icon/ab/4_arrows_2",
+      "file": "assets-raw/_generated/icons/ab/4_arrows_2.png"
+    },
+    {
+      "key": "icon/ab/4_arrows_3",
+      "file": "assets-raw/_generated/icons/ab/4_arrows_3.png"
+    },
+    {
+      "key": "icon/ab/4_fire_1",
+      "file": "assets-raw/_generated/icons/ab/4_fire_1.png"
+    },
+    {
+      "key": "icon/ab/4_fire_2",
+      "file": "assets-raw/_generated/icons/ab/4_fire_2.png"
+    },
+    {
+      "key": "icon/ab/4_fire_3",
+      "file": "assets-raw/_generated/icons/ab/4_fire_3.png"
+    },
+    {
+      "key": "icon/ab/4_ice_1",
+      "file": "assets-raw/_generated/icons/ab/4_ice_1.png"
+    },
+    {
+      "key": "icon/ab/4_ice_2",
+      "file": "assets-raw/_generated/icons/ab/4_ice_2.png"
+    },
+    {
+      "key": "icon/ab/4_ice_3",
+      "file": "assets-raw/_generated/icons/ab/4_ice_3.png"
+    },
+    {
+      "key": "icon/ab/4_lightning_1",
+      "file": "assets-raw/_generated/icons/ab/4_lightning_1.png"
+    },
+    {
+      "key": "icon/ab/4_lightning_2",
+      "file": "assets-raw/_generated/icons/ab/4_lightning_2.png"
+    },
+    {
+      "key": "icon/ab/4_lightning_3",
+      "file": "assets-raw/_generated/icons/ab/4_lightning_3.png"
+    },
+    {
+      "key": "icon/ab/4_throwing_1",
+      "file": "assets-raw/_generated/icons/ab/4_throwing_1.png"
+    },
+    {
+      "key": "icon/ab/4_throwing_2",
+      "file": "assets-raw/_generated/icons/ab/4_throwing_2.png"
+    },
+    {
+      "key": "icon/ab/4_throwing_3",
+      "file": "assets-raw/_generated/icons/ab/4_throwing_3.png"
+    },
+    {
+      "key": "icon/ab/4_weapon_axe",
+      "file": "assets-raw/_generated/icons/ab/4_weapon_axe.png"
+    },
+    {
+      "key": "icon/ab/4_weapon_hammer",
+      "file": "assets-raw/_generated/icons/ab/4_weapon_hammer.png"
+    },
+    {
+      "key": "icon/ab/4_weapon_sword",
+      "file": "assets-raw/_generated/icons/ab/4_weapon_sword.png"
+    },
+    {
+      "key": "icon/loot/antidote",
+      "file": "assets-raw/_generated/icons/loot/antidote.png"
+    },
+    {
+      "key": "icon/loot/aquamarine",
+      "file": "assets-raw/_generated/icons/loot/aquamarine.png"
+    },
+    {
+      "key": "icon/loot/bat_wings",
+      "file": "assets-raw/_generated/icons/loot/bat_wings.png"
+    },
+    {
+      "key": "icon/loot/bear_paw",
+      "file": "assets-raw/_generated/icons/loot/bear_paw.png"
+    },
+    {
+      "key": "icon/loot/bear_pelt",
+      "file": "assets-raw/_generated/icons/loot/bear_pelt.png"
+    },
+    {
+      "key": "icon/loot/bee_sting",
+      "file": "assets-raw/_generated/icons/loot/bee_sting.png"
+    },
+    {
+      "key": "icon/loot/bird_feather",
+      "file": "assets-raw/_generated/icons/loot/bird_feather.png"
+    },
+    {
+      "key": "icon/loot/bird_nest",
+      "file": "assets-raw/_generated/icons/loot/bird_nest.png"
+    },
+    {
+      "key": "icon/loot/blackbear_pelt",
+      "file": "assets-raw/_generated/icons/loot/blackbear_pelt.png"
+    },
+    {
+      "key": "icon/loot/blue_average_grade_cultivation_pill",
+      "file": "assets-raw/_generated/icons/loot/blue_average_grade_cultivation_pill.png"
+    },
+    {
+      "key": "icon/loot/blue_berries",
+      "file": "assets-raw/_generated/icons/loot/blue_berries.png"
+    },
+    {
+      "key": "icon/loot/blue_higher_grade_cultivation_pill",
+      "file": "assets-raw/_generated/icons/loot/blue_higher_grade_cultivation_pill.png"
+    },
+    {
+      "key": "icon/loot/blue_lower_grade_cultivation_pill",
+      "file": "assets-raw/_generated/icons/loot/blue_lower_grade_cultivation_pill.png"
+    },
+    {
+      "key": "icon/loot/candy",
+      "file": "assets-raw/_generated/icons/loot/candy.png"
+    },
+    {
+      "key": "icon/loot/canine_tooth",
+      "file": "assets-raw/_generated/icons/loot/canine_tooth.png"
+    },
+    {
+      "key": "icon/loot/cheese",
+      "file": "assets-raw/_generated/icons/loot/cheese.png"
+    },
+    {
+      "key": "icon/loot/cherries",
+      "file": "assets-raw/_generated/icons/loot/cherries.png"
+    },
+    {
+      "key": "icon/loot/clover",
+      "file": "assets-raw/_generated/icons/loot/clover.png"
+    },
+    {
+      "key": "icon/loot/coal",
+      "file": "assets-raw/_generated/icons/loot/coal.png"
+    },
+    {
+      "key": "icon/loot/cookies",
+      "file": "assets-raw/_generated/icons/loot/cookies.png"
+    },
+    {
+      "key": "icon/loot/crab_claw",
+      "file": "assets-raw/_generated/icons/loot/crab_claw.png"
+    },
+    {
+      "key": "icon/loot/crow_feather",
+      "file": "assets-raw/_generated/icons/loot/crow_feather.png"
+    },
+    {
+      "key": "icon/loot/deer_antler",
+      "file": "assets-raw/_generated/icons/loot/deer_antler.png"
+    },
+    {
+      "key": "icon/loot/deer_hoof",
+      "file": "assets-raw/_generated/icons/loot/deer_hoof.png"
+    },
+    {
+      "key": "icon/loot/diamonds",
+      "file": "assets-raw/_generated/icons/loot/diamonds.png"
+    },
+    {
+      "key": "icon/loot/dragon_scale",
+      "file": "assets-raw/_generated/icons/loot/dragon_scale.png"
+    },
+    {
+      "key": "icon/loot/fish_tail",
+      "file": "assets-raw/_generated/icons/loot/fish_tail.png"
+    },
+    {
+      "key": "icon/loot/fools_gold",
+      "file": "assets-raw/_generated/icons/loot/fools_gold.png"
+    },
+    {
+      "key": "icon/loot/fortune_cookie",
+      "file": "assets-raw/_generated/icons/loot/fortune_cookie.png"
+    },
+    {
+      "key": "icon/loot/frog_leg",
+      "file": "assets-raw/_generated/icons/loot/frog_leg.png"
+    },
+    {
+      "key": "icon/loot/fur_tuft",
+      "file": "assets-raw/_generated/icons/loot/fur_tuft.png"
+    },
+    {
+      "key": "icon/loot/ghost_ectoplasm",
+      "file": "assets-raw/_generated/icons/loot/ghost_ectoplasm.png"
+    },
+    {
+      "key": "icon/loot/ginger_root",
+      "file": "assets-raw/_generated/icons/loot/ginger_root.png"
+    },
+    {
+      "key": "icon/loot/goblin_nose",
+      "file": "assets-raw/_generated/icons/loot/goblin_nose.png"
+    },
+    {
+      "key": "icon/loot/golden_ginger",
+      "file": "assets-raw/_generated/icons/loot/golden_ginger.png"
+    },
+    {
+      "key": "icon/loot/health_potion",
+      "file": "assets-raw/_generated/icons/loot/health_potion.png"
+    },
+    {
+      "key": "icon/loot/honey_comb",
+      "file": "assets-raw/_generated/icons/loot/honey_comb.png"
+    },
+    {
+      "key": "icon/loot/human_eye",
+      "file": "assets-raw/_generated/icons/loot/human_eye.png"
+    },
+    {
+      "key": "icon/loot/human_skull",
+      "file": "assets-raw/_generated/icons/loot/human_skull.png"
+    },
+    {
+      "key": "icon/loot/insect_egg",
+      "file": "assets-raw/_generated/icons/loot/insect_egg.png"
+    },
+    {
+      "key": "icon/loot/insect_wings",
+      "file": "assets-raw/_generated/icons/loot/insect_wings.png"
+    },
+    {
+      "key": "icon/loot/lapis_lazuli",
+      "file": "assets-raw/_generated/icons/loot/lapis_lazuli.png"
+    },
+    {
+      "key": "icon/loot/mana_potion",
+      "file": "assets-raw/_generated/icons/loot/mana_potion.png"
+    },
+    {
+      "key": "icon/loot/monster_bone",
+      "file": "assets-raw/_generated/icons/loot/monster_bone.png"
+    },
+    {
+      "key": "icon/loot/monster_claw",
+      "file": "assets-raw/_generated/icons/loot/monster_claw.png"
+    },
+    {
+      "key": "icon/loot/monster_core",
+      "file": "assets-raw/_generated/icons/loot/monster_core.png"
+    },
+    {
+      "key": "icon/loot/monster_ear",
+      "file": "assets-raw/_generated/icons/loot/monster_ear.png"
+    },
+    {
+      "key": "icon/loot/monster_egg",
+      "file": "assets-raw/_generated/icons/loot/monster_egg.png"
+    },
+    {
+      "key": "icon/loot/monster_eye",
+      "file": "assets-raw/_generated/icons/loot/monster_eye.png"
+    },
+    {
+      "key": "icon/loot/monster_fin",
+      "file": "assets-raw/_generated/icons/loot/monster_fin.png"
+    },
+    {
+      "key": "icon/loot/monster_heart",
+      "file": "assets-raw/_generated/icons/loot/monster_heart.png"
+    },
+    {
+      "key": "icon/loot/monster_horn",
+      "file": "assets-raw/_generated/icons/loot/monster_horn.png"
+    },
+    {
+      "key": "icon/loot/monster_liver",
+      "file": "assets-raw/_generated/icons/loot/monster_liver.png"
+    },
+    {
+      "key": "icon/loot/monster_rib",
+      "file": "assets-raw/_generated/icons/loot/monster_rib.png"
+    },
+    {
+      "key": "icon/loot/monster_scale",
+      "file": "assets-raw/_generated/icons/loot/monster_scale.png"
+    },
+    {
+      "key": "icon/loot/monster_scales",
+      "file": "assets-raw/_generated/icons/loot/monster_scales.png"
+    },
+    {
+      "key": "icon/loot/monster_spine",
+      "file": "assets-raw/_generated/icons/loot/monster_spine.png"
+    },
+    {
+      "key": "icon/loot/monster_tail",
+      "file": "assets-raw/_generated/icons/loot/monster_tail.png"
+    },
+    {
+      "key": "icon/loot/monster_teeth",
+      "file": "assets-raw/_generated/icons/loot/monster_teeth.png"
+    },
+    {
+      "key": "icon/loot/monster_tentacle",
+      "file": "assets-raw/_generated/icons/loot/monster_tentacle.png"
+    },
+    {
+      "key": "icon/loot/moon_stone",
+      "file": "assets-raw/_generated/icons/loot/moon_stone.png"
+    },
+    {
+      "key": "icon/loot/mushrooms",
+      "file": "assets-raw/_generated/icons/loot/mushrooms.png"
+    },
+    {
+      "key": "icon/loot/nuts",
+      "file": "assets-raw/_generated/icons/loot/nuts.png"
+    },
+    {
+      "key": "icon/loot/pepper",
+      "file": "assets-raw/_generated/icons/loot/pepper.png"
+    },
+    {
+      "key": "icon/loot/peridot",
+      "file": "assets-raw/_generated/icons/loot/peridot.png"
+    },
+    {
+      "key": "icon/loot/poison",
+      "file": "assets-raw/_generated/icons/loot/poison.png"
+    },
+    {
+      "key": "icon/loot/rare_monsterfungus",
+      "file": "assets-raw/_generated/icons/loot/rare_monsterfungus.png"
+    },
+    {
+      "key": "icon/loot/red_apple",
+      "file": "assets-raw/_generated/icons/loot/red_apple.png"
+    },
+    {
+      "key": "icon/loot/red_big_cultivation_pill",
+      "file": "assets-raw/_generated/icons/loot/red_big_cultivation_pill.png"
+    },
+    {
+      "key": "icon/loot/red_high_cultivation_pill",
+      "file": "assets-raw/_generated/icons/loot/red_high_cultivation_pill.png"
+    },
+    {
+      "key": "icon/loot/red_meat",
+      "file": "assets-raw/_generated/icons/loot/red_meat.png"
+    },
+    {
+      "key": "icon/loot/red_small_cultivation_pill",
+      "file": "assets-raw/_generated/icons/loot/red_small_cultivation_pill.png"
+    },
+    {
+      "key": "icon/loot/ruby",
+      "file": "assets-raw/_generated/icons/loot/ruby.png"
+    },
+    {
+      "key": "icon/loot/sea_algae",
+      "file": "assets-raw/_generated/icons/loot/sea_algae.png"
+    },
+    {
+      "key": "icon/loot/sea_shell",
+      "file": "assets-raw/_generated/icons/loot/sea_shell.png"
+    },
+    {
+      "key": "icon/loot/sea_star",
+      "file": "assets-raw/_generated/icons/loot/sea_star.png"
+    },
+    {
+      "key": "icon/loot/seamonster_paw",
+      "file": "assets-raw/_generated/icons/loot/seamonster_paw.png"
+    },
+    {
+      "key": "icon/loot/slime_blob",
+      "file": "assets-raw/_generated/icons/loot/slime_blob.png"
+    },
+    {
+      "key": "icon/loot/smoky_quartz",
+      "file": "assets-raw/_generated/icons/loot/smoky_quartz.png"
+    },
+    {
+      "key": "icon/loot/snake_fang",
+      "file": "assets-raw/_generated/icons/loot/snake_fang.png"
+    },
+    {
+      "key": "icon/loot/spider_leg",
+      "file": "assets-raw/_generated/icons/loot/spider_leg.png"
+    },
+    {
+      "key": "icon/loot/thunder_topaz",
+      "file": "assets-raw/_generated/icons/loot/thunder_topaz.png"
+    },
+    {
+      "key": "icon/loot/turtle_shell",
+      "file": "assets-raw/_generated/icons/loot/turtle_shell.png"
+    },
+    {
+      "key": "icon/loot/water_lilly",
+      "file": "assets-raw/_generated/icons/loot/water_lilly.png"
+    },
+    {
+      "key": "icon/loot/whetstone",
+      "file": "assets-raw/_generated/icons/loot/whetstonel.png"
+    },
+    {
+      "key": "icon/loot/whetstonel",
+      "file": "assets-raw/_generated/icons/loot/whetstonel.png"
+    },
+    {
+      "key": "icon/loot/white_meat",
+      "file": "assets-raw/_generated/icons/loot/white_meat.png"
+    },
+    {
+      "key": "icon/rune/1",
+      "file": "assets-raw/_generated/icons/rune/1.png"
+    },
+    {
+      "key": "icon/rune/10",
+      "file": "assets-raw/_generated/icons/rune/10.png"
+    },
+    {
+      "key": "icon/rune/11",
+      "file": "assets-raw/_generated/icons/rune/11.png"
+    },
+    {
+      "key": "icon/rune/12",
+      "file": "assets-raw/_generated/icons/rune/12.png"
+    },
+    {
+      "key": "icon/rune/13",
+      "file": "assets-raw/_generated/icons/rune/13.png"
+    },
+    {
+      "key": "icon/rune/14",
+      "file": "assets-raw/_generated/icons/rune/14.png"
+    },
+    {
+      "key": "icon/rune/15",
+      "file": "assets-raw/_generated/icons/rune/15.png"
+    },
+    {
+      "key": "icon/rune/16",
+      "file": "assets-raw/_generated/icons/rune/16.png"
+    },
+    {
+      "key": "icon/rune/17",
+      "file": "assets-raw/_generated/icons/rune/17.png"
+    },
+    {
+      "key": "icon/rune/18",
+      "file": "assets-raw/_generated/icons/rune/18.png"
+    },
+    {
+      "key": "icon/rune/19",
+      "file": "assets-raw/_generated/icons/rune/19.png"
+    },
+    {
+      "key": "icon/rune/2",
+      "file": "assets-raw/_generated/icons/rune/2.png"
+    },
+    {
+      "key": "icon/rune/20",
+      "file": "assets-raw/_generated/icons/rune/20.png"
+    },
+    {
+      "key": "icon/rune/21",
+      "file": "assets-raw/_generated/icons/rune/21.png"
+    },
+    {
+      "key": "icon/rune/22",
+      "file": "assets-raw/_generated/icons/rune/22.png"
+    },
+    {
+      "key": "icon/rune/23",
+      "file": "assets-raw/_generated/icons/rune/23.png"
+    },
+    {
+      "key": "icon/rune/24",
+      "file": "assets-raw/_generated/icons/rune/24.png"
+    },
+    {
+      "key": "icon/rune/25",
+      "file": "assets-raw/_generated/icons/rune/25.png"
+    },
+    {
+      "key": "icon/rune/26",
+      "file": "assets-raw/_generated/icons/rune/26.png"
+    },
+    {
+      "key": "icon/rune/27",
+      "file": "assets-raw/_generated/icons/rune/27.png"
+    },
+    {
+      "key": "icon/rune/28",
+      "file": "assets-raw/_generated/icons/rune/28.png"
+    },
+    {
+      "key": "icon/rune/29",
+      "file": "assets-raw/_generated/icons/rune/29.png"
+    },
+    {
+      "key": "icon/rune/3",
+      "file": "assets-raw/_generated/icons/rune/3.png"
+    },
+    {
+      "key": "icon/rune/30",
+      "file": "assets-raw/_generated/icons/rune/30.png"
+    },
+    {
+      "key": "icon/rune/31",
+      "file": "assets-raw/_generated/icons/rune/31.png"
+    },
+    {
+      "key": "icon/rune/32",
+      "file": "assets-raw/_generated/icons/rune/32.png"
+    },
+    {
+      "key": "icon/rune/33",
+      "file": "assets-raw/_generated/icons/rune/33.png"
+    },
+    {
+      "key": "icon/rune/34",
+      "file": "assets-raw/_generated/icons/rune/34.png"
+    },
+    {
+      "key": "icon/rune/35",
+      "file": "assets-raw/_generated/icons/rune/35.png"
+    },
+    {
+      "key": "icon/rune/36",
+      "file": "assets-raw/_generated/icons/rune/36.png"
+    },
+    {
+      "key": "icon/rune/37",
+      "file": "assets-raw/_generated/icons/rune/37.png"
+    },
+    {
+      "key": "icon/rune/38",
+      "file": "assets-raw/_generated/icons/rune/38.png"
+    },
+    {
+      "key": "icon/rune/39",
+      "file": "assets-raw/_generated/icons/rune/39.png"
+    },
+    {
+      "key": "icon/rune/4",
+      "file": "assets-raw/_generated/icons/rune/4.png"
+    },
+    {
+      "key": "icon/rune/40",
+      "file": "assets-raw/_generated/icons/rune/40.png"
+    },
+    {
+      "key": "icon/rune/41",
+      "file": "assets-raw/_generated/icons/rune/41.png"
+    },
+    {
+      "key": "icon/rune/42",
+      "file": "assets-raw/_generated/icons/rune/42.png"
+    },
+    {
+      "key": "icon/rune/43",
+      "file": "assets-raw/_generated/icons/rune/43.png"
+    },
+    {
+      "key": "icon/rune/44",
+      "file": "assets-raw/_generated/icons/rune/44.png"
+    },
+    {
+      "key": "icon/rune/45",
+      "file": "assets-raw/_generated/icons/rune/45.png"
+    },
+    {
+      "key": "icon/rune/46",
+      "file": "assets-raw/_generated/icons/rune/46.png"
+    },
+    {
+      "key": "icon/rune/47",
+      "file": "assets-raw/_generated/icons/rune/47.png"
+    },
+    {
+      "key": "icon/rune/48",
+      "file": "assets-raw/_generated/icons/rune/48.png"
+    },
+    {
+      "key": "icon/rune/49",
+      "file": "assets-raw/_generated/icons/rune/49.png"
+    },
+    {
+      "key": "icon/rune/5",
+      "file": "assets-raw/_generated/icons/rune/5.png"
+    },
+    {
+      "key": "icon/rune/50",
+      "file": "assets-raw/_generated/icons/rune/50.png"
+    },
+    {
+      "key": "icon/rune/51",
+      "file": "assets-raw/_generated/icons/rune/51.png"
+    },
+    {
+      "key": "icon/rune/52",
+      "file": "assets-raw/_generated/icons/rune/52.png"
+    },
+    {
+      "key": "icon/rune/53",
+      "file": "assets-raw/_generated/icons/rune/53.png"
+    },
+    {
+      "key": "icon/rune/54",
+      "file": "assets-raw/_generated/icons/rune/54.png"
+    },
+    {
+      "key": "icon/rune/55",
+      "file": "assets-raw/_generated/icons/rune/55.png"
+    },
+    {
+      "key": "icon/rune/56",
+      "file": "assets-raw/_generated/icons/rune/56.png"
+    },
+    {
+      "key": "icon/rune/57",
+      "file": "assets-raw/_generated/icons/rune/57.png"
+    },
+    {
+      "key": "icon/rune/58",
+      "file": "assets-raw/_generated/icons/rune/58.png"
+    },
+    {
+      "key": "icon/rune/59",
+      "file": "assets-raw/_generated/icons/rune/59.png"
+    },
+    {
+      "key": "icon/rune/6",
+      "file": "assets-raw/_generated/icons/rune/6.png"
+    },
+    {
+      "key": "icon/rune/60",
+      "file": "assets-raw/_generated/icons/rune/60.png"
+    },
+    {
+      "key": "icon/rune/61",
+      "file": "assets-raw/_generated/icons/rune/61.png"
+    },
+    {
+      "key": "icon/rune/62",
+      "file": "assets-raw/_generated/icons/rune/62.png"
+    },
+    {
+      "key": "icon/rune/63",
+      "file": "assets-raw/_generated/icons/rune/63.png"
+    },
+    {
+      "key": "icon/rune/64",
+      "file": "assets-raw/_generated/icons/rune/64.png"
+    },
+    {
+      "key": "icon/rune/65",
+      "file": "assets-raw/_generated/icons/rune/65.png"
+    },
+    {
+      "key": "icon/rune/66",
+      "file": "assets-raw/_generated/icons/rune/66.png"
+    },
+    {
+      "key": "icon/rune/67",
+      "file": "assets-raw/_generated/icons/rune/67.png"
+    },
+    {
+      "key": "icon/rune/68",
+      "file": "assets-raw/_generated/icons/rune/68.png"
+    },
+    {
+      "key": "icon/rune/69",
+      "file": "assets-raw/_generated/icons/rune/69.png"
+    },
+    {
+      "key": "icon/rune/7",
+      "file": "assets-raw/_generated/icons/rune/7.png"
+    },
+    {
+      "key": "icon/rune/70",
+      "file": "assets-raw/_generated/icons/rune/70.png"
+    },
+    {
+      "key": "icon/rune/8",
+      "file": "assets-raw/_generated/icons/rune/8.png"
+    },
+    {
+      "key": "icon/rune/9",
+      "file": "assets-raw/_generated/icons/rune/9.png"
+    },
+    {
       "key": "mob/ancient_vampire",
       "file": "assets-raw/mobsavataricons_windows/mobsavataricons/ancient_vampire.png"
     },

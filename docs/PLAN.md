@@ -42,6 +42,8 @@ Built and running:
 - Loot, XP, banked level-ups, shops (buy/sell, stock scaling with settlement
   size), inns, chests, altars
 - Character sheet and pack with out-of-combat item use
+- Icons: 229 indexed across three sets, wired through items, gear and
+  techniques, box-reduced to 16px at pipeline time
 - Scenery: trees, boulders, ferns, water plants and cacti scattered per
   terrain from a position hash, with a pipeline step that converts Mana Seed's
   baked purple drop shadows into real translucent ones
@@ -86,8 +88,9 @@ testable and a simulation harness is cheap to add later.
 
 ### Phase 1 — make it feel like a game *(save/load and audio done)*
 
-1. **Icons everywhere.** 720 spell icons, 480 stat icons, 273 loot icons are
-   extracted. Wire `Item.Icon`, `Weapon.Icon`, `Spell.Icon` through to the menus.
+1. **Decor inside locations.** Interiors autotile but are still bare: no
+   furniture in a house, no rubble in a dungeon. The interior packs are
+   extracted and unused.
 
 ### Phase 2 — depth
 

@@ -99,6 +99,8 @@ func newBattleScene(g *Game, mons []*model.Monster, where string) *battleScene {
 }
 
 func (b *battleScene) setRootMenu(g *Game) {
+	// The root menu is text-only; icons return when a list of things appears.
+	b.menu.Icons = nil
 	spells := g.Data.SpellsFor(g.Player)
 	b.menu.SetItems([]ui.MenuItem{
 		{Label: "Attack", Detail: g.Player.Weapon.Name},
@@ -257,29 +259,32 @@ func (b *battleScene) chooseRoot(g *Game) {
 		items := make([]ui.MenuItem, 0, len(spells)+1)
 		for _, s := range spells {
 			items = append(items, ui.MenuItem{
-				Label: s.Name, Detail: fmt.Sprintf("%d SP", s.Cost),
+				Label: s.Name, Detail: fmt.Sprintf("%d SP", s.Cost), Icon: s.Icon,
 				Disabled: s.Cost > g.Player.Psyche, Data: s,
 			})
 		}
 		if len(items) == 0 {
 			return
 		}
+		b.menu.Icons = g.Assets
 		b.menu.SetItems(items)
-		b.menu.Visible = 4
+		// Icon rows are taller, so fewer fit the command panel.
+		b.menu.Visible = 3
 		b.mode = modeSpell
 	case 2: // Item
 		items := make([]ui.MenuItem, 0, len(g.Player.Bag))
 		for i, it := range g.Player.Bag {
 			items = append(items, ui.MenuItem{
-				Label: it.Name, Detail: fmt.Sprintf("x%d", it.Count),
+				Label: it.Name, Detail: fmt.Sprintf("x%d", it.Count), Icon: it.Icon,
 				Disabled: it.Kind == model.ItemTrinket, Data: i,
 			})
 		}
 		if len(items) == 0 {
 			return
 		}
+		b.menu.Icons = g.Assets
 		b.menu.SetItems(items)
-		b.menu.Visible = 4
+		b.menu.Visible = 3
 		b.mode = modeItem
 	case 3: // Defend
 		b.runRound(g, func(g *Game) {
@@ -768,7 +773,6 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 	ui.TitledPanel(dst, title, 204, 206, render.ScreenW-212, 58)
 	switch b.mode {
 	case modeRoot, modeSpell, modeItem:
-		b.menu.Visible = 4
 		b.menu.Draw(dst, 218, 212, render.ScreenW-238)
 	case modeTarget:
 		render.Text(dst, "Left / Right to choose.", 214, 218, render.ColInk)

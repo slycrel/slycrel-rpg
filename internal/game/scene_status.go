@@ -29,13 +29,14 @@ func (s *statusScene) refresh(g *Game) {
 	items := make([]ui.MenuItem, 0, len(g.Player.Bag))
 	for i, it := range g.Player.Bag {
 		items = append(items, ui.MenuItem{
-			Label: it.Name, Detail: fmt.Sprintf("x%d", it.Count), Data: i,
+			Label: it.Name, Detail: fmt.Sprintf("x%d", it.Count), Icon: it.Icon, Data: i,
 		})
 	}
 	if len(items) == 0 {
 		items = append(items, ui.MenuItem{Label: "(nothing but lint)", Disabled: true})
 	}
-	s.bag.Visible = 8
+	s.bag.Icons = g.Assets
+	s.bag.Visible = 7
 	s.bag.SetItems(items)
 }
 

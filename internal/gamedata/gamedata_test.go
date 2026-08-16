@@ -1,6 +1,9 @@
 package gamedata_test
 
 import (
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/slycrel/slycrel-rpg/internal/core"
@@ -259,5 +262,76 @@ func TestInteriorsAreDeterministic(t *testing.T) {
 				break
 			}
 		}
+	}
+}
+
+// manifestKeys reads the committed asset manifest. The file is checked in even
+// though the art it points at is not, which is what lets content reference
+// icons by key and be verified without anyone holding the purchased bundle.
+func manifestKeys(t *testing.T) map[string]bool {
+	t.Helper()
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Fatalf("finding repo root: %v", err)
+	}
+	data, err := os.ReadFile(filepath.Join(root, "assets", "manifest.json"))
+	if err != nil {
+		t.Skipf("no asset manifest: %v", err)
+	}
+	var m struct {
+		Entries []struct {
+			Key string `json:"key"`
+		} `json:"entries"`
+	}
+	if err := json.Unmarshal(data, &m); err != nil {
+		t.Fatalf("parsing manifest: %v", err)
+	}
+	keys := map[string]bool{}
+	for _, e := range m.Entries {
+		keys[e.Key] = true
+	}
+	return keys
+}
+
+// TestIconsResolve is the check that catches a whole class of silent failure:
+// an icon key that no manifest entry provides just leaves a blank space in a
+// menu, which is easy to miss and impossible to attribute later. It already
+// caught the loot pack shipping its whetstone icon as "whetstonel_x.png".
+func TestIconsResolve(t *testing.T) {
+	keys := manifestKeys(t)
+	tables := load(t)
+
+	check := func(what, name, icon string) {
+		if icon == "" {
+			t.Errorf("%s %q has no icon", what, name)
+			return
+		}
+		if !keys[icon] {
+			t.Errorf("%s %q wants icon %q, which the manifest does not provide", what, name, icon)
+		}
+	}
+	for _, it := range tables.Items {
+		check("item", it.Name, it.Icon)
+	}
+	for _, w := range tables.Weapons {
+		check("weapon", w.Name, w.Icon)
+	}
+	for _, a := range tables.Armors {
+		check("armor", a.Name, a.Icon)
+	}
+	for _, s := range tables.Spells {
+		check("spell", s.Name, s.Icon)
+	}
+}
+
+// TestItemIconsAreDistinct keeps the pack readable: two items sharing an icon
+// makes the bag ambiguous at a glance, which is the only reason to have icons.
+func TestItemIconsAreDistinct(t *testing.T) {
+	seen := map[string]string{}
+	for _, it := range load(t).Items {
+		if prev, dup := seen[it.Icon]; dup {
+			t.Errorf("%q and %q share icon %q", prev, it.Name, it.Icon)
+		}
+		seen[it.Icon] = it.Name
 	}
 }

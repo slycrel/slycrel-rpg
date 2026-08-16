@@ -47,6 +47,9 @@ var (
 	ColMagic     = color.RGBA{0x60, 0x88, 0xD0, 0xFF}
 	ColShadow    = color.RGBA{0x00, 0x00, 0x00, 0xB0}
 	ColSelect    = color.RGBA{0xE0, 0xB0, 0x4C, 0x40}
+	// ColSelectInk is the label colour on a highlighted row. Gold-on-gold was
+	// technically legible and practically not.
+	ColSelectInk = color.RGBA{0x2A, 0x1C, 0x10, 0xFF}
 )
 
 // Camera converts world pixel coordinates to screen coordinates.

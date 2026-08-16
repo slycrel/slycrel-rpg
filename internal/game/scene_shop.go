@@ -65,7 +65,7 @@ func (s *shopScene) refresh(g *Game) {
 					continue
 				}
 				items = append(items, ui.MenuItem{
-					Label: w.Name, Detail: fmt.Sprintf("%d", w.Cost),
+					Label: w.Name, Detail: fmt.Sprintf("%d", w.Cost), Icon: w.Icon,
 					Disabled: int64(w.Cost) > g.Player.Coins, Data: w,
 				})
 			}
@@ -75,7 +75,7 @@ func (s *shopScene) refresh(g *Game) {
 					continue
 				}
 				items = append(items, ui.MenuItem{
-					Label: a.Name, Detail: fmt.Sprintf("%d", a.Cost),
+					Label: a.Name, Detail: fmt.Sprintf("%d", a.Cost), Icon: a.Icon,
 					Disabled: int64(a.Cost) > g.Player.Coins, Data: a,
 				})
 			}
@@ -90,7 +90,7 @@ func (s *shopScene) refresh(g *Game) {
 				}
 				price := it.Value * 2
 				items = append(items, ui.MenuItem{
-					Label: it.Name, Detail: fmt.Sprintf("%d", price),
+					Label: it.Name, Detail: fmt.Sprintf("%d", price), Icon: it.Icon,
 					Disabled: int64(price) > g.Player.Coins, Data: it,
 				})
 			}
@@ -103,14 +103,15 @@ func (s *shopScene) refresh(g *Game) {
 			}
 			items = append(items, ui.MenuItem{
 				Label:  fmt.Sprintf("%s x%d", it.Name, it.Count),
-				Detail: fmt.Sprintf("%d", price), Data: i,
+				Detail: fmt.Sprintf("%d", price), Icon: it.Icon, Data: i,
 			})
 		}
 	}
 	if len(items) == 0 {
 		items = append(items, ui.MenuItem{Label: "(nothing doing)", Disabled: true})
 	}
-	s.menu.Visible = 8
+	s.menu.Icons = g.Assets
+	s.menu.Visible = 7
 	s.menu.SetItems(items)
 }
 
