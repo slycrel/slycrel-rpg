@@ -28,7 +28,14 @@ import (
 
 // Version is the save format revision. Load refuses anything it does not know,
 // rather than silently misreading an older layout.
-const Version = 1
+//
+// v2 added the party. A v1 save is still read — it simply describes a run with
+// no companions in it, which is a lossless reading rather than a guess — so the
+// bump is about refusing a *future* format, not about abandoning old files.
+const Version = 2
+
+// minVersion is the oldest layout this build can still read correctly.
+const minVersion = 1
 
 // Dir is the save folder, relative to the repo root.
 const Dir = "saves"
@@ -43,6 +50,11 @@ type File struct {
 	Seed int64 `json:"seed"`
 
 	Player *model.Character `json:"player"`
+
+	// Allies are the hirelings, in marching order. Their positions are not
+	// stored: the line re-forms on the hero's tile when the save is loaded,
+	// which is indistinguishable from walking into the room together.
+	Allies []*model.Character `json:"allies,omitempty"`
 
 	// At is the overworld tile the player occupies. Facing is a core.Dir.
 	At     core.Point `json:"at"`
@@ -184,9 +196,9 @@ func Read(path string) (*File, error) {
 	if err := json.Unmarshal(data, &f); err != nil {
 		return nil, fmt.Errorf("parsing %s: %w", filepath.Base(path), err)
 	}
-	if f.Version != Version {
-		return nil, fmt.Errorf("%s is save format v%d; this build reads v%d",
-			filepath.Base(path), f.Version, Version)
+	if f.Version < minVersion || f.Version > Version {
+		return nil, fmt.Errorf("%s is save format v%d; this build reads v%d-v%d",
+			filepath.Base(path), f.Version, minVersion, Version)
 	}
 	if f.Player == nil {
 		return nil, fmt.Errorf("%s has no character in it", filepath.Base(path))

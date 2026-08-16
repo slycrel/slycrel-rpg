@@ -9,9 +9,33 @@ const (
 	SpellDrain  SpellKind = "drain"  // damage, healing the caster for half
 	SpellWeaken SpellKind = "weaken" // cuts the target's offense for the fight
 	SpellStun   SpellKind = "stun"   // target loses its next turn
+	SpellBless  SpellKind = "bless"  // raises an ally's offense for the fight
+	SpellRevive SpellKind = "revive" // stands a fallen ally back up
 )
 
-// SpellTarget selects who a spell hits.
+// Side is which half of the battlefield an effect is aimed at.
+type Side int
+
+const (
+	SideFoes Side = iota
+	SideParty
+)
+
+// Side reports who a kind of effect is for.
+//
+// It is derived from the kind rather than stored alongside it, because the two
+// can never disagree: there is no such thing as a heal aimed at a monster or a
+// stun aimed at your own party. A data file able to express one would sooner or
+// later contain one.
+func (k SpellKind) Side() Side {
+	switch k {
+	case SpellHeal, SpellBless, SpellRevive:
+		return SideParty
+	}
+	return SideFoes
+}
+
+// SpellTarget is how many of that side an effect reaches.
 type SpellTarget string
 
 const (
@@ -32,12 +56,19 @@ type Spell struct {
 	Power  int         `json:"power"` // base magnitude before stat scaling
 	Kind   SpellKind   `json:"kind"`
 	Target SpellTarget `json:"target"`
-	Icon   string      `json:"icon"`
-	Cast   string      `json:"cast"` // flavor line, "%s" takes the caster name
+	// Blood restricts a technique to people with that strain of ancestry.
+	// These are the things a hireling brings that no hero can learn, which is
+	// most of the reason to take a part-monster on in the first place.
+	Blood MonsterKind `json:"blood,omitempty"`
+	Icon  string      `json:"icon"`
+	Cast  string      `json:"cast"` // flavor line, "%s" takes the caster name
 }
 
 // Known reports whether c has access to this spell.
 func (s Spell) Known(c *Character) bool {
+	if s.Blood != "" && s.Blood != c.Blood {
+		return false
+	}
 	if s.Class != "" && s.Class != c.Class {
 		return false
 	}

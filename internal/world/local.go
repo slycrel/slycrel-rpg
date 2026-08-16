@@ -39,6 +39,29 @@ var folkSprites = []string{
 	"npc/shieldman_surprised",
 }
 
+// recruitClasses is what a hireling can be, as model.Class strings.
+var recruitClasses = []string{"Fighter", "Thief", "Mage"}
+
+// recruitBloods is the ancestry a hireling can carry, as model.MonsterKind
+// strings. It mirrors model.Lineages, which is the list that says what each one
+// actually does; anything named here and missing there is simply ignored.
+var recruitBloods = []string{"beast", "fey", "undead", "demon", "ooze", "aberrant"}
+
+// recruitLooks are the walk sheets each trade can turn up wearing, keyed by the
+// same strings as recruitClasses.
+//
+// They are the hero sheets rather than the townsperson ones, because a
+// companion has to hold up as a follower on the map at the size the player
+// does. They are keyed by class rather than picked freely so that somebody
+// selling themselves as a mage does not walk over dressed as a swordsman — and
+// the druid sheet, which no player class uses, is in the caster's list so that
+// a hireling can read as somebody else rather than as a recolour of you.
+var recruitLooks = map[string][]string{
+	"Fighter": {"hero/fighter"},
+	"Thief":   {"hero/thief"},
+	"Mage":    {"hero/mage", "hero/druid"},
+}
+
 // foeSprites is the pool for the shapes that lurk in interiors.
 var foeSprites = []string{
 	"foe/ghost/idle",
@@ -78,15 +101,16 @@ type EntityKind string
 
 // The interactable roster.
 const (
-	ENPC   EntityKind = "npc"
-	EShop  EntityKind = "shop"
-	EInn   EntityKind = "inn"
-	EChest EntityKind = "chest"
-	ESign  EntityKind = "sign"
-	EFoe   EntityKind = "foe"   // a visible wandering monster
-	EExit  EntityKind = "exit"  // leave back to the overworld
-	EBoss  EntityKind = "boss"  // the thing the dungeon is about
-	EAltar EntityKind = "altar" // shrines: a blessing with strings attached
+	ENPC     EntityKind = "npc"
+	EShop    EntityKind = "shop"
+	EInn     EntityKind = "inn"
+	EChest   EntityKind = "chest"
+	ESign    EntityKind = "sign"
+	EFoe     EntityKind = "foe"     // a visible wandering monster
+	EExit    EntityKind = "exit"    // leave back to the overworld
+	EBoss    EntityKind = "boss"    // the thing the dungeon is about
+	EAltar   EntityKind = "altar"   // shrines: a blessing with strings attached
+	ERecruit EntityKind = "recruit" // someone outside the inn, available for money
 )
 
 // Entity is something standing in a local map.
@@ -97,7 +121,18 @@ type Entity struct {
 	Line   string // dialogue or description
 	Sprite string // assetsys key
 	Shop   ShopKind
-	Used   bool // chests opened, foes killed, altars prayed at
+	// Class is the trade a recruit plies, as a model.Class string. It is held
+	// untyped because generation must not drag the character model into world
+	// building; the hiring code converts it.
+	Class string
+	// Blood is a recruit's non-human ancestry, as a model.MonsterKind string,
+	// empty for the ordinary people who make up most of the roster.
+	Blood string
+	// Look is a recruit's walk-sheet prefix, e.g. "hero/druid". Sprite is one
+	// frame of it for standing in the street; the character carries the prefix
+	// so it can face four ways once it is following you around.
+	Look string
+	Used bool // chests opened, foes killed, altars prayed at
 	// Wander is set on foes that move on their own.
 	Wander bool
 	facing core.Dir
@@ -297,6 +332,7 @@ func buildSettlement(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 	if poi.Kind == KindVillage {
 		shops = shops[:2]
 	}
+	inn := core.Point{X: -1}
 	for i, s := range shops {
 		if i >= len(built) {
 			break
@@ -306,12 +342,37 @@ func buildSettlement(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 		kind := EShop
 		if s.kind == ShopInn {
 			kind = EInn
+			inn = door
 		}
 		l.Entities = append(l.Entities, &Entity{
 			Kind: kind, Pos: door, Name: s.name, Shop: s.kind,
 			Line:   wr.NPCLine(g),
 			Sprite: shopSprites[s.kind],
 		})
+	}
+
+	// Someone loitering outside the inn, available for money. Only settlements
+	// big enough to have an inn get one, which gives a village a reason to be
+	// somewhere you pass through and a town a reason to be somewhere you stop.
+	if inn.X >= 0 {
+		if p, ok := openNear(g, l, inn, 4); ok {
+			class := core.Pick(g, recruitClasses)
+			look := core.Pick(g, recruitLooks[class])
+			// Roughly one hireling in three is not entirely a person. They are
+			// the ones going cheap, because nobody else in town will take them.
+			blood := ""
+			if g.Chance(0.35) {
+				blood = core.Pick(g, recruitBloods)
+			}
+			l.Entities = append(l.Entities, &Entity{
+				Kind: ERecruit, Pos: p, Name: wr.PersonName(g),
+				Line:   wr.RecruitPitch(g, blood),
+				Class:  class,
+				Blood:  blood,
+				Look:   look,
+				Sprite: look + "/idle",
+			})
+		}
 	}
 
 	// Townsfolk milling about on the streets.
@@ -546,6 +607,33 @@ func findOpen(g *core.RNG, l *LocalMap, tries int) (core.Point, bool) {
 		p := core.Point{X: g.Between(1, l.W-2), Y: g.Between(1, l.H-2)}
 		if l.At(p.X, p.Y).Info().Passable && l.EntityAt(p.X, p.Y) == nil {
 			return p, true
+		}
+	}
+	return core.Point{}, false
+}
+
+// openNear finds a free walkable tile within radius of at, searching outward
+// so the result hugs the anchor. Used to stand someone beside a door rather
+// than at a random address in the same town.
+func openNear(g *core.RNG, l *LocalMap, at core.Point, radius int) (core.Point, bool) {
+	for r := 1; r <= radius; r++ {
+		var ring []core.Point
+		for dy := -r; dy <= r; dy++ {
+			for dx := -r; dx <= r; dx++ {
+				if core.Abs(dx) != r && core.Abs(dy) != r {
+					continue // interior of the ring was covered by a smaller r
+				}
+				p := core.Point{X: at.X + dx, Y: at.Y + dy}
+				if p.X < 1 || p.Y < 1 || p.X >= l.W-1 || p.Y >= l.H-1 {
+					continue
+				}
+				if l.At(p.X, p.Y).Info().Passable && l.EntityAt(p.X, p.Y) == nil {
+					ring = append(ring, p)
+				}
+			}
+		}
+		if len(ring) > 0 {
+			return core.Pick(g, ring), true
 		}
 	}
 	return core.Point{}, false

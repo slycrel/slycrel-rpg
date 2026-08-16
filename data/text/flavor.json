@@ -194,7 +194,7 @@
   "hitFlavor": [
     "{A} {V} {T} for {D}.",
     "{A} {V} {T}. {D} damage, and a noise.",
-    "{A} {V} {T} \u2014 {D}. That will bruise in a shape.",
+    "{A} {V} {T} — {D}. That will bruise in a shape.",
     "{T} takes {D} and does not enjoy it.",
     "{A} {V} {T} for {D}. Somewhere, a bard is already lying about this.",
     "{D} damage. {T} reassesses.",
@@ -253,7 +253,7 @@
   "signText": [
     "NO ENTRY. THIS MEANS YOU. YES, YOU SPECIFICALLY.",
     "Beware of the dog. The dog is fine. Beware of what the dog is afraid of.",
-    "Turn back. \u2014 the management",
+    "Turn back. — the management",
     "Lost: one sword, sentimental value, answers to 'Gerald'.",
     "By order of the Crown, this place does not exist. Please do not tell it.",
     "Free to a good home. Or any home. Please.",
@@ -323,5 +323,90 @@
         "\"Delivered, and you didn't open it. I can tell. You'd be different if you had.\""
       ]
     }
-  }
+  },
+  "recruitPitch": [
+    "\"You're going out there. I can tell. You've got the walk of someone who hasn't been told no recently.\"",
+    "\"I fight for money. I've tried the other reasons. Money is the one that works.\"",
+    "\"Last three employers didn't come back. I did. Draw your own conclusions about who to hire.\"",
+    "\"I'm cheap, I'm rested, and I have absolutely nothing else on.\"",
+    "\"I can hold a sword, hold a grudge, and hold my tongue. Two of those come free.\"",
+    "\"You look like you need someone standing between you and the horizon.\"",
+    "\"I'm between wars. It's a seasonal trade.\"",
+    "\"My last party voted me out. There were only two of us. I'd like that on the record.\"",
+    "\"I don't ask where we're going. I've found that helps.\"",
+    "\"Take me with you. This town has one well and I've read all of it.\""
+  ],
+  "recruitJoin": [
+    "{N} counts it twice, pockets it, and falls in behind you without another word.",
+    "{N} shoulders their pack. \"Right. Don't make this weird.\"",
+    "{N} takes the coin, looks at the road, and visibly reconsiders. Then follows anyway.",
+    "{N} shakes your hand for slightly too long and joins the company.",
+    "{N} says \"you won't regret this\" in the tone of someone who knows you will.",
+    "{N} is now your problem, and you are now theirs."
+  ],
+  "recruitLeave": [
+    "{N} takes their share, says nothing, and walks off in a direction you did not choose.",
+    "{N} nods once. \"No hard feelings. There were some. They're gone now.\"",
+    "{N} leaves the company, and takes the good waterskin.",
+    "{N} departs, already telling the story a different way.",
+    "{N} shrugs and goes. You will hear about this from strangers."
+  ],
+  "allyDown": [
+    "{N} goes down hard and stays down.",
+    "{N} sits down in the middle of it and declines to get up.",
+    "{N} takes one too many and folds like a bad argument.",
+    "{N} is out of the fight, and loudly out of it.",
+    "{N} drops. This was not in the arrangement, and they say so on the way down."
+  ],
+  "allyUp": [
+    "{N} gets back up, humiliated but structurally sound.",
+    "{N} is helped upright and immediately claims they were pacing themselves.",
+    "{N} comes round, checks their purse first, and stands.",
+    "{N} is upright again, and has notes."
+  ],
+  "bloodPitch": {
+    "beast": [
+      "\"Yes. I know. It's the ears. Everyone starts with the ears.\"",
+      "\"I'll smell it before you see it. That's the whole pitch, really.\"",
+      "\"I shed. I'm cheap. Those two facts are related.\""
+    ],
+    "fey": [
+      "\"I can't lie to you, which people think is a limitation. It is not.\"",
+      "\"Don't accept anything I offer you for free. I'm being polite by warning you.\"",
+      "\"My mother's side is complicated and I'd rather not go into it on the street.\""
+    ],
+    "undead": [
+      "\"I don't need the bed at the inn. That should factor into your offer.\"",
+      "\"Technically I'm still under contract to a previous employer. Technically he's dead.\"",
+      "\"I don't sleep, I don't eat, and I don't scare. Two of those are savings for you.\""
+    ],
+    "demon": [
+      "\"There's an arrangement. It doesn't involve you. It could, but it doesn't.\"",
+      "\"I work cheap because the alternative is going home.\"",
+      "\"Don't sign anything I hand you and we'll get on famously.\""
+    ],
+    "ooze": [
+      "\"I take a lot of hitting. That's not a boast, it's just what I am.\"",
+      "\"I'll need to travel behind the horse, not on it. Long story. Wet story.\"",
+      "\"Don't put me near the good furniture and this'll work out.\""
+    ],
+    "aberrant": [
+      "\"Nobody's established what I am. Nobody's pressed. I'd keep it that way.\"",
+      "\"I'm going to be some distance from you at all times. It's better for both of us.\"",
+      "\"People find me difficult to look at directly. Monsters find it worse.\""
+    ]
+  },
+  "rescue": [
+    "You wake up in {P}. {N} is going through your pockets, which is how you know you are not dead.",
+    "{N} carried you into {P} and paid somebody to argue with the situation. It worked. It was not free.",
+    "You come round on a table in {P}. {N} is explaining to a physician that you are worth the effort, and being unconvincing.",
+    "{N} dragged you the whole way to {P} without once suggesting it was easier to leave you. They mention this. Repeatedly.",
+    "You are alive, in {P}, and considerably poorer. {N} does not explain the order those happened in."
+  ],
+  "revived": [
+    "{N} sits up, furious, and rejoins the fight mid-sentence.",
+    "{N} comes back with the look of somebody who has been interrupted.",
+    "{N} is upright again and taking it personally.",
+    "{N} returns to the proceedings, having missed nothing important."
+  ]
 }

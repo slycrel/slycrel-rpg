@@ -35,6 +35,7 @@ func newOverworldScene(g *Game) *overworldScene {
 
 func (s *overworldScene) Update(g *Game) error {
 	g.Walk.Advance()
+	advanceLine(g.follow)
 	s.cam.Update()
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyM) {
@@ -95,7 +96,9 @@ func (s *overworldScene) tryStep(g *Game, d core.Dir) {
 		return
 	}
 
+	from := g.Walk.Tile
 	g.Walk.Step(next, d)
+	stepLine(g.follow, from)
 	// Rough terrain costs a pause before the next step is accepted.
 	s.moveDelay = g.World.At(next.X, next.Y).Info().Cost * 2
 	g.World.Reveal(next, 6)
@@ -119,7 +122,7 @@ func (s *overworldScene) tryStep(g *Game, d core.Dir) {
 			if g.RNG.Chance(0.10) {
 				count = 3
 			}
-			mons := g.Data.PickMonsters(g.RNG, biome, level, count)
+			mons := g.Data.PickMonsters(g.RNG, biome, level, g.encounterSize(count))
 			if len(mons) > 0 {
 				g.Push(newBattleScene(g, mons, g.World.At(next.X, next.Y).Name()))
 			}
@@ -157,6 +160,10 @@ func (g *Game) enterPOI(poi *world.POI) {
 	g.Local = world.BuildLocal(poi, g.Write)
 	g.LocalWalk = walker{dur: 7}
 	g.LocalWalk.Place(g.Local.Entry)
+	// The company comes in through the gate stacked on the hero and spreads
+	// back out over the first few steps.
+	g.reformLines()
+	placeLine(g.localFollow, g.Local.Entry)
 	g.Sound.Play("world/enter")
 	if idx := g.poiIndex(poi); idx >= 0 {
 		g.noteQuestProgress(g.Quests.OnEnteredPOI(idx))
@@ -198,7 +205,10 @@ func (s *overworldScene) Draw(g *Game, dst *ebiten.Image) {
 		drawPOIMarker(ctx, p)
 	}
 
-	// The player.
+	// The company, then the player, so nothing ever covers the character you
+	// are steering.
+	g.drawFollowers(ctx, g.follow)
+
 	sp := g.Assets.Get(heroSpriteKey(g.Player, g.Walk.Dir(), g.Walk.Moving()))
 	frame := 0
 	if g.Walk.Moving() {

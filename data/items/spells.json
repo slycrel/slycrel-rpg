@@ -19,8 +19,8 @@
     "cost": 3,
     "power": 12,
     "kind": "heal",
-    "target": "self",
-    "cast": "{A} mutters an apology to their own ribs.",
+    "target": "one",
+    "cast": "{A} mutters an apology to somebody's ribs.",
     "icon": "icon/rune/11"
   },
   {
@@ -190,5 +190,113 @@
     "target": "one",
     "cast": "{A} finds the one seam in the armour and the one seam in the person.",
     "icon": "icon/rune/33"
+  },
+  {
+    "id": "rally",
+    "name": "Loud Encouragement",
+    "class": "Fighter",
+    "level": 4,
+    "cost": 5,
+    "power": 3,
+    "kind": "bless",
+    "target": "all",
+    "cast": "{A} says several true things at an unreasonable volume.",
+    "icon": "icon/rune/44"
+  },
+  {
+    "id": "steady",
+    "name": "Steady On",
+    "class": "Thief",
+    "level": 5,
+    "cost": 3,
+    "power": 4,
+    "kind": "bless",
+    "target": "one",
+    "cast": "{A} points out where the soft bits are.",
+    "icon": "icon/rune/27"
+  },
+  {
+    "id": "reknit",
+    "name": "Reknit",
+    "class": "Mage",
+    "level": 8,
+    "cost": 9,
+    "power": 0,
+    "kind": "revive",
+    "target": "one",
+    "cast": "{A} explains to the recently deceased that this is not convenient.",
+    "icon": "icon/rune/54"
+  },
+  {
+    "id": "hackles",
+    "name": "Hackles",
+    "blood": "beast",
+    "level": 1,
+    "cost": 3,
+    "power": 4,
+    "kind": "bless",
+    "target": "self",
+    "cast": "{A}'s hair stands up in a way that ends the conversation.",
+    "icon": "icon/rune/9"
+  },
+  {
+    "id": "glamour",
+    "name": "Glamour",
+    "blood": "fey",
+    "level": 2,
+    "cost": 4,
+    "power": 6,
+    "kind": "stun",
+    "target": "one",
+    "cast": "{A} becomes briefly worth staring at.",
+    "icon": "icon/rune/16"
+  },
+  {
+    "id": "coldcomfort",
+    "name": "Cold Comfort",
+    "blood": "undead",
+    "level": 2,
+    "cost": 4,
+    "power": 10,
+    "kind": "drain",
+    "target": "one",
+    "cast": "{A} takes some warmth back, having been owed it for years.",
+    "icon": "icon/rune/31"
+  },
+  {
+    "id": "badbargain",
+    "name": "A Bad Bargain",
+    "blood": "demon",
+    "level": 3,
+    "cost": 6,
+    "power": 18,
+    "kind": "damage",
+    "target": "one",
+    "cast": "{A} offers terms. They are accepted. They should not have been.",
+    "icon": "icon/rune/39"
+  },
+  {
+    "id": "reconstitute",
+    "name": "Reconstitute",
+    "blood": "ooze",
+    "level": 2,
+    "cost": 4,
+    "power": 18,
+    "kind": "heal",
+    "target": "self",
+    "cast": "{A} flows back into approximately the previous shape.",
+    "icon": "icon/rune/49"
+  },
+  {
+    "id": "wrongness",
+    "name": "Ambient Wrongness",
+    "blood": "aberrant",
+    "level": 3,
+    "cost": 6,
+    "power": 6,
+    "kind": "weaken",
+    "target": "all",
+    "cast": "{A} is briefly the wrong number of things at once.",
+    "icon": "icon/rune/60"
   }
 ]

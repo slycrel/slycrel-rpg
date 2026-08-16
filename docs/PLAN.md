@@ -44,6 +44,23 @@ Built and running:
 - Character sheet and pack with out-of-combat item use
 - Quests: four kinds — fetch, cull, delve, deliver — generated from nearby
   locations, biomes and drop tables, with a log, hand-in, and rewards
+- Party: up to two hirelings, standing outside inns, rolled at the hero's level
+  for a fee and a standing cut of every haul. They act on their own policy —
+  the one the balance simulator plays — take a share of the incoming damage,
+  level separately, re-arm out of their cut, and follow the hero in a line that
+  tracks his path rather than his position
+- Effects have a side: which half of the field an effect lands on is derived
+  from its kind, not stored, so a heal can never be aimed at a monster and a
+  stun can never be aimed at a friend. Anything beneficial — a heal, a blessing,
+  a revive, a potion out of the pack — can be pointed at any party member, with
+  the cursor skipped when there is only one person it could mean
+- Part-monster hirelings: six lineages, each with a stat trade-off, a discount
+  on the fee because nobody else will take them, and one technique gated on
+  ancestry that no hero of any class or level can learn
+- Getting back up: a fallen companion is out of the fight rather than dead and
+  stands up afterwards, or sooner via an item or Reknit. A hero who falls with
+  somebody still standing is carried to the nearest town for a large share of
+  the purse and a point of Shame; a hero who falls alone still ends the run
 - Balance: a simulator over the real rules, and a tuning pass that removed a
   damage cliff at level 5, made monsters scale with the encounter, and flattened
   endurance from 12-fights-then-3 to a steady 4-9 per rest
@@ -62,11 +79,12 @@ Built and running:
 - Save and load: three slots, a pause menu, and `-load` to boot straight into a
   save. A save is the seed plus what the player changed, so it is ~6 KB of
   mostly readable JSON and doubles as a test fixture
-- 54 monsters across nine biomes, 14 weapons, 10 armours, 38 items, 16 techniques
+- 62 monsters across nine biomes, 14 weapons, 10 armours, 40 items, 25 techniques
+  (nine of them party-facing or gated on a hireling's ancestry)
 - Asset pipeline: inventory, selective extraction, manifest generation, and an
   audit that reports which art keys still fall back to placeholders
 
-Deliberately not built yet: party members, equipment slots, status effects.
+Deliberately not built yet: equipment slots, status effects.
 
 ## Architecture, and why
 
@@ -91,45 +109,69 @@ testable and a simulation harness is cheap to add later.
 
 ## Roadmap
 
-### Phase 1 — make it feel like a game *(save/load and audio done)*
-
-1. **Party members.** `model.Character` and the battle screen are both written
-   for one hero but structured for a slice. Recruitable from taverns.
+### Phase 1 — make it feel like a game *(done: save/load, audio, quests, party)*
 
 ### Phase 2 — depth
 
-4. **Quests.** Generated from POI pairs: someone in a town wants a thing from a
-   dungeon. Small state machine, big payoff for a generated world.
-5. **Party members.** `model.Character` and the battle scene are both written
-   for one hero but structured for a slice. Recruitable NPCs from taverns.
-6. **Equipment slots and affixes.** Currently one weapon and one armour.
+1. **Equipment slots and affixes.** Currently one weapon and one armour.
    Add shield/trinket slots and a suffix generator ("of the Damp", "of Poor
    Decisions") that rolls stat modifiers.
-7. **Status effects.** Poison, burn, stun already have hooks in the spell kinds;
+2. **Status effects.** Poison, burn, stun already have hooks in the spell kinds;
    generalise into a timed-effect list on combatants.
+3. **Party, third pass.** What the targeting rework did not reach: outfitting a
+   companion at a shop rather than letting them re-arm off-screen out of their
+   cut, and letting a companion carry a pack of their own.
+
+   A resurrecting NPC was considered here and deliberately left out. With the
+   fallen standing up when a fight ends and a fallen hero carried to town by
+   the company, there is no state a run can reach where somebody stays dead and
+   needs paying for — so a healer at a counter would be a door that never
+   opens. The apothecary stocks the revive items instead, which is the same
+   idea placed where it does something. If death ever gets harsher, this is the
+   first thing to revisit.
+4. **Companion backstories.** A hireling arrives with a name, a lineage and a
+   pitch, and nothing behind it. Give each one a two- or three-step thread that
+   surfaces as you travel with them — the previous employer a part-undead is
+   still technically contracted to, the arrangement a part-demon will not
+   discuss — resolved at a place the world already generated.
+5. **NPC backstories.** The same shape for the townspeople who currently have
+   one line each.
+
+   These two want one mechanism, and it is a step up from what `internal/quest`
+   does now. The existing generator picks a verb, an object and a place, checks
+   they exist, and hands back a counter: stateless, interchangeable, and
+   deliberately basic. A backstory is a small *ordered* thread that remembers
+   where it got to, with a fixed cast. The likely shape is an authored skeleton
+   — a beat list with roles (a giver, a place, a thing, an antagonist) — cast
+   from whatever the seed generated at first contact and then frozen into the
+   save. That keeps the writing hand-made and the casting generated, and it
+   means a thread can never name a place this world does not contain.
 
 ### Phase 3 — the world reacting
 
-8. **Day/night and weather.** The tileset collection includes a weather-effects
+6. **Day/night and weather.** The tileset collection includes a weather-effects
    pack. Changes encounter tables and which NPCs are out.
-9. **Faction and reputation.** `Fame`, `Honor`, `Faith` and `Shame` exist on
-    the character and currently do almost nothing. Gate content on them.
-10. **A reason to be here.** A generated main thread that strings together
-    five or six POIs into something with an ending.
+7. **Faction and reputation.** `Fame`, `Honor`, `Faith` and `Shame` exist on
+   the character and currently do almost nothing. Gate content on them.
+8. **A reason to be here.** A generated main thread that strings together
+   five or six POIs into something with an ending.
 
 ### Phase 4 — polish
 
-11. Curated UI art from the 4,488-file GUI Pro kit, replacing the procedural panels.
-12. Title screen art, transitions, particles from the 115-file VFX pack.
-13. Balance simulation: run 10,000 headless fights per level band against the
-    pure `rules` package and tune the curve.
+9. Curated UI art from the 4,488-file GUI Pro kit, replacing the procedural panels.
+10. Title screen art, transitions, particles from the 115-file VFX pack.
+11. Balance simulation: run 10,000 headless fights per level band against the
+   pure `rules` package and tune the curve.
 
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on
   foot. Larger needs fast travel; smaller needs denser points of interest.
-- **Death.** Currently returns to the title. Permadeath fits the BBS heritage;
-  a resurrection cost fits the tone better and the original had a healer.
+- ~~**Death.**~~ *Settled.* The company carries a fallen hero to the nearest
+  town for a large share of the purse and a point of Shame. Dying with nobody
+  left standing still ends the run, so permadeath is intact for anyone playing
+  alone, and the hirelings are the thing that buys it off — which makes the fee
+  a reason to hire rather than a softening of the stakes.
 - **Multiplayer.** `new-slycrel` was built session-per-user with a shared store,
   because the original was a door game. Worth deciding before save format
   hardens.

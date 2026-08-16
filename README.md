@@ -24,6 +24,10 @@ tone-setting rule is that nobody in the world ever acknowledges the joke.
 | The map — only what you have walked past | A shop, with icons |
 | ![The character sheet and pack](docs/screenshots/character.png) | ![The quest log, showing an errand to clear a ruin](docs/screenshots/quests.png) |
 | Character sheet and pack | Errands, generated from the world |
+| ![Someone outside an inn offering to join for coins](docs/screenshots/hire.png) | ![A hireling walking behind the player through a town](docs/screenshots/party.png) |
+| Hiring — cheaper, because he is part demon | The company, following you around |
+| ![A companion's sheet showing part-demon ancestry](docs/screenshots/lineage.png) | ![Choosing which party member an item is used on](docs/screenshots/targeting.png) |
+| A hireling's sheet, ancestry and all | Choosing who an effect lands on |
 
 ## Running it
 
@@ -51,7 +55,8 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 | Z, Enter, Space | confirm, talk, enter a location |
 | X, Esc | back out |
 | M | the map of everywhere you have been |
-| C or I | character sheet and pack |
+| C or I | character sheet and pack; left/right pages through the company |
+| R | on a companion's sheet, let them go |
 | J | the errands you agreed to |
 | Esc | pause: sound, save, load, abandon the run |
 | `\` or F12 | screenshot to `shots/` (F12 needs standard function keys on macOS) |
@@ -67,9 +72,36 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
   dungeons, caves, ruins, towers, shrines, camps, and whatever an "oddity"
   turns out to be this time. Each generates its own interior on demand from its
   seed, so leaving and coming back gives you the same town without storing it.
-- **Turn-based battles** against up to three monsters, with initiative,
+- **Turn-based battles** against up to four monsters, with initiative,
   targeting, techniques, items, defending, and fleeing.
-- **54 monsters** across nine biomes, each with its own attack verbs, defensive
+- **A party** — up to two hirelings, found loitering outside inns. They cost a
+  fee up front and a standing cut of every haul afterwards, and they are never
+  commanded: you drive your own hero and they make their own decisions, running
+  the same policy the balance simulator plays, with triage first — somebody on
+  the floor, then somebody about to be, then whatever is causing it. They walk
+  behind you in a line that follows your path rather than your position, take
+  hits that would otherwise be yours, level on their own curve, and spend their
+  cut re-arming so a companion hired at level three is still worth having at
+  twelve.
+- **Hirelings who are not entirely people** — about one in three is part beast,
+  fey, undead, demon, ooze or something nobody has established. Each lineage
+  shifts the stat line in both directions, comes with a discount because nobody
+  else in town will take them, and carries one technique gated on ancestry that
+  no hero of any class or level can ever learn. That is most of the reason to
+  hire the cheap one on the corner.
+- **Two sides to every effect** — which half of the field an effect lands on is
+  derived from what it does rather than stored next to it, so a heal cannot be
+  aimed at a monster and a stun cannot be aimed at a friend. Anything that helps
+  — a heal, a blessing, standing somebody back up, a potion out of the pack —
+  can be pointed at whoever needs it. With nobody else in the party the cursor
+  is skipped, so playing alone never got slower.
+- **Getting back up** — a companion out of hit points is out of the fight, not
+  dead, and stands up when it ends; an item or the right technique gets them up
+  sooner. A hero who falls with somebody still standing is carried to the
+  nearest town for a large share of the purse and a point of Shame. A hero who
+  falls alone still loses the run, so the company is the thing that buys the
+  ending off rather than the game going soft.
+- **62 monsters** across nine biomes, each with its own attack verbs, defensive
   flavour, taunts, death lines, and drop table.
 - **Shops, inns, chests, altars and townsfolk** who all have opinions.
 - **Quests** — generated from the world rather than written against it. Someone
@@ -97,7 +129,9 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
   There is also a retired magician who occasionally comments on your victories.
 - **Save and load** — three slots, reachable from the pause menu (Escape) or
   Continue on the title. A save is the seed plus whatever you changed, so it is
-  a few kilobytes of readable JSON rather than a dump of the map.
+  a few kilobytes of readable JSON rather than a dump of the map. The format is
+  at v2 (the party arrived in it) and still reads a v1 save, which describes a
+  run with nobody in it.
 
 ## Project layout
 
@@ -187,6 +221,19 @@ Its findings are kept honest by tests: `TestDamageHasNoCliff`,
 `TestOnLevelFightsAreWinnable`, `TestDangerRadiatesOutward` and
 `TestEnduranceHoldsAcrossLevels` assert the *shape* of the curve, so content
 can be added freely but progression cannot silently break.
+
+The party is deliberately kept out of that curve rather than folded into it.
+Experience is not divided — every member banks the full award and levels
+separately — so the hero's progression is exactly what the simulator measured
+whether or not anyone is walking behind them. What a companion costs instead is
+coin (a fee, a cut, a bed each at the inn) and a bigger crowd at every
+encounter, both of which are levers that can be turned without re-tuning the
+damage formulas.
+
+Lineages are held to the same rule from the other direction: every one of the
+six gives with one hand and takes with the other, and a test asserts it, so a
+part-monster hireling is a different shape of companion rather than a better
+one. Their discount is the reward for the trade-off, not for a bargain.
 
 ## Testing
 

@@ -100,6 +100,53 @@ func (w *Writer) NPCLine(g *core.RNG) string { return core.Pick(g, w.t.NpcLine) 
 // SignText returns signage, chest engravings, and altar inscriptions.
 func (w *Writer) SignText(g *core.RNG) string { return core.Pick(g, w.t.SignText) }
 
+// RecruitPitch returns what someone loitering outside an inn says to a person
+// who looks like they are going somewhere dangerous.
+//
+// Anybody visibly not entirely human leads with it, because they have learned
+// that the alternative is having the conversation twice.
+func (w *Writer) RecruitPitch(g *core.RNG, blood string) string {
+	if lines := w.t.BloodPitch[blood]; len(lines) > 0 {
+		return core.Pick(g, lines)
+	}
+	return core.Pick(g, w.t.RecruitPitch)
+}
+
+// Rescue narrates the hirelings carrying a dead employer into town. {N} is the
+// companion who did most of the carrying, {P} the place they carried them to.
+func (w *Writer) Rescue(g *core.RNG, by, place string) string {
+	r := strings.NewReplacer("{N}", by, "{P}", place)
+	return r.Replace(core.Pick(g, w.t.Rescue))
+}
+
+// Revived narrates somebody being stood back up mid-fight.
+func (w *Writer) Revived(g *core.RNG, name string) string {
+	return strings.ReplaceAll(core.Pick(g, w.t.Revived), "{N}", name)
+}
+
+// RecruitJoin returns the line a hireling gives on being paid. {N} is their
+// name.
+func (w *Writer) RecruitJoin(g *core.RNG, name string) string {
+	return strings.ReplaceAll(core.Pick(g, w.t.RecruitJoin), "{N}", name)
+}
+
+// RecruitLeave returns the line a hireling gives on being let go.
+func (w *Writer) RecruitLeave(g *core.RNG, name string) string {
+	return strings.ReplaceAll(core.Pick(g, w.t.RecruitLeave), "{N}", name)
+}
+
+// AllyDown narrates a companion running out of hit points. They are not dead —
+// permanently losing a hireling you paid for is the kind of thing that makes
+// people stop hiring them — but they are out of this fight.
+func (w *Writer) AllyDown(g *core.RNG, name string) string {
+	return strings.ReplaceAll(core.Pick(g, w.t.AllyDown), "{N}", name)
+}
+
+// AllyUp narrates a companion getting back up once the fighting stops.
+func (w *Writer) AllyUp(g *core.RNG, name string) string {
+	return strings.ReplaceAll(core.Pick(g, w.t.AllyUp), "{N}", name)
+}
+
 // Idle returns ambient narration for standing around outdoors.
 func (w *Writer) Idle(g *core.RNG) string { return core.Pick(g, w.t.IdleFlavor) }
 

@@ -12,11 +12,12 @@ import (
 
 type stubNamer struct{}
 
-func (stubNamer) PlaceName(*core.RNG, string) string { return "Placename" }
-func (stubNamer) PlaceTag(*core.RNG, string) string  { return "tag" }
-func (stubNamer) PersonName(*core.RNG) string        { return "Person" }
-func (stubNamer) NPCLine(*core.RNG) string           { return "line" }
-func (stubNamer) SignText(*core.RNG) string          { return "sign" }
+func (stubNamer) PlaceName(*core.RNG, string) string    { return "Placename" }
+func (stubNamer) PlaceTag(*core.RNG, string) string     { return "tag" }
+func (stubNamer) PersonName(*core.RNG) string           { return "Person" }
+func (stubNamer) NPCLine(*core.RNG) string              { return "line" }
+func (stubNamer) SignText(*core.RNG) string             { return "sign" }
+func (stubNamer) RecruitPitch(*core.RNG, string) string { return "pitch" }
 
 type stubWriter struct{}
 

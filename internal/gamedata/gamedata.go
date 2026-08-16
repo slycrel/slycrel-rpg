@@ -54,6 +54,21 @@ type Text struct {
 	NpcLine     []string `json:"npcLine"`
 	SignText    []string `json:"signText"`
 
+	// Hirelings: the sales pitch, the handshake, the parting, and what happens
+	// when one of them stops being upright.
+	RecruitPitch []string `json:"recruitPitch"`
+	RecruitJoin  []string `json:"recruitJoin"`
+	RecruitLeave []string `json:"recruitLeave"`
+	AllyDown     []string `json:"allyDown"`
+	AllyUp       []string `json:"allyUp"`
+	// BloodPitch is what a hireling who is visibly not entirely human opens
+	// with, keyed by the model.MonsterKind string of their ancestry.
+	BloodPitch map[string][]string `json:"bloodPitch"`
+	// Rescue and Revived cover getting back up: carried into town by the
+	// company, and stood up mid-fight by an item or a technique.
+	Rescue  []string `json:"rescue"`
+	Revived []string `json:"revived"`
+
 	// Quest lines, keyed by quest kind then by part (ask / nag / thank).
 	Quest map[string]map[string][]string `json:"quest"`
 }
@@ -222,6 +237,26 @@ func (t *Tables) StockFor(tier int) ([]model.Weapon, []model.Armor) {
 		}
 	}
 	return ws, as
+}
+
+// GearTierFor is the gear band a character is expected to be carrying at a
+// level. The shops stock by tier and tiers span roughly three levels each, so
+// this is the "on curve" assumption: it is what the balance report measures
+// against, and what a hireling turns up already wearing.
+func GearTierFor(level int) int { return core.Clamp(1+(level-1)/3, 1, 5) }
+
+// Equip fits a character with the best gear of their expected tier. Anyone
+// arriving mid-game — a companion for hire, a simulated subject — is dressed
+// through here, so there is one definition of what "level N and properly
+// equipped" means rather than one per caller.
+func (t *Tables) Equip(c *model.Character) {
+	ws, as := t.StockFor(GearTierFor(c.Level))
+	if len(ws) > 0 {
+		c.Weapon = ws[len(ws)-1]
+	}
+	if len(as) > 0 {
+		c.Armor = as[len(as)-1]
+	}
 }
 
 // BiomeDrops lists the distinct items monsters of a biome can drop, which is

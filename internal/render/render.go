@@ -228,8 +228,30 @@ func Frame(dst *ebiten.Image, x, y, w, h float64, c color.Color) {
 	Rect(dst, x+w-1, y, 1, h, c)
 }
 
+// fold rewrites the typography a writer naturally reaches for into the ASCII
+// the face actually has.
+//
+// basicfont.Face7x13 covers Latin-1 and nothing else, so an em-dash or a curly
+// quote arrives on screen as a replacement box. That is not hypothetical: the
+// em-dash in the hit table rendered every landed blow as "Bosk slap the Wolf @
+// 6". Folding here rather than in the content files means a line is safe
+// wherever it came from, including one a generator assembled at runtime.
+//
+// Every entry widens or holds its width except the ellipsis, and measurement
+// folds too, so what is measured is always what is drawn.
+var fold = strings.NewReplacer(
+	"—", "-", // em dash
+	"–", "-", // en dash
+	"…", "...", // ellipsis
+	"“", `"`, "”", `"`, // curly double quotes
+	"‘", "'", "’", "'", // curly single quotes
+	" ", " ", // non-breaking space
+)
+
 // Text draws a single line with a hard drop shadow for legibility over art.
 func Text(dst *ebiten.Image, s string, x, y float64, c color.Color) {
+	s = fold.Replace(s)
+
 	op := &text.DrawOptions{}
 	op.GeoM.Translate(round(x)+1, round(y)+1)
 	op.ColorScale.ScaleWithColor(ColShadow)
@@ -241,9 +263,9 @@ func Text(dst *ebiten.Image, s string, x, y float64, c color.Color) {
 	text.Draw(dst, s, Font, op)
 }
 
-// TextW measures a string in pixels.
+// TextW measures a string in pixels, as it will actually be drawn.
 func TextW(s string) float64 {
-	w, _ := text.Measure(s, Font, LineH)
+	w, _ := text.Measure(fold.Replace(s), Font, LineH)
 	return w
 }
 
@@ -260,23 +282,27 @@ func TextRight(dst *ebiten.Image, s string, rx, y float64, c color.Color) {
 // Trunc shortens s until it fits within width pixels, marking the cut with a
 // trailing period so a clipped name still reads as deliberate.
 func Trunc(s string, width float64) string {
+	s = fold.Replace(s)
 	if TextW(s) <= width {
 		return s
 	}
-	for len(s) > 1 {
-		s = s[:len(s)-1]
-		if TextW(s+".") <= width {
-			return s + "."
+	// By runes, not bytes: a name carrying anything the fold left multi-byte
+	// would otherwise be cut in half and drawn as mojibake.
+	r := []rune(s)
+	for len(r) > 1 {
+		r = r[:len(r)-1]
+		if cut := string(r) + "."; TextW(cut) <= width {
+			return cut
 		}
 	}
-	return s
+	return string(r)
 }
 
 // Wrap breaks s into lines no wider than width pixels, splitting on spaces.
 // Explicit newlines in s are honoured.
 func Wrap(s string, width float64) []string {
 	var out []string
-	for _, para := range strings.Split(s, "\n") {
+	for _, para := range strings.Split(fold.Replace(s), "\n") {
 		words := strings.Fields(para)
 		if len(words) == 0 {
 			out = append(out, "")

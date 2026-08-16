@@ -167,6 +167,7 @@ type Namer interface {
 	PersonName(g *core.RNG) string
 	NPCLine(g *core.RNG) string
 	SignText(g *core.RNG) string
+	RecruitPitch(g *core.RNG, blood string) string
 }
 
 // Generate builds a continent from a seed.

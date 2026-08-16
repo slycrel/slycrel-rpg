@@ -61,6 +61,22 @@ type Character struct {
 	Armor  Armor  `json:"armor"`
 	Bag    []Item `json:"bag"`
 
+	// Ally marks a hired companion rather than the player's own hero.
+	//
+	// A companion is an ordinary Character in every other respect — same rolls,
+	// same growth curve, same spell list — because a hireling that used a
+	// reduced stat block would need its own balance pass, and there is no
+	// reason for one. What differs is ownership: the pack, the coin and the
+	// quest log belong to the hero, and a companion is never commanded.
+	Ally bool `json:"ally,omitempty"`
+	// Cut is the percentage of every coin haul the companion takes off the top,
+	// which is the standing price of not swinging the sword yourself.
+	Cut int `json:"cut,omitempty"`
+	// Blood is a strain of non-human ancestry. Empty means an ordinary person,
+	// which most people are. It shifts the stat line and unlocks a technique no
+	// hero can learn, and it is the reason the hireling was going cheap.
+	Blood MonsterKind `json:"blood,omitempty"`
+
 	Sprite   string `json:"sprite"`   // asset key for the overworld/local sprite
 	Portrait string `json:"portrait"` // asset key for the battle portrait
 }
@@ -85,7 +101,15 @@ func (c *Character) PsycheFrac() float64 {
 }
 
 // Heal restores up to n hit points and returns the amount actually restored.
+//
+// Healing does not raise the dead. Left as a plain clamp, it lifted anybody on
+// zero straight back up, which made every healing potion a resurrection and
+// left the revive items and Reknit with nothing to do. Standing somebody up is
+// a different act with its own cost, and it sets hit points directly.
 func (c *Character) Heal(n int) int {
+	if !c.Alive() {
+		return 0
+	}
 	before := c.HP
 	c.HP = core.Clamp(c.HP+n, 0, c.MaxHP)
 	return c.HP - before
@@ -150,9 +174,25 @@ const (
 	ItemHeal    ItemKind = "heal"
 	ItemPsyche  ItemKind = "psyche"
 	ItemBuff    ItemKind = "buff"
+	ItemRevive  ItemKind = "revive"  // stands a fallen party member back up
 	ItemTrinket ItemKind = "trinket" // sellable junk, mostly a joke delivery system
 	ItemKey     ItemKind = "key"
 )
+
+// UsedOnSomeone reports whether the item is applied to a person, and therefore
+// needs somebody chosen before it does anything. A trinket is waved at the
+// problem and a key is turned in a lock; neither picks a target.
+func (k ItemKind) UsedOnSomeone() bool {
+	switch k {
+	case ItemHeal, ItemPsyche, ItemBuff, ItemRevive:
+		return true
+	}
+	return false
+}
+
+// WantsTheFallen reports whether the item is for someone who is down rather
+// than someone who is standing, which is the opposite target list.
+func (k ItemKind) WantsTheFallen() bool { return k == ItemRevive }
 
 // Item is a bag entry.
 type Item struct {

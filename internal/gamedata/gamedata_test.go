@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/slycrel/slycrel-rpg/internal/core"
@@ -108,11 +109,12 @@ func TestSpellsCoverEveryClass(t *testing.T) {
 // stubNamer lets world generation run without the content package.
 type stubNamer struct{}
 
-func (stubNamer) PlaceName(*core.RNG, string) string { return "Placename" }
-func (stubNamer) PlaceTag(*core.RNG, string) string  { return "tag" }
-func (stubNamer) PersonName(*core.RNG) string        { return "Person" }
-func (stubNamer) NPCLine(*core.RNG) string           { return "line" }
-func (stubNamer) SignText(*core.RNG) string          { return "sign" }
+func (stubNamer) PlaceName(*core.RNG, string) string    { return "Placename" }
+func (stubNamer) PlaceTag(*core.RNG, string) string     { return "tag" }
+func (stubNamer) PersonName(*core.RNG) string           { return "Person" }
+func (stubNamer) NPCLine(*core.RNG) string              { return "line" }
+func (stubNamer) SignText(*core.RNG) string             { return "sign" }
+func (stubNamer) RecruitPitch(*core.RNG, string) string { return "pitch" }
 
 // TestWorldGenerationIsHabitable runs a spread of seeds because the failure
 // this guards against — an island so small or so waterlogged that the capital
@@ -460,6 +462,206 @@ func TestEnduranceHoldsAcrossLevels(t *testing.T) {
 		if avg > 20 {
 			t.Errorf("level %d fighter manages %.1f fights per rest; "+
 				"resting has stopped mattering", level, avg)
+		}
+	}
+}
+
+// A hireling advertises a trade and then walks over wearing a sprite. Those
+// have to agree: somebody selling themselves as a mage turning up dressed as a
+// swordsman reads as a bug, and the two are picked separately.
+func TestRecruitsLookLikeTheTradeTheySell(t *testing.T) {
+	seen := map[string]bool{}
+	for _, seed := range []int64{1, 42, 1994, 20260816} {
+		m := world.Generate(seed, stubNamer{})
+		for _, poi := range m.POIs {
+			for _, e := range world.BuildLocal(poi, stubNamer{}).Entities {
+				if e.Kind != world.ERecruit {
+					continue
+				}
+				seen[e.Class] = true
+				if e.Look == "" || e.Sprite != e.Look+"/idle" {
+					t.Errorf("seed %d, %s: recruit has look %q and sprite %q, which do not agree",
+						seed, poi.Name, e.Look, e.Sprite)
+				}
+				if !strings.HasPrefix(e.Look, "hero/") {
+					t.Errorf("seed %d, %s: recruit walks on %q, not a hero sheet", seed, poi.Name, e.Look)
+				}
+				if want, ok := looksFor[e.Class]; !ok {
+					t.Errorf("seed %d, %s: recruit sells %q, which is not a class", seed, poi.Name, e.Class)
+				} else if !want[e.Look] {
+					t.Errorf("seed %d, %s: a %s recruit turned up as %q", seed, poi.Name, e.Class, e.Look)
+				}
+			}
+		}
+	}
+	// If no settlement in four continents put anybody outside an inn, the test
+	// above proved nothing and would keep proving nothing after a regression.
+	if len(seen) == 0 {
+		t.Fatal("no recruits were generated in any of the sampled worlds")
+	}
+}
+
+var looksFor = map[string]map[string]bool{
+	"Fighter": {"hero/fighter": true},
+	"Thief":   {"hero/thief": true},
+	"Mage":    {"hero/mage": true, "hero/druid": true},
+}
+
+// Every technique in the table has to be coherent about who it is for. The
+// targeting code reads the side off the kind and the breadth off the target,
+// and a row that disagrees with itself would be an effect nobody can aim.
+func TestSpellTargetingIsCoherent(t *testing.T) {
+	tables := load(t)
+	for _, s := range tables.Spells {
+		if s.ID == "" || s.Name == "" {
+			t.Errorf("a technique has no id or name: %+v", s)
+		}
+		switch s.Target {
+		case model.TargetOne, model.TargetAll, model.TargetSelf:
+		default:
+			t.Errorf("%s targets %q, which is not a target", s.ID, s.Target)
+		}
+		switch s.Kind {
+		case model.SpellDamage, model.SpellDrain, model.SpellWeaken, model.SpellStun,
+			model.SpellHeal, model.SpellBless, model.SpellRevive:
+		default:
+			t.Errorf("%s is of kind %q, which nothing implements", s.ID, s.Kind)
+		}
+		// Nothing pointed at the monsters may be self-targeted: the caster is
+		// not on that side of the field, and the battle screen would have to
+		// invent a meaning for it.
+		if s.Kind.Side() == model.SideFoes && s.Target == model.TargetSelf {
+			t.Errorf("%s is aimed at the enemy but targets the caster", s.ID)
+		}
+		// A revive has to be able to reach somebody other than the caster; a
+		// dead mage cannot cast anything.
+		if s.Kind == model.SpellRevive && s.Target == model.TargetSelf {
+			t.Errorf("%s revives only the caster, who by definition cannot cast it", s.ID)
+		}
+		if s.Cost < 0 || s.Level < 1 {
+			t.Errorf("%s costs %d at level %d", s.ID, s.Cost, s.Level)
+		}
+	}
+}
+
+// A lineage technique is the reason to hire somebody who is not entirely a
+// person, so each strain has to have one, and it must name a real lineage.
+func TestEveryLineageHasATechniqueNobodyElseCanLearn(t *testing.T) {
+	tables := load(t)
+	g := core.NewRNG(5)
+
+	byBlood := map[model.MonsterKind][]model.Spell{}
+	for _, s := range tables.Spells {
+		if s.Blood == "" {
+			continue
+		}
+		if _, ok := model.LineageOf(s.Blood); !ok {
+			t.Errorf("%s is gated on blood %q, which is not a lineage", s.ID, s.Blood)
+			continue
+		}
+		if s.Class != "" {
+			t.Errorf("%s is gated on both %s ancestry and the %s class, so almost nobody can learn it",
+				s.ID, s.Blood, s.Class)
+		}
+		byBlood[s.Blood] = append(byBlood[s.Blood], s)
+	}
+
+	for _, l := range model.Lineages {
+		if len(byBlood[l.Kind]) == 0 {
+			t.Errorf("nothing in the technique table is unique to a part-%s hireling", l.Kind)
+		}
+	}
+
+	// And a hero must never be able to learn one, whatever their class or level.
+	for _, class := range model.AllClasses {
+		hero := rules.BuildCharacter(g, class, 20)
+		for _, s := range tables.SpellsFor(hero) {
+			if s.Blood != "" {
+				t.Errorf("a level 20 %s can learn %s, which is meant to need %s ancestry",
+					class, s.ID, s.Blood)
+			}
+		}
+	}
+
+	// A hireling with the ancestry must actually get it in a usable timeframe.
+	for _, l := range model.Lineages {
+		mate := rules.Recruit(g, "Mate", model.ClassFighter, l.Kind, 5)
+		found := false
+		for _, s := range tables.SpellsFor(mate) {
+			if s.Blood == l.Kind {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("a level 5 part-%s hireling knows none of their own techniques", l.Kind)
+		}
+	}
+}
+
+// Standing somebody back up needs something in the world that does it, or the
+// rules for it are unreachable.
+func TestSomethingInTheWorldRevives(t *testing.T) {
+	tables := load(t)
+	items := 0
+	for _, it := range tables.Items {
+		if it.Kind == model.ItemRevive {
+			items++
+			if it.Power <= 0 {
+				t.Errorf("%s revives for %d", it.Name, it.Power)
+			}
+		}
+	}
+	if items == 0 {
+		t.Error("no item in the game stands a fallen party member back up")
+	}
+	spells := 0
+	for _, s := range tables.Spells {
+		if s.Kind == model.SpellRevive {
+			spells++
+		}
+	}
+	if spells == 0 {
+		t.Error("no technique in the game stands a fallen party member back up")
+	}
+}
+
+// A part-monster hireling leads with their ancestry, because they have learned
+// the alternative is having the conversation twice. Every lineage therefore
+// needs its own pitch, or a part-ooze opens with the generic line and the whole
+// point of the lineage never reaches the player.
+func TestEveryLineageHasSomethingToSay(t *testing.T) {
+	tables := load(t)
+	if len(tables.Text.RecruitPitch) == 0 {
+		t.Fatal("nobody has a hiring pitch at all")
+	}
+	for _, l := range model.Lineages {
+		lines := tables.Text.BloodPitch[string(l.Kind)]
+		if len(lines) == 0 {
+			t.Errorf("a part-%s hireling has nothing of their own to say", l.Kind)
+		}
+		for _, ln := range lines {
+			if ln == "" {
+				t.Errorf("a part-%s pitch is empty", l.Kind)
+			}
+		}
+	}
+	// The lines the party's two new endings need.
+	if len(tables.Text.Rescue) == 0 {
+		t.Error("nothing describes the company carrying a fallen hero to town")
+	}
+	if len(tables.Text.Revived) == 0 {
+		t.Error("nothing describes somebody being stood back up")
+	}
+	// {N} and {P} are substituted at runtime; a line missing its slot silently
+	// drops the name of whoever did the carrying.
+	for _, ln := range tables.Text.Rescue {
+		if !strings.Contains(ln, "{N}") || !strings.Contains(ln, "{P}") {
+			t.Errorf("rescue line is missing a substitution slot: %q", ln)
+		}
+	}
+	for _, ln := range tables.Text.Revived {
+		if !strings.Contains(ln, "{N}") {
+			t.Errorf("revive line never names anybody: %q", ln)
 		}
 	}
 }

@@ -1,8 +1,10 @@
 package save_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/slycrel/slycrel-rpg/internal/core"
@@ -112,21 +114,62 @@ func TestCorruptFogDoesNotFailTheLoad(t *testing.T) {
 	}
 }
 
-func TestVersionMismatchIsRefused(t *testing.T) {
-	root := t.TempDir()
+// writeAtVersion writes the sample save and then rewrites its version stamp, so
+// the test does not depend on the current one being any particular number.
+func writeAtVersion(t *testing.T, root string, version int) {
+	t.Helper()
 	if err := save.Write(root, "1", sample()); err != nil {
 		t.Fatal(err)
 	}
 	path := save.Path(root, "1")
-	data, _ := os.ReadFile(path)
-	// Bump the on-disk version to something this build does not know.
-	bumped := []byte(replaceFirst(string(data), `"version": 1`, `"version": 99`))
-	if err := os.WriteFile(path, bumped, 0o644); err != nil {
+	data, err := os.ReadFile(path)
+	if err != nil {
 		t.Fatal(err)
 	}
+	stamped := replaceFirst(string(data),
+		fmt.Sprintf(`"version": %d`, save.Version),
+		fmt.Sprintf(`"version": %d`, version))
+	if stamped == string(data) {
+		t.Fatalf("could not find the version stamp to rewrite in %s", path)
+	}
+	if err := os.WriteFile(path, []byte(stamped), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFutureVersionIsRefused(t *testing.T) {
+	root := t.TempDir()
+	writeAtVersion(t, root, save.Version+97)
 
 	if _, err := save.Load(root, "1"); err == nil {
-		t.Fatal("a v99 save loaded without complaint")
+		t.Fatal("a save from the future loaded without complaint")
+	}
+}
+
+// A save older than the format floor is a layout this build would misread, so
+// it must be refused as loudly as one from the future.
+func TestPrehistoricVersionIsRefused(t *testing.T) {
+	root := t.TempDir()
+	writeAtVersion(t, root, 0)
+
+	if _, err := save.Load(root, "1"); err == nil {
+		t.Fatal("a v0 save loaded without complaint")
+	}
+}
+
+// The party arrived in v2, and a v1 save is still a complete description of a
+// run without one. Refusing those would have thrown away every save anyone had
+// for no reason.
+func TestPreviousVersionStillLoads(t *testing.T) {
+	root := t.TempDir()
+	writeAtVersion(t, root, 1)
+
+	f, err := save.Load(root, "1")
+	if err != nil {
+		t.Fatalf("a v1 save should still load: %v", err)
+	}
+	if len(f.Allies) != 0 {
+		t.Fatalf("a v1 save described %d companions; it cannot describe any", len(f.Allies))
 	}
 }
 
@@ -196,4 +239,50 @@ func indexOf(s, sub string) int {
 		}
 	}
 	return -1
+}
+
+// A hireling is most of what is worth saving about a run that has one: their
+// ancestry decides which techniques they know and what their stat line means,
+// so losing it on load would quietly turn a part-demon into an ordinary person
+// with suspiciously good numbers.
+func TestCompanionsRoundTripWholesale(t *testing.T) {
+	root := t.TempDir()
+	f := sample()
+	f.Allies = []*model.Character{
+		{
+			Name: "Ilsabet Dun", Class: model.ClassMage, Ally: true, Cut: 12,
+			Blood: model.KindDemon, Level: 6, HP: 3, MaxHP: 28, Psyche: 4, MaxPsyche: 14,
+			Strength: 11, Dexterity: 5, Speed: 8,
+			Sprite: "hero/druid", Portrait: "portrait/female/f_08",
+			Weapon: model.Weapon{Name: "Actual Sword", Strike: 6},
+			Armor:  model.Armor{Name: "Studded Leather", Defense: 4},
+		},
+		{
+			Name: "Onager Flint", Class: model.ClassFighter, Ally: true, Cut: 9,
+			Level: 6, HP: 40, MaxHP: 40,
+		},
+	}
+	if err := save.Write(root, "1", f); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := save.Load(root, "1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Allies) != len(f.Allies) {
+		t.Fatalf("saved %d companions, read back %d", len(f.Allies), len(got.Allies))
+	}
+	for i := range f.Allies {
+		// reflect.DeepEqual rather than == : Character carries a bag slice, and
+		// comparing field by field is how a newly added field gets forgotten.
+		if !reflect.DeepEqual(got.Allies[i], f.Allies[i]) {
+			t.Errorf("companion %d came back different:\n got %+v\nwant %+v",
+				i, *got.Allies[i], *f.Allies[i])
+		}
+	}
+	// An ordinary hireling must not acquire an ancestry on the way through.
+	if got.Allies[1].Blood != "" {
+		t.Errorf("an ordinary hireling came back as part-%s", got.Allies[1].Blood)
+	}
 }

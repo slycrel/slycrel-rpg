@@ -340,5 +340,23 @@
     "count": 1,
     "desc": "Minted by a kingdom that no longer exists, and still worth more than yours.",
     "icon": "icon/loot/diamonds"
+  },
+  {
+    "name": "Smelling Salts, Militant",
+    "kind": "revive",
+    "power": 25,
+    "value": 55,
+    "count": 1,
+    "desc": "Brings a person round by making unconsciousness the worse option.",
+    "icon": "icon/loot/antidote"
+  },
+  {
+    "name": "Still-Warm Heart",
+    "kind": "revive",
+    "power": 60,
+    "value": 130,
+    "count": 1,
+    "desc": "Somebody's. It keeps beating, which is the useful part.",
+    "icon": "icon/loot/monster_heart"
   }
 ]

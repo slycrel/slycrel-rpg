@@ -48,10 +48,21 @@ type Game struct {
 	World  *world.Map
 	Seed   int64
 
+	// Allies are the hirelings walking behind the player, in the order they
+	// were taken on. The hero is not in here; Party puts them together.
+	Allies []*model.Character
+
 	// Where the player is on the overworld, and inside a location.
 	Walk      walker
 	Local     *world.LocalMap
 	LocalWalk walker
+
+	// follow and localFollow are the companions' walkers, parallel to Allies,
+	// one set per map. They are separate from Allies so a companion's position
+	// is never something that has to be saved: a line re-forms on the hero's
+	// tile whenever a map is entered.
+	follow      []walker
+	localFollow []walker
 
 	// Quests the player has taken on.
 	Quests quest.Log
@@ -113,6 +124,22 @@ func (g *Game) Replace(s Scene) {
 		return
 	}
 	g.stack[len(g.stack)-1] = s
+}
+
+// dropToOverworld unwinds the stack back to the continent view, discarding
+// whatever interiors and overlays were above it.
+//
+// It is how a run gets moved somewhere else against the player's wishes: the
+// rescue after a fatal fight has to put you in a town, and it cannot do that
+// while a dungeon you died in is still on the stack under the battle.
+func (g *Game) dropToOverworld() {
+	for len(g.stack) > 1 {
+		if _, ok := g.stack[len(g.stack)-1].(*overworldScene); ok {
+			return
+		}
+		g.stack = g.stack[:len(g.stack)-1]
+	}
+	g.Local = nil
 }
 
 // Top returns the active scene, or nil.
@@ -216,8 +243,21 @@ func (g *Game) drawStatusBar(dst *ebiten.Image, place, hint string) {
 	render.Text(dst, fmt.Sprintf("%d/%d", p.HP, p.MaxHP), 100, y+17, render.ColInkDim)
 	ui.Bar(dst, 152, y+18, 56, 6, p.PsycheFrac(), render.ColMagic)
 	render.Text(dst, fmt.Sprintf("%d SP", p.Psyche), 212, y+17, render.ColInkDim)
-	render.Text(dst, fmt.Sprintf("%d coins", p.Coins), 262, y+17, render.ColGold)
+	coins := fmt.Sprintf("%d coins", p.Coins)
+	render.Text(dst, coins, 262, y+17, render.ColGold)
 	render.TextRight(dst, hint, render.ScreenW-8, y+17, render.ColInkFaint)
+
+	// The company's health, as bare meters after the purse. No names: at this
+	// size they would not fit, and what you need off the walking-around screen
+	// is whether anyone is about to fall over, not which of them it is.
+	ax := 262 + render.TextW(coins) + 10
+	for _, a := range g.Allies {
+		if ax+24 > render.ScreenW-8-render.TextW(hint)-8 {
+			break
+		}
+		ui.Bar(dst, ax, y+18, 24, 6, a.HPFrac(), render.ColBlood)
+		ax += 28
+	}
 
 	g.Log.Draw(dst, 8, y+30, 1)
 }
@@ -383,18 +423,26 @@ func MenuDir() (core.Dir, bool) {
 	return core.DirDown, false
 }
 
-// heroSpriteKey maps a class and facing to a manifest key, falling back to the
-// idle sheet when a directional one is missing.
+// heroSpriteKey maps a character and facing to a manifest key, falling back to
+// the idle sheet when it is standing still.
+//
+// A companion carries its own sheet prefix in Sprite so that two thieves in one
+// party do not walk in matching outfits; anyone without one is drawn from their
+// class, which is every hero.
 func heroSpriteKey(c *model.Character, d core.Dir, moving bool) string {
-	class := "fighter"
-	switch c.Class {
-	case model.ClassThief:
-		class = "thief"
-	case model.ClassMage:
-		class = "mage"
+	base := c.Sprite
+	if base == "" {
+		class := "fighter"
+		switch c.Class {
+		case model.ClassThief:
+			class = "thief"
+		case model.ClassMage:
+			class = "mage"
+		}
+		base = "hero/" + class
 	}
 	if !moving {
-		return "hero/" + class + "/idle"
+		return base + "/idle"
 	}
-	return "hero/" + class + "/" + [...]string{"down", "left", "right", "up"}[d]
+	return base + "/" + [...]string{"down", "left", "right", "up"}[d]
 }

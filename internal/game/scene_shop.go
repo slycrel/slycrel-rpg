@@ -80,9 +80,12 @@ func (s *shopScene) refresh(g *Game) {
 				})
 			}
 		default: // apothecary
+			// The revive stock is the town's answer to somebody going down, and
+			// the reason the physician's counter is worth walking back to.
 			for _, name := range []string{
 				"Small Beer", "Field Poultice", "Physician's Draught",
 				"Bottled Nap", "Philosopher's Espresso", "Bitter Root", "Suspicious Pollen",
+				"Smelling Salts, Militant", "Still-Warm Heart",
 			} {
 				it, ok := g.Data.Item(name)
 				if !ok {

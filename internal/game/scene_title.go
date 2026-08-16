@@ -204,6 +204,12 @@ func (g *Game) startRun(name, epithet string, class model.Class) {
 		g.Player.AddItem(it)
 	}
 
+	// A new run starts alone. Without this, dying and starting again would hand
+	// the next character the previous one's hirelings, who would arrive already
+	// paid for and levelled to somebody else's career.
+	g.Allies = nil
+	g.follow, g.localFollow = nil, nil
+
 	g.World = world.Generate(g.Seed, g.Write)
 	g.Quests = quest.Log{}
 	g.Walk = walker{dur: 9}

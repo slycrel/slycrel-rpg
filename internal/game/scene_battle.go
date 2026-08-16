@@ -16,12 +16,13 @@ import (
 type battleMode int
 
 const (
-	modeRoot   battleMode = iota // Attack / Technique / Item / Flee
-	modeTarget                   // choosing which monster
-	modeSpell                    // choosing a technique
-	modeItem                     // choosing an item
-	modeBusy                     // playing back queued actions
-	modeDone                     // battle over, waiting for a key
+	modeRoot     battleMode = iota // Attack / Technique / Item / Flee
+	modeTarget                     // choosing which monster
+	modeAllyPick                   // choosing which of your own people
+	modeSpell                      // choosing a technique
+	modeItem                       // choosing an item
+	modeBusy                       // playing back queued actions
+	modeDone                       // battle over, waiting for a key
 )
 
 // stepTicks is how long each queued action's message stays up before the next
@@ -43,6 +44,12 @@ type battleScene struct {
 	mons  []*model.Monster
 	where string
 
+	// party is the company as it stood when the fight started, hero first.
+	// It is snapshotted rather than read from the game each round so that
+	// indices into the panel and the per-member state below stay valid; you
+	// cannot hire anybody halfway through a fight anyway.
+	party []*model.Character
+
 	log  *ui.Log
 	menu ui.Menu
 	mode battleMode
@@ -52,36 +59,56 @@ type battleScene struct {
 	target      int
 	pendingCast model.Spell
 	pendingItem int
+	// allyPick is the cursor over your own party, and pendingFall records
+	// whether it is picking somebody to help or somebody to stand back up —
+	// which are opposite lists, and choosing the wrong one is how a revive
+	// ends up offered to the only person who does not need it.
+	allyPick    int
+	pendingFall bool
 
 	queue []func(*Game)
 	timer int
 
-	cam      render.Camera
-	floaters []floater
-	hurt     []int // per-monster hit flash timer
-	heroHurt int
+	cam       render.Camera
+	floaters  []floater
+	hurt      []int // per-monster hit flash timer
+	partyHurt map[*model.Character]int
 
-	defending bool
+	// guarding is who braced this round. Per member rather than a single flag,
+	// because a companion deciding to cover up must not also halve what the
+	// hero takes.
+	guarding map[*model.Character]bool
 	// weakened tracks temporary offense reductions, keyed by monster index.
 	weakened []int
 	stunned  []bool
-	// buffs applied by items, cleared when the battle ends.
+	// buffs applied by items to the hero. Items come out of the hero's pack and
+	// can now be handed to anyone, so these are the hero's own and blessed
+	// carries everybody else's.
 	buffStr, buffDex int
+	// blessed is extra offense a party member is carrying for this fight, from
+	// a technique rather than from a bottle.
+	blessed map[*model.Character]int
 
-	result   int // 0 running, 1 victory, 2 defeat, 3 fled
+	// result is 0 running, 1 victory, 2 defeat, 3 fled, 4 the hero went down
+	// but the company did not.
+	result   int
 	round    int
 	introRun bool
 }
 
 func newBattleScene(g *Game, mons []*model.Monster, where string) *battleScene {
 	b := &battleScene{
-		under:    g.Top(),
-		mons:     mons,
-		where:    where,
-		log:      ui.NewLog(60),
-		hurt:     make([]int, len(mons)),
-		weakened: make([]int, len(mons)),
-		stunned:  make([]bool, len(mons)),
+		under:     g.Top(),
+		mons:      mons,
+		where:     where,
+		party:     g.Party(),
+		log:       ui.NewLog(60),
+		hurt:      make([]int, len(mons)),
+		weakened:  make([]int, len(mons)),
+		stunned:   make([]bool, len(mons)),
+		partyHurt: map[*model.Character]int{},
+		guarding:  map[*model.Character]bool{},
+		blessed:   map[*model.Character]int{},
 	}
 	b.cam = render.Camera{}
 	b.setRootMenu(g)
@@ -96,6 +123,45 @@ func newBattleScene(g *Game, mons []*model.Monster, where string) *battleScene {
 		b.log.Add("%s", t)
 	}
 	return b
+}
+
+// partyFrac is the company's health as one number, for the between-rounds
+// narration. It pools hit points across everyone including the fallen, so "you
+// are both nearly finished" is a read on the party rather than on the hero
+// alone — a hero at full health flanked by two people on the floor is not
+// winning, and the line should not say so.
+func (b *battleScene) partyFrac() float64 {
+	var hp, max int
+	for _, c := range b.party {
+		hp += core.Max(0, c.HP)
+		max += c.MaxHP
+	}
+	if max <= 0 {
+		return 0
+	}
+	return core.ClampF(float64(hp)/float64(max), 0, 1)
+}
+
+// anyoneDown reports whether the company has somebody on the floor, which is
+// what makes a revive worth offering.
+func (b *battleScene) anyoneDown() bool {
+	for _, c := range b.party {
+		if !c.Alive() {
+			return true
+		}
+	}
+	return false
+}
+
+// livingParty returns the members of this fight's company still standing.
+func (b *battleScene) livingParty() []*model.Character {
+	var out []*model.Character
+	for _, c := range b.party {
+		if c.Alive() {
+			out = append(out, c)
+		}
+	}
+	return out
 }
 
 func (b *battleScene) setRootMenu(g *Game) {
@@ -138,8 +204,10 @@ func (b *battleScene) Update(g *Game) error {
 			b.hurt[i]--
 		}
 	}
-	if b.heroHurt > 0 {
-		b.heroHurt--
+	for c, n := range b.partyHurt {
+		if n > 0 {
+			b.partyHurt[c] = n - 1
+		}
 	}
 	for i := 0; i < len(b.floaters); {
 		b.floaters[i].life--
@@ -181,11 +249,11 @@ func (b *battleScene) updateBusy(g *Game) {
 	if b.checkEnd(g) {
 		return
 	}
-	b.defending = false
+	clear(b.guarding)
 	b.round++
 	if b.round%3 == 0 {
 		if i := b.firstLiving(); i >= 0 {
-			d := rules.GetDisposition(g.Player.HPFrac(), b.mons[i].HPFrac())
+			d := rules.GetDisposition(b.partyFrac(), b.mons[i].HPFrac())
 			if line := g.Write.DispositionLine(g.RNG, d, b.mons[i].Name); line != "" {
 				b.log.AddColor(render.ColInkDim, "%s", line)
 			}
@@ -209,6 +277,20 @@ func (b *battleScene) updateMenus(g *Game) {
 					g.Sound.Play("ui/move")
 				}
 			}
+		case modeAllyPick:
+			// The party is a vertical list, so this cursor runs up and down
+			// where the monster cursor runs left and right.
+			l := b.allyChoices()
+			if len(l) > 0 {
+				switch d {
+				case core.DirUp:
+					b.allyPick = prevIn(l, b.allyPick)
+					g.Sound.Play("ui/move")
+				case core.DirDown:
+					b.allyPick = nextIn(l, b.allyPick)
+					g.Sound.Play("ui/move")
+				}
+			}
 		default:
 			switch d {
 			case core.DirDown:
@@ -225,7 +307,7 @@ func (b *battleScene) updateMenus(g *Game) {
 		switch b.mode {
 		case modeSpell, modeItem:
 			b.setRootMenu(g)
-		case modeTarget:
+		case modeTarget, modeAllyPick:
 			if b.back == modeRoot {
 				b.setRootMenu(g)
 			} else {
@@ -247,6 +329,8 @@ func (b *battleScene) updateMenus(g *Game) {
 		b.chooseItem(g)
 	case modeTarget:
 		b.confirmTarget(g)
+	case modeAllyPick:
+		b.confirmAlly(g)
 	}
 }
 
@@ -256,11 +340,17 @@ func (b *battleScene) chooseRoot(g *Game) {
 		b.beginTargeting(modeRoot)
 	case 1: // Technique
 		spells := g.Data.SpellsFor(g.Player)
+		fallen := b.anyoneDown()
 		items := make([]ui.MenuItem, 0, len(spells)+1)
 		for _, s := range spells {
+			// Greying out a revive while everybody is upright is the same
+			// courtesy as greying out a technique you cannot pay for: the menu
+			// should not offer a move that does nothing.
+			off := s.Cost > g.Player.Psyche ||
+				(s.Kind == model.SpellRevive && !fallen)
 			items = append(items, ui.MenuItem{
 				Label: s.Name, Detail: fmt.Sprintf("%d SP", s.Cost), Icon: s.Icon,
-				Disabled: s.Cost > g.Player.Psyche, Data: s,
+				Disabled: off, Data: s,
 			})
 		}
 		if len(items) == 0 {
@@ -272,11 +362,14 @@ func (b *battleScene) chooseRoot(g *Game) {
 		b.menu.Visible = 3
 		b.mode = modeSpell
 	case 2: // Item
+		fallen := b.anyoneDown()
 		items := make([]ui.MenuItem, 0, len(g.Player.Bag))
 		for i, it := range g.Player.Bag {
+			off := it.Kind == model.ItemTrinket ||
+				(it.Kind.WantsTheFallen() && !fallen)
 			items = append(items, ui.MenuItem{
 				Label: it.Name, Detail: fmt.Sprintf("x%d", it.Count), Icon: it.Icon,
-				Disabled: it.Kind == model.ItemTrinket, Data: i,
+				Disabled: off, Data: i,
 			})
 		}
 		if len(items) == 0 {
@@ -288,7 +381,7 @@ func (b *battleScene) chooseRoot(g *Game) {
 		b.mode = modeItem
 	case 3: // Defend
 		b.runRound(g, func(g *Game) {
-			b.defending = true
+			b.guarding[g.Player] = true
 			b.log.Add("%s sets their feet and waits for it.", g.Player.Name)
 		})
 	case 4: // Flee
@@ -296,6 +389,11 @@ func (b *battleScene) chooseRoot(g *Game) {
 	}
 }
 
+// chooseSpell routes a technique to whichever cursor it needs.
+//
+// A technique aimed at your own side asks for a party member; one aimed at the
+// monsters asks for a monster; one that hits everybody, or that only ever
+// applies to the caster, asks for nothing and goes straight off.
 func (b *battleScene) chooseSpell(g *Game) {
 	it, ok := b.menu.Selected()
 	if !ok || it.Disabled {
@@ -303,11 +401,18 @@ func (b *battleScene) chooseSpell(g *Game) {
 	}
 	s := it.Data.(model.Spell)
 	b.pendingCast = s
+
 	if s.Target == model.TargetOne {
+		if s.Kind.Side() == model.SideParty {
+			b.beginAllyPick(g, modeSpell, s.Kind == model.SpellRevive)
+			return
+		}
 		b.beginTargeting(modeSpell)
 		return
 	}
-	b.runRound(g, func(g *Game) { b.castSpell(g, s, -1) })
+	b.runRound(g, func(g *Game) {
+		b.castSpell(g, cast{by: g.Player, spell: s, foe: -1, ally: g.Player})
+	})
 }
 
 func (b *battleScene) chooseItem(g *Game) {
@@ -316,8 +421,90 @@ func (b *battleScene) chooseItem(g *Game) {
 		return
 	}
 	idx := it.Data.(int)
+	if idx >= len(g.Player.Bag) {
+		return
+	}
 	b.pendingItem = idx
-	b.runRound(g, func(g *Game) { b.useItem(g, idx) })
+
+	// Anything applied to a person needs one chosen once there is more than
+	// one of you. Handing a companion a potion is most of why the party has a
+	// pack at all.
+	if kind := g.Player.Bag[idx].Kind; kind.UsedOnSomeone() {
+		b.beginAllyPick(g, modeItem, kind.WantsTheFallen())
+		return
+	}
+	b.runRound(g, func(g *Game) { b.useItem(g, idx, g.Player) })
+}
+
+// allyChoices lists the party indices the ally cursor may land on: the fallen
+// when something is being used to stand somebody up, everyone still standing
+// otherwise.
+func (b *battleScene) allyChoices() []int {
+	var out []int
+	for i, c := range b.party {
+		if c.Alive() != b.pendingFall {
+			out = append(out, i)
+		}
+	}
+	return out
+}
+
+// beginAllyPick opens the cursor over your own party, or skips it when there is
+// only one person it could possibly mean.
+//
+// Skipping matters more than it looks: a solo hero would otherwise have to
+// confirm "yes, me" every time they drank a potion, and the party feature would
+// have made the common case worse.
+func (b *battleScene) beginAllyPick(g *Game, from battleMode, fallen bool) {
+	b.back = from
+	b.pendingFall = fallen
+
+	choices := b.allyChoices()
+	switch len(choices) {
+	case 0:
+		// Nothing to aim it at — a revive with nobody down. Say so rather than
+		// silently eating the turn.
+		g.Sound.Play("ui/deny")
+		b.log.AddColor(render.ColInkDim, "Nobody here needs that yet.")
+		b.setRootMenu(g)
+		return
+	case 1:
+		b.allyPick = choices[0]
+		b.commitAlly(g)
+		return
+	}
+	if !contains(choices, b.allyPick) {
+		b.allyPick = choices[0]
+	}
+	b.mode = modeAllyPick
+}
+
+func (b *battleScene) confirmAlly(g *Game) { b.commitAlly(g) }
+
+// commitAlly turns the chosen party member into a queued action.
+func (b *battleScene) commitAlly(g *Game) {
+	if b.allyPick < 0 || b.allyPick >= len(b.party) {
+		return
+	}
+	target := b.party[b.allyPick]
+	if b.back == modeItem {
+		idx := b.pendingItem
+		b.runRound(g, func(g *Game) { b.useItem(g, idx, target) })
+		return
+	}
+	s := b.pendingCast
+	b.runRound(g, func(g *Game) {
+		b.castSpell(g, cast{by: g.Player, spell: s, foe: -1, ally: target})
+	})
+}
+
+func contains(list []int, v int) bool {
+	for _, x := range list {
+		if x == v {
+			return true
+		}
+	}
+	return false
 }
 
 func (b *battleScene) beginTargeting(from battleMode) {
@@ -341,14 +528,31 @@ func (b *battleScene) confirmTarget(g *Game) {
 	tgt := b.target
 	if b.back == modeSpell {
 		s := b.pendingCast
-		b.runRound(g, func(g *Game) { b.castSpell(g, s, tgt) })
+		b.runRound(g, func(g *Game) {
+			b.castSpell(g, cast{by: g.Player, spell: s, foe: tgt})
+		})
 		return
 	}
-	b.runRound(g, func(g *Game) { b.playerAttack(g, tgt) })
+	b.runRound(g, func(g *Game) { b.playerAttack(g, g.Player, tgt) })
 }
 
-// runRound queues the player's action and every monster's response, ordered by
-// initiative, then hands the scene over to the playback loop.
+// cast is one queued casting: who is doing it, what, and at whom. It exists so
+// that adding a second target side did not turn castSpell into a function with
+// two nullable index parameters that callers had to remember the rules for.
+type cast struct {
+	by    *model.Character
+	spell model.Spell
+	foe   int              // index into b.mons, or -1
+	ally  *model.Character // party-side target, or nil
+}
+
+// runRound queues the whole round — the player's chosen action, each
+// companion's own decision, and every monster's response — then hands the scene
+// over to the playback loop.
+//
+// Initiative is rolled per party member against the fastest monster, so a quick
+// thief can act before the pack and a mage in plate can end up going last. For a
+// solo hero this is exactly the single roll it always was.
 func (b *battleScene) runRound(g *Game, playerAction func(*Game)) {
 	b.menu.Visible = 0
 	fastest := 0
@@ -357,7 +561,32 @@ func (b *battleScene) runRound(g *Game, playerAction func(*Game)) {
 			fastest = s
 		}
 	}
-	playerFirst := rules.Initiative(g.RNG, g.Player.Speed, fastest)
+
+	var before, after []func(*Game)
+	for _, c := range b.livingParty() {
+		member := c
+		act := playerAction
+		if member != g.Player {
+			act = func(g *Game) { b.allyTurn(g, member) }
+		}
+		// Anybody who loses initiative may be dead by the time their step comes
+		// up, since the monsters go in between. Without this the hero could be
+		// killed during the monster phase and still swing, drink a potion, or
+		// flee afterwards — the companions were already guarded inside
+		// allyTurn, and the hero was the one who was not.
+		queued := func(g *Game) {
+			if !member.Alive() || b.result != 0 {
+				b.timer = 0
+				return
+			}
+			act(g)
+		}
+		if rules.Initiative(g.RNG, member.Speed, fastest) {
+			before = append(before, queued)
+		} else {
+			after = append(after, queued)
+		}
+	}
 
 	var monSteps []func(*Game)
 	for _, i := range b.living() {
@@ -366,18 +595,45 @@ func (b *battleScene) runRound(g *Game, playerAction func(*Game)) {
 	}
 
 	b.queue = b.queue[:0]
-	if playerFirst {
-		b.queue = append(b.queue, playerAction)
-		b.queue = append(b.queue, monSteps...)
-	} else {
-		b.queue = append(b.queue, monSteps...)
-		b.queue = append(b.queue, playerAction)
-	}
+	b.queue = append(b.queue, before...)
+	b.queue = append(b.queue, monSteps...)
+	b.queue = append(b.queue, after...)
 	b.mode = modeBusy
 	b.timer = 0
 }
 
-func (b *battleScene) playerAttack(g *Game, idx int) {
+// allyTurn plays one companion's move. They are never commanded: the policy in
+// rules picks, and the screen narrates it.
+func (b *battleScene) allyTurn(g *Game, c *model.Character) {
+	move := rules.ChooseAllyMove(g.RNG, c, g.Data.SpellsFor(c), b.party)
+	switch move.Kind {
+	case rules.AllyCast:
+		b.castSpell(g, cast{
+			by: c, spell: move.Spell, foe: b.weakestLiving(), ally: move.Ally,
+		})
+	case rules.AllyGuard:
+		b.guarding[c] = true
+		b.log.AddColor(render.ColInkDim, "%s gets behind %s and stays there.", c.Name, c.Armor.Name)
+	default:
+		b.playerAttack(g, c, b.weakestLiving())
+	}
+}
+
+// weakestLiving is the monster a companion goes for: the one closest to
+// falling over. Finishing something off removes an attacker from the round,
+// which is worth more than spreading damage around evenly.
+func (b *battleScene) weakestLiving() int {
+	best := -1
+	for _, i := range b.living() {
+		if best < 0 || b.mons[i].HP < b.mons[best].HP {
+			best = i
+		}
+	}
+	return best
+}
+
+// playerAttack resolves a weapon swing by any party member, not only the hero.
+func (b *battleScene) playerAttack(g *Game, p *model.Character, idx int) {
 	if idx < 0 || idx >= len(b.mons) || b.mons[idx].Dead {
 		if l := b.firstLiving(); l >= 0 {
 			idx = l
@@ -386,9 +642,9 @@ func (b *battleScene) playerAttack(g *Game, idx int) {
 		}
 	}
 	m := b.mons[idx]
-	p := g.Player
+	str, dex := b.buffsFor(g, p)
 
-	sw := rules.PlayerAttack(g.RNG, p, m, b.buffStr, b.buffDex)
+	sw := rules.PlayerAttack(g.RNG, p, m, str, dex)
 	if sw.Miss {
 		g.Sound.Play("fight/miss")
 		b.log.Add("%s", g.Write.Miss(g.RNG, p.Name, m.Name))
@@ -406,21 +662,120 @@ func (b *battleScene) playerAttack(g *Game, idx int) {
 	b.log.Add("%s", g.Write.Hit(g.RNG, p.Name, p.Weapon.Verb, m.Name, dmg, crit))
 }
 
-func (b *battleScene) castSpell(g *Game, s model.Spell, idx int) {
-	p := g.Player
+// buffsFor returns the temporary bonuses in force for a member: the hero's own
+// bottles, plus whatever blessings anybody is carrying.
+func (b *battleScene) buffsFor(g *Game, c *model.Character) (str, dex int) {
+	str = b.blessed[c]
+	if c == g.Player {
+		str += b.buffStr
+		dex = b.buffDex
+	}
+	return str, dex
+}
+
+// castSpell resolves one technique. Which side it lands on comes from the
+// kind, and how many of that side from the target — so a heal can never
+// accidentally be aimed at a monster and a stun can never be aimed at a friend.
+func (b *battleScene) castSpell(g *Game, c cast) {
+	p, s := c.by, c.spell
 	if s.Cost > p.Psyche {
 		b.log.Add("%s reaches for it and finds nothing there.", p.Name)
 		return
 	}
 	p.Psyche -= s.Cost
-	if s.Kind == model.SpellHeal {
+	switch s.Kind {
+	case model.SpellHeal, model.SpellRevive:
 		g.Sound.Play("fight/heal")
-	} else {
+	default:
 		g.Sound.Play("fight/spell")
 	}
 	if s.Cast != "" {
 		b.log.AddColor(render.ColMagic, "%s", fmt.Sprintf(s.Cast, p.Name))
 	}
+
+	if s.Kind.Side() == model.SideParty {
+		b.castOnParty(g, c)
+		return
+	}
+	b.castOnFoes(g, c)
+}
+
+// castOnParty applies the techniques that help: heals, blessings, and standing
+// somebody back up.
+func (b *battleScene) castOnParty(g *Game, c cast) {
+	p, s := c.by, c.spell
+
+	targets := []*model.Character{c.ally}
+	switch {
+	case s.Target == model.TargetSelf:
+		targets = []*model.Character{p}
+	case s.Target == model.TargetAll:
+		// A blessing over the whole party reaches everyone upright; a revive
+		// over the whole party reaches everyone who is not.
+		targets = nil
+		for _, m := range b.party {
+			if m.Alive() != (s.Kind == model.SpellRevive) {
+				targets = append(targets, m)
+			}
+		}
+	case c.ally == nil:
+		targets = []*model.Character{p}
+	}
+
+	for _, t := range targets {
+		if t == nil {
+			continue
+		}
+		fx, fy := b.memberFloat(t)
+		switch s.Kind {
+		case model.SpellHeal:
+			if !t.Alive() {
+				b.log.Add("%s is past the point where that would help.", t.Name)
+				continue
+			}
+			healed := t.Heal(rules.SpellDamage(g.RNG, p, s))
+			b.log.AddColor(render.ColHeal, "%s closes up %d worth of %s.",
+				p.Name, healed, damageOn(p, t))
+			b.addFloater(fx, fy, fmt.Sprintf("+%d", healed), render.ColHeal)
+		case model.SpellBless:
+			if !t.Alive() {
+				b.log.Add("%s is in no condition to be encouraged.", t.Name)
+				continue
+			}
+			b.blessed[t] += s.Power
+			b.log.AddColor(render.ColMagic, "%s hits harder for the rest of this.", t.Name)
+		case model.SpellRevive:
+			if t.Alive() {
+				b.log.Add("%s is already standing, and says so.", t.Name)
+				continue
+			}
+			b.standUp(g, t, rules.ReviveAmount(t, s.Power))
+			b.addFloater(fx, fy, fmt.Sprintf("+%d", t.HP), render.ColHeal)
+		}
+	}
+}
+
+// damageOn phrases whose injuries are being closed, so a self-heal reads as
+// "their own" rather than repeating the caster's name twice in one sentence.
+func damageOn(caster, target *model.Character) string {
+	if caster == target {
+		return "their own damage"
+	}
+	return target.Name + "'s damage"
+}
+
+// standUp puts a fallen party member back on their feet.
+func (b *battleScene) standUp(g *Game, c *model.Character, hp int) {
+	c.HP = core.Clamp(hp, 1, c.MaxHP)
+	b.partyHurt[c] = 0
+	g.Sound.Play("fight/levelup")
+	b.log.AddColor(render.ColHeal, "%s", g.Write.Revived(g.RNG, c.Name))
+}
+
+// castOnFoes applies the techniques that do not.
+func (b *battleScene) castOnFoes(g *Game, c cast) {
+	p, s, idx := c.by, c.spell, c.foe
+	hx, hy := b.memberFloat(p)
 
 	apply := func(i int) {
 		m := b.mons[i]
@@ -434,7 +789,7 @@ func (b *battleScene) castSpell(g *Game, s model.Spell, idx int) {
 			b.damageMonster(g, i, d)
 			healed := p.Heal(d / 2)
 			b.log.Add("%s takes %d; %s recovers %d of it.", m.Name, d, p.Name, healed)
-			b.addFloater(heroSlotX(), 200, fmt.Sprintf("+%d", healed), render.ColHeal)
+			b.addFloater(hx, hy, fmt.Sprintf("+%d", healed), render.ColHeal)
 		case model.SpellWeaken:
 			b.weakened[i] += s.Power
 			b.log.Add("%s hits noticeably softer now.", m.Name)
@@ -444,54 +799,82 @@ func (b *battleScene) castSpell(g *Game, s model.Spell, idx int) {
 		}
 	}
 
-	switch s.Kind {
-	case model.SpellHeal:
-		healed := p.Heal(rules.SpellDamage(g.RNG, p, s))
-		b.log.AddColor(render.ColHeal, "%s closes up %d worth of damage.", p.Name, healed)
-		b.addFloater(heroSlotX(), 200, fmt.Sprintf("+%d", healed), render.ColHeal)
-	default:
-		if s.Target == model.TargetAll {
-			for _, i := range b.living() {
-				apply(i)
-			}
-			b.cam.Shake(2)
-		} else {
-			if idx < 0 || idx >= len(b.mons) || b.mons[idx].Dead {
-				idx = b.firstLiving()
-			}
-			if idx >= 0 {
-				apply(idx)
-			}
+	if s.Target == model.TargetAll {
+		for _, i := range b.living() {
+			apply(i)
 		}
+		b.cam.Shake(2)
+		return
+	}
+	if idx < 0 || idx >= len(b.mons) || b.mons[idx].Dead {
+		idx = b.firstLiving()
+	}
+	if idx >= 0 {
+		apply(idx)
 	}
 }
 
-func (b *battleScene) useItem(g *Game, idx int) {
-	p := g.Player
-	it, ok := p.TakeItem(idx)
+// useItem spends one item out of the hero's pack on whoever it was aimed at.
+// The pack is always the hero's; the target need not be.
+func (b *battleScene) useItem(g *Game, idx int, t *model.Character) {
+	it, ok := g.Player.TakeItem(idx)
 	if !ok {
 		return
 	}
+	if t == nil {
+		t = g.Player
+	}
+	// You aim at somebody standing and the monsters get to them first. Only a
+	// revive works on the fallen; without this, Character.Heal would clamp a
+	// corpse up from zero and every healing potion in the game would quietly be
+	// a resurrection, which is the one thing the revive items are for.
+	if !t.Alive() && !it.Kind.WantsTheFallen() {
+		b.log.Add("%s is past the point where the %s would help.", t.Name, it.Name)
+		return
+	}
+
+	who := "%s downs the %s"
+	if t != g.Player {
+		who = "%s is handed the %s"
+	}
+	fx, fy := b.memberFloat(t)
+
 	switch it.Kind {
 	case model.ItemHeal:
-		healed := p.Heal(it.Power)
+		healed := t.Heal(it.Power)
 		g.Sound.Play("fight/heal")
-		b.log.AddColor(render.ColHeal, "%s downs the %s. %d back.", p.Name, it.Name, healed)
-		b.addFloater(heroSlotX(), 200, fmt.Sprintf("+%d", healed), render.ColHeal)
+		b.log.AddColor(render.ColHeal, who+". %d back.", t.Name, it.Name, healed)
+		b.addFloater(fx, fy, fmt.Sprintf("+%d", healed), render.ColHeal)
 	case model.ItemPsyche:
-		before := p.Psyche
-		p.Psyche = core.Clamp(p.Psyche+it.Power, 0, p.MaxPsyche)
-		b.log.AddColor(render.ColMagic, "%s recovers %d psyche.", p.Name, p.Psyche-before)
-	case model.ItemBuff:
-		if it.Name == "Suspicious Pollen" {
-			b.buffDex += it.Power
-			b.log.Add("%s feels quicker, and slightly wrong about it.", p.Name)
-		} else {
-			b.buffStr += it.Power
-			b.log.Add("%s feels stronger and considerably angrier.", p.Name)
+		before := t.Psyche
+		t.Psyche = core.Clamp(t.Psyche+it.Power, 0, t.MaxPsyche)
+		b.log.AddColor(render.ColMagic, "%s recovers %d psyche.", t.Name, t.Psyche-before)
+	case model.ItemRevive:
+		if t.Alive() {
+			b.log.Add("%s is upright, and finds the gesture insulting.", t.Name)
+			return
 		}
+		b.standUp(g, t, rules.ReviveAmount(t, it.Power))
+		b.addFloater(fx, fy, fmt.Sprintf("+%d", t.HP), render.ColHeal)
+	case model.ItemBuff:
+		// A bottle handed to somebody else has to affect them, not the hero
+		// who was carrying it. The hero's own bonuses stay in buffStr/buffDex
+		// because they also cover dexterity, which nothing else grants.
+		if it.Name == "Suspicious Pollen" {
+			if t == g.Player {
+				b.buffDex += it.Power
+			}
+			b.log.Add("%s feels quicker, and slightly wrong about it.", t.Name)
+			return
+		}
+		if t == g.Player {
+			b.buffStr += it.Power
+		} else {
+			b.blessed[t] += it.Power
+		}
+		b.log.Add("%s feels stronger and considerably angrier.", t.Name)
 	default:
-		b.log.Add("%s waves the %s at the problem. It does not help.", p.Name, it.Name)
+		b.log.Add("%s waves the %s at the problem. It does not help.", g.Player.Name, it.Name)
 	}
 }
 
@@ -502,7 +885,16 @@ func (b *battleScene) attemptFlee(g *Game) {
 			fastest = s
 		}
 	}
-	if g.RNG.Chance(rules.FleeChance(g.Player.Speed, fastest)) {
+	// A company runs at the pace of whoever is slowest. Rolling on the hero's
+	// speed would mean a fast thief could outrun a wolf while dragging two
+	// people who plainly cannot.
+	slowest := g.Player.Speed
+	for _, c := range b.livingParty() {
+		if c.Speed < slowest {
+			slowest = c.Speed
+		}
+	}
+	if g.RNG.Chance(rules.FleeChance(slowest, fastest)) {
 		b.result = 3
 		g.Sound.Play("fight/flee")
 		b.log.AddColor(render.ColGold, "%s leaves with what dignity remains. Which is none.", g.Player.Name)
@@ -535,12 +927,22 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 		return
 	}
 
-	dmg := rules.MonsterDamage(g.RNG, g.Player, m)
+	// A monster swings at whoever is in front of it, which is anyone still
+	// upright. Spreading the incoming damage across the party is most of what
+	// makes a companion worth the fee: they are an extra sword and, more
+	// usefully, an extra place for a claw to land.
+	living := b.livingParty()
+	if len(living) == 0 {
+		return
+	}
+	tgt := core.Pick(g.RNG, living)
+
+	dmg := rules.MonsterDamage(g.RNG, tgt, m)
 	dmg -= b.weakened[idx]
 	if dmg < 0 {
 		dmg = 0
 	}
-	if b.defending {
+	if b.guarding[tgt] {
 		dmg = rules.Defending(dmg)
 	}
 
@@ -548,16 +950,25 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 	g.Sound.Play("fight/monster")
 	if dmg == 0 {
 		b.log.Add("%s %s at %s with %s. %s %s it.",
-			m.Name, verb, g.Player.Name, with, g.Player.Armor.Name, g.Player.Armor.Verb)
+			m.Name, verb, tgt.Name, with, tgt.Armor.Name, tgt.Armor.Verb)
 		return
 	}
-	g.Player.HP = core.Max(0, g.Player.HP-dmg)
+	tgt.HP = core.Max(0, tgt.HP-dmg)
 	g.Sound.Play("fight/hurt")
-	b.heroHurt = 14
+	b.partyHurt[tgt] = 14
 	b.cam.Shake(float64(dmg) / 6)
-	b.addFloater(heroSlotX(), 200, fmt.Sprintf("-%d", dmg), render.ColBlood)
+	fx, fy := b.memberFloat(tgt)
+	b.addFloater(fx, fy, fmt.Sprintf("-%d", dmg), render.ColBlood)
 	b.log.AddColor(render.ColBlood, "%s %s %s with %s for %d.",
-		m.Name, verb, g.Player.Name, with, dmg)
+		m.Name, verb, tgt.Name, with, dmg)
+
+	// A companion who runs out of hit points is out of the fight, not dead.
+	// Permanently losing someone you paid for would make hiring anyone a bet
+	// rather than a purchase, and nobody would take it twice.
+	if !tgt.Alive() && tgt != g.Player {
+		g.Sound.Play("fight/die")
+		b.log.AddColor(render.ColBlood, "%s", g.Write.AllyDown(g.RNG, tgt.Name))
+	}
 }
 
 func (b *battleScene) damageMonster(g *Game, idx, dmg int) {
@@ -582,8 +993,16 @@ func (b *battleScene) checkEnd(g *Game) bool {
 	if b.result != 0 {
 		return true
 	}
+	// The hero falling ends the fight either way. What it does to the run
+	// depends on whether anybody is left to do something about it: with a
+	// companion still standing you get carried to a town and charged for it,
+	// and alone it is still the end. That is the whole argument for a party —
+	// not that they hit things, but that somebody is there to pick you up.
 	if g.Player.HP <= 0 {
 		b.result = 2
+		if len(b.livingParty()) > 0 {
+			b.result = 4
+		}
 		b.finish(g)
 		return true
 	}
@@ -610,11 +1029,34 @@ func (b *battleScene) awardSpoils(g *Game) {
 
 	xp := rules.XPAward(killed)
 	coins := rules.CoinAward(g.RNG, killed)
-	p.TotalXP += xp
-	p.SpendXP += xp
-	p.Coins += coins
+
+	// Experience is not divided. Every member banks the full award and levels
+	// on their own curve, which is what keeps a hireling taken on at level 6
+	// still useful at level 12 without any catch-up machinery — and it leaves
+	// the hero's progression exactly where the balance pass tuned it, because
+	// splitting XP would silently re-tune the whole curve.
+	//
+	// The party is paid for out of the purse instead: each companion skims a
+	// standing cut of every haul, which is a cost you feel at the shop counter
+	// rather than one that slows down levelling.
+	var skimmed int64
+	for _, c := range b.party {
+		c.TotalXP += xp
+		if c == p {
+			c.SpendXP += xp
+			continue
+		}
+		skimmed += rules.Skim(coins, c.Cut)
+	}
+
+	p.Coins += coins - skimmed
 	g.Sound.Play("world/coins")
-	b.log.AddColor(render.ColGold, "%d experience. %d coins.", xp, coins)
+	if skimmed > 0 {
+		b.log.AddColor(render.ColGold, "%d experience. %d coins, less %d in cuts.",
+			xp, coins, skimmed)
+	} else {
+		b.log.AddColor(render.ColGold, "%d experience. %d coins.", xp, coins)
+	}
 
 	for _, m := range killed {
 		for name, n := range rules.RollLoot(g.RNG, m.Def.Loot) {
@@ -629,10 +1071,32 @@ func (b *battleScene) awardSpoils(g *Game) {
 		}
 	}
 
+	// Level-ups, hero loudly and companions in one line, so a three-strong
+	// party does not bury the transcript in congratulations.
 	for rules.PendingLevels(p) > 0 {
 		rules.LevelUp(g.RNG, p)
 		g.Sound.Play("fight/levelup")
 		b.log.AddColor(render.ColHeal, "%s", g.Write.LevelUpLine(g.RNG, p.Level))
+	}
+	for _, c := range b.party {
+		if c == p || rules.PendingLevels(c) == 0 {
+			continue
+		}
+		for rules.PendingLevels(c) > 0 {
+			rules.LevelUp(g.RNG, c)
+		}
+		// They re-arm themselves out of the cut they have been taking, which is
+		// what the cut is for. Without this a companion taken on early would
+		// still be swinging a table leg twenty levels later, and the standing
+		// charge on every haul would buy the player nothing at all.
+		was := c.Weapon.Name
+		g.Data.Equip(c)
+		if c.Weapon.Name != was {
+			b.log.AddColor(render.ColHeal, "%s is now level %d, and has spent their cut on a %s.",
+				c.Name, c.Level, c.Weapon.Name)
+			continue
+		}
+		b.log.AddColor(render.ColHeal, "%s is now level %d, and mentions it.", c.Name, c.Level)
 	}
 	g.Quests.SyncFetch(p.Bag)
 }
@@ -654,19 +1118,44 @@ func (b *battleScene) finish(g *Game) {
 		b.log.AddColor(render.ColBlood, "You die. Press Z.")
 	case 3:
 		b.log.AddColor(render.ColGold, "Escaped. Press Z.")
+	case 4:
+		g.Sound.Play("fight/defeat")
+		b.log.AddColor(render.ColBlood, "%s goes down. Somebody is still up. Press Z.", g.Player.Name)
+	}
+	// Anyone who fell gets up once the fighting stops — including the hero,
+	// whose company is about to carry him somewhere with a roof.
+	if b.result != 2 {
+		b.reviveFallen(g)
 	}
 	// Copy the battle transcript into the world log so it survives the pop.
 	g.sinceFight = 0
 }
 
-// Pop handling: on defeat, drop the run and return to the title.
+// reviveFallen stands the downed companions back up on one hit point once the
+// fighting stops. They cost a rest rather than a funeral, so the party leaves a
+// bad fight intact but in no condition to walk into another one.
+func (b *battleScene) reviveFallen(g *Game) {
+	for _, c := range b.party {
+		if c == g.Player || c.Alive() {
+			continue
+		}
+		c.HP = 1
+		b.log.AddColor(render.ColHeal, "%s", g.Write.AllyUp(g.RNG, c.Name))
+	}
+}
+
+// Pop handling: on a rescue the company relocates the run, and on a real defeat
+// the run is over.
 func (b *battleScene) onPopped(g *Game) {
-	if b.result == 2 {
+	switch b.result {
+	case 2:
 		for len(g.stack) > 0 {
 			g.Pop()
 		}
 		g.quit = false
 		g.Push(newTitleScene(g))
+	case 4:
+		g.rescueToTown()
 	}
 }
 
@@ -679,7 +1168,44 @@ func monSlotX(i, n int) float64 {
 	return render.ScreenW / float64(n+1) * float64(i+1)
 }
 
-func heroSlotX() float64 { return 66 }
+// Where the party panel sits, and what one member's row looks like inside it.
+const (
+	partyPanelX = 8.0
+	partyPanelY = 206.0
+	partyPanelW = 188.0
+	partyPanelH = 58.0
+)
+
+// drawAllyCursor frames the party row the cursor is on. It borrows the gold
+// frame the monster cursor uses, so "this is the thing you are about to act on"
+// looks the same whichever side of the fight it is on.
+func (b *battleScene) drawAllyCursor(g *Game, dst *ebiten.Image) {
+	if b.allyPick < 0 || b.allyPick >= len(b.party) {
+		return
+	}
+	// A solo hero never opens this cursor, so the row geometry is the one the
+	// party panel uses rather than the large single-portrait layout.
+	ry := partyPanelY + 4 + float64(b.allyPick)*partyRowH
+	render.Frame(dst, partyPanelX+2, ry-1, partyPanelW-4, partyRowH, render.ColGold)
+	if (g.Tick()/12)%2 == 0 {
+		render.Text(dst, ">", partyPanelX-4, ry+1, render.ColGold)
+	}
+}
+
+// memberFloat is where a damage or healing number pops for a party member: over
+// their own row, so with three of them on screen it is never a guess who just
+// took the hit. A solo hero keeps the original spot beside their portrait.
+func (b *battleScene) memberFloat(c *model.Character) (float64, float64) {
+	if len(b.party) <= 1 {
+		return 66, 200
+	}
+	for i, m := range b.party {
+		if m == c {
+			return partyPanelX + 118, partyPanelY + 4 + float64(i)*partyRowH
+		}
+	}
+	return 66, 200
+}
 
 func nextIn(list []int, cur int) int {
 	for i, v := range list {
@@ -750,20 +1276,16 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 	ui.TitledPanel(dst, "", 8, 136, render.ScreenW-16, 64)
 	b.log.Draw(dst, 16, 142, 4)
 
-	// Hero panel.
-	ui.TitledPanel(dst, render.Trunc(g.Player.Name, 120), 8, 206, 188, 58)
-	portrait := g.Assets.Get("portrait/male/m_01")
-	tint := color.RGBA{0xFF, 0xFF, 0xFF, 0xFF}
-	if b.heroHurt > 0 && (b.heroHurt/3)%2 == 0 {
-		tint = color.RGBA{0xFF, 0x80, 0x80, 0xFF}
+	// The company.
+	g.drawPartyPanel(dst, partyPanelX, partyPanelY, partyPanelW, partyPanelH, b.partyHurt)
+	if b.mode == modeAllyPick {
+		b.drawAllyCursor(g, dst)
 	}
-	render.ScreenFit(dst, portrait, 0, 12, 210, 46, 46, tint)
-	ui.StatBars(dst, 64, 212, 122, g.Player.HP, g.Player.MaxHP, g.Player.Psyche, g.Player.MaxPsyche)
 
 	// Command panel.
 	title := map[battleMode]string{
 		modeRoot: "", modeSpell: "technique", modeItem: "pack",
-		modeTarget: "target", modeBusy: "", modeDone: "",
+		modeTarget: "target", modeAllyPick: "on whom", modeBusy: "", modeDone: "",
 	}[b.mode]
 	ui.TitledPanel(dst, title, 204, 206, render.ScreenW-212, 58)
 	switch b.mode {
@@ -771,6 +1293,9 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		b.menu.Draw(dst, 218, 212, render.ScreenW-238)
 	case modeTarget:
 		render.Text(dst, "Left / Right to choose.", 214, 218, render.ColInk)
+		render.Text(dst, "Z commits. X reconsiders.", 214, 232, render.ColInkDim)
+	case modeAllyPick:
+		render.Text(dst, "Up / Down to choose.", 214, 218, render.ColInk)
 		render.Text(dst, "Z commits. X reconsiders.", 214, 232, render.ColInkDim)
 	case modeBusy:
 		render.Text(dst, "...", 214, 224, render.ColInkDim)

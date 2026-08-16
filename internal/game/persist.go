@@ -16,6 +16,7 @@ func (g *Game) Snapshot() *save.File {
 	f := &save.File{
 		Seed:       g.Seed,
 		Player:     g.Player,
+		Allies:     g.Allies,
 		At:         g.Walk.Tile,
 		Facing:     int(g.Walk.Dir()),
 		Fog:        save.PackFog(g.World.Explored),
@@ -55,8 +56,12 @@ func (g *Game) summary() string {
 	if g.Local != nil {
 		where = g.Local.POI.Name
 	}
-	return fmt.Sprintf("%s %s - %s L%d - %s",
-		g.Player.Name, g.Player.Epithet, g.Player.Class, g.Player.Level, where)
+	company := ""
+	if n := len(g.Allies); n > 0 {
+		company = fmt.Sprintf(" +%d", n)
+	}
+	return fmt.Sprintf("%s %s - %s L%d%s - %s",
+		g.Player.Name, g.Player.Epithet, g.Player.Class, g.Player.Level, company, where)
 }
 
 func (g *Game) poiIndex(target *world.POI) int {
@@ -78,6 +83,9 @@ func (g *Game) Restore(f *save.File) error {
 	g.Seed = f.Seed
 	g.RNG = core.NewRNG(f.Seed)
 	g.Player = f.Player
+	g.Allies = f.Allies
+	// A save written before the party existed carries no marching order and no
+	// list; both are already zero, so nothing needs converting.
 	g.World = world.Generate(f.Seed, g.Write)
 	g.sinceFight = f.SinceFight
 	g.Quests = quest.Log{Quests: f.Quests}
@@ -108,6 +116,8 @@ func (g *Game) Restore(f *save.File) error {
 	g.Walk = walker{dur: 9}
 	g.Walk.Place(f.At)
 	g.Walk.dir = core.Dir(f.Facing)
+	g.follow, g.localFollow = nil, nil
+	g.reformLines()
 
 	// Rebuild the scene stack from the bottom so backing out of an interior
 	// lands on the overworld, exactly as it would have during play.
@@ -121,6 +131,7 @@ func (g *Game) Restore(f *save.File) error {
 		g.LocalWalk = walker{dur: 7}
 		g.LocalWalk.Place(f.Inside.At)
 		g.LocalWalk.dir = core.Dir(f.Inside.Facing)
+		placeLine(g.localFollow, f.Inside.At)
 		g.Push(newLocalScene(g))
 	}
 

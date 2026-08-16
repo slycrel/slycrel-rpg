@@ -52,23 +52,11 @@ func main() {
 	reportMonsterSpread(out, t)
 }
 
-// gearTierFor is the gear a player is expected to be carrying at a level. The
-// shop stocks by tier, and tiers span roughly three levels each.
-func gearTierFor(level int) int {
-	return core.Clamp(1+(level-1)/3, 1, 5)
-}
-
 // equip fits a character with the best gear of their expected tier, which is
-// the "on curve" assumption the rest of the report measures against.
-func equip(t *gamedata.Tables, c *model.Character) {
-	ws, as := t.StockFor(gearTierFor(c.Level))
-	if len(ws) > 0 {
-		c.Weapon = ws[len(ws)-1]
-	}
-	if len(as) > 0 {
-		c.Armor = as[len(as)-1]
-	}
-}
+// the "on curve" assumption the rest of the report measures against. The
+// definition lives in gamedata because the game hires companions against the
+// same curve, and two copies of it would drift.
+func equip(t *gamedata.Tables, c *model.Character) { t.Equip(c) }
 
 // biomeForLevel is roughly where a character of this level would be fighting,
 // following the world's "danger radiates outward from the capital" layout.
@@ -217,7 +205,7 @@ func reportEconomy(out *os.File, t *gamedata.Tables) {
 		"level", "tier", "weapon", "cost", "armor", "cost")
 	fmt.Fprintln(out, strings.Repeat("-", 92))
 	for level := 1; level <= maxLevel; level += 2 {
-		tier := gearTierFor(level)
+		tier := gamedata.GearTierFor(level)
 		ws, as := t.StockFor(tier)
 		w, a := model.Weapon{Name: "-"}, model.Armor{Name: "-"}
 		if len(ws) > 0 {

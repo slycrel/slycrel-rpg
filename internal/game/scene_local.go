@@ -34,6 +34,7 @@ func newLocalScene(g *Game) *localScene {
 
 func (s *localScene) Update(g *Game) error {
 	g.LocalWalk.Advance()
+	advanceLine(g.localFollow)
 	s.cam.Update()
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
@@ -108,7 +109,9 @@ func (s *localScene) tryStep(g *Game, d core.Dir) {
 		return
 	}
 
+	from := g.LocalWalk.Tile
 	g.LocalWalk.Step(next, d)
+	stepLine(g.localFollow, from)
 	s.moveDelay = 0
 	s.steps++
 	g.sinceFight++
@@ -116,7 +119,7 @@ func (s *localScene) tryStep(g *Game, d core.Dir) {
 	// Interiors have their own ambush rate; towns do not.
 	if !g.Local.POI.Kind.Settlement() && g.sinceFight > 6 && g.RNG.Intn(100) < 6 {
 		g.sinceFight = 0
-		mons := g.Data.PickMonsters(g.RNG, g.Local.Biome, g.Local.POI.Level, 1+g.RNG.Intn(2))
+		mons := g.Data.PickMonsters(g.RNG, g.Local.Biome, g.Local.POI.Level, g.encounterSize(1+g.RNG.Intn(2)))
 		if len(mons) > 0 {
 			g.Push(newBattleScene(g, mons, "dark"))
 		}
@@ -134,6 +137,9 @@ func (g *Game) interact(e *world.Entity) {
 	case world.ENPC:
 		g.talkTo(e)
 
+	case world.ERecruit:
+		g.offerRecruit(e)
+
 	case world.ESign:
 		g.Say(e.Name, e.Line)
 
@@ -149,8 +155,7 @@ func (g *Game) interact(e *world.Entity) {
 				}
 				g.Player.Coins -= 25
 				e.Used = true
-				g.Player.HP = g.Player.MaxHP
-				g.Player.Psyche = g.Player.MaxPsyche
+				g.restParty()
 				g.Player.Faith++
 				g.Say("", "Something old and largely retired takes an interest. You are made whole, and faintly indebted.")
 			})
@@ -163,8 +168,15 @@ func (g *Game) interact(e *world.Entity) {
 		g.Push(newShopScene(g, e))
 
 	case world.EInn:
-		cost := 10 + g.Player.Level*4
-		g.Ask(e.Name, fmt.Sprintf("A bed, a bolt on the door, and a landlord who does not ask questions.\n\nA night costs %d coins.", cost),
+		// A bed each. The party is restored together because a companion left
+		// to sleep in the road would be a rule nobody wants to remember.
+		beds := len(g.Party())
+		cost := (10 + g.Player.Level*4) * beds
+		body := "A bed, a bolt on the door, and a landlord who does not ask questions."
+		if beds > 1 {
+			body = fmt.Sprintf("%s\n\n%d beds, since you brought people.", body, beds)
+		}
+		g.Ask(e.Name, fmt.Sprintf("%s\n\nA night costs %d coins.", body, cost),
 			[]string{"Sleep", "Decline"}, func(g *Game, choice int) {
 				if choice != 0 {
 					return
@@ -174,16 +186,17 @@ func (g *Game) interact(e *world.Entity) {
 					return
 				}
 				g.Player.Coins -= int64(cost)
-				g.Player.HP = g.Player.MaxHP
-				g.Player.Psyche = g.Player.MaxPsyche
+				g.restParty()
 				g.Say("", "You sleep like something that has stopped worrying. You wake fully restored and slightly sticky.")
 			})
 
 	case world.EFoe, world.EBoss:
 		g.spend(e)
-		count := 1 + g.RNG.Intn(2)
+		count := g.encounterSize(1 + g.RNG.Intn(2))
 		level := g.Local.POI.Level
 		if e.Kind == world.EBoss {
+			// A boss stands alone whatever you brought with you. It is the
+			// point of the room, and two of them is a different room.
 			count = 1
 			level += 3
 		}
@@ -288,6 +301,8 @@ func (s *localScene) Draw(g *Game, dst *ebiten.Image) {
 		}
 		drawEntity(g, ctx, e)
 	}
+
+	g.drawFollowers(ctx, g.localFollow)
 
 	sp := g.Assets.Get(heroSpriteKey(g.Player, g.LocalWalk.Dir(), g.LocalWalk.Moving()))
 	frame := g.Tick() / 6

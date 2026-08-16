@@ -191,3 +191,13 @@ func Max(a, b int) int {
 	}
 	return b
 }
+
+// Max64 returns the larger of a and b. Coins and experience are int64, and
+// converting them down to compare would be the kind of narrowing that goes
+// unnoticed until somebody has a lot of money.
+func Max64(a, b int64) int64 {
+	if a > b {
+		return a
+	}
+	return b
+}

@@ -306,6 +306,243 @@ func ChooseMonsterAction(g *core.RNG, m *model.Monster) MonsterAction {
 	return MonAttack
 }
 
+// --- companions -----------------------------------------------------------
+
+// AllyMoveKind is what a companion does with its turn.
+type AllyMoveKind int
+
+const (
+	AllySwing AllyMoveKind = iota // attack with the weapon
+	AllyCast                      // use the technique in AllyMove.Spell
+	AllyGuard                     // brace, halving what lands this round
+)
+
+// AllyMove is a companion's decision for one turn.
+//
+// Companions are not commanded — the player drives the hero and the hirelings
+// have their own opinions about the rest of it — so this is the whole of their
+// tactical brain.
+type AllyMove struct {
+	Kind  AllyMoveKind
+	Spell model.Spell // set only when Kind is AllyCast
+	// Ally is who a party-side technique is aimed at. It is nil for anything
+	// pointed at the monsters, and for a self-targeted technique it is the
+	// caster, so the battle screen never has to work out who was meant.
+	Ally *model.Character
+}
+
+// ChooseAllyMove picks a companion's action for the round.
+//
+// The order of business is triage first: someone on the floor, then someone
+// about to be, then hurting whatever is causing it. That ordering is the whole
+// of the difference between a companion and a second sword — it is why a party
+// medic is worth a slot even though healing does no damage.
+//
+// The attack half runs the same policy the balance simulator plays, so a
+// companion's contribution can be reasoned about from numbers that already
+// exist rather than guessed at.
+func ChooseAllyMove(g *core.RNG, c *model.Character, spells []model.Spell, party []*model.Character) AllyMove {
+	// Somebody is down and this one can stand them up.
+	if s, ok := affordable(c, spells, model.SpellRevive); ok {
+		if target := mostBroken(party, false); target != nil {
+			return AllyMove{Kind: AllyCast, Spell: s, Ally: target}
+		}
+	}
+
+	// Somebody is failing. Heal the worst of them, which may well be the
+	// caster: a medic who patches everyone but themselves falls over first.
+	if s, ok := bestHeal(c, spells); ok {
+		if target := healTarget(c, s, party); target != nil && target.HPFrac() < healBelow {
+			return AllyMove{Kind: AllyCast, Spell: s, Ally: target}
+		}
+	}
+
+	// Nothing urgent. Hit something, unless a technique beats the weapon.
+	if s, ok := bestAttack(c, spells); ok {
+		return AllyMove{Kind: AllyCast, Spell: s}
+	}
+
+	// Fresh, safe, and nothing worth casting at the enemy: this is when a
+	// blessing is worth the psyche rather than a round wasted while people are
+	// bleeding. Occasionally, so a companion is not permanently mid-speech.
+	if s, ok := affordable(c, spells, model.SpellBless); ok && partyIsHealthy(party) && g.Chance(0.3) {
+		return AllyMove{Kind: AllyCast, Spell: s, Ally: blessTarget(c, s, party)}
+	}
+
+	// Badly hurt with nothing left to cast: sometimes cover up rather than
+	// trade blows it cannot afford. Rarely enough that a companion never
+	// becomes a wall that just stands there.
+	if c.HPFrac() < 0.25 && g.Chance(0.35) {
+		return AllyMove{Kind: AllyGuard}
+	}
+	return AllyMove{Kind: AllySwing}
+}
+
+// healBelow is how hurt somebody has to be before healing them beats acting.
+// Above it, a heal is psyche spent to top up a scratch.
+const healBelow = 0.45
+
+// healTarget picks who a heal is aimed at: the worst-off member it can reach.
+// A self-only technique can only ever reach one person.
+func healTarget(caster *model.Character, s model.Spell, party []*model.Character) *model.Character {
+	if s.Target == model.TargetSelf {
+		return caster
+	}
+	return mostBroken(party, true)
+}
+
+// blessTarget picks who a blessing lands on. Self-only goes to the caster;
+// anything else goes to whoever hits hardest, since a blessing is offense.
+func blessTarget(caster *model.Character, s model.Spell, party []*model.Character) *model.Character {
+	if s.Target == model.TargetSelf || s.Target == model.TargetAll {
+		return caster
+	}
+	best := caster
+	for _, c := range party {
+		if c.Alive() && c.Strength > best.Strength {
+			best = c
+		}
+	}
+	return best
+}
+
+// mostBroken returns the party member in the worst state. With standing set it
+// looks for the lowest fraction among those still up; with it clear it looks
+// for anybody who is down.
+func mostBroken(party []*model.Character, standing bool) *model.Character {
+	var worst *model.Character
+	for _, c := range party {
+		if c.Alive() != standing {
+			continue
+		}
+		if worst == nil || c.HPFrac() < worst.HPFrac() {
+			worst = c
+		}
+	}
+	return worst
+}
+
+// partyIsHealthy reports whether everyone is upright and in one piece, which is
+// when there is room in the round for something other than triage.
+func partyIsHealthy(party []*model.Character) bool {
+	for _, c := range party {
+		if !c.Alive() || c.HPFrac() < 0.8 {
+			return false
+		}
+	}
+	return len(party) > 0
+}
+
+// affordable returns the strongest known technique of a kind that the caster
+// can currently pay for.
+func affordable(c *model.Character, spells []model.Spell, kind model.SpellKind) (model.Spell, bool) {
+	var best model.Spell
+	found := false
+	for _, s := range spells {
+		if s.Kind != kind || s.Cost > c.Psyche || !s.Known(c) {
+			continue
+		}
+		if !found || s.Power > best.Power {
+			best, found = s, true
+		}
+	}
+	return best, found
+}
+
+// HireCost is the fee a companion of the given level and ancestry asks up
+// front. It grows with the square of level so that a late hire is a considered
+// purchase rather than pocket change, and lands in the same band as a weapon of
+// the tier the hireling arrives carrying.
+//
+// A lineage takes a percentage off, because nobody else is bidding for someone
+// who is visibly part troll. That discount is the reward for the trade-offs in
+// the lineage table, and it is why the cheap hireling on the corner is the one
+// with the interesting abilities.
+func HireCost(level int, blood model.MonsterKind) int64 {
+	base := int64(60 + level*level*6)
+	if l, ok := model.LineageOf(blood); ok {
+		base -= base * int64(l.Discount) / 100
+	}
+	return core.Max64(1, base)
+}
+
+// Skim is the share of a coin haul a companion takes off the top.
+func Skim(coins int64, cut int) int64 {
+	if cut <= 0 || coins <= 0 {
+		return 0
+	}
+	return coins * int64(cut) / 100
+}
+
+// Recruit rolls a companion of the given class and ancestry, levelled to
+// match. Gear is the caller's business — it comes out of the content tables,
+// which this package deliberately cannot see.
+func Recruit(g *core.RNG, name string, class model.Class, blood model.MonsterKind, level int) *model.Character {
+	c := BuildCharacter(g, class, level)
+	c.Name = name
+	c.Ally = true
+	c.Cut = g.Between(8, 18)
+	c.Blood = blood
+	ApplyLineage(c)
+	// Rested and ready. ApplyLineage only ever clamps downward — it has no way
+	// to know whether the character it is adjusting was at full — so a lineage
+	// that raises the maximum would otherwise hand over somebody who arrives
+	// already short of the hit points they are being paid for.
+	c.HP, c.Psyche = c.MaxHP, c.MaxPsyche
+	// The pack, the purse and the errands stay with the hero.
+	c.Coins, c.Bag, c.SpendXP = 0, nil, 0
+	return c
+}
+
+// ApplyLineage folds a character's ancestry into their stat line.
+//
+// It runs once, after levelling, rather than being re-applied per level: the
+// deltas are a description of the person, not of their training, so a part-ooze
+// is stout at level one and proportionally as stout at level fifteen. Hit
+// points shift by percentage for that reason and the rest are flat, because the
+// stats themselves only creep upward a point or two a level.
+func ApplyLineage(c *model.Character) {
+	l, ok := model.LineageOf(c.Blood)
+	if !ok {
+		return
+	}
+	c.MaxHP = core.Max(1, c.MaxHP+c.MaxHP*l.HPPct/100)
+	c.Strength = core.Max(1, c.Strength+l.Strength)
+	c.Dexterity = core.Max(1, c.Dexterity+l.Dexterity)
+	c.Speed = core.Max(1, c.Speed+l.Speed)
+	c.MaxPsyche = core.Max(0, c.MaxPsyche+l.Psyche)
+	c.HP = core.Clamp(c.HP, 0, c.MaxHP)
+	c.Psyche = core.Clamp(c.Psyche, 0, c.MaxPsyche)
+}
+
+// ReviveAmount is how much health standing somebody back up gives them.
+//
+// Power is the item's or technique's rating, read as a percentage of maximum,
+// and the floor of one exists so that a revive is never the no-op of standing
+// somebody up dead. It is deliberately a fraction rather than a full heal:
+// getting back up is the expensive part, and being fit to fight afterwards is a
+// separate purchase.
+func ReviveAmount(c *model.Character, power int) int {
+	if power <= 0 {
+		power = 25
+	}
+	return core.Clamp(c.MaxHP*power/100, 1, c.MaxHP)
+}
+
+// RescueFee is what the hirelings take for carrying a dead employer to the
+// nearest town and paying somebody to argue with the situation.
+//
+// It is a share of the purse rather than a flat sum, so it hurts proportionally
+// at every level and can never be unpayable — a run must not be able to end
+// because the player could not afford to survive. What it costs when the purse
+// is empty is time and a point of Shame, which is the correct currency.
+func RescueFee(coins int64) int64 {
+	if coins <= 0 {
+		return 0
+	}
+	return core.Max64(1, coins*40/100)
+}
+
 // Disposition is the nine-way read on how a fight is going, used to select
 // flavor text. Ported from GetMainCombatText.
 type Disposition int
@@ -484,44 +721,55 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 	return res
 }
 
-// bestSpell picks what a competent player would cast this round: a heal when
-// badly hurt, otherwise the strongest affordable attack, and nothing at all
-// when swinging would do more than the psyche is worth.
-func bestSpell(c *model.Character, spells []model.Spell) (model.Spell, bool) {
-	var heal, attack model.Spell
-	var haveHeal, haveAttack bool
+// bestHeal returns the strongest affordable technique that restores hit points.
+func bestHeal(c *model.Character, spells []model.Spell) (model.Spell, bool) {
+	return affordable(c, spells, model.SpellHeal)
+}
+
+// bestAttack returns the strongest affordable technique worth casting at the
+// enemy, or false when swinging the weapon would do at least as well.
+//
+// That last condition is what keeps a fighter's technique a finisher rather
+// than a replacement for the sword, and it is why a low-level attack spell
+// quietly retires once the weapon outgrows it instead of being cast forever.
+func bestAttack(c *model.Character, spells []model.Spell) (model.Spell, bool) {
+	var attack model.Spell
+	found := false
 	for _, s := range spells {
 		if s.Cost > c.Psyche || !s.Known(c) {
-			continue
-		}
-		if s.Kind == model.SpellHeal {
-			if !haveHeal || s.Power > heal.Power {
-				heal, haveHeal = s, true
-			}
 			continue
 		}
 		if s.Kind != model.SpellDamage && s.Kind != model.SpellDrain {
 			continue
 		}
-		if !haveAttack || s.Power > attack.Power {
-			attack, haveAttack = s, true
+		if !found || s.Power > attack.Power {
+			attack, found = s, true
 		}
 	}
-
-	if haveHeal && c.HPFrac() < 0.3 {
-		return heal, true
-	}
-	if !haveAttack {
+	if !found {
 		return model.Spell{}, false
 	}
-	// Only cast when it beats the weapon; a fighter's technique is a finisher,
-	// not a replacement for the sword.
 	weapon := float64(c.Strength)/2 + float64(c.Weapon.Strike)
 	spell := float64(attack.Power) + float64(c.MaxPsyche)*0.6 + float64(c.Level)*0.8
 	if spell <= weapon {
 		return model.Spell{}, false
 	}
 	return attack, true
+}
+
+// bestSpell picks what a competent solo player would cast this round: a heal
+// when badly hurt, otherwise the strongest attack worth the psyche.
+//
+// This is the simulator's policy. It stays deliberately solo — the balance
+// report measures one character against an encounter, and a heal it casts is
+// necessarily on itself — while ChooseAllyMove layers party triage on top of
+// the same two helpers. One set of "what is worth casting" rules, two callers
+// with different amounts of company.
+func bestSpell(c *model.Character, spells []model.Spell) (model.Spell, bool) {
+	if heal, ok := bestHeal(c, spells); ok && c.HPFrac() < 0.3 {
+		return heal, true
+	}
+	return bestAttack(c, spells)
 }
 
 func livingMonsters(mons []*model.Monster) []*model.Monster {
