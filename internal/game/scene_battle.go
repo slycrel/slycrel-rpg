@@ -153,6 +153,9 @@ func (b *battleScene) tickEffects(g *Game) {
 			// the corpse before the poison that made it reads backwards.
 			b.log.AddColor(render.ColGold, "%s %s for %d.", t.Kind.Verb(), m.Name, t.Damage)
 			b.damageMonster(g, i, t.Damage)
+			if m.Dead {
+				break // the rest of what is wrong with it no longer matters
+			}
 		}
 		m.Active, _ = rules.Advance(m.Active)
 	}
@@ -168,9 +171,15 @@ func (b *battleScene) tickEffects(g *Game) {
 			fx, fy := b.memberFloat(c)
 			b.addFloater(fx, fy, fmt.Sprintf("-%d", t.Damage), render.ColBlood)
 			b.log.AddColor(render.ColBlood, "%s %s for %d.", t.Kind.Verb(), c.Name, t.Damage)
-			if !c.Alive() && c != g.Player {
-				g.Sound.Play("fight/die")
-				b.log.AddColor(render.ColBlood, "%s", g.Write.AllyDown(g.RNG, c.Name))
+			// Somebody carrying two conditions has both roll every round, so
+			// without stopping here the second one would tick a body that is
+			// already on the floor and announce it going down a second time.
+			if !c.Alive() {
+				if c != g.Player {
+					g.Sound.Play("fight/die")
+					b.log.AddColor(render.ColBlood, "%s", g.Write.AllyDown(g.RNG, c.Name))
+				}
+				break
 			}
 		}
 		var expired []model.EffectKind
