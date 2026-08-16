@@ -214,6 +214,11 @@
     "death": [
       "{T} cuts off mid-note. The silence is the best part of your week."
     ],
+    "inflicts": {
+      "kind": "weaken",
+      "power": 3,
+      "chance": 30
+    },
     "sprite": "mob/banshee",
     "loot": [
       {
@@ -334,6 +339,11 @@
     "death": [
       "{T} crumbles, muttering about the paperwork."
     ],
+    "inflicts": {
+      "kind": "weaken",
+      "power": 4,
+      "chance": 30
+    },
     "sprite": "mob/ancient_vampire",
     "loot": [
       {

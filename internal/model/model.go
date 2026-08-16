@@ -79,6 +79,11 @@ type Character struct {
 
 	Sprite   string `json:"sprite"`   // asset key for the overworld/local sprite
 	Portrait string `json:"portrait"` // asset key for the battle portrait
+
+	// Active is what the character is currently suffering or enjoying. It is
+	// fight-scoped and never written to a save: a battle cannot be saved from,
+	// and a poison that survived reloading would be a bug.
+	Active Effects `json:"-"`
 }
 
 // Alive reports whether the character can still act.
@@ -175,6 +180,7 @@ const (
 	ItemPsyche  ItemKind = "psyche"
 	ItemBuff    ItemKind = "buff"
 	ItemRevive  ItemKind = "revive"  // stands a fallen party member back up
+	ItemCure    ItemKind = "cure"    // strips the conditions somebody picked up
 	ItemTrinket ItemKind = "trinket" // sellable junk, mostly a joke delivery system
 	ItemKey     ItemKind = "key"
 )
@@ -184,7 +190,7 @@ const (
 // problem and a key is turned in a lock; neither picks a target.
 func (k ItemKind) UsedOnSomeone() bool {
 	switch k {
-	case ItemHeal, ItemPsyche, ItemBuff, ItemRevive:
+	case ItemHeal, ItemPsyche, ItemBuff, ItemRevive, ItemCure:
 		return true
 	}
 	return false
@@ -203,6 +209,12 @@ type Item struct {
 	Count int      `json:"count"`
 	Desc  string   `json:"desc"`
 	Icon  string   `json:"icon"`
+	// Effect is what a buff item leaves behind, and for how long. The battle
+	// screen used to tell the two buff items apart by comparing against the
+	// literal string "Suspicious Pollen", which meant renaming a potion
+	// silently changed what it did.
+	Effect EffectKind `json:"effect,omitempty"`
+	Rounds int        `json:"rounds,omitempty"`
 }
 
 // MonsterKind is a creature family. Damage types and some jokes key off it.
@@ -240,8 +252,21 @@ type MonsterDef struct {
 	Taunt      []string `json:"taunt"`
 	Death      []string `json:"death"`
 
+	// Inflicts is what a landed hit from this creature leaves behind: a spider
+	// leaves venom, a salamander leaves you on fire. Nil for the majority that
+	// simply hit you.
+	Inflicts *Affliction `json:"inflicts,omitempty"`
+
 	Sprite string `json:"sprite"` // battle art key
 	Loot   []Drop `json:"loot"`
+}
+
+// Affliction is a condition a monster's attack can apply, and how often.
+type Affliction struct {
+	Kind   EffectKind `json:"kind"`
+	Power  int        `json:"power"`
+	Rounds int        `json:"rounds"`
+	Chance int        `json:"chance"` // percentage, 0-100
 }
 
 // Drop is a weighted loot entry; Chance is a percentage in [0,100].
@@ -270,6 +295,10 @@ type Monster struct {
 	Speed   int
 	XP      int
 	Coins   int
+
+	// Active is what the monster is currently suffering. Monsters are spawned
+	// fresh for every encounter and never stored, so this needs no exclusion.
+	Active Effects
 }
 
 // HPFrac returns current HP as a fraction of max.

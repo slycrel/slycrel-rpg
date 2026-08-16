@@ -86,6 +86,7 @@ func (s *shopScene) refresh(g *Game) {
 				"Small Beer", "Field Poultice", "Physician's Draught",
 				"Bottled Nap", "Philosopher's Espresso", "Bitter Root", "Suspicious Pollen",
 				"Smelling Salts, Militant", "Still-Warm Heart",
+				"Damp Compress", "Broad Antidote",
 			} {
 				it, ok := g.Data.Item(name)
 				if !ok {

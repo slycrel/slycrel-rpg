@@ -697,6 +697,13 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 					dmg := MonsterDamage(g, sim, m)
 					sim.HP = core.Max(0, sim.HP-dmg)
 					res.DamageTaken += dmg
+					// Some creatures leave a condition behind, which is worth
+					// more than their damage roll suggests. The simulator has
+					// to catch that or the report would rate a venomous spider
+					// by its bite alone and call the swamp safer than it is.
+					if e, ok := RollAffliction(g, m.Def.Inflicts); ok && sim.HP > 0 {
+						sim.Active = Apply(sim.Active, e)
+					}
 				}
 			}
 		}
@@ -709,10 +716,29 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 			strike()
 		}
 
+		// Conditions bite at the end of the round on both sides, exactly as
+		// the battle screen resolves them.
+		for _, m := range living {
+			if m.Dead {
+				continue
+			}
+			for _, t := range TickDamage(g, m.Active) {
+				hurt(m, t.Damage)
+			}
+			m.Active, _ = Advance(m.Active)
+		}
+		for _, t := range TickDamage(g, sim.Active) {
+			sim.HP = core.Max(0, sim.HP-t.Damage)
+			res.DamageTaken += t.Damage
+		}
+		sim.Active, _ = Advance(sim.Active)
+
 		if sim.HP <= 0 {
 			break
 		}
 	}
+	// Nothing survives the fight it was applied in.
+	sim.Active = nil
 
 	if len(livingMonsters(mons)) == 0 && sim.HP > 0 {
 		res.Won = true

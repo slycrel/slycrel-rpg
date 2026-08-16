@@ -139,6 +139,11 @@
     "death": [
       "{T} drops. Four more crows arrive to take notes."
     ],
+    "inflicts": {
+      "kind": "weaken",
+      "power": 1,
+      "chance": 20
+    },
     "sprite": "mob/crow_01",
     "loot": [
       {

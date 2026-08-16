@@ -408,5 +408,25 @@
     "{N} comes back with the look of somebody who has been interrupted.",
     "{N} is upright again and taking it personally.",
     "{N} returns to the proceedings, having missed nothing important."
-  ]
+  ],
+  "afflicted": {
+    "poison": [
+      "{N} has been envenomed, and is now on a schedule.",
+      "Something goes into {N} that was not on the menu.",
+      "{N} starts to sweat in a colour."
+    ],
+    "burn": [
+      "{N} is on fire. This is not a metaphor.",
+      "{N} catches, and stays caught.",
+      "Parts of {N} begin to smoke in an organised way."
+    ],
+    "weaken": [
+      "{N} loses something out of the arms.",
+      "Whatever {N} had, they have less of it now."
+    ],
+    "stun": [
+      "{N} stops receiving new information.",
+      "{N} is briefly elsewhere."
+    ]
+  }
 }

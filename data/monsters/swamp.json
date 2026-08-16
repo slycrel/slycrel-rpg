@@ -63,6 +63,12 @@
     "death": [
       "{T} lets go with a noise like a boot leaving mud."
     ],
+    "inflicts": {
+      "kind": "poison",
+      "power": 2,
+      "rounds": 3,
+      "chance": 35
+    },
     "sprite": "mob/parasit_01",
     "loot": [
       {
@@ -174,6 +180,12 @@
     "death": [
       "{T} unwinds slowly, all the way down."
     ],
+    "inflicts": {
+      "kind": "poison",
+      "power": 4,
+      "rounds": 4,
+      "chance": 50
+    },
     "sprite": "mob/snake_01",
     "loot": [
       {
@@ -211,6 +223,12 @@
     "death": [
       "{T} disperses. Some of it goes home. Some of it stays in your hair."
     ],
+    "inflicts": {
+      "kind": "poison",
+      "power": 3,
+      "rounds": 3,
+      "chance": 30
+    },
     "sprite": "mob/insect_02",
     "loot": [
       {

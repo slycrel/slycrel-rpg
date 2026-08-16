@@ -412,6 +412,50 @@ func (g *Game) drawPartyPanel(dst *ebiten.Image, x, y, w, h float64, hurt map[*m
 
 		ui.Bar(dst, x+106, ry+4, 46, 5, c.HPFrac(), render.ColBlood)
 		ui.Bar(dst, x+156, ry+4, 26, 5, c.PsycheFrac(), render.ColMagic)
+		// Under the meters rather than beside the name: a row is sixteen pixels
+		// and the bars only use six of them, so this is the one place in the
+		// panel that was not already spoken for. Squeezing the name instead
+		// turned "Ilsabet Dun" into "Ilsabet.".
+		drawEffectPips(dst, x+106, ry+10, c.Active)
+	}
+}
+
+// effectColour is the pip a condition draws as. They are read at three pixels
+// square, so the palette has to separate on hue alone: green is something in
+// you, orange is something on you, gold is help and grey is harm.
+func effectColour(k model.EffectKind) color.RGBA {
+	switch k {
+	case model.EffectPoison:
+		return color.RGBA{0x5C, 0xC0, 0x50, 0xFF}
+	case model.EffectBurn:
+		return color.RGBA{0xE8, 0x7A, 0x28, 0xFF}
+	case model.EffectBless:
+		return color.RGBA{0xE0, 0xB0, 0x4C, 0xFF}
+	case model.EffectQuicken:
+		return color.RGBA{0x60, 0xC8, 0xE0, 0xFF}
+	case model.EffectStun:
+		return color.RGBA{0xF0, 0xE8, 0xC0, 0xFF}
+	default: // weaken
+		return color.RGBA{0x90, 0x70, 0xB0, 0xFF}
+	}
+}
+
+// maxPips is how many conditions fit beside a name before the row runs out of
+// width. Nothing in the game stacks more than this at once; if something ever
+// does, the overflow is silent rather than drawn over the meters.
+const maxPips = 4
+
+// drawEffectPips paints one small square per active condition. Without these
+// the player is poisoned and has no way of knowing except by watching their
+// own hit points drop for reasons the transcript has already scrolled past.
+func drawEffectPips(dst *ebiten.Image, x, y float64, list model.Effects) {
+	for i, e := range list {
+		if i >= maxPips {
+			return
+		}
+		px := x + float64(i)*4
+		render.Rect(dst, px, y, 3, 3, effectColour(e.Kind))
+		render.Frame(dst, px, y, 3, 3, color.RGBA{0, 0, 0, 0x80})
 	}
 }
 
@@ -422,6 +466,7 @@ func (g *Game) drawSoloPanel(dst *ebiten.Image, x, y, w, h float64, hurt map[*mo
 	ui.TitledPanel(dst, render.Trunc(p.Name, w-68), x, y, w, h)
 	render.ScreenFit(dst, g.Assets.Get(portraitOf(p)), 0, x+4, y+4, 46, 46, memberTint(p, hurt[p]))
 	ui.StatBars(dst, x+56, y+6, w-66, p.HP, p.MaxHP, p.Psyche, p.MaxPsyche)
+	drawEffectPips(dst, x+56, y+h-10, p.Active)
 }
 
 // memberTint flashes a member red on the frames just after they were hit, and

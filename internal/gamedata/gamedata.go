@@ -68,6 +68,9 @@ type Text struct {
 	// company, and stood up mid-fight by an item or a technique.
 	Rescue  []string `json:"rescue"`
 	Revived []string `json:"revived"`
+	// Afflicted is what a condition landing reads like, keyed by the
+	// model.EffectKind string.
+	Afflicted map[string][]string `json:"afflicted"`
 
 	// Quest lines, keyed by quest kind then by part (ask / nag / thank).
 	Quest map[string]map[string][]string `json:"quest"`

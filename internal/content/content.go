@@ -240,3 +240,12 @@ func (w *Writer) DispositionLine(g *core.RNG, d rules.Disposition, target string
 	}
 	return strings.ReplaceAll(core.Pick(g, lines), "{T}", target)
 }
+
+// Afflicted narrates a condition landing on somebody. {N} is who caught it.
+func (w *Writer) Afflicted(g *core.RNG, kind, name string) string {
+	lines := w.t.Afflicted[kind]
+	if len(lines) == 0 {
+		return name + " has picked something up."
+	}
+	return strings.ReplaceAll(core.Pick(g, lines), "{N}", name)
+}

@@ -89,6 +89,14 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
   else in town will take them, and carries one technique gated on ancestry that
   no hero of any class or level can ever learn. That is most of the reason to
   hire the cheap one on the corner.
+- **Conditions that linger** — poison and burning tick at the end of each round,
+  weakness and blessings change what a blow is worth, a stun costs a turn. One
+  timed list on each combatant rather than the four separate mechanisms the
+  battle screen used to carry, so anything can be given a duration without
+  inventing a fifth. Fourteen creatures leave something behind when they land a
+  hit — a spider's bite is worth more than its damage roll suggests — which is
+  what stops the roster's stat lines being the whole story about which monster
+  you would rather meet. Antidotes take the harm and leave the help.
 - **Two sides to every effect** — which half of the field an effect lands on is
   derived from what it does rather than stored next to it, so a heal cannot be
   aimed at a monster and a stun cannot be aimed at a friend. Anything that helps
@@ -102,7 +110,8 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
   falls alone still loses the run, so the company is the thing that buys the
   ending off rather than the game going soft.
 - **62 monsters** across nine biomes, each with its own attack verbs, defensive
-  flavour, taunts, death lines, and drop table.
+  flavour, taunts, death lines, drop table, and — for a minority of them —
+  something they leave in you.
 - **Shops, inns, chests, altars and townsfolk** who all have opinions.
 - **Quests** — generated from the world rather than written against it. Someone
   in a town wants four pelts, or a cave cleared, or a parcel carried two days
@@ -234,6 +243,23 @@ Lineages are held to the same rule from the other direction: every one of the
 six gives with one hand and takes with the other, and a test asserts it, so a
 part-monster hireling is a different shape of companion rather than a better
 one. Their discount is the reward for the trade-off, not for a bargain.
+
+Conditions are inside the simulation rather than beside it. When fourteen
+creatures started leaving poison and fire behind, `SimulateFight` learned to
+apply and tick them too — otherwise the report would rate a venomous spider by
+its bite alone and call the swamp safer than it is. It moved the numbers where
+it should: an over-level fight in the swamp went from 97.2% to 95.6%, and the
+band's hit points left dropped four points. The rule the whole report depends on
+is that it plays the game's own code, and a mechanic the simulator cannot see is
+a mechanic the balance pass is lying about.
+
+One gap is known and deliberate: the simulated player never *casts* poison or
+burning, because its policy compares a technique against a weapon swing by
+single-hit power and damage over time does not fit that comparison. The report
+is therefore conservative — it measures a character who has those techniques and
+declines to use them. Understating the player is the safe direction for a report
+whose question is "can you survive this", but it is the next thing to fix in the
+policy.
 
 ## Testing
 

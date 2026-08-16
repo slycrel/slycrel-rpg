@@ -11,6 +11,8 @@ const (
 	SpellStun   SpellKind = "stun"   // target loses its next turn
 	SpellBless  SpellKind = "bless"  // raises an ally's offense for the fight
 	SpellRevive SpellKind = "revive" // stands a fallen ally back up
+	SpellPoison SpellKind = "poison" // damage over several rounds
+	SpellBurn   SpellKind = "burn"   // more damage over fewer rounds
 )
 
 // Side is which half of the battlefield an effect is aimed at.

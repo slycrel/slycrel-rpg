@@ -214,6 +214,12 @@
     "death": [
       "{T} goes out like a doused forge, complaining to the last."
     ],
+    "inflicts": {
+      "kind": "burn",
+      "power": 7,
+      "rounds": 3,
+      "chance": 40
+    },
     "sprite": "mob/dragon_03",
     "loot": [
       {
@@ -258,6 +264,12 @@
     "death": [
       "{T} lands for the last time. The valley notices."
     ],
+    "inflicts": {
+      "kind": "burn",
+      "power": 9,
+      "rounds": 3,
+      "chance": 50
+    },
     "sprite": "mob/dragon_08",
     "loot": [
       {

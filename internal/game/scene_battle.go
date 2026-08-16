@@ -3,6 +3,7 @@ package game
 import (
 	"fmt"
 	"image/color"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/slycrel/slycrel-rpg/internal/core"
@@ -76,18 +77,9 @@ type battleScene struct {
 
 	// guarding is who braced this round. Per member rather than a single flag,
 	// because a companion deciding to cover up must not also halve what the
-	// hero takes.
+	// hero takes. It is not an Effect: bracing is a stance held for one round,
+	// not a condition with a duration.
 	guarding map[*model.Character]bool
-	// weakened tracks temporary offense reductions, keyed by monster index.
-	weakened []int
-	stunned  []bool
-	// buffs applied by items to the hero. Items come out of the hero's pack and
-	// can now be handed to anyone, so these are the hero's own and blessed
-	// carries everybody else's.
-	buffStr, buffDex int
-	// blessed is extra offense a party member is carrying for this fight, from
-	// a technique rather than from a bottle.
-	blessed map[*model.Character]int
 
 	// result is 0 running, 1 victory, 2 defeat, 3 fled, 4 the hero went down
 	// but the company did not.
@@ -104,11 +96,12 @@ func newBattleScene(g *Game, mons []*model.Monster, where string) *battleScene {
 		party:     g.Party(),
 		log:       ui.NewLog(60),
 		hurt:      make([]int, len(mons)),
-		weakened:  make([]int, len(mons)),
-		stunned:   make([]bool, len(mons)),
 		partyHurt: map[*model.Character]int{},
 		guarding:  map[*model.Character]bool{},
-		blessed:   map[*model.Character]int{},
+	}
+	// Nobody carries anything in from the last fight.
+	for _, c := range b.party {
+		c.Active = nil
 	}
 	b.cam = render.Camera{}
 	b.setRootMenu(g)
@@ -140,6 +133,101 @@ func (b *battleScene) partyFrac() float64 {
 		return 0
 	}
 	return core.ClampF(float64(hp)/float64(max), 0, 1)
+}
+
+// tickEffects runs the lingering conditions on both sides: damage first, then
+// the clocks, then a line for anything that has just worn off.
+//
+// It runs at the end of the round rather than the start so that something
+// applied this round does not immediately tick, which would make a one-round
+// effect land twice and a three-round one feel like four.
+func (b *battleScene) tickEffects(g *Game) {
+	for i, m := range b.mons {
+		if m.Dead {
+			m.Active = nil
+			continue
+		}
+		for _, t := range rules.TickDamage(g.RNG, m.Active) {
+			// The line before the blow: damageMonster writes the death notice
+			// when it finishes something off, and a transcript that announces
+			// the corpse before the poison that made it reads backwards.
+			b.log.AddColor(render.ColGold, "%s %s for %d.", t.Kind.Verb(), m.Name, t.Damage)
+			b.damageMonster(g, i, t.Damage)
+		}
+		m.Active, _ = rules.Advance(m.Active)
+	}
+
+	for _, c := range b.party {
+		if !c.Alive() {
+			c.Active = nil
+			continue
+		}
+		for _, t := range rules.TickDamage(g.RNG, c.Active) {
+			c.HP = core.Max(0, c.HP-t.Damage)
+			b.partyHurt[c] = 10
+			fx, fy := b.memberFloat(c)
+			b.addFloater(fx, fy, fmt.Sprintf("-%d", t.Damage), render.ColBlood)
+			b.log.AddColor(render.ColBlood, "%s %s for %d.", t.Kind.Verb(), c.Name, t.Damage)
+			if !c.Alive() && c != g.Player {
+				g.Sound.Play("fight/die")
+				b.log.AddColor(render.ColBlood, "%s", g.Write.AllyDown(g.RNG, c.Name))
+			}
+		}
+		var expired []model.EffectKind
+		c.Active, expired = rules.Advance(c.Active)
+		for _, k := range expired {
+			if k.Harmful() {
+				b.log.AddColor(render.ColInkDim, "%s stops %s.", c.Name, wearingOff(k))
+			}
+		}
+	}
+}
+
+// sufferingList names what somebody has just been cured of, in plain English
+// rather than as a comma-separated dump of internal kind names.
+func sufferingList(kinds []model.EffectKind) string {
+	words := make([]string, 0, len(kinds))
+	for _, k := range kinds {
+		words = append(words, suffering(k))
+	}
+	switch len(words) {
+	case 0:
+		return "afflicted"
+	case 1:
+		return words[0]
+	case 2:
+		return words[0] + " or " + words[1]
+	default:
+		return strings.Join(words[:len(words)-1], ", ") + " or " + words[len(words)-1]
+	}
+}
+
+// suffering is the adjective for a condition.
+func suffering(k model.EffectKind) string {
+	switch k {
+	case model.EffectPoison:
+		return "poisoned"
+	case model.EffectBurn:
+		return "on fire"
+	case model.EffectStun:
+		return "confused"
+	case model.EffectWeaken:
+		return "weakened"
+	}
+	return "afflicted"
+}
+
+// wearingOff phrases a condition ending, from the sufferer's point of view.
+func wearingOff(k model.EffectKind) string {
+	switch k {
+	case model.EffectPoison:
+		return "being poisoned, which they mention"
+	case model.EffectBurn:
+		return "burning, eventually"
+	case model.EffectStun:
+		return "staring at the middle distance"
+	}
+	return "suffering from it"
 }
 
 // anyoneDown reports whether the company has somebody on the floor, which is
@@ -245,7 +333,10 @@ func (b *battleScene) updateBusy(g *Game) {
 		b.timer = stepTicks
 		return
 	}
-	// Round over: check for an ending, otherwise hand control back.
+	// Conditions bite at the end of the round, before the ending is checked, so
+	// a poison can be what finishes a fight rather than only ever softening
+	// one. Then the clocks run down.
+	b.tickEffects(g)
 	if b.checkEnd(g) {
 		return
 	}
@@ -662,15 +753,11 @@ func (b *battleScene) playerAttack(g *Game, p *model.Character, idx int) {
 	b.log.Add("%s", g.Write.Hit(g.RNG, p.Name, p.Weapon.Verb, m.Name, dmg, crit))
 }
 
-// buffsFor returns the temporary bonuses in force for a member: the hero's own
-// bottles, plus whatever blessings anybody is carrying.
-func (b *battleScene) buffsFor(g *Game, c *model.Character) (str, dex int) {
-	str = b.blessed[c]
-	if c == g.Player {
-		str += b.buffStr
-		dex = b.buffDex
-	}
-	return str, dex
+// buffsFor returns what the conditions riding on a member are worth to a blow.
+// Blessings and potions both land in the same list now, so the hero's bottles
+// and a companion's encouragement are added up the same way.
+func (b *battleScene) buffsFor(_ *Game, c *model.Character) (str, dex int) {
+	return rules.OffenseMod(c.Active), rules.DexterityMod(c.Active)
 }
 
 // castSpell resolves one technique. Which side it lands on comes from the
@@ -742,7 +829,9 @@ func (b *battleScene) castOnParty(g *Game, c cast) {
 				b.log.Add("%s is in no condition to be encouraged.", t.Name)
 				continue
 			}
-			b.blessed[t] += s.Power
+			t.Active = rules.Apply(t.Active, model.Effect{
+				Kind: model.EffectBless, Power: s.Power, Rounds: model.Forever,
+			})
 			b.log.AddColor(render.ColMagic, "%s hits harder for the rest of this.", t.Name)
 		case model.SpellRevive:
 			if t.Alive() {
@@ -791,11 +880,25 @@ func (b *battleScene) castOnFoes(g *Game, c cast) {
 			b.log.Add("%s takes %d; %s recovers %d of it.", m.Name, d, p.Name, healed)
 			b.addFloater(hx, hy, fmt.Sprintf("+%d", healed), render.ColHeal)
 		case model.SpellWeaken:
-			b.weakened[i] += s.Power
+			m.Active = rules.Apply(m.Active, model.Effect{
+				Kind: model.EffectWeaken, Power: s.Power, Rounds: model.Forever,
+			})
 			b.log.Add("%s hits noticeably softer now.", m.Name)
 		case model.SpellStun:
-			b.stunned[i] = true
+			m.Active = rules.Apply(m.Active, model.Effect{
+				Kind: model.EffectStun, Power: 1, Rounds: 1,
+			})
 			b.log.Add("%s loses track of the fight entirely.", m.Name)
+		case model.SpellPoison:
+			m.Active = rules.Apply(m.Active, model.Effect{
+				Kind: model.EffectPoison, Power: s.Power, Rounds: 4,
+			})
+			b.log.Add("%s has been given something it cannot metabolise.", m.Name)
+		case model.SpellBurn:
+			m.Active = rules.Apply(m.Active, model.Effect{
+				Kind: model.EffectBurn, Power: s.Power, Rounds: 3,
+			})
+			b.log.Add("%s is on fire, and has noticed.", m.Name)
 		}
 	}
 
@@ -856,23 +959,29 @@ func (b *battleScene) useItem(g *Game, idx int, t *model.Character) {
 		}
 		b.standUp(g, t, rules.ReviveAmount(t, it.Power))
 		b.addFloater(fx, fy, fmt.Sprintf("+%d", t.HP), render.ColHeal)
-	case model.ItemBuff:
-		// A bottle handed to somebody else has to affect them, not the hero
-		// who was carrying it. The hero's own bonuses stay in buffStr/buffDex
-		// because they also cover dexterity, which nothing else grants.
-		if it.Name == "Suspicious Pollen" {
-			if t == g.Player {
-				b.buffDex += it.Power
-			}
-			b.log.Add("%s feels quicker, and slightly wrong about it.", t.Name)
+	case model.ItemCure:
+		var removed []model.EffectKind
+		t.Active, removed = rules.Cleanse(t.Active)
+		if len(removed) == 0 {
+			b.log.Add("%s has nothing in them worth removing. Yet.", t.Name)
 			return
 		}
-		if t == g.Player {
-			b.buffStr += it.Power
-		} else {
-			b.blessed[t] += it.Power
+		g.Sound.Play("fight/heal")
+		b.log.AddColor(render.ColHeal, "%s is no longer %s.", t.Name, sufferingList(removed))
+	case model.ItemBuff:
+		// The bottle says what it does, and it does it to whoever drank it.
+		kind := it.Effect
+		if kind == "" {
+			kind = model.EffectBless
 		}
-		b.log.Add("%s feels stronger and considerably angrier.", t.Name)
+		t.Active = rules.Apply(t.Active, model.Effect{
+			Kind: kind, Power: it.Power, Rounds: it.Rounds,
+		})
+		if kind == model.EffectQuicken {
+			b.log.Add("%s feels quicker, and slightly wrong about it.", t.Name)
+		} else {
+			b.log.Add("%s feels stronger and considerably angrier.", t.Name)
+		}
 	default:
 		b.log.Add("%s waves the %s at the problem. It does not help.", g.Player.Name, it.Name)
 	}
@@ -911,8 +1020,8 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 		b.timer = 0
 		return
 	}
-	if b.stunned[idx] {
-		b.stunned[idx] = false
+	if rules.Has(m.Active, model.EffectStun) {
+		m.Active = rules.Remove(m.Active, model.EffectStun)
 		b.log.AddColor(render.ColInkDim, "%s is still working out what happened.", m.Name)
 		return
 	}
@@ -937,8 +1046,7 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 	}
 	tgt := core.Pick(g.RNG, living)
 
-	dmg := rules.MonsterDamage(g.RNG, tgt, m)
-	dmg -= b.weakened[idx]
+	dmg := rules.MonsterDamage(g.RNG, tgt, m) + rules.OffenseMod(m.Active)
 	if dmg < 0 {
 		dmg = 0
 	}
@@ -961,6 +1069,14 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 	b.addFloater(fx, fy, fmt.Sprintf("-%d", dmg), render.ColBlood)
 	b.log.AddColor(render.ColBlood, "%s %s %s with %s for %d.",
 		m.Name, verb, tgt.Name, with, dmg)
+
+	// Some things leave more than a wound. A spider's bite is worth more than
+	// its damage roll suggests, which is what makes the roster's stat lines
+	// stop being the whole story about which monster you would rather meet.
+	if e, ok := rules.RollAffliction(g.RNG, m.Def.Inflicts); ok && tgt.Alive() {
+		tgt.Active = rules.Apply(tgt.Active, e)
+		b.log.AddColor(render.ColBlood, "%s", g.Write.Afflicted(g.RNG, string(e.Kind), tgt.Name))
+	}
 
 	// A companion who runs out of hit points is out of the fight, not dead.
 	// Permanently losing someone you paid for would make hiring anyone a bet
@@ -1266,6 +1382,7 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		}
 		if !m.Dead {
 			ui.Bar(dst, cx-boxW/2, top+84, boxW, 5, m.HPFrac(), render.ColBlood)
+			drawEffectPips(dst, cx-boxW/2, top+90, m.Active)
 		}
 		// Names run long and slots are only a third of the screen, so the
 		// plate is truncated rather than allowed to collide with its neighbour.

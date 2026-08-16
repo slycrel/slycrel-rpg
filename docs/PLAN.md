@@ -57,6 +57,12 @@ Built and running:
 - Part-monster hirelings: six lineages, each with a stat trade-off, a discount
   on the fee because nobody else will take them, and one technique gated on
   ancestry that no hero of any class or level can learn
+- Status effects: one timed list per combatant, replacing the four ad-hoc
+  mechanisms the battle screen had grown. Poison and burning tick at the end of
+  a round, weakness and blessings net against each other, a stun costs a turn.
+  Fourteen monsters apply one on a landed hit, the simulator applies and ticks
+  them so the balance report stays honest, and antidotes take the harm while
+  leaving the help
 - Getting back up: a fallen companion is out of the fight rather than dead and
   stands up afterwards, or sooner via an item or Reknit. A hero who falls with
   somebody still standing is carried to the nearest town for a large share of
@@ -79,8 +85,8 @@ Built and running:
 - Save and load: three slots, a pause menu, and `-load` to boot straight into a
   save. A save is the seed plus what the player changed, so it is ~6 KB of
   mostly readable JSON and doubles as a test fixture
-- 62 monsters across nine biomes, 14 weapons, 10 armours, 40 items, 25 techniques
-  (nine of them party-facing or gated on a hireling's ancestry)
+- 62 monsters across nine biomes, 14 weapons, 10 armours, 42 items, 27 techniques
+  (eleven of them party-facing, lingering, or gated on a hireling's ancestry)
 - Asset pipeline: inventory, selective extraction, manifest generation, and an
   audit that reports which art keys still fall back to placeholders
 
@@ -116,9 +122,7 @@ testable and a simulation harness is cheap to add later.
 1. **Equipment slots and affixes.** Currently one weapon and one armour.
    Add shield/trinket slots and a suffix generator ("of the Damp", "of Poor
    Decisions") that rolls stat modifiers.
-2. **Status effects.** Poison, burn, stun already have hooks in the spell kinds;
-   generalise into a timed-effect list on combatants.
-3. **Party, third pass.** What the targeting rework did not reach: outfitting a
+2. **Party, third pass.** What the targeting rework did not reach: outfitting a
    companion at a shop rather than letting them re-arm off-screen out of their
    cut, and letting a companion carry a pack of their own.
 
@@ -129,12 +133,12 @@ testable and a simulation harness is cheap to add later.
    opens. The apothecary stocks the revive items instead, which is the same
    idea placed where it does something. If death ever gets harsher, this is the
    first thing to revisit.
-4. **Companion backstories.** A hireling arrives with a name, a lineage and a
+3. **Companion backstories.** A hireling arrives with a name, a lineage and a
    pitch, and nothing behind it. Give each one a two- or three-step thread that
    surfaces as you travel with them — the previous employer a part-undead is
    still technically contracted to, the arrangement a part-demon will not
    discuss — resolved at a place the world already generated.
-5. **NPC backstories.** The same shape for the townspeople who currently have
+4. **NPC backstories.** The same shape for the townspeople who currently have
    one line each.
 
    These two want one mechanism, and it is a step up from what `internal/quest`
@@ -149,18 +153,18 @@ testable and a simulation harness is cheap to add later.
 
 ### Phase 3 — the world reacting
 
-6. **Day/night and weather.** The tileset collection includes a weather-effects
+5. **Day/night and weather.** The tileset collection includes a weather-effects
    pack. Changes encounter tables and which NPCs are out.
-7. **Faction and reputation.** `Fame`, `Honor`, `Faith` and `Shame` exist on
+6. **Faction and reputation.** `Fame`, `Honor`, `Faith` and `Shame` exist on
    the character and currently do almost nothing. Gate content on them.
-8. **A reason to be here.** A generated main thread that strings together
+7. **A reason to be here.** A generated main thread that strings together
    five or six POIs into something with an ending.
 
 ### Phase 4 — polish
 
-9. Curated UI art from the 4,488-file GUI Pro kit, replacing the procedural panels.
-10. Title screen art, transitions, particles from the 115-file VFX pack.
-11. Balance simulation: run 10,000 headless fights per level band against the
+8. Curated UI art from the 4,488-file GUI Pro kit, replacing the procedural panels.
+9. Title screen art, transitions, particles from the 115-file VFX pack.
+10. Balance simulation: run 10,000 headless fights per level band against the
    pure `rules` package and tune the curve.
 
 ## Open questions

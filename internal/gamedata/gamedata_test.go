@@ -523,6 +523,7 @@ func TestSpellTargetingIsCoherent(t *testing.T) {
 		}
 		switch s.Kind {
 		case model.SpellDamage, model.SpellDrain, model.SpellWeaken, model.SpellStun,
+			model.SpellPoison, model.SpellBurn,
 			model.SpellHeal, model.SpellBless, model.SpellRevive:
 		default:
 			t.Errorf("%s is of kind %q, which nothing implements", s.ID, s.Kind)
@@ -663,5 +664,73 @@ func TestEveryLineageHasSomethingToSay(t *testing.T) {
 		if !strings.Contains(ln, "{N}") {
 			t.Errorf("revive line never names anybody: %q", ln)
 		}
+	}
+}
+
+// Afflictions are what make two monsters with the same stat line different to
+// meet. Every one has to name a real condition and be rollable, and they have
+// to stay a minority: if most things poison you, poison is just damage with
+// extra words.
+func TestMonsterAfflictionsAreSaneAndRare(t *testing.T) {
+	tables := load(t)
+	known := map[model.EffectKind]bool{
+		model.EffectPoison: true, model.EffectBurn: true,
+		model.EffectWeaken: true, model.EffectStun: true,
+	}
+
+	total, afflicting := 0, 0
+	kinds := map[model.EffectKind]int{}
+	for _, d := range tables.ByID {
+		total++
+		a := d.Inflicts
+		if a == nil {
+			continue
+		}
+		afflicting++
+		kinds[a.Kind]++
+		if !known[a.Kind] {
+			t.Errorf("%s inflicts %q, which is not a condition a monster should apply", d.ID, a.Kind)
+		}
+		if a.Chance <= 0 || a.Chance > 100 {
+			t.Errorf("%s inflicts %s with a %d%% chance", d.ID, a.Kind, a.Chance)
+		}
+		if a.Power < 1 {
+			t.Errorf("%s inflicts %s at power %d", d.ID, a.Kind, a.Power)
+		}
+		// A ticking condition needs a duration; a permanent poison would run
+		// for the whole fight and read as a second health bar.
+		if a.Kind == model.EffectPoison || a.Kind == model.EffectBurn {
+			if a.Rounds < 1 {
+				t.Errorf("%s inflicts %s for %d rounds", d.ID, a.Kind, a.Rounds)
+			}
+		}
+	}
+
+	if afflicting == 0 {
+		t.Fatal("nothing in the game inflicts a condition")
+	}
+	if share := float64(afflicting) / float64(total); share > 0.4 {
+		t.Errorf("%d of %d monsters inflict a condition (%.0f%%), which is no longer a minority",
+			afflicting, total, share*100)
+	}
+	// The lines that name it landing have to exist for every kind in use.
+	for k := range kinds {
+		if len(tables.Text.Afflicted[string(k)]) == 0 {
+			t.Errorf("monsters inflict %s and nothing describes it happening", k)
+		}
+	}
+}
+
+// A condition the player can inflict but never shed would be a one-way ratchet.
+func TestConditionsHaveACounter(t *testing.T) {
+	tables := load(t)
+	cures := 0
+	for _, it := range tables.Items {
+		if it.Kind == model.ItemCure {
+			cures++
+		}
+	}
+	if cures == 0 {
+		t.Error("nothing in the game clears a condition")
 	}
 }

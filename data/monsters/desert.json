@@ -64,6 +64,12 @@
     "death": [
       "{T} flips onto its back and waves goodbye with everything at once."
     ],
+    "inflicts": {
+      "kind": "poison",
+      "power": 3,
+      "rounds": 3,
+      "chance": 30
+    },
     "sprite": "mob/bug2",
     "loot": [
       {
@@ -221,6 +227,12 @@
     "death": [
       "{T} burns down to an ember, which glares."
     ],
+    "inflicts": {
+      "kind": "burn",
+      "power": 6,
+      "rounds": 3,
+      "chance": 45
+    },
     "sprite": "mob/phoenix_01",
     "loot": [
       {

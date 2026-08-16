@@ -100,6 +100,12 @@
     "death": [
       "{T} folds up, still chewing on nothing."
     ],
+    "inflicts": {
+      "kind": "poison",
+      "power": 4,
+      "rounds": 4,
+      "chance": 30
+    },
     "sprite": "mob/red_ghoul_01",
     "loot": [
       {
@@ -212,6 +218,12 @@
     "death": [
       "{T} is recalled. The paperwork lands somewhere else."
     ],
+    "inflicts": {
+      "kind": "burn",
+      "power": 6,
+      "rounds": 3,
+      "chance": 35
+    },
     "sprite": "mob/demon_03",
     "loot": [
       {

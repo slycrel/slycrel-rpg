@@ -298,5 +298,29 @@
     "target": "all",
     "cast": "{A} is briefly the wrong number of things at once.",
     "icon": "icon/rune/60"
+  },
+  {
+    "id": "envenom",
+    "name": "Envenom",
+    "class": "Thief",
+    "level": 7,
+    "cost": 5,
+    "power": 6,
+    "kind": "poison",
+    "target": "one",
+    "cast": "{A} puts something on the blade that was not sold legally.",
+    "icon": "icon/rune/12"
+  },
+  {
+    "id": "kindle",
+    "name": "Kindle",
+    "class": "Mage",
+    "level": 6,
+    "cost": 6,
+    "power": 9,
+    "kind": "burn",
+    "target": "one",
+    "cast": "{A} sets one specific thing alight and steps back.",
+    "icon": "icon/rune/22"
   }
 ]

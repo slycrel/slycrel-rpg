@@ -71,6 +71,12 @@
     "death": [
       "{T} curls up like a hand closing. It somehow still fits in your nightmares."
     ],
+    "inflicts": {
+      "kind": "poison",
+      "power": 3,
+      "rounds": 4,
+      "chance": 40
+    },
     "sprite": "mob/spider_01",
     "loot": [
       {

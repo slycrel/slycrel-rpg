@@ -51,7 +51,9 @@
     "value": 12,
     "count": 1,
     "desc": "Chew it before a fight. Raises strength for the battle and ruins your evening.",
-    "icon": "icon/loot/ginger_root"
+    "icon": "icon/loot/ginger_root",
+    "effect": "bless",
+    "rounds": 0
   },
   {
     "name": "Suspicious Pollen",
@@ -60,7 +62,9 @@
     "value": 14,
     "count": 1,
     "desc": "Raises dexterity for the battle. Also, briefly, your opinion of shrubs.",
-    "icon": "icon/loot/rare_monsterfungus"
+    "icon": "icon/loot/rare_monsterfungus",
+    "effect": "quicken",
+    "rounds": 0
   },
   {
     "name": "Suspicious Egg",
@@ -358,5 +362,23 @@
     "count": 1,
     "desc": "Somebody's. It keeps beating, which is the useful part.",
     "icon": "icon/loot/monster_heart"
+  },
+  {
+    "name": "Broad Antidote",
+    "kind": "cure",
+    "power": 0,
+    "value": 30,
+    "count": 1,
+    "desc": "Counteracts most of what is in you. The rest it introduces to each other.",
+    "icon": "icon/loot/blue_lower_grade_cultivation_pill"
+  },
+  {
+    "name": "Damp Compress",
+    "kind": "cure",
+    "power": 0,
+    "value": 14,
+    "count": 1,
+    "desc": "For when a member of the party is on fire, or full of something.",
+    "icon": "icon/loot/water_lilly"
   }
 ]

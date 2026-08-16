@@ -139,6 +139,13 @@ func (s *statusScene) useOutOfCombat(g *Game, idx int) {
 		before := c.Psyche
 		c.Psyche = core.Clamp(c.Psyche+it.Power, 0, c.MaxPsyche)
 		g.Log.AddColor(render.ColMagic, "%s: %d psyche back for %s.", it.Name, c.Psyche-before, c.Name)
+	case model.ItemCure:
+		// Conditions do not survive a fight, so out here this is always a
+		// wasted swallow. Refuse rather than quietly spend it.
+		g.Sound.Play("ui/deny")
+		g.Log.AddColor(render.ColInkDim, "%s is not suffering from anything a %s would fix.",
+			c.Name, g.Player.Bag[idx].Name)
+		return
 	case model.ItemRevive:
 		// The company picks each other up once the fighting stops, so out here
 		// this is a spare rather than a necessity. Say so instead of spending it.

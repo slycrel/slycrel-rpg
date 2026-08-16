@@ -100,6 +100,12 @@
     "death": [
       "{T} retracts. Permanently."
     ],
+    "inflicts": {
+      "kind": "poison",
+      "power": 2,
+      "rounds": 3,
+      "chance": 25
+    },
     "sprite": "mob/snail_02",
     "loot": [
       {
