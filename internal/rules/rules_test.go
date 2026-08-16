@@ -271,3 +271,82 @@ func TestFledIsNeitherWonNorDied(t *testing.T) {
 		}
 	}
 }
+
+// The false retreat is the thief's answer to a retreat paying nothing. It has
+// to stay a gamble: sold less often than a real escape would succeed, and
+// punished when it is not bought. If it were as reliable as running it would
+// simply be the correct move every time and the flee button would be decoration.
+func TestTheFalseRetreatIsAGambleAndNotAnUpgrade(t *testing.T) {
+	g := core.NewRNG(41)
+	for _, level := range []int{4, 8, 13} {
+		c := rules.BuildCharacter(g, model.ClassThief, level)
+		for _, monSpeed := range []int{6, 12, 18} {
+			feint := rules.FeintChance(c, monSpeed)
+			flee := rules.FleeChance(c.Spd(), monSpeed)
+			if feint <= 0 || feint >= 1 {
+				t.Errorf("feint chance came out %.2f", feint)
+			}
+			// Against something you could outrun, running has to be the better
+			// bet. Against something faster than you it does not: FleeChance
+			// floors out down there and lying to a thing you cannot escape is
+			// exactly when a lie is worth telling. That niche is the point of
+			// the move, so the rule is asserted where it means something.
+			if monSpeed > c.Spd() {
+				continue
+			}
+			if feint >= flee {
+				t.Errorf("level %d thief (speed %d) against speed %d: feint %.2f, "+
+					"flee %.2f; a lie that works as often as running is not a gamble",
+					level, c.Spd(), monSpeed, feint, flee)
+			}
+		}
+	}
+
+	// And failing has to hurt more than not trying.
+	if rules.FeintPunish(10) <= 10 {
+		t.Errorf("a retreat nobody bought costs %d against a normal %d", rules.FeintPunish(10), 10)
+	}
+}
+
+// Only the thief, and only once they have grown into it.
+func TestOnlyTheThiefCanSellARetreat(t *testing.T) {
+	g := core.NewRNG(42)
+	for _, class := range model.AllClasses {
+		for _, level := range []int{1, 3, 4, 10} {
+			c := rules.BuildCharacter(g, class, level)
+			want := class == model.ClassThief && level >= 4
+			if got := rules.CanFeint(c); got != want {
+				t.Errorf("%s level %d: CanFeint=%v, want %v", class, level, got, want)
+			}
+		}
+	}
+	if rules.CanFeint(nil) {
+		t.Error("a nil character can feint")
+	}
+}
+
+// The decision to try it has to read the target's armour, not just its health.
+// PlayerDamage subtracts Defense before the feint bonus multiplies anything, so
+// an estimate that ignored armour called the heavily plated things reachable
+// when three such blows would not have finished them.
+func TestAFeintIsOnlyWorthItAgainstSomethingActuallyReachable(t *testing.T) {
+	g := core.NewRNG(43)
+	c := rules.BuildCharacter(g, model.ClassThief, 10)
+	c.Weapon = model.Weapon{Name: "Test", Strike: 12}
+
+	soft := &model.Monster{HP: 10, Defense: 0}
+	if !rules.FeintIsWorthIt(c, soft) {
+		t.Error("something on its last legs and unarmoured is not worth a gamble")
+	}
+	tough := &model.Monster{HP: 10, Defense: 500}
+	if rules.FeintIsWorthIt(c, tough) {
+		t.Error("armour that eats the whole blow still reads as reachable")
+	}
+	far := &model.Monster{HP: 100000, Defense: 0}
+	if rules.FeintIsWorthIt(c, far) {
+		t.Error("something unkillable reads as one blow away")
+	}
+	if rules.FeintIsWorthIt(c, &model.Monster{HP: 1, Dead: true}) {
+		t.Error("a corpse is worth feinting at")
+	}
+}

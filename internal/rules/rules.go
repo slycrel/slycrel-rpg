@@ -265,6 +265,88 @@ func SpellDamage(g *core.RNG, c *model.Character, s model.Spell) int {
 // your sword" rather than "reload".
 func AfterWard(raw, ward int) int { return core.Max(1, raw-ward) }
 
+// --- the false retreat ---------------------------------------------------
+
+// feintLevel is when a thief works out that a rout can be sold rather than run.
+const feintLevel = 4
+
+// feintBonus is what a blow lands for when the target has committed to a
+// pursuit, as a multiple of an ordinary swing.
+const feintBonus = 2.2
+
+// FeintIsWorthIt reports whether a false retreat could plausibly turn the fight
+// rather than merely decorate the loss.
+//
+// Measured against what the blow would actually land for, not against a
+// fraction of the target's health. A fraction reads the same at every level and
+// it is not the same: at level 13 a creature sitting at 65% is still forty hit
+// points away from dying and a doubled swing does not close that, so the thief
+// was spending its escape on a gesture — plus 12.9 points of death for plus 1.9
+// of victory. Against something actually within reach the same trade runs about
+// one death per win, which is a gamble worth being offered.
+func FeintIsWorthIt(c *model.Character, m *model.Monster) bool {
+	if m == nil || m.Dead {
+		return false
+	}
+	// The late-game damage midpoint, less what the target's armour takes off
+	// it, then scaled by the bonus. Leaving armour out of the estimate is why
+	// this misfired worst against the plated things in the mountains:
+	// PlayerDamage subtracts Defense before the multiplier touches anything, so
+	// an estimate that ignored it called a creature reachable when three such
+	// blows would not have finished it, and the thief spent its escape on a
+	// gesture.
+	reach := (float64(c.Str())*0.65 + float64(c.Strike()) - float64(m.Defense)) * feintBonus
+	if reach <= 0 {
+		return false
+	}
+	return float64(m.HP) <= reach*1.1
+}
+
+// feintPunish is what the target hits back for when it does not buy the act,
+// which is what makes this a gamble and not simply a better attack.
+const feintPunish = 1.6
+
+// CanFeint reports whether a character has the false retreat.
+//
+// It is the thief's alone and always will be. Fleeing pays nothing at all — no
+// experience, no coin, no drop, and the fight was still fought — so the class
+// whose survival plan is leaving is the class whose plan is to come away with
+// nothing. This is the way out of that, and it is a way out only they have.
+func CanFeint(c *model.Character) bool {
+	return c != nil && c.Class == model.ClassThief && c.Level >= feintLevel
+}
+
+// feintFloor is the worst odds a competent player would take this at.
+//
+// The chance is carried by dexterity, so a level-four thief is selling the act
+// at about three in ten and eating a heavier hit for the other seven. Offering
+// the move that early is fine; taking it that early is not, and a simulator
+// that took every gamble on offer reported the trick as a straight downgrade —
+// win rates fell five to eight points through the middle of the game. The move
+// arrives when the thief does and becomes worth using when their hands do.
+const feintFloor = 0.5
+
+// FeintChance is the odds of selling the retreat.
+//
+// Deliberately below FleeChance for the same character against the same
+// creature. A feint that worked as often as a real escape would not be a
+// gamble, it would be the correct move every time and the flee button would be
+// decoration. Dexterity carries it rather than speed: this is a lie told with
+// footwork, not a race.
+func FeintChance(c *model.Character, monsterSpeed int) float64 {
+	base := 0.30 + float64(c.Dex()-monsterSpeed)*0.035
+	return core.ClampF(base, 0.10, 0.70)
+}
+
+// FeintDamage rolls the blow that lands when the act is bought. The target has
+// turned its back on somebody it believed to be running away.
+func FeintDamage(g *core.RNG, c *model.Character, m *model.Monster) int {
+	return core.Max(1, int(float64(PlayerDamage(g, c, m))*feintBonus))
+}
+
+// FeintPunish scales the answer a creature gives when it does not fall for it.
+func FeintPunish(dmg int) int { return int(float64(dmg) * feintPunish) }
+
 // Initiative reports whether the player acts before the monster.
 // Original: RollInitiative() — a speed difference plus a d4 fudge.
 func Initiative(g *core.RNG, playerSpeed, monsterSpeed int) bool {
@@ -698,6 +780,44 @@ type FightResult struct {
 // Died reports the outcome that actually costs a run.
 func (r FightResult) Died() bool { return !r.Won && !r.Fled }
 
+// worstHPFrac is the health of the healthiest thing still standing, which is
+// what decides whether a fight is nearly turned or merely lost.
+func worstHPFrac(living []*model.Monster) float64 {
+	var worst float64
+	for _, m := range living {
+		if f := m.HPFrac(); f > worst {
+			worst = f
+		}
+	}
+	return worst
+}
+
+// inTrouble reports that the fight is close enough to going wrong to be worth
+// gambling on. Looser than wantsOut, which is the threshold for giving up.
+func inTrouble(c *model.Character, living []*model.Monster) bool {
+	if c.MaxHP <= 0 {
+		return false
+	}
+	return c.HP*2 <= c.MaxHP && float64(c.HP) < float64(incomingPerRound(c, living))*3
+}
+
+// incomingPerRound estimates what is about to be taken off the player, which is
+// the unit both the retreat and the gambit are decided in.
+func incomingPerRound(c *model.Character, living []*model.Monster) int {
+	total := 0
+	for _, m := range living {
+		if m.Dead {
+			continue
+		}
+		guard := c.Defense()
+		if m.Def != nil && m.Def.Magic {
+			guard = c.Ward()
+		}
+		total += core.Max(1, int(float64(m.Offense)*0.85)-guard)
+	}
+	return total
+}
+
 // wantsOut decides whether the simulated player should be trying to leave.
 //
 // Deliberately late and conservative: badly hurt, losing on exchange, and out
@@ -715,17 +835,7 @@ func wantsOut(c *model.Character, living []*model.Monster) bool {
 	// it — so the class with by far the best escape odds per attempt got fewer
 	// attempts than the fighter and escaped *less often*. Nobody plays that
 	// way. You leave while leaving is still possible.
-	incoming := 0
-	for _, m := range living {
-		if m.Dead {
-			continue
-		}
-		guard := c.Defense()
-		if m.Def != nil && m.Def.Magic {
-			guard = c.Ward()
-		}
-		incoming += core.Max(1, int(float64(m.Offense)*0.85)-guard)
-	}
+	incoming := incomingPerRound(c, living)
 	if c.HP > incoming*3/2 {
 		return false
 	}
@@ -737,13 +847,7 @@ func wantsOut(c *model.Character, living []*model.Monster) bool {
 	// it was about to win, and a level 13 fighter's run of fights on one rest
 	// fell to 2.3 before it broke the endurance floor. Retreating is supposed
 	// to be the answer to losing, not to being hurt.
-	var worst float64
-	for _, m := range living {
-		if f := m.HPFrac(); f > worst {
-			worst = f
-		}
-	}
-	return worst > 0.5
+	return worstHPFrac(living) > 0.5
 }
 
 // SimulateFight plays an encounter to the end, mutating nothing the caller owns.
@@ -782,6 +886,11 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 		}
 		playerFirst := Initiative(g, sim.Spd(), fastest)
 
+		// Set when a false retreat is not bought: the creature that saw through
+		// it hits harder for the round. Declared up here because monsterTurns
+		// closes over it below.
+		punished := false
+
 		hurt := func(target *model.Monster, dmg int) {
 			target.HP = core.Max(0, target.HP-dmg)
 			res.DamageDealt += dmg
@@ -794,7 +903,7 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 			if target.Dead {
 				return
 			}
-			if s, ok := bestSpell(sim, spells); ok {
+			if s, ok := bestSpell(sim, spells, living); ok {
 				sim.Psyche -= s.Cost
 				switch s.Kind {
 				case model.SpellHeal:
@@ -835,6 +944,9 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 					// no attack this turn
 				default:
 					dmg := MonsterDamage(g, sim, m)
+					if punished {
+						dmg = FeintPunish(dmg)
+					}
 					sim.HP = core.Max(0, sim.HP-dmg)
 					res.DamageTaken += dmg
 					// Some creatures leave a condition behind, which is worth
@@ -861,12 +973,38 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 		// to leave spends it. Skipping the monsters' turn as well made escape
 		// free and eventually certain, which is a different lie from the one it
 		// replaced.
+		// Losing gives the player a third answer as well as fight and run: a
+		// thief can sell the retreat rather than take it. It is modelled here
+		// because it has to be — a move the simulator cannot see is one the
+		// balance report lies about, and this one deliberately trades survival
+		// for the chance at a fight that pays.
+		// Three answers when it is going badly, not two.
+		//
+		// The feint is not an alternative to running, which was the first way
+		// this was modelled and it barely fired: wantsOut only triggers while
+		// the other thing is still above half health, and a false retreat is
+		// only worth selling when it is nearly dead, so the two windows hardly
+		// ever met. It is an alternative to *swinging* — the gambit you take
+		// when you are nearly out of hit points and the thing opposite is
+		// nearly out of them too, and you would rather end it this round than
+		// find out who runs out first.
 		act := strike
-		if wantsOut(sim, living) {
+		switch {
+		case wantsOut(sim, living):
 			act = func() {
 				if g.Chance(FleeChance(sim.Spd(), fastest)) {
 					res.Fled = true
 				}
+			}
+		case CanFeint(sim) && inTrouble(sim, living) && FeintIsWorthIt(sim, living[0]) &&
+			FeintChance(sim, fastest) >= feintFloor:
+			act = func() {
+				target := living[0]
+				if g.Chance(FeintChance(sim, fastest)) {
+					hurt(target, FeintDamage(g, sim, target))
+					return
+				}
+				punished = true
 			}
 		}
 
@@ -961,9 +1099,21 @@ func bestAttack(c *model.Character, spells []model.Spell) (model.Spell, bool) {
 // necessarily on itself — while ChooseAllyMove layers party triage on top of
 // the same two helpers. One set of "what is worth casting" rules, two callers
 // with different amounts of company.
-func bestSpell(c *model.Character, spells []model.Spell) (model.Spell, bool) {
-	if heal, ok := bestHeal(c, spells); ok && c.HPFrac() < 0.3 {
-		return heal, true
+// bestSpell picks the technique to cast, healing when healing is what the
+// moment calls for.
+//
+// The trigger is rounds of survival left, not a fraction of health — the same
+// correction the retreat needed and for the same reason. "Below 30%" is 4 hit
+// points to a level-one mage and 36 to a level-thirteen fighter: the mage was
+// waiting until one blow finished it before considering a heal, which is why it
+// came out the most fragile thing in the game at exactly the level where it has
+// the fewest hit points and the most psyche to spend on not dying.
+func bestSpell(c *model.Character, spells []model.Spell, living []*model.Monster) (model.Spell, bool) {
+	if heal, ok := bestHeal(c, spells); ok {
+		incoming := incomingPerRound(c, living)
+		if c.HP <= incoming*2 && c.HP < c.MaxHP*3/4 {
+			return heal, true
+		}
 	}
 	return bestAttack(c, spells)
 }

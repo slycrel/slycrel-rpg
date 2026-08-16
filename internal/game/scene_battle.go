@@ -82,6 +82,10 @@ type battleScene struct {
 	// not a condition with a duration.
 	guarding map[*model.Character]bool
 
+	// feintFailed is set when a false retreat is not bought, and makes the
+	// answer land harder for the rest of the round. Cleared when the round is.
+	feintFailed bool
+
 	// result is 0 running, 1 victory, 2 defeat, 3 fled, 4 the hero went down
 	// but the company did not.
 	result   int
@@ -266,13 +270,24 @@ func (b *battleScene) setRootMenu(g *Game) {
 	// The root menu is text-only; icons return when a list of things appears.
 	b.menu.Icons = nil
 	spells := g.Data.SpellsFor(g.Player)
-	b.menu.SetItems([]ui.MenuItem{
+	items := []ui.MenuItem{
 		{Label: "Attack", Detail: g.Player.Weapon.Name},
 		{Label: "Technique", Detail: fmt.Sprintf("%d SP", g.Player.Psyche), Disabled: len(spells) == 0},
 		{Label: "Item", Detail: fmt.Sprintf("%d", len(g.Player.Bag)), Disabled: len(g.Player.Bag) == 0},
 		{Label: "Defend", Detail: "brace"},
 		{Label: "Flee", Detail: "sensible"},
-	})
+	}
+	// The thief's way out of a retreat paying nothing. It sits under Flee
+	// because that is what it pretends to be, and it only appears for somebody
+	// who can actually do it — a greyed row would be advertising a class
+	// ability to two classes that will never have it.
+	if rules.CanFeint(g.Player) {
+		items = append(items, ui.MenuItem{
+			Label: "False retreat", Detail: fmt.Sprintf("%.0f%%",
+				rules.FeintChance(g.Player, b.fastestFoe())*100),
+		})
+	}
+	b.menu.SetItems(items)
 	b.menu.Index = 0
 	b.mode = modeRoot
 }
@@ -351,6 +366,7 @@ func (b *battleScene) updateBusy(g *Game) {
 		return
 	}
 	clear(b.guarding)
+	b.feintFailed = false
 	b.round++
 	if b.round%3 == 0 {
 		if i := b.firstLiving(); i >= 0 {
@@ -487,7 +503,47 @@ func (b *battleScene) chooseRoot(g *Game) {
 		})
 	case 4: // Flee
 		b.runRound(g, func(g *Game) { b.attemptFlee(g) })
+	case 5: // False retreat
+		b.runRound(g, func(g *Game) { b.attemptFeint(g) })
 	}
+}
+
+// fastestFoe reports the speed of the quickest thing still standing, which is
+// what both running and pretending to run are judged against.
+func (b *battleScene) fastestFoe() int {
+	fastest := 0
+	for _, i := range b.living() {
+		if b.mons[i].Speed > fastest {
+			fastest = b.mons[i].Speed
+		}
+	}
+	return fastest
+}
+
+// attemptFeint sells the retreat, or fails to.
+//
+// The reward is a blow against something that has turned its back; the price of
+// failing is the round plus a harder answer, which is what keeps this a gamble
+// rather than simply the thief's best attack.
+func (b *battleScene) attemptFeint(g *Game) {
+	live := b.living()
+	if len(live) == 0 {
+		return
+	}
+	idx := live[0]
+	m := b.mons[idx]
+
+	if !g.RNG.Chance(rules.FeintChance(g.Player, b.fastestFoe())) {
+		b.feintFailed = true
+		g.Sound.Play("fight/miss")
+		b.log.Add("%s turns to run. Nobody buys it.", g.Player.Name)
+		return
+	}
+	g.Sound.Play("fight/crit")
+	d := rules.FeintDamage(g.RNG, g.Player, m)
+	b.damageMonster(g, idx, d)
+	b.log.AddColor(render.ColGold, "%s breaks, %s follows, and %s was never leaving. %d.",
+		g.Player.Name, m.Name, g.Player.Name, d)
 }
 
 // chooseSpell routes a technique to whichever cursor it needs.
@@ -1075,6 +1131,10 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 	dmg := rules.MonsterDamage(g.RNG, tgt, m) + rules.OffenseMod(m.Active)
 	if dmg < 0 {
 		dmg = 0
+	}
+	// A retreat nobody bought leaves the player facing the wrong way.
+	if b.feintFailed && tgt == g.Player {
+		dmg = rules.FeintPunish(dmg)
 	}
 	if b.guarding[tgt] {
 		dmg = rules.Defending(dmg)

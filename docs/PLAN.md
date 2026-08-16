@@ -290,11 +290,32 @@ than by tests, became something a test can reach.
    trade is the reward you would have forfeited against the survivability you
    would have banked, chosen in the moment rather than by class.
 
-   Two things to get right. It has to be *worse* than fleeing on average or it
-   is not a gamble, it is the correct move every time. And the simulator has to
-   know about it, or the balance report goes back to lying about the thief in
-   the opposite direction — `wantsOut` would need a third answer beyond fight
-   and run.
+   *(Built.)* `rules.CanFeint` / `FeintChance` / `FeintDamage` / `FeintPunish`,
+   offered in the battle menu under Flee to thieves from level 4, and modelled
+   in `SimulateFight` so the report can see it.
+
+   Three things came out of building it. It is not an alternative to running —
+   that was the first model and it barely fired, because `wantsOut` only
+   triggers while the other thing is above half health and a false retreat is
+   only worth selling when it is nearly dead. It is an alternative to
+   *swinging*: the gambit when you are nearly out of hit points and so is the
+   thing opposite. Second, the decision has to read the target's armour, since
+   `PlayerDamage` subtracts Defense before the bonus multiplies anything.
+   Third, a simulator that took every gamble on offer reported the trick as a
+   straight downgrade, so the policy has a floor — the move arrives when the
+   thief does and becomes worth using when their dexterity does.
+
+   The rule "worse than fleeing on average" holds where it matters and has one
+   deliberate exception: against something faster than you, `FleeChance` floors
+   out and lying is the better bet. That niche is the point of the move.
+
+   **Still open, and Jeremy's:** the thief should get more out of buying
+   healing items — two for the price of one, because they steal one and pay for
+   the other. That is not a flourish, it is the right shape for the actual
+   constraint. The thief has *no* healing technique at all (the shared-looking
+   ones in `spells.json` are blood-gated hireling moves, not class-agnostic),
+   and its only sustain is two drains. Its recovery is therefore entirely
+   items, which makes a discount on them the class's real defensive stat.
 
 6. **Day/night and weather.** The tileset collection includes a weather-effects
    pack. Changes encounter tables and which NPCs are out.
