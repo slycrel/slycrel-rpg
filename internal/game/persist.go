@@ -113,9 +113,9 @@ func (g *Game) Restore(f *save.File) error {
 		g.World.Explored = fog
 	}
 
-	g.Walk = walker{dur: 9}
+	g.Walk = core.NewWalker(9)
 	g.Walk.Place(f.At)
-	g.Walk.dir = core.Dir(f.Facing)
+	g.Walk.Face(core.Dir(f.Facing))
 	g.follow, g.localFollow = nil, nil
 	g.reformLines()
 
@@ -128,10 +128,10 @@ func (g *Game) Restore(f *save.File) error {
 	if f.Inside != nil && f.Inside.POI >= 0 && f.Inside.POI < len(g.World.POIs) {
 		poi := g.World.POIs[f.Inside.POI]
 		g.Local = world.BuildLocal(poi, g.Write)
-		g.LocalWalk = walker{dur: 7}
+		g.LocalWalk = core.NewWalker(7)
 		g.LocalWalk.Place(f.Inside.At)
-		g.LocalWalk.dir = core.Dir(f.Inside.Facing)
-		placeLine(g.localFollow, f.Inside.At)
+		g.LocalWalk.Face(core.Dir(f.Inside.Facing))
+		g.localFollow.Place(f.Inside.At)
 		g.Push(newLocalScene(g))
 	}
 

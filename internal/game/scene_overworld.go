@@ -35,7 +35,7 @@ func newOverworldScene(g *Game) *overworldScene {
 
 func (s *overworldScene) Update(g *Game) error {
 	g.Walk.Advance()
-	advanceLine(g.follow)
+	g.follow.Advance()
 	s.cam.Update()
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyM) {
@@ -90,15 +90,14 @@ func (s *overworldScene) tryStep(g *Game, d core.Dir) {
 	next := g.Walk.Tile.Add(d.Delta())
 	if !g.World.Walkable(next.X, next.Y) {
 		// Face the obstacle anyway so the sprite turns; it feels responsive.
-		g.Walk.Step(g.Walk.Tile, d)
-		g.Walk.t = 1
+		g.Walk.Face(d)
 		s.moveDelay = 6
 		return
 	}
 
 	from := g.Walk.Tile
 	g.Walk.Step(next, d)
-	stepLine(g.follow, from)
+	g.follow.Step(from)
 	// Rough terrain costs a pause before the next step is accepted.
 	s.moveDelay = g.World.At(next.X, next.Y).Info().Cost * 2
 	g.World.Reveal(next, 6)
@@ -158,12 +157,12 @@ func (g *Game) encounterLevel(at core.Point) int {
 // enterPOI builds the interior and switches scenes.
 func (g *Game) enterPOI(poi *world.POI) {
 	g.Local = world.BuildLocal(poi, g.Write)
-	g.LocalWalk = walker{dur: 7}
+	g.LocalWalk = core.NewWalker(7)
 	g.LocalWalk.Place(g.Local.Entry)
 	// The company comes in through the gate stacked on the hero and spreads
 	// back out over the first few steps.
 	g.reformLines()
-	placeLine(g.localFollow, g.Local.Entry)
+	g.localFollow.Place(g.Local.Entry)
 	g.Sound.Play("world/enter")
 	if idx := g.poiIndex(poi); idx >= 0 {
 		g.noteQuestProgress(g.Quests.OnEnteredPOI(idx))

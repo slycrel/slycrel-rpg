@@ -20,6 +20,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/gamedata"
 	"github.com/slycrel/slycrel-rpg/internal/model"
+	"github.com/slycrel/slycrel-rpg/internal/party"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/tiles"
@@ -53,16 +54,16 @@ type Game struct {
 	Allies []*model.Character
 
 	// Where the player is on the overworld, and inside a location.
-	Walk      walker
+	Walk      core.Walker
 	Local     *world.LocalMap
-	LocalWalk walker
+	LocalWalk core.Walker
 
 	// follow and localFollow are the companions' walkers, parallel to Allies,
 	// one set per map. They are separate from Allies so a companion's position
 	// is never something that has to be saved: a line re-forms on the hero's
 	// tile whenever a map is entered.
-	follow      []walker
-	localFollow []walker
+	follow      party.Line
+	localFollow party.Line
 
 	// Quests the player has taken on.
 	Quests quest.Log
@@ -264,60 +265,6 @@ func (g *Game) drawStatusBar(dst *ebiten.Image, place, hint string) {
 
 // Layout fixes the logical resolution; the window scales by whole multiples.
 func (g *Game) Layout(int, int) (int, int) { return render.ScreenW, render.ScreenH }
-
-// walker is a grid-stepping actor with smooth interpolation between tiles.
-// Movement is tile-locked (it is that kind of game) but drawn continuously, so
-// it reads as walking rather than teleporting.
-type walker struct {
-	Tile core.Point
-	prev core.Point
-	t    float64 // progress from prev to Tile, in [0,1]
-	dir  core.Dir
-	// dur is how many ticks a step takes.
-	dur float64
-}
-
-// Place teleports the walker with no animation.
-func (w *walker) Place(p core.Point) {
-	w.Tile, w.prev, w.t = p, p, 1
-}
-
-// Moving reports whether a step is in progress.
-func (w *walker) Moving() bool { return w.t < 1 }
-
-// Step begins a move to p, facing d.
-func (w *walker) Step(p core.Point, d core.Dir) {
-	w.prev = w.Tile
-	w.Tile = p
-	w.dir = d
-	w.t = 0
-}
-
-// Advance progresses the interpolation one tick.
-func (w *walker) Advance() {
-	if w.dur <= 0 {
-		w.dur = 8
-	}
-	if w.t < 1 {
-		w.t += 1 / w.dur
-		if w.t > 1 {
-			w.t = 1
-		}
-	}
-}
-
-// Pixel returns the walker's interpolated position in world pixels, centred on
-// its tile horizontally and at the tile's bottom edge vertically, which is the
-// anchor render.Ctx.World expects.
-func (w *walker) Pixel() (float64, float64) {
-	const ts = assetsys.TileSize
-	fx := float64(w.prev.X) + (float64(w.Tile.X)-float64(w.prev.X))*w.t
-	fy := float64(w.prev.Y) + (float64(w.Tile.Y)-float64(w.prev.Y))*w.t
-	return fx*ts + ts/2, fy*ts + ts
-}
-
-// Dir returns the current facing.
-func (w *walker) Dir() core.Dir { return w.dir }
 
 // Input helpers. Everything routes through these so rebinding later is a
 // single-file change.

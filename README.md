@@ -149,9 +149,10 @@ cmd/
   slycrel/            the game
   assetpipe/          inventory, extract, and index the source art bundle
 internal/
-  core/               RNG that forks deterministically, grid maths
-  model/              characters, monsters, gear, spells
-  rules/              combat / levelling / loot maths, ported from the original
+  core/               RNG that forks deterministically, grid maths, the tile walker
+  model/              characters, monsters, gear, spells, conditions
+  rules/              combat / levelling / loot / effect maths, ported from the original
+  party/              the company roster and the line that follows you
   world/              continent generation, terrain, points of interest, interiors
   gamedata/           JSON content loading
   content/            the writing room: names, signs, taunts, combat narration
@@ -266,6 +267,14 @@ policy.
 ```bash
 go test ./internal/...
 ```
+
+Six of the nine packages have no path to Ebitengine and run anywhere — `core`,
+`model`, `rules`, `party`, `gamedata`, `save` and `quest` between them hold most
+of the assertions. That is deliberate. Ebitengine initialises a window at
+package init on macOS, so a package that imports it cannot start without a
+display, and a laptop that has locked its screen fails every test in it. Keeping
+the rules, the roster and the marching order out of the scene layer means the
+logic most likely to be wrong is also the logic that can always be run.
 
 They target the things that fail silently: loot tables referring to items that
 do not exist, a biome with no spawnable monsters, an XP curve that stops being

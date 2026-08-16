@@ -34,7 +34,7 @@ func newLocalScene(g *Game) *localScene {
 
 func (s *localScene) Update(g *Game) error {
 	g.LocalWalk.Advance()
-	advanceLine(g.localFollow)
+	g.localFollow.Advance()
 	s.cam.Update()
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
@@ -92,8 +92,7 @@ func (s *localScene) tryStep(g *Game, d core.Dir) {
 
 	// Walking into a blocking entity is how you engage it.
 	if e := g.Local.EntityAt(next.X, next.Y); e != nil {
-		g.LocalWalk.Step(g.LocalWalk.Tile, d)
-		g.LocalWalk.t = 1
+		g.LocalWalk.Face(d)
 		s.moveDelay = 8
 		switch e.Kind {
 		case world.EFoe, world.EBoss, world.EExit:
@@ -103,15 +102,14 @@ func (s *localScene) tryStep(g *Game, d core.Dir) {
 	}
 
 	if !g.Local.Walkable(next.X, next.Y) {
-		g.LocalWalk.Step(g.LocalWalk.Tile, d)
-		g.LocalWalk.t = 1
+		g.LocalWalk.Face(d)
 		s.moveDelay = 6
 		return
 	}
 
 	from := g.LocalWalk.Tile
 	g.LocalWalk.Step(next, d)
-	stepLine(g.localFollow, from)
+	g.localFollow.Step(from)
 	s.moveDelay = 0
 	s.steps++
 	g.sinceFight++

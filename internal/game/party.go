@@ -8,43 +8,32 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
+	"github.com/slycrel/slycrel-rpg/internal/party"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
 
-// PartyMax is the size of the company, hero included.
-//
-// Three is not arbitrary. The battle screen gives the party a 188x58 panel
-// beside the command menu, which is three legible rows; a fourth would mean
-// shrinking the meters to the point where you cannot tell at a glance who is
-// about to fall over, and knowing that is the whole reason the panel exists.
-const PartyMax = 3
-
-// Party returns the hero followed by every companion, which is the order
-// everything else — turn order, the panel, the XP split — reads them in.
-func (g *Game) Party() []*model.Character {
-	out := make([]*model.Character, 0, 1+len(g.Allies))
-	if g.Player != nil {
-		out = append(out, g.Player)
-	}
-	return append(out, g.Allies...)
-}
+// Party returns the hero followed by every companion.
+func (g *Game) Party() []*model.Character { return party.Members(g.Player, g.Allies) }
 
 // LivingParty returns the members still on their feet.
-func (g *Game) LivingParty() []*model.Character {
-	var out []*model.Character
-	for _, c := range g.Party() {
-		if c.Alive() {
-			out = append(out, c)
-		}
-	}
-	return out
-}
+func (g *Game) LivingParty() []*model.Character { return party.Living(g.Party()) }
 
 // PartyFull reports whether there is no room for another hireling.
-func (g *Game) PartyFull() bool { return len(g.Allies)+1 >= PartyMax }
+func (g *Game) PartyFull() bool { return party.Full(len(g.Allies)) }
+
+// uniqueName keeps two members of one company from answering to the same thing.
+func (g *Game) uniqueName(name string) string { return party.UniqueName(g.Party(), name) }
+
+// encounterSize scales a rolled encounter to the size of the company.
+func (g *Game) encounterSize(base int) int {
+	return party.EncounterSize(g.RNG, base, len(g.Allies))
+}
+
+// restParty puts everyone back to full.
+func (g *Game) restParty() { party.Rest(g.Party()) }
 
 // --- hiring ---------------------------------------------------------------
 
@@ -156,35 +145,6 @@ func (g *Game) dismiss(c *model.Character) {
 	}
 }
 
-// uniqueName stops two members of one company answering to the same thing.
-//
-// The given-name pool is thirty deep and the hero draws from it too, so a
-// collision is far from rare — and a party panel with two identical rows, or a
-// transcript where you cannot tell who just went down, is unreadable.
-//
-// A regnal number rather than "the Lesser": the party panel gives a name eighty
-// pixels, and a suffix that gets truncated to "Bosk the." has solved nothing.
-// Nobody involved acknowledges the number.
-func (g *Game) uniqueName(name string) string {
-	taken := func(n string) bool {
-		for _, c := range g.Party() {
-			if c.Name == n {
-				return true
-			}
-		}
-		return false
-	}
-	if !taken(name) {
-		return name
-	}
-	for _, numeral := range []string{" II", " III", " IV"} {
-		if !taken(name + numeral) {
-			return name + numeral
-		}
-	}
-	return name + " V"
-}
-
 // allyPortrait picks a battle portrait for a hireling. The hero is always
 // m_01, so anyone else drawing from the wider pool is immediately not the hero.
 func allyPortrait(g *core.RNG) string {
@@ -195,35 +155,6 @@ func allyPortrait(g *core.RNG) string {
 		"portrait/female/f_17", "portrait/female/f_24",
 	}
 	return core.Pick(g, pool)
-}
-
-// maxFoes is the biggest group the battle screen can lay out legibly. Four
-// portraits across 480 pixels leaves each one 56 wide with room for a name
-// plate under it; a fifth would start truncating names to initials.
-const maxFoes = 4
-
-// encounterSize scales a rolled encounter to the size of the company.
-//
-// A party of three walking into a wood does not meet the single wolf a lone
-// traveller meets. Without this, hiring anyone would be a straight discount on
-// difficulty rather than a trade — you would be buying the same fights with
-// more swords, and the whole curve the balance pass tuned would go soft.
-func (g *Game) encounterSize(base int) int {
-	if n := len(g.Allies); n > 0 {
-		base += g.RNG.Intn(n + 1)
-	}
-	return core.Clamp(base, 1, maxFoes)
-}
-
-// restParty puts everyone back to full. Anything that restores the hero — a
-// bed, an altar, whatever comes next — goes through here, because a party that
-// heals one member at a time is a party that arrives at the next fight in three
-// different conditions for no reason the player can see.
-func (g *Game) restParty() {
-	for _, c := range g.Party() {
-		c.HP = c.MaxHP
-		c.Psyche = c.MaxPsyche
-	}
 }
 
 // --- getting back up -------------------------------------------------------
@@ -258,7 +189,7 @@ func (g *Game) rescueToTown() {
 		g.World.Reveal(town.Pos, 8)
 		town.Discovered, town.Visited = true, true
 	}
-	placeLine(g.follow, g.Walk.Tile)
+	g.follow.Place(g.Walk.Tile)
 
 	fee := rules.RescueFee(g.Player.Coins)
 	g.Player.Coins -= fee
@@ -297,74 +228,16 @@ func (g *Game) nearestSettlement() *world.POI {
 
 // reformLines resizes the follower walkers to match the roster and stacks them
 // on whoever they are following. Called whenever the party changes or a map is
-// entered: a companion's position is never saved, it is simply re-derived from
-// where the hero is standing.
+// entered.
 func (g *Game) reformLines() {
-	g.follow = fitLine(g.follow, len(g.Allies), g.Walk.Tile, 9)
-	g.localFollow = fitLine(g.localFollow, len(g.Allies), g.LocalWalk.Tile, 7)
-}
-
-func fitLine(line []walker, n int, at core.Point, dur float64) []walker {
-	if len(line) > n {
-		return line[:n]
-	}
-	for len(line) < n {
-		w := walker{dur: dur}
-		w.Place(at)
-		line = append(line, w)
-	}
-	return line
-}
-
-// placeLine teleports the whole line onto a tile, for entering a location or
-// loading a save.
-func placeLine(line []walker, at core.Point) {
-	for i := range line {
-		line[i].Place(at)
-	}
-}
-
-// stepLine walks the company forward one tile.
-//
-// Each companion steps onto the tile the one ahead of it has just left, which
-// is why the line bends around corners instead of cutting them: what it follows
-// is the leader's history, not the leader.
-func stepLine(line []walker, leaderFrom core.Point) {
-	next := leaderFrom
-	for i := range line {
-		from := line[i].Tile
-		if from != next {
-			line[i].Step(next, dirBetween(from, next))
-		}
-		next = from
-	}
-}
-
-// dirBetween returns the facing that gets from a to b, defaulting to south for
-// a step that is neither horizontal nor vertical.
-func dirBetween(a, b core.Point) core.Dir {
-	switch {
-	case b.X > a.X:
-		return core.DirRight
-	case b.X < a.X:
-		return core.DirLeft
-	case b.Y < a.Y:
-		return core.DirUp
-	default:
-		return core.DirDown
-	}
-}
-
-func advanceLine(line []walker) {
-	for i := range line {
-		line[i].Advance()
-	}
+	g.follow = party.Fit(g.follow, len(g.Allies), g.Walk.Tile, 9)
+	g.localFollow = party.Fit(g.localFollow, len(g.Allies), g.LocalWalk.Tile, 7)
 }
 
 // drawFollowers paints the companions behind the hero. They are drawn back to
 // front so the one nearest the player overlaps the one behind it, and the hero
 // is drawn after this so nothing ever covers the character you are steering.
-func (g *Game) drawFollowers(ctx *render.Ctx, line []walker) {
+func (g *Game) drawFollowers(ctx *render.Ctx, line party.Line) {
 	for i := len(line) - 1; i >= 0; i-- {
 		if i >= len(g.Allies) {
 			continue

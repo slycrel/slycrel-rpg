@@ -28,10 +28,9 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 )
 
-// TileSize is the edge length of one world tile in pixels. Mana Seed and the
-// RPG Maker packs are both built on a 16px grid, so this is the whole game's
-// unit of measure.
-const TileSize = 16
+// TileSize is the edge length of one world tile in pixels, re-exported from
+// core so that art code can talk about the grid without importing it twice.
+const TileSize = core.TileSize
 
 // Entry is one manifest record.
 type Entry struct {

@@ -113,6 +113,16 @@ incremental and reversible.
 **The maths is pure.** `internal/rules` has no I/O and no globals, so balance is
 testable and a simulation harness is cheap to add later.
 
+**Domain logic stays out of the scene layer.** Ebitengine opens a window at
+package init on macOS, so anything that imports it — directly or through
+`assetsys` — cannot run without a display. `internal/game` is the scene stack
+and the drawing, and everything that is neither lives outside it: the roster and
+the marching order in `internal/party`, the tile walker and `TileSize` in
+`internal/core`. This started as a way to keep working through a flaky display,
+but it is the right shape regardless: `game` shrank by three hundred lines and
+the party rules, which had already produced two bugs found by reading rather
+than by tests, became something a test can reach.
+
 ## Roadmap
 
 ### Phase 1 — make it feel like a game *(done: save/load, audio, quests, party)*

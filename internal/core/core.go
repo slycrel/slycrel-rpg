@@ -101,6 +101,14 @@ func (g *RNG) Weighted(weights []int) int {
 	return len(weights) - 1
 }
 
+// TileSize is the edge length of one world tile in pixels.
+//
+// It lives here rather than with the art because it is a property of the grid
+// rather than of the sprites drawn on it: positions, camera maths and the
+// walker below all need it, and none of them should have to import the asset
+// system to find out how big a tile is.
+const TileSize = 16
+
 // Point is an integer grid coordinate.
 type Point struct{ X, Y int }
 
@@ -144,6 +152,21 @@ func (d Dir) Delta() Point {
 // String names the direction.
 func (d Dir) String() string {
 	return [...]string{"south", "west", "east", "north"}[d]
+}
+
+// DirBetween returns the facing that gets from a to b, defaulting to south for
+// a step that is neither horizontal nor vertical.
+func DirBetween(a, b Point) Dir {
+	switch {
+	case b.X > a.X:
+		return DirRight
+	case b.X < a.X:
+		return DirLeft
+	case b.Y < a.Y:
+		return DirUp
+	default:
+		return DirDown
+	}
 }
 
 // Abs returns the absolute value of n.

@@ -327,14 +327,12 @@ func (g *Game) demoWalkLocal(n int) {
 			}
 			from := g.LocalWalk.Tile
 			g.LocalWalk.Place(q)
-			g.LocalWalk.dir = d
-			stepLine(g.localFollow, from)
+			g.LocalWalk.Face(d)
+			g.localFollow.Step(from)
 			break
 		}
 	}
-	for i := range g.localFollow {
-		g.localFollow[i].t = 1
-	}
+	g.localFollow.Settle()
 }
 
 // demoLevelParty brings everyone up to a level and re-arms them, so a staged

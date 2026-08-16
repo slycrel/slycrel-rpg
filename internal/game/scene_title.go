@@ -212,7 +212,7 @@ func (g *Game) startRun(name, epithet string, class model.Class) {
 
 	g.World = world.Generate(g.Seed, g.Write)
 	g.Quests = quest.Log{}
-	g.Walk = walker{dur: 9}
+	g.Walk = core.NewWalker(9)
 	g.Walk.Place(g.World.Start)
 
 	g.Sound.Play("vo/welcome")
