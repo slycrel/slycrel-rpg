@@ -1,0 +1,455 @@
+package thread_test
+
+import (
+	"fmt"
+	"strings"
+	"testing"
+
+	"github.com/slycrel/slycrel-rpg/internal/core"
+	"github.com/slycrel/slycrel-rpg/internal/gamedata"
+	"github.com/slycrel/slycrel-rpg/internal/model"
+	"github.com/slycrel/slycrel-rpg/internal/thread"
+	"github.com/slycrel/slycrel-rpg/internal/world"
+)
+
+// A stub namer, deliberately: these assert structural properties of a cast
+// thread, not the identity of the continent it was cast on. Anything comparing
+// a save against its world needs the real writer instead.
+type stubNamer struct{}
+
+func (stubNamer) PlaceName(*core.RNG, string) string    { return "Placename" }
+func (stubNamer) PlaceTag(*core.RNG, string) string     { return "tag" }
+func (stubNamer) PersonName(*core.RNG) string           { return "Person" }
+func (stubNamer) NPCLine(*core.RNG) string              { return "line" }
+func (stubNamer) SignText(*core.RNG) string             { return "sign" }
+func (stubNamer) RecruitPitch(*core.RNG, string) string { return "pitch" }
+
+func tables(t *testing.T) *gamedata.Tables {
+	t.Helper()
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Fatalf("finding repo root: %v", err)
+	}
+	tb, err := gamedata.Load(root)
+	if err != nil {
+		t.Fatalf("loading content: %v", err)
+	}
+	return tb
+}
+
+func hireling(name string, blood model.MonsterKind, level int) *model.Character {
+	return &model.Character{Name: name, Level: level, Ally: true, Blood: blood, Cut: 12}
+}
+
+// TestCastThreadsNameOnlyRealThings is the property the whole package exists
+// for, and it is the quest generator's rule restated: a backstory must never
+// mention a place, a creature or an object this continent does not contain.
+func TestCastThreadsNameOnlyRealThings(t *testing.T) {
+	tb := tables(t)
+	seen := map[string]int{}
+
+	for _, seed := range []int64{1, 7, 1994, 20260816} {
+		w := world.Generate(seed, stubNamer{})
+		g := core.NewRNG(seed)
+
+		for _, l := range append([]model.Lineage{{}}, model.Lineages...) {
+			for try := 0; try < 8; try++ {
+				c := hireling("Bosk", l.Kind, 4)
+				th, ok := thread.Cast(g, &tb.Threads, w, tb, c, w.Start, nil)
+				if !ok {
+					continue
+				}
+				seen[th.Skeleton]++
+
+				if th.Owner != c.Name {
+					t.Errorf("%s: thread belongs to %q, was cast for %q", th.Skeleton, th.Owner, c.Name)
+				}
+				if th.State != thread.Open {
+					t.Errorf("%s: a freshly cast thread is already %q", th.Skeleton, th.State)
+				}
+
+				if th.PlacePOI >= 0 {
+					if th.PlacePOI >= len(w.POIs) {
+						t.Errorf("%s: points at location %d of %d", th.Skeleton, th.PlacePOI, len(w.POIs))
+						continue
+					}
+					if got := w.POIs[th.PlacePOI].Name; got != th.Roles["{P}"] {
+						t.Errorf("%s: names the place %q, location %d is %q",
+							th.Skeleton, th.Roles["{P}"], th.PlacePOI, got)
+					}
+				}
+				if th.MonsterID != "" {
+					def, ok := tb.ByID[th.MonsterID]
+					if !ok {
+						t.Errorf("%s: names monster %q, which does not exist", th.Skeleton, th.MonsterID)
+					} else if def.Name != th.Roles["{X}"] {
+						t.Errorf("%s: calls the monster %q, it is called %q",
+							th.Skeleton, th.Roles["{X}"], def.Name)
+					}
+				}
+				if item := th.Roles["{I}"]; item != "" {
+					if _, ok := tb.Item(item); !ok {
+						t.Errorf("%s: wants %q, which is not an item", th.Skeleton, item)
+					}
+				}
+
+				// And every line the player can be shown must come out filled.
+				// Any brace at all is the failure: casting reads its
+				// requirements out of the writing, so a placeholder nothing
+				// filled is one the author invented and nothing implements,
+				// and it reaches the player as literal braces mid-sentence.
+				for _, line := range allText(&tb.Threads, th) {
+					if i := strings.IndexByte(line, '{'); i >= 0 {
+						t.Errorf("%s: an unfilled placeholder survived into %q", th.Skeleton, line[i:])
+					}
+				}
+			}
+		}
+	}
+
+	// Every skeleton in the book should be reachable. One that never casts is
+	// writing nobody will ever read, and the likeliest cause is a requirement
+	// no world can satisfy.
+	for _, s := range tb.Threads.Threads {
+		if seen[s.ID] == 0 {
+			t.Errorf("skeleton %q was never cast across four continents", s.ID)
+		}
+	}
+}
+
+// allText is every line a cast thread can put in front of the player.
+func allText(b *thread.Book, t *thread.Thread) []string {
+	out := []string{t.Fill(t.Title)}
+	s, ok := b.Get(t.Skeleton)
+	if !ok {
+		return out
+	}
+	for i := range s.Beats {
+		t.At = i
+		out = append(out, t.Fill(s.Beats[i].Text), t.Note(b))
+	}
+	t.At = 0
+	for _, e := range t.Options(b) {
+		out = append(out, e.Label, e.Text)
+	}
+	return out
+}
+
+// A companion of three is three different stories. Casting the same skeleton
+// twice would give a company two people with the same past, which is a worse
+// failure than a companion with no past at all.
+func TestCastDoesNotRepeatAStoryTheCompanyIsAlreadyTelling(t *testing.T) {
+	tb := tables(t)
+	w := world.Generate(1994, stubNamer{})
+	g := core.NewRNG(1994)
+
+	var taken []string
+	for i := 0; i < 3; i++ {
+		c := hireling(fmt.Sprintf("Hireling %d", i), "", 5)
+		th, ok := thread.Cast(g, &tb.Threads, w, tb, c, w.Start, taken)
+		if !ok {
+			break
+		}
+		for _, id := range taken {
+			if id == th.Skeleton {
+				t.Fatalf("cast %q again with it already in use", id)
+			}
+		}
+		taken = append(taken, th.Skeleton)
+	}
+	if len(taken) < 2 {
+		t.Fatalf("only %d thread(s) cast; the test cannot see the collision it is for", len(taken))
+	}
+}
+
+// A hireling with a lineage gets the story written for that lineage. It is the
+// reason the ancestry is on the sheet at all: "there is an arrangement" is a
+// promise, and casting a part-demon in the generic debt story breaks it.
+func TestALineageGetsItsOwnStoryWhileThereIsOneLeft(t *testing.T) {
+	tb := tables(t)
+	w := world.Generate(1994, stubNamer{})
+
+	for _, l := range model.Lineages {
+		want := ""
+		for _, s := range tb.Threads.Threads {
+			if s.Blood == string(l.Kind) {
+				want = s.ID
+			}
+		}
+		if want == "" {
+			t.Errorf("nothing is written for a %s", l.Tag)
+			continue
+		}
+		g := core.NewRNG(int64(len(l.Kind)))
+		c := hireling("Bosk", l.Kind, 6)
+		th, ok := thread.Cast(g, &tb.Threads, w, tb, c, w.Start, nil)
+		if !ok {
+			t.Errorf("%s: nothing could be cast at all", l.Tag)
+			continue
+		}
+		if th.Skeleton != want {
+			t.Errorf("%s was cast in %q, not their own %q", l.Tag, th.Skeleton, want)
+		}
+
+		// With their own story already running, they fall through to the
+		// general pool rather than coming away with nothing.
+		th2, ok := thread.Cast(g, &tb.Threads, w, tb, c, w.Start, []string{want})
+		if !ok {
+			t.Errorf("%s: a second one got no story once %q was taken", l.Tag, want)
+			continue
+		}
+		if th2.Skeleton == want {
+			t.Errorf("%s: %q was cast twice despite being listed as taken", l.Tag, want)
+		}
+	}
+}
+
+// TestEveryThreadCanBeFinishedByABrokePlayer. Endings may cost money, and a
+// player who has just paid a rescue fee may have none. Without a free way out,
+// a companion could stand there asking a question that cannot be answered for
+// the rest of the run.
+func TestEveryThreadCanBeFinishedByABrokePlayer(t *testing.T) {
+	for _, s := range tables(t).Threads.Threads {
+		free := false
+		for _, e := range s.Endings {
+			if e.Costs() == 0 {
+				free = true
+			}
+		}
+		if !free {
+			t.Errorf("every ending of %q costs money", s.ID)
+		}
+	}
+}
+
+// A generated name will not take an article or a plural. "Owl That Knows" is a
+// creature and an item is "Suspicious Pollen", so "a {X}" becomes "a Owl That
+// Knows" and "{X}s" becomes something nobody wrote. Both got into the shipped
+// writing on the first pass and both were caught by reading the filled text
+// rather than the templates, which is the argument for this test existing.
+func TestWritingNeverPutsAnArticleOrAPluralOnAGeneratedName(t *testing.T) {
+	bad := []string{"a {X}", "an {X}", "a {I}", "an {I}", "a {P}", "an {P}",
+		"{X}s", "{I}s", "{P}s", "{N}s"}
+	for _, s := range tables(t).Threads.Threads {
+		for _, line := range append(beatText(s), endingText(s)...) {
+			for _, b := range bad {
+				if strings.Contains(line, b) {
+					t.Errorf("%q: %q will not read as English once it is cast: %q", s.ID, b, line)
+				}
+			}
+		}
+	}
+}
+
+func beatText(s thread.Skeleton) []string {
+	out := []string{s.Title}
+	for _, b := range s.Beats {
+		out = append(out, b.Text, b.Note)
+	}
+	return out
+}
+
+func endingText(s thread.Skeleton) []string {
+	var out []string
+	for _, e := range s.Endings {
+		out = append(out, e.Label, e.Text)
+	}
+	return out
+}
+
+// TestNoEndingDominatesAnother. Everything that gives must take: if one ending
+// were better than another on every axis, the choice at the end of a thread
+// would be a formality with a menu in front of it.
+func TestNoEndingDominatesAnother(t *testing.T) {
+	for _, s := range tables(t).Threads.Threads {
+		if len(s.Endings) < 2 {
+			t.Errorf("%q offers %d ending(s); a thread with no choice in it is a cutscene",
+				s.ID, len(s.Endings))
+			continue
+		}
+		for i, a := range s.Endings {
+			for j, b := range s.Endings {
+				if i == j {
+					continue
+				}
+				if dominates(a, b) {
+					t.Errorf("%q: %q beats %q on every count, so nobody will ever pick the other",
+						s.ID, a.Label, b.Label)
+				}
+			}
+		}
+	}
+}
+
+// dominates reports whether a is at least as good as b everywhere and strictly
+// better somewhere. A lower cut is better; shame is a cost.
+func dominates(a, b thread.Ending) bool {
+	axes := [][2]int{
+		{int(a.Coins), int(b.Coins)},
+		{int(a.XP), int(b.XP)},
+		{-a.Cut, -b.Cut},
+		{a.Fame, b.Fame},
+		{-a.Shame, -b.Shame},
+	}
+	better := false
+	for _, ax := range axes {
+		if ax[0] < ax[1] {
+			return false
+		}
+		if ax[0] > ax[1] {
+			better = true
+		}
+	}
+	return better
+}
+
+// --- advancing ------------------------------------------------------------
+
+// book is a two-beat thread with a counted first beat, small enough to reason
+// about and independent of whatever the shipped writing happens to say.
+func book() *thread.Book {
+	return &thread.Book{Threads: []thread.Skeleton{{
+		ID: "test", Title: "A Test", Place: "delve",
+		Beats: []thread.Beat{
+			{Trigger: thread.Travel, Need: 3, Text: "one", Note: "walk"},
+			{Trigger: thread.Reach, Text: "two", Note: "arrive"},
+		},
+		Endings: []thread.Ending{{Label: "yes"}, {Label: "no", Coins: 10, Shame: 1}},
+	}}}
+}
+
+func running(owner string) *thread.Thread {
+	return &thread.Thread{
+		Skeleton: "test", Owner: owner, Title: "A Test", State: thread.Open,
+		PlacePOI: 5, Roles: map[string]string{"{N}": owner},
+	}
+}
+
+func TestBeatsFireInOrderAndOnlyOnce(t *testing.T) {
+	b, l := book(), &thread.Log{}
+	th := running("Bosk")
+	l.Add(th)
+
+	// A trigger the current beat is not waiting for does nothing, even when it
+	// is one a later beat wants.
+	if got := l.Advance(b, thread.Event{Kind: thread.Reach, POI: 5}); len(got) != 0 {
+		t.Fatalf("arriving fired %d beat(s) while the thread was still counting steps", len(got))
+	}
+
+	if got := th.Awaiting(b); got != thread.Travel {
+		t.Errorf("a thread on its first beat is waiting on %q", got)
+	}
+
+	for i := 0; i < 2; i++ {
+		if got := l.Advance(b, thread.Event{Kind: thread.Travel, N: 1}); len(got) != 0 {
+			t.Fatalf("step %d of 3 fired the beat early", i+1)
+		}
+	}
+	fired := l.Advance(b, thread.Event{Kind: thread.Travel, N: 1})
+	if len(fired) != 1 || fired[0].Text != "one" {
+		t.Fatalf("the third step produced %+v", fired)
+	}
+	if fired[0].Last {
+		t.Error("the first of two beats reported itself as the last")
+	}
+
+	// The game reveals a thread's destination the moment it starts waiting to
+	// be taken there, so this has to flip on the beat before the arrival and
+	// not on the arrival itself.
+	if got := th.Awaiting(b); got != thread.Reach {
+		t.Errorf("a thread one beat from its destination is waiting on %q", got)
+	}
+
+	// Walking further must not re-fire a beat that is behind you.
+	for i := 0; i < 5; i++ {
+		if got := l.Advance(b, thread.Event{Kind: thread.Travel, N: 1}); len(got) != 0 {
+			t.Fatal("a beat fired twice")
+		}
+	}
+
+	if got := l.Advance(b, thread.Event{Kind: thread.Reach, POI: 4}); len(got) != 0 {
+		t.Fatal("arriving somewhere else fired the arrival beat")
+	}
+	fired = l.Advance(b, thread.Event{Kind: thread.Reach, POI: 5})
+	if len(fired) != 1 || !fired[0].Last {
+		t.Fatalf("arriving at the cast place produced %+v", fired)
+	}
+	if th.State != thread.Ready {
+		t.Errorf("a thread out of beats is %q, expected %q", th.State, thread.Ready)
+	}
+	if got := l.Advance(b, thread.Event{Kind: thread.Reach, POI: 5}); len(got) != 0 {
+		t.Error("a thread waiting on its ending is still advancing")
+	}
+	if got := th.Awaiting(b); got != "" {
+		t.Errorf("a thread out of beats is still waiting on %q", got)
+	}
+}
+
+// A counted beat has to accept a single event worth several, or a caller that
+// batches becomes a caller that silently loses progress.
+func TestCountedBeatsTakeTheirEventsInBulk(t *testing.T) {
+	b, l := book(), &thread.Log{}
+	l.Add(running("Bosk"))
+	if got := l.Advance(b, thread.Event{Kind: thread.Travel, N: 3}); len(got) != 1 {
+		t.Fatalf("three steps at once fired %d beats", len(got))
+	}
+}
+
+// A departing companion takes their story with them. Left behind, it would sit
+// in the journal waiting on a beat that nobody can trigger any more.
+func TestDismissingSomebodyTakesTheirThread(t *testing.T) {
+	l := &thread.Log{}
+	l.Add(running("Bosk"))
+	l.Add(running("Ilsabet"))
+
+	l.Drop("Bosk")
+	if l.For("Bosk") != nil {
+		t.Error("a dismissed companion's thread is still in the log")
+	}
+	if l.For("Ilsabet") == nil {
+		t.Error("dismissing one companion dropped another's thread")
+	}
+	if got := len(l.Running()); got != 1 {
+		t.Errorf("%d threads still running, expected 1", got)
+	}
+}
+
+func TestResolvingClosesAThreadAndRecordsWhichWay(t *testing.T) {
+	b := book()
+	th := running("Bosk")
+	opts := th.Options(b)
+	if len(opts) != 2 {
+		t.Fatalf("the test book offers %d endings", len(opts))
+	}
+	th.Resolve(opts[1])
+	if th.State != thread.Closed {
+		t.Errorf("a resolved thread is %q", th.State)
+	}
+	if th.Ended != "no" {
+		t.Errorf("a resolved thread recorded %q as the choice taken", th.Ended)
+	}
+	l := &thread.Log{}
+	l.Add(th)
+	if got := l.Running(); len(got) != 0 {
+		t.Error("a closed thread is still listed as running")
+	}
+	if got := l.Advance(b, thread.Event{Kind: thread.Travel, N: 99}); len(got) != 0 {
+		t.Error("a closed thread advanced")
+	}
+}
+
+// A thread whose skeleton has been deleted from the data must go quiet rather
+// than panic. Saves outlive the writing they were cast from.
+func TestAThreadWithNoSkeletonLeftIsHarmless(t *testing.T) {
+	b, l := book(), &thread.Log{}
+	th := running("Bosk")
+	th.Skeleton = "deleted-in-a-later-build"
+	l.Add(th)
+
+	if got := l.Advance(b, thread.Event{Kind: thread.Travel, N: 10}); len(got) != 0 {
+		t.Error("an orphaned thread fired a beat")
+	}
+	if th.Note(b) != "" || th.Progress(b) != "" || th.Options(b) != nil {
+		t.Error("an orphaned thread still has something to say for itself")
+	}
+}

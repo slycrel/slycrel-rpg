@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "saved": "2026-08-16T12:00:00Z",
   "summary": "a level 6 hero and one hireling, mid-run",
   "seed": 1994,
@@ -214,21 +214,36 @@
   "sinceFight": 0,
   "quests": [
     {
-      "id": "deliver-0-12495393",
-      "kind": "deliver",
+      "id": "cull-0-5948421",
+      "kind": "cull",
       "state": "active",
-      "title": "Parcel for Cinderstead",
-      "ask": "\"Take this to Cinderstead. Don't open it. Don't shake it. Don't listen to it.\"",
-      "nag": "\"Still carrying that? Cinderstead. Any day now.\"",
-      "thank": "\"It arrived. Nobody's shouting. That's the best outcome I'd planned for.\"",
+      "title": "Cull 5 Wolf, Deeply Unimpressed",
+      "ask": "\"There's Wolf, Deeply Unimpressed out there. 5 of them, ideally fewer by supper.\"",
+      "nag": "\"Still out there, then. The Wolf, Deeply Unimpressed. I can hear them from here.\"",
+      "thank": "\"Done? Properly done? Right. I'll stop flinching at noises.\"",
       "giver": "Person",
       "giverPOI": 0,
-      "targetPOI": 6,
-      "targetName": "Cinderstead",
-      "need": 1,
+      "monsterID": "forest_wolf",
+      "monsterName": "Wolf, Deeply Unimpressed",
+      "need": 5,
       "have": 0,
-      "rewardCoins": 37,
-      "rewardXP": 28
+      "rewardCoins": 50,
+      "rewardXP": 85
+    }
+  ],
+  "threads": [
+    {
+      "skeleton": "debt-collector",
+      "owner": "Hireling 1",
+      "title": "The Outstanding Sum",
+      "state": "open",
+      "roles": {
+        "{N}": "Hireling 1",
+        "{P}": "Gallow Town"
+      },
+      "placePOI": 2,
+      "at": 0,
+      "have": 0
     }
   ]
 }

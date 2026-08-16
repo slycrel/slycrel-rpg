@@ -7,9 +7,12 @@
 //
 //	go run ./cmd/genfixtures
 //
-// It does not touch v1-solo.json. That file's whole job is to be an old save,
-// and regenerating it at the current version would quietly delete the only
-// evidence that the loader still reads the previous format.
+// It does not touch v1-solo.json or v2-company.json. Those files' whole job is
+// to be old saves, and regenerating them at the current version would quietly
+// delete the only evidence that the loader still reads the earlier formats.
+// v1 is a run from before the party existed; v2 is a company from before the
+// backstories did, which is the one that exercises threads being cast on the
+// way in rather than at the moment somebody was hired.
 package main
 
 import (
@@ -25,6 +28,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
 	"github.com/slycrel/slycrel-rpg/internal/save"
+	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
 
@@ -64,6 +68,13 @@ func main() {
 		}
 		if a, ok := tables.PickAffix(core.NewRNG(4), 4); ok {
 			f.Player.Weapon.Affix = &a
+		}
+		// One backstory already underway, so the set holds a company that is
+		// partway through something rather than three people who have only just
+		// been introduced.
+		if len(f.Threads) > 0 {
+			f.Threads[0].At = 1
+			f.Threads[0].Have = 2
 		}
 	}))
 
@@ -126,6 +137,17 @@ func build(t *gamedata.Tables, seed int64, level, allies int, blood model.Monste
 		c.Sprite, c.Portrait = "hero/druid", "portrait/female/f_08"
 		f.Allies = append(f.Allies, c)
 	}
+	// A backstory apiece. The game would cast these on load anyway, but a
+	// fixture that carries them is a fixture that can be halfway through one,
+	// which is the state worth having a starting point for.
+	var log thread.Log
+	for _, c := range f.Allies {
+		if th, ok := thread.Cast(g, &t.Threads, m, t, c, m.Start, log.IDs()); ok {
+			log.Add(th)
+		}
+	}
+	f.Threads = log.Threads
+
 	if q, ok := quest.Generate(g, m, t, writerFor(t), 0, "Person"); ok {
 		f.Quests = append(f.Quests, q)
 	}

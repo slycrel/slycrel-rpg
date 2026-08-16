@@ -10,6 +10,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
+	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 )
 
@@ -1118,6 +1119,7 @@ func (b *battleScene) damageMonster(g *Game, idx, dmg int) {
 		m.Dead = true
 		g.Sound.Play("fight/die")
 		g.noteQuestProgress(g.Quests.OnMonsterKilled(m.Def.ID))
+		g.advanceThreads(thread.Event{Kind: thread.Kills, Monster: m.Def.ID})
 		b.log.AddColor(render.ColGold, "%s", g.Write.Death(g.RNG, m))
 	}
 }
@@ -1264,6 +1266,11 @@ func (b *battleScene) finish(g *Game) {
 	// whose company is about to carry him somewhere with a roof.
 	if b.result != 2 {
 		b.reviveFallen(g)
+	}
+	// A fight the company came out of, which is what a backstory beat counts.
+	// Dying is not a shared anecdote.
+	if b.result == 1 && len(g.Allies) > 0 {
+		g.advanceThreads(thread.Event{Kind: thread.Fights, N: 1})
 	}
 	// Copy the battle transcript into the world log so it survives the pop.
 	g.sinceFight = 0

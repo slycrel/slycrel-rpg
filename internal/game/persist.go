@@ -6,6 +6,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/save"
+	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
 
@@ -23,6 +24,7 @@ func (g *Game) Snapshot() *save.File {
 		SinceFight: g.sinceFight,
 		Summary:    g.summary(),
 		Quests:     g.Quests.Quests,
+		Threads:    g.Threads.Threads,
 	}
 
 	f.POIs = make([]save.POIState, len(g.World.POIs))
@@ -89,6 +91,8 @@ func (g *Game) Restore(f *save.File) error {
 	g.World = world.Generate(f.Seed, g.Write)
 	g.sinceFight = f.SinceFight
 	g.Quests = quest.Log{Quests: f.Quests}
+	g.Threads = thread.Log{Threads: f.Threads}
+	g.pendingBeats, g.remindEndings = nil, false
 
 	// The location list is generated from the seed, so it is stable — but a
 	// save written by a build with a different world generator would not line
@@ -136,6 +140,9 @@ func (g *Game) Restore(f *save.File) error {
 	}
 
 	g.Quests.SyncFetch(g.Player.Bag)
+	// A save from before threads existed, or one whose continent had nothing to
+	// stage a particular story in, gets its companions caught up here.
+	g.ensureThreads()
 
 	g.Log.Clear()
 	g.Log.Add("Loaded: %s", f.Summary)

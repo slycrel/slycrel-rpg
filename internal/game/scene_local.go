@@ -40,6 +40,10 @@ func (s *localScene) Update(g *Game) error {
 	g.localFollow.Advance()
 	s.cam.Update()
 
+	if g.serviceThreads() {
+		return nil
+	}
+
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
 		g.Push(newPauseScene(g))
 		return nil

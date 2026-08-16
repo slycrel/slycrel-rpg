@@ -1,0 +1,357 @@
+{
+  "threads": [
+    {
+      "id": "undead-contract",
+      "blood": "undead",
+      "title": "The Standing Contract",
+      "place": "delve",
+      "beats": [
+        {
+          "trigger": "travel",
+          "need": 90,
+          "note": "walk with them and let it come up",
+          "text": "{N} has been getting letters. You have not seen anybody deliver one. 'Old employer,' they say, folding it away. 'There is paperwork. There is always paperwork.'"
+        },
+        {
+          "trigger": "fights",
+          "need": 4,
+          "note": "keep them in fights and see what slips",
+          "text": "{N} stops mid-swing and apologises to nobody in particular. Afterwards, unprompted: 'Not to you. There is a clause about enthusiasm and I am told I have been exceeding it.'"
+        },
+        {
+          "trigger": "reach",
+          "note": "take them to {P}",
+          "text": "{N} regards {P} the way most people regard a dentist. 'This is where I signed. I would like the original back, and I would like to not discuss why on the walk in.'"
+        }
+      ],
+      "endings": [
+        {
+          "label": "Burn it in front of them",
+          "text": "The document goes up fast, the way old paper does. {N} watches every word of it catch, then works their jaw like somebody testing a new tooth. The letters stop. Something quieter starts, and they do not mention it.",
+          "cut": -5,
+          "xp": 22
+        },
+        {
+          "label": "Sell it back to the estate",
+          "text": "The estate pays promptly, which tells you what the contract was worth. {N} takes the news like a professional, which is to say entirely, and calls you 'employer' for a week afterwards without once making it sound like a compliment.",
+          "coins": 48,
+          "cut": 3
+        }
+      ]
+    },
+    {
+      "id": "demon-arrangement",
+      "blood": "demon",
+      "title": "The Arrangement",
+      "place": "delve",
+      "beats": [
+        {
+          "trigger": "travel",
+          "need": 70,
+          "note": "walk with them and let it come up",
+          "text": "{N} will not eat in front of anyone. On the fourth night they explain that it is not a religious thing, it is a scheduling thing, and then they explain nothing further for two days."
+        },
+        {
+          "trigger": "kills",
+          "need": 3,
+          "note": "put down {X} where they can count them",
+          "text": "{N} counts each {X} out loud as it goes down. At three they stop counting and look relieved in a way that does not suit their face at all."
+        },
+        {
+          "trigger": "reach",
+          "note": "take them to {P}",
+          "text": "'{P},' says {N}. 'Witnessed here. Do not sign anything, do not accept a drink, and whatever else happens, do not compliment the furniture.'"
+        }
+      ],
+      "endings": [
+        {
+          "label": "Buy out the terms",
+          "text": "The sum is large and the receipt is a small cold weight in your pocket for about an hour before it stops existing. {N} does not thank you. They do start eating in front of people, which from them is a speech.",
+          "coins": -38,
+          "cut": -6,
+          "xp": 18
+        },
+        {
+          "label": "Let it stand",
+          "text": "The arrangement continues, and the arrangement pays. {N} accepts this the way you accept weather. 'It was always going to,' they say. 'That is the shape of it.' They are cheerful for a week, which is much worse.",
+          "coins": 30,
+          "shame": 1
+        }
+      ]
+    },
+    {
+      "id": "beast-litter",
+      "blood": "beast",
+      "title": "Whatever Raised Them",
+      "place": "delve",
+      "beats": [
+        {
+          "trigger": "travel",
+          "need": 80,
+          "note": "walk with them and let it come up",
+          "text": "{N} has started sleeping outside the camp, facing out. They say the fire ruins their night vision. This is true. It is not the reason."
+        },
+        {
+          "trigger": "town",
+          "note": "walk them into a town and watch",
+          "text": "In the street somebody calls {N} by a name you did not hire. {N} does not turn round, does not break stride, and does not say another word for four streets."
+        },
+        {
+          "trigger": "reach",
+          "note": "take them to {P}",
+          "text": "{P}. {N} goes quiet a hundred paces out and stays quiet. Then: 'They will be smaller than I remember. Everything is. I would like to get this over with.'"
+        }
+      ],
+      "endings": [
+        {
+          "label": "Go in with them",
+          "text": "It is dark and it smells of animal and old smoke, and whatever meeting happens in there happens in a language with no words in it. {N} comes out walking differently. They do not explain and you do not ask.",
+          "cut": -4,
+          "xp": 26,
+          "fame": 1
+        },
+        {
+          "label": "Wait outside",
+          "text": "You wait. It takes a while. {N} comes out alone carrying something wrapped, sells it in the next town without discussion, and hands you the larger half. Neither of you raises the subject again.",
+          "coins": 34
+        }
+      ]
+    },
+    {
+      "id": "fey-favour",
+      "blood": "fey",
+      "title": "The Favour They Cannot Ask For",
+      "place": "delve",
+      "beats": [
+        {
+          "trigger": "travel",
+          "need": 60,
+          "note": "walk with them and let it come up",
+          "text": "{N} cannot lie, as they mention often, in sentences built with the care of a load-bearing wall. Tonight one of them fails halfway through and they sit down in the road."
+        },
+        {
+          "trigger": "fights",
+          "need": 5,
+          "note": "keep them in fights and see what slips",
+          "text": "'I am glad you are alive,' says {N} after the fight, and then stands very still, apparently checking whether it went through unchallenged."
+        },
+        {
+          "trigger": "reach",
+          "note": "take them to {P}",
+          "text": "At {P} something is owed to {N} that they are not permitted to ask for, on account of asking being a kind of lying if you already know the answer. They look at you meaningfully. That is the whole of it."
+        }
+      ],
+      "endings": [
+        {
+          "label": "Ask on their behalf",
+          "text": "You ask. It is a small thing, said out loud, and the thing at {P} hands it over with the bad grace of a clerk at closing. {N} does not thank you, because that would also be a kind of lying, and instead is unbearably pleasant for a month.",
+          "cut": -6,
+          "xp": 20
+        },
+        {
+          "label": "Make them find the words",
+          "text": "It takes {N} most of an hour and it is not comfortable to watch. What they eventually construct is technically true, structurally magnificent, and answered with something heavy and unpleasantly warm. They insist you take half.",
+          "coins": 32,
+          "cut": 2,
+          "fame": 1
+        }
+      ]
+    },
+    {
+      "id": "ooze-jar",
+      "blood": "ooze",
+      "title": "The Jar",
+      "place": "delve",
+      "beats": [
+        {
+          "trigger": "travel",
+          "need": 100,
+          "note": "walk with them and let it come up",
+          "text": "{N} keeps a jar. The jar, in a sense they decline to unpack, also keeps {N}. It is corked. It is always the last thing packed and the first thing checked."
+        },
+        {
+          "trigger": "kills",
+          "need": 3,
+          "note": "put down {X} where they can see",
+          "text": "{N} holds the jar up to each {X} as it falls, the way you show a child a parade. 'He would have liked that one,' they say, of nobody you have met."
+        },
+        {
+          "trigger": "reach",
+          "note": "take them to {P}",
+          "text": "'{P},' says {N}, and sets the jar down on a rock with enormous care. 'He asked to be brought here. He asked a lot of things. This is the one I can still do.'"
+        }
+      ],
+      "endings": [
+        {
+          "label": "Help them bury it",
+          "text": "The ground is bad and it takes both of you the better part of the afternoon. {N} says a few words that are mostly logistics. Afterwards they are lighter by about a jar, and by rather more than that.",
+          "cut": -4,
+          "xp": 24
+        },
+        {
+          "label": "Tell them to keep it",
+          "text": "{N} thinks about it for a long moment and then packs the jar away again, visibly relieved and visibly ashamed of being relieved. Somebody in the next town pays absurdly well for a look at it. You split that.",
+          "coins": 36,
+          "shame": 1
+        }
+      ]
+    },
+    {
+      "id": "aberrant-notes",
+      "blood": "aberrant",
+      "title": "Nobody Has Established What",
+      "place": "delve",
+      "beats": [
+        {
+          "trigger": "travel",
+          "need": 85,
+          "note": "walk with them and let it come up",
+          "text": "{N} has been counting their own steps since the day you hired them and will tell you the number if asked. It is correct. It has been correct every time you have checked."
+        },
+        {
+          "trigger": "town",
+          "note": "walk them into a town and watch",
+          "text": "A man in a good coat follows you for two streets, writing, and leaves when {N} looks at him. 'They keep notes,' {N} says. 'I would quite like to read them. I am the subject.'"
+        },
+        {
+          "trigger": "reach",
+          "note": "take them to {P}",
+          "text": "The notes are at {P}, in a box, in an order somebody thought about. {N} stands in front of it with their hands behind their back like a person at a graveside."
+        }
+      ],
+      "endings": [
+        {
+          "label": "Burn the notes unread",
+          "text": "{N} does not read a page of it, which you suspect took more out of them than the walk. The fire is brief and thorough. 'Now nobody has established what,' they say, apparently pleased. 'Including me.'",
+          "cut": -5,
+          "xp": 25
+        },
+        {
+          "label": "Sell them to the college",
+          "text": "The college pays without haggling, which is how you learn what {N} is worth on paper. {N} reads the receipt with great interest and asks to keep it. They are noticeably easier company and noticeably more expensive.",
+          "coins": 44,
+          "cut": 3
+        }
+      ]
+    },
+    {
+      "id": "debt-collector",
+      "title": "The Outstanding Sum",
+      "place": "settlement",
+      "beats": [
+        {
+          "trigger": "travel",
+          "need": 70,
+          "note": "walk with them and let it come up",
+          "text": "{N} counts their cut twice every time, and puts most of it somewhere that is not a pocket. Asked about it, they say 'it is spoken for' in the voice of somebody quoting."
+        },
+        {
+          "trigger": "fights",
+          "need": 4,
+          "note": "keep them in fights and see what slips",
+          "text": "{N} takes a bad hit and says a name on the way down. It is not yours and it is not theirs, and when they get up they are extremely keen to talk about anything else."
+        },
+        {
+          "trigger": "reach",
+          "note": "take them to {P}",
+          "text": "The sum is owed in {P}, and has been for long enough to have grown a personality. {N} is very calm about this in the way of somebody who has rehearsed being calm about it."
+        }
+      ],
+      "endings": [
+        {
+          "label": "Settle it out of the purse",
+          "text": "The debt is smaller than the dread of it, which is how debts work. {N} watches it get paid, says 'right', and then says 'right' again about ten minutes later, out on the road, to nobody.",
+          "coins": -30,
+          "cut": -5,
+          "xp": 16
+        },
+        {
+          "label": "Introduce yourself to the creditor",
+          "text": "You have a conversation. It is not a long one and nothing is broken. The terms afterwards are extremely reasonable, and {N} looks at you for the rest of the day as though recalculating something.",
+          "fame": 1,
+          "shame": 1,
+          "cut": -2,
+          "xp": 12
+        }
+      ]
+    },
+    {
+      "id": "trophy-hunt",
+      "title": "The One They Want",
+      "place": "delve",
+      "beats": [
+        {
+          "trigger": "travel",
+          "need": 60,
+          "note": "walk with them and let it come up",
+          "text": "{N} asks, casually, whether {X} ever drops {I}. Then asks again the next day, and the day after that, each time as though for the first."
+        },
+        {
+          "trigger": "kills",
+          "need": 3,
+          "note": "put down {X} until they say when",
+          "text": "Three of them down, and {N} has been through all three with a knife and an expression of mounting professional disappointment. 'Not that one either.'"
+        },
+        {
+          "trigger": "reach",
+          "note": "take them to {P}",
+          "text": "'The big one is at {P},' says {N}. 'It has been at {P} for eleven years. I have been not going to {P} for eleven years. Those two facts are related.'"
+        }
+      ],
+      "endings": [
+        {
+          "label": "Let them take the shot",
+          "text": "{N} takes it. It is not clean and it is not quick and nobody says anything encouraging while it is happening. Afterwards they hold up {I} in both hands and look at it for a very long time, and then put it in a pocket like a receipt.",
+          "cut": -5,
+          "xp": 22,
+          "fame": 1
+        },
+        {
+          "label": "Take it yourself and hand it over",
+          "text": "You do it. It is easier than it should be, and that is the problem: {N} is grateful, thoroughly and out loud, and something goes out of them that you cannot put back. They ask for a bigger share the following week and you give it.",
+          "coins": 26,
+          "cut": 4
+        }
+      ]
+    },
+    {
+      "id": "wrong-name",
+      "title": "That Is Not Their Name",
+      "place": "settlement",
+      "beats": [
+        {
+          "trigger": "town",
+          "note": "walk them into a town and watch",
+          "text": "{N} does not go into the tavern. {N} waits outside the tavern, at an angle, with a view of both doors, and is unable to give a reason that survives being said out loud."
+        },
+        {
+          "trigger": "travel",
+          "need": 80,
+          "note": "walk with them and let it come up",
+          "text": "The name you hired {N} under is on a list somewhere, they explain, along with a description that is unfair and a sum that is not. The sum is the part they resent."
+        },
+        {
+          "trigger": "reach",
+          "note": "take them to {P}",
+          "text": "The list is kept in {P}, and so is the man who keeps it. {N} points this out, waits, and then adds: 'I am not asking. I am describing a situation.'"
+        }
+      ],
+      "endings": [
+        {
+          "label": "Have the name struck off",
+          "text": "It costs what it costs and the clerk does not look up once. {N} reads the amended page twice, mouths their own name off it, and is unreasonably good company for a fortnight.",
+          "coins": -34,
+          "cut": -6,
+          "xp": 18
+        },
+        {
+          "label": "Have it sold to somebody else",
+          "text": "There is always a market for a name with a sum attached. The buyer is delighted, the clerk is incurious, and {N} is now legally somebody with a much worse reputation and considerably more money.",
+          "coins": 40,
+          "shame": 1,
+          "cut": 2
+        }
+      ]
+    }
+  ]
+}

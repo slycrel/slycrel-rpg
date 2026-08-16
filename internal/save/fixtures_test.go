@@ -141,6 +141,35 @@ func TestFixturesOnlyNameContentThatExists(t *testing.T) {
 				t.Errorf("%s: a quest points at location %d / %d", name, q.GiverPOI, q.TargetPOI)
 			}
 		}
+		for _, th := range f.Threads {
+			if th == nil {
+				t.Errorf("%s: a nil thread survived the round trip", name)
+				continue
+			}
+			if _, ok := tables.Threads.Get(th.Skeleton); !ok {
+				t.Errorf("%s: a thread was cast from skeleton %q, which no longer exists",
+					name, th.Skeleton)
+			}
+			if th.MonsterID != "" {
+				if _, ok := tables.ByID[th.MonsterID]; !ok {
+					t.Errorf("%s: a thread names monster %q, which no longer exists",
+						name, th.MonsterID)
+				}
+			}
+			// A thread is keyed to its owner by name, so a thread whose owner
+			// is not in the company is one that can never advance and never be
+			// resolved: it would sit in the journal for the rest of the run.
+			owned := false
+			for _, c := range f.Allies {
+				if c.Name == th.Owner {
+					owned = true
+				}
+			}
+			if !owned {
+				t.Errorf("%s: %q belongs to %q, who is not in the company",
+					name, th.Title, th.Owner)
+			}
+		}
 	}
 }
 
@@ -199,8 +228,20 @@ func TestFixturesCoverTheStatesWorthCovering(t *testing.T) {
 	all := fixtures(t)
 
 	var haveOld, haveFull, haveFallen, haveInside, haveSolo, haveLineage bool
-	var haveAffix, haveSidearms bool
+	var haveAffix, haveSidearms, haveThreadUnderway, haveCompanyNoThreads bool
 	for _, f := range all {
+		// A company from before backstories existed, which is what makes the
+		// loader cast them on the way in rather than only at the hiring.
+		if len(f.Allies) > 0 && len(f.Threads) == 0 {
+			haveCompanyNoThreads = true
+		}
+		for _, th := range f.Threads {
+			// Partway through, rather than freshly cast. Everything interesting
+			// about a thread is in the middle of it.
+			if th != nil && th.At > 0 {
+				haveThreadUnderway = true
+			}
+		}
 		// An affix hangs off a pointer, and a pointer is what comes back nil.
 		if f.Player.Weapon.Affix != nil || f.Player.Armor.Affix != nil {
 			haveAffix = true
@@ -242,6 +283,8 @@ func TestFixturesCoverTheStatesWorthCovering(t *testing.T) {
 		{haveInside, "a party standing inside a location"},
 		{haveSidearms, "a character with a shield and a charm"},
 		{haveAffix, "a piece of gear carrying an affix"},
+		{haveThreadUnderway, "a companion partway through their backstory"},
+		{haveCompanyNoThreads, "a company saved before backstories existed"},
 	} {
 		if !c.got {
 			t.Errorf("no fixture covers %s", c.want)

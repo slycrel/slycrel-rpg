@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "saved": "2026-08-16T12:00:00Z",
   "summary": "a level 11 hero at the party cap, one of them part demon",
   "seed": 20260816,
@@ -277,20 +277,51 @@
   "sinceFight": 0,
   "quests": [
     {
-      "id": "fetch-0-14987032",
-      "kind": "fetch",
+      "id": "cull-0-9977032",
+      "kind": "cull",
       "state": "active",
-      "title": "5 x Greasy Haunch",
-      "ask": "\"5 Greasy Haunch. That's the order. My supplier was eaten, which is the third time this year.\"",
-      "nag": "\"Greasy Haunch. 5 of them. I'm not going anywhere, worse luck.\"",
-      "thank": "\"All 5. You actually did it. I had a whole speech ready for if you didn't.\"",
+      "title": "Cull 4 Ox With a Grudge",
+      "ask": "\"There's Ox With a Grudge out there. 4 of them, ideally fewer by supper.\"",
+      "nag": "\"Still out there, then. The Ox With a Grudge. I can hear them from here.\"",
+      "thank": "\"Done? Properly done? Right. I'll stop flinching at noises.\"",
       "giver": "Person",
       "giverPOI": 0,
-      "item": "Greasy Haunch",
-      "need": 5,
+      "monsterID": "plains_ox",
+      "monsterName": "Ox With a Grudge",
+      "need": 4,
       "have": 0,
-      "rewardCoins": 105,
-      "rewardXP": 60
+      "rewardCoins": 72,
+      "rewardXP": 96
+    }
+  ],
+  "threads": [
+    {
+      "skeleton": "demon-arrangement",
+      "owner": "Hireling 1",
+      "title": "The Arrangement",
+      "state": "open",
+      "roles": {
+        "{N}": "Hireling 1",
+        "{P}": "Deeps of the Long Excuse",
+        "{X}": "Editorial Crow"
+      },
+      "placePOI": 16,
+      "monsterID": "plains_crow",
+      "at": 1,
+      "have": 2
+    },
+    {
+      "skeleton": "debt-collector",
+      "owner": "Hireling 2",
+      "title": "The Outstanding Sum",
+      "state": "open",
+      "roles": {
+        "{N}": "Hireling 2",
+        "{P}": "Steading of the Sunken Barge"
+      },
+      "placePOI": 5,
+      "at": 0,
+      "have": 0
     }
   ]
 }

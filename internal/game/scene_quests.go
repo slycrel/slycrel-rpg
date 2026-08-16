@@ -7,15 +7,19 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/render"
+	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 )
 
-// questScene is the errand list: what you agreed to, how far along it is, and
-// where it has to go back to.
+// questScene is the journal: the errands you agreed to, and whatever the people
+// walking behind you have going on.
+//
+// They share one screen because they are the same question — what is
+// outstanding — even though they are different mechanisms underneath. Two keys
+// for two lists would have been two habits to build for one glance.
 type questScene struct {
 	under Scene
 	menu  ui.Menu
-	list  []*quest.Quest
 }
 
 func newQuestScene(g *Game) *questScene {
@@ -27,9 +31,8 @@ func newQuestScene(g *Game) *questScene {
 }
 
 func (s *questScene) refresh(g *Game) {
-	s.list = g.Quests.Active()
-	items := make([]ui.MenuItem, 0, len(s.list))
-	for _, q := range s.list {
+	var items []ui.MenuItem
+	for _, q := range g.Quests.Active() {
 		detail := q.Progress()
 		if q.Complete() {
 			detail = "ready"
@@ -41,6 +44,18 @@ func (s *questScene) refresh(g *Game) {
 			Label: "(nobody has asked you for anything)", Disabled: true,
 		})
 	}
+
+	// The company's own business goes underneath, behind a heading, so that a
+	// backstory never looks like something a stranger in a town asked for.
+	if running := g.Threads.Running(); len(running) > 0 {
+		items = append(items, ui.MenuItem{Label: "- the company -", Disabled: true})
+		for _, t := range running {
+			items = append(items, ui.MenuItem{
+				Label: t.Title, Detail: t.Progress(&g.Data.Threads), Data: t,
+			})
+		}
+	}
+
 	s.menu.Visible = 7
 	s.menu.SetItems(items)
 }
@@ -64,51 +79,92 @@ func (s *questScene) Draw(g *Game, dst *ebiten.Image) {
 	}
 	render.Rect(dst, 0, 0, render.ScreenW, render.ScreenH, color.RGBA{0x0A, 0x08, 0x10, 0xFF})
 
-	ui.TitledPanel(dst, "things you agreed to", 14, 16, render.ScreenW-28, 118)
+	ui.TitledPanel(dst, "things outstanding", 14, 16, render.ScreenW-28, 118)
 	s.menu.Draw(dst, 28, 28, render.ScreenW-56)
 
 	ui.TitledPanel(dst, "", 14, 144, render.ScreenW-28, 96)
 	if it, ok := s.menu.Selected(); ok && !it.Disabled {
-		q := it.Data.(*quest.Quest)
-		y := 152.0
-
-		body := q.Nag
-		if q.Complete() {
-			body = q.Thank
+		if t, ok := it.Data.(*thread.Thread); ok {
+			s.drawThread(g, dst, t)
+		} else {
+			s.drawQuest(g, dst, it.Data.(*quest.Quest))
 		}
-		for i, ln := range render.Wrap(body, render.ScreenW-64) {
-			if i > 2 {
-				break
-			}
-			render.Text(dst, ln, 26, y, render.ColInk)
-			y += render.LineH
-		}
-		y += 4
-
-		render.Text(dst, "Asked by", 26, y, render.ColInkDim)
-		render.TextRight(dst, fmt.Sprintf("%s, %s", q.Giver, g.poiName(q.GiverPOI)),
-			render.ScreenW-26, y, render.ColInk)
-		y += render.LineH
-
-		if q.TargetName != "" {
-			render.Text(dst, "Where", 26, y, render.ColInkDim)
-			render.TextRight(dst, q.TargetName, render.ScreenW-26, y, render.ColInk)
-			y += render.LineH
-		}
-		render.Text(dst, "Progress", 26, y, render.ColInkDim)
-		col := render.ColInk
-		if q.Complete() {
-			col = render.ColGold
-		}
-		render.TextRight(dst, q.Progress(), render.ScreenW-26, y, col)
-		y += render.LineH
-
-		render.Text(dst, "Pays", 26, y, render.ColInkDim)
-		render.TextRight(dst, fmt.Sprintf("%d coins, %d experience", q.RewardCoins, q.RewardXP),
-			render.ScreenW-26, y, render.ColGold)
 	}
 
 	render.TextCenter(dst, "X to close", render.ScreenW/2, 250, render.ColInkFaint)
+}
+
+// drawThread fills the detail panel for a companion's backstory. It reads as
+// the same shape as an errand — what, where, how far along — because from the
+// player's side that is what it is.
+func (s *questScene) drawThread(g *Game, dst *ebiten.Image, t *thread.Thread) {
+	y := 152.0
+	for i, ln := range render.Wrap(t.Note(&g.Data.Threads), render.ScreenW-64) {
+		if i > 2 {
+			break
+		}
+		render.Text(dst, ln, 26, y, render.ColInk)
+		y += render.LineH
+	}
+	y += 4
+
+	render.Text(dst, "Whose", 26, y, render.ColInkDim)
+	render.TextRight(dst, t.Owner, render.ScreenW-26, y, render.ColInk)
+	y += render.LineH
+
+	if t.PlacePOI >= 0 {
+		render.Text(dst, "Ends at", 26, y, render.ColInkDim)
+		render.TextRight(dst, g.poiName(t.PlacePOI), render.ScreenW-26, y, render.ColInk)
+		y += render.LineH
+	}
+
+	if p := t.Progress(&g.Data.Threads); p != "" {
+		render.Text(dst, "Progress", 26, y, render.ColInkDim)
+		render.TextRight(dst, p, render.ScreenW-26, y, render.ColInk)
+		y += render.LineH
+	}
+
+	render.Text(dst, "Pays", 26, y, render.ColInkDim)
+	render.TextRight(dst, "depends what you decide", render.ScreenW-26, y, render.ColGold)
+}
+
+func (s *questScene) drawQuest(g *Game, dst *ebiten.Image, q *quest.Quest) {
+	y := 152.0
+
+	body := q.Nag
+	if q.Complete() {
+		body = q.Thank
+	}
+	for i, ln := range render.Wrap(body, render.ScreenW-64) {
+		if i > 2 {
+			break
+		}
+		render.Text(dst, ln, 26, y, render.ColInk)
+		y += render.LineH
+	}
+	y += 4
+
+	render.Text(dst, "Asked by", 26, y, render.ColInkDim)
+	render.TextRight(dst, fmt.Sprintf("%s, %s", q.Giver, g.poiName(q.GiverPOI)),
+		render.ScreenW-26, y, render.ColInk)
+	y += render.LineH
+
+	if q.TargetName != "" {
+		render.Text(dst, "Where", 26, y, render.ColInkDim)
+		render.TextRight(dst, q.TargetName, render.ScreenW-26, y, render.ColInk)
+		y += render.LineH
+	}
+	render.Text(dst, "Progress", 26, y, render.ColInkDim)
+	col := render.ColInk
+	if q.Complete() {
+		col = render.ColGold
+	}
+	render.TextRight(dst, q.Progress(), render.ScreenW-26, y, col)
+	y += render.LineH
+
+	render.Text(dst, "Pays", 26, y, render.ColInkDim)
+	render.TextRight(dst, fmt.Sprintf("%d coins, %d experience", q.RewardCoins, q.RewardXP),
+		render.ScreenW-26, y, render.ColGold)
 }
 
 // poiName resolves a stored location index for display.

@@ -38,6 +38,13 @@ func (s *overworldScene) Update(g *Game) error {
 	g.follow.Advance()
 	s.cam.Update()
 
+	// Somebody in the company may have something to say about their own life.
+	// Checked before input so the box goes up on the step that earned it, and
+	// the frame ends there so nothing else can be pushed on top of it.
+	if g.serviceThreads() {
+		return nil
+	}
+
 	if inpututil.IsKeyJustPressed(ebiten.KeyM) {
 		g.Push(newMapScene(g))
 		return nil
@@ -102,6 +109,7 @@ func (s *overworldScene) tryStep(g *Game, d core.Dir) {
 	s.moveDelay = g.World.At(next.X, next.Y).Info().Cost * 2
 	g.World.Reveal(next, 6)
 	g.sinceFight++
+	g.travelWithCompany()
 
 	if poi := g.World.POIAt(next.X, next.Y); poi != nil && !poi.Visited {
 		poi.Visited = true
@@ -166,6 +174,7 @@ func (g *Game) enterPOI(poi *world.POI) {
 	g.Sound.Play("world/enter")
 	if idx := g.poiIndex(poi); idx >= 0 {
 		g.noteQuestProgress(g.Quests.OnEnteredPOI(idx))
+		g.threadsOnEnteringPOI(idx)
 	}
 	g.Push(newLocalScene(g))
 	g.Log.AddColor(render.ColGold, "You enter %s.", poi.Name)

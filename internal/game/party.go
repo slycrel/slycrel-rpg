@@ -117,6 +117,7 @@ func (g *Game) hire(e *world.Entity, level int) {
 
 	g.Allies = append(g.Allies, c)
 	g.reformLines()
+	g.ensureThreads()
 	g.Sound.Play("world/coins")
 
 	what := fmt.Sprintf("%s, %s, level %d. Takes %d%% of the coin.",
@@ -159,6 +160,7 @@ func (g *Game) dismiss(c *model.Character) {
 		}
 		g.Allies = append(g.Allies[:i], g.Allies[i+1:]...)
 		g.reformLines()
+		g.Threads.Drop(c.Name)
 		g.Log.AddColor(render.ColInkDim, "%s", g.Write.RecruitLeave(g.RNG, c.Name))
 		// Whatever you bought them comes back. They are being let go, not
 		// robbing you — and a pack that vanished on dismissal would make

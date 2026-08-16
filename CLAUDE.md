@@ -62,8 +62,10 @@ Ebitengine opens a window at package init on macOS, so anything importing it —
 directly or through `assetsys` — cannot run without a display. `internal/game`
 is the scene stack and the drawing; everything that is neither lives outside it:
 the roster and marching order in `internal/party`, the tile walker and
-`TileSize` in `internal/core`, the maths in `internal/rules`. Keep new domain
-logic out of `internal/game`.
+`TileSize` in `internal/core`, the maths in `internal/rules`, the errands in
+`internal/quest` and the companion backstories in `internal/thread`. Keep new
+domain logic out of `internal/game`, which should be left holding the wiring:
+which event fires which trigger, and where it is safe to put a box on screen.
 
 ## Content conventions
 
@@ -78,9 +80,20 @@ logic out of `internal/game`.
   places and items it has checked for; a test asserts the same of save fixtures.
 - **Gear whose name already ends in a flourish never gets an affix**, or you get
   "Runed Maul of the Last Word of the Last Word".
+- **A companion backstory is authored writing over generated staging.** The
+  skeletons in `data/text/threads.json` may only name `{N}`, `{P}`, `{X}` and
+  `{I}`; `internal/thread` reads which of those a skeleton needs out of its own
+  text, so adding a placeholder is the whole of adding a role. Two rules are
+  enforced by tests: every thread has an ending that costs nothing (a broke
+  player must never be stuck holding a story), and no ending may beat another on
+  every axis (otherwise the choice is a formality with a menu in front of it).
 
 ## Gotchas
 
+- **`core.RNG.Fork` never reads its receiver.** It derives the child stream from
+  the label and the salt alone, so `g.RNG.Fork("thing", 0)` is the same stream in
+  every run of every seed. Whatever should vary has to go into the salt —
+  `poi.Seed` for an interior, `g.Seed` for anything cast once per run.
 - **World regeneration needs the real writer.** Location names are drawn from
   the same `*core.RNG` that places the locations, so a stub namer builds a
   *different continent*. Anything comparing a save against its world must use
@@ -88,7 +101,10 @@ logic out of `internal/game`.
   deliberately — they assert structural properties, not identity.)
 - **`saves/` is gitignored except `saves/fixtures/`**, which is committed: it is
   both the regression net and the set of playtest starting points.
-- **`v1-solo.json` must never be regenerated.** Its job is to be an old save.
+- **`v1-solo.json` and `v2-company.json` must never be regenerated.** Their job
+  is to be old saves — v1 predates the party, v2 predates the backstories — and
+  rewriting either at the current version deletes the only evidence that the
+  loader still reads the earlier format. `cmd/genfixtures` skips both.
 - **The UI font is Latin-1 only.** `internal/render` folds typography to ASCII
   before drawing; do not bypass it, or an em-dash renders as `@`.
 - **Screen capture is blocked on this machine.** Use `-demo`, or `\` in game to

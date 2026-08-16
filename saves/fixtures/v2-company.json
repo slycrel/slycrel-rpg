@@ -1,61 +1,64 @@
 {
-  "version": 3,
+  "version": 2,
   "saved": "2026-08-16T12:00:00Z",
-  "summary": "a level 1 hero, alone, one step out of the capital",
+  "summary": "a v2 company: hirelings from before backstories existed",
   "seed": 1994,
   "player": {
     "name": "Bosk",
     "class": "Fighter",
     "epithet": "the Regrettable",
-    "level": 1,
+    "level": 6,
     "totalXP": 0,
     "spendXP": 0,
-    "hp": 24,
-    "maxHP": 24,
-    "psyche": 4,
-    "maxPsyche": 4,
-    "strength": 9,
-    "dexterity": 6,
-    "speed": 9,
-    "fame": 0,
+    "hp": 53,
+    "maxHP": 53,
+    "psyche": 6,
+    "maxPsyche": 6,
+    "strength": 15,
+    "dexterity": 9,
+    "speed": 14,
+    "fame": 5,
     "honor": 3,
     "faith": 3,
     "shame": 0,
     "coins": 250,
     "weapon": {
-      "name": "Mace of Modest Ambition",
-      "strike": 5,
-      "range": 0,
-      "cost": 36,
-      "quality": 65,
-      "verb": "clobber",
-      "tier": 1,
-      "icon": "icon/ab/1_weapon_hammer"
+      "name": "Spear, Regrettably Long",
+      "strike": 7,
+      "range": 3,
+      "cost": 82,
+      "quality": 68,
+      "verb": "skewer",
+      "tier": 2,
+      "icon": "icon/ab/2_weapon_sword"
     },
     "armor": {
-      "name": "Boiled Leather",
-      "defense": 3,
-      "cost": 30,
-      "quality": 55,
-      "verb": "deflects",
-      "tier": 1,
-      "icon": "icon/loot/bear_pelt"
+      "name": "Ringmail, Secondhand",
+      "defense": 6,
+      "cost": 90,
+      "quality": 68,
+      "verb": "catches",
+      "tier": 2,
+      "icon": "icon/loot/blackbear_pelt"
     },
     "shield": {
-      "name": "",
-      "defense": 0,
-      "cost": 0,
-      "tier": 0,
-      "verb": "",
-      "icon": ""
+      "name": "Pot Lid, Dented Twice",
+      "defense": 1,
+      "cost": 22,
+      "tier": 1,
+      "verb": "clangs against",
+      "icon": "icon/loot/crab_claw"
     },
     "charm": {
-      "name": "",
-      "bonus": {},
-      "cost": 0,
-      "tier": 0,
-      "desc": "",
-      "icon": ""
+      "name": "Heavy Knucklebone",
+      "bonus": {
+        "strength": 1,
+        "dexterity": -1
+      },
+      "cost": 18,
+      "tier": 1,
+      "desc": "Held in the fist. Adds nothing but weight, and weight is enough.",
+      "icon": "icon/loot/monster_bone"
     },
     "bag": [
       {
@@ -80,6 +83,71 @@
     "sprite": "",
     "portrait": ""
   },
+  "allies": [
+    {
+      "name": "Hireling 1",
+      "class": "Fighter",
+      "epithet": "",
+      "level": 6,
+      "totalXP": 0,
+      "spendXP": 0,
+      "hp": 46,
+      "maxHP": 46,
+      "psyche": 4,
+      "maxPsyche": 4,
+      "strength": 18,
+      "dexterity": 10,
+      "speed": 13,
+      "fame": 5,
+      "honor": 2,
+      "faith": 2,
+      "shame": 0,
+      "coins": 0,
+      "weapon": {
+        "name": "Spear, Regrettably Long",
+        "strike": 7,
+        "range": 3,
+        "cost": 82,
+        "quality": 68,
+        "verb": "skewer",
+        "tier": 2,
+        "icon": "icon/ab/2_weapon_sword"
+      },
+      "armor": {
+        "name": "Ringmail, Secondhand",
+        "defense": 6,
+        "cost": 90,
+        "quality": 68,
+        "verb": "catches",
+        "tier": 2,
+        "icon": "icon/loot/blackbear_pelt"
+      },
+      "shield": {
+        "name": "Pot Lid, Dented Twice",
+        "defense": 1,
+        "cost": 22,
+        "tier": 1,
+        "verb": "clangs against",
+        "icon": "icon/loot/crab_claw"
+      },
+      "charm": {
+        "name": "Heavy Knucklebone",
+        "bonus": {
+          "strength": 1,
+          "dexterity": -1
+        },
+        "cost": 18,
+        "tier": 1,
+        "desc": "Held in the fist. Adds nothing but weight, and weight is enough.",
+        "icon": "icon/loot/monster_bone"
+      },
+      "bag": null,
+      "ally": true,
+      "cut": 15,
+      "sprite": "hero/druid",
+      "portrait": "portrait/female/f_08"
+    }
+  ],
   "at": {
     "X": 80,
     "Y": 67
@@ -89,7 +157,17 @@
     {},
     {},
     {},
-    {},
+    {
+      "discovered": true,
+      "visited": true,
+      "used": [
+        {
+          "kind": "chest",
+          "x": 12,
+          "y": 9
+        }
+      ]
+    },
     {},
     {},
     {},
@@ -136,21 +214,21 @@
   "sinceFight": 0,
   "quests": [
     {
-      "id": "delve-0-2208660",
-      "kind": "delve",
+      "id": "cull-0-5948421",
+      "kind": "cull",
       "state": "active",
-      "title": "Clear Gorse Ruin",
-      "ask": "\"Clear out Gorse Ruin. My brother went in. I'd like the place emptied and, if convenient, him back.\"",
-      "nag": "\"Gorse Ruin is still there. Still full. Still nobody's problem but yours, apparently.\"",
-      "thank": "\"You went in and came out. That puts you ahead of everyone else who tried.\"",
+      "title": "Cull 5 Wolf, Deeply Unimpressed",
+      "ask": "\"There's Wolf, Deeply Unimpressed out there. 5 of them, ideally fewer by supper.\"",
+      "nag": "\"Still out there, then. The Wolf, Deeply Unimpressed. I can hear them from here.\"",
+      "thank": "\"Done? Properly done? Right. I'll stop flinching at noises.\"",
       "giver": "Person",
       "giverPOI": 0,
-      "targetPOI": 26,
-      "targetName": "Gorse Ruin",
-      "need": 1,
+      "monsterID": "forest_wolf",
+      "monsterName": "Wolf, Deeply Unimpressed",
+      "need": 5,
       "have": 0,
-      "rewardCoins": 150,
-      "rewardXP": 96
+      "rewardCoins": 50,
+      "rewardXP": 85
     }
   ]
 }

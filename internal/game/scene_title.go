@@ -11,6 +11,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
 	"github.com/slycrel/slycrel-rpg/internal/save"
+	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
@@ -209,6 +210,7 @@ func (g *Game) startRun(name, epithet string, class model.Class) {
 	// paid for and levelled to somebody else's career.
 	g.Allies = nil
 	g.follow, g.localFollow = nil, nil
+	g.Threads, g.pendingBeats, g.remindEndings = thread.Log{}, nil, false
 
 	g.World = world.Generate(g.Seed, g.Write)
 	g.Quests = quest.Log{}

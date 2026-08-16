@@ -76,6 +76,13 @@ Built and running:
   stands up afterwards, or sooner via an item or Reknit. A hero who falls with
   somebody still standing is carried to the nearest town for a large share of
   the purse and a point of Shame; a hero who falls alone still ends the run
+- Companion backstories: nine authored threads, one per lineage plus three for
+  the ordinary hirelings, each a short ordered chain of beats that surfaces
+  while you travel together. The writing is authored and the staging is cast
+  from the world at the moment somebody is hired, then frozen into the save, so
+  a thread can never name a place this continent does not contain. Every one
+  ends in a choice rather than a payout, and the choice is a trade: the ending
+  that pays is not the ending that settles anything
 - Balance: a simulator over the real rules, and a tuning pass that removed a
   damage cliff at level 5, made monsters scale with the encounter, and flattened
   endurance from 12-fights-then-3 to a steady 4-9 per rest
@@ -96,11 +103,13 @@ Built and running:
   mostly readable JSON and doubles as a test fixture
 - 62 monsters across nine biomes, 14 weapons, 10 armours, 6 shields, 9 charms,
   10 affixes, 42 items, 27 techniques
-  (eleven of them party-facing, lingering, or gated on a hireling's ancestry)
+  (eleven of them party-facing, lingering, or gated on a hireling's ancestry),
+  9 companion backstories
 - Asset pipeline: inventory, selective extraction, manifest generation, and an
   audit that reports which art keys still fall back to placeholders
 
-Deliberately not built yet: equipment slots, status effects.
+Deliberately not built yet: backstories for the townspeople, alternative
+progression arcs, day/night and weather, anything that reads Fame or Shame.
 
 ## Architecture, and why
 
@@ -112,7 +121,10 @@ gets a dimmed backdrop of the place it started.
 **Everything generated takes an `*RNG`, never a global.** `core.RNG.Fork(label,
 salt)` derives child streams deterministically, which is what lets a point of
 interest regenerate its own interior from `poi.Seed` on every visit instead of
-being stored. A seed reproduces the continent, the towns, and the jokes.
+being stored. A seed reproduces the continent, the towns, and the jokes. Fork
+derives its stream from the label and the salt *only* and never reads the
+parent's state, so the salt has to carry whatever should vary — `poi.Seed` for
+an interior, the run's seed for anything cast per-run.
 
 **Art never blocks the build.** `assetsys` falls back to a generated
 placeholder for any key it cannot resolve — dithered pixel-art tiles for
@@ -150,23 +162,30 @@ than by tests, became something a test can reach.
    opens. The apothecary stocks the revive items instead, which is the same
    idea placed where it does something. If death ever gets harsher, this is the
    first thing to revisit.
-2. **Companion backstories.** A hireling arrives with a name, a lineage and a
-   pitch, and nothing behind it. Give each one a two- or three-step thread that
-   surfaces as you travel with them — the previous employer a part-undead is
-   still technically contracted to, the arrangement a part-demon will not
-   discuss — resolved at a place the world already generated.
-3. **NPC backstories.** The same shape for the townspeople who currently have
-   one line each.
+2. ~~**Companion backstories.**~~ *(built — `internal/thread`.)* The shape the
+   plan guessed at is the shape it took: an authored skeleton (a beat list with
+   roles) cast from whatever the seed generated at first contact and then frozen
+   into the save. Two details only turned up in the building.
 
-   These two want one mechanism, and it is a step up from what `internal/quest`
-   does now. The existing generator picks a verb, an object and a place, checks
-   they exist, and hands back a counter: stateless, interchangeable, and
-   deliberately basic. A backstory is a small *ordered* thread that remembers
-   where it got to, with a fixed cast. The likely shape is an authored skeleton
-   — a beat list with roles (a giver, a place, a thing, an antagonist) — cast
-   from whatever the seed generated at first contact and then frozen into the
-   save. That keeps the writing hand-made and the casting generated, and it
-   means a thread can never name a place this world does not contain.
+   The first is that which roles a skeleton needs is read out of its own
+   writing. Putting `{X}` in a line is the whole of adding an antagonist, so
+   there is no second list to forget to update — and the test that catches an
+   unfilled placeholder is a scan for a surviving `{`, which also catches a
+   typo nobody implements.
+
+   The second is that a counted beat has to be cast from where the company is
+   *now*, not from the place the thread ends at. The counted beats fire in the
+   stretch before the story has even named a destination, so an antagonist
+   drawn from the far end is one the player has no reason to be near, and the
+   thread stalls on "put down three of them" for the rest of the run.
+
+3. **NPC backstories.** The same mechanism for the townspeople who currently
+   have one line each. `internal/thread` already has the casting, the beat
+   chain and the choice at the end; what it does not have is a way for a thread
+   to belong to somebody who stays put. A companion's thread is keyed to a name
+   in the party and advanced by things the party does — a townsperson's would
+   need to be keyed to a location and advanced by returning to it, which is
+   closer to how a quest already works than to how a thread does.
 
 ### Phase 3 — the world reacting
 

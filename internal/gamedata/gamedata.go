@@ -13,6 +13,7 @@ import (
 
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
+	"github.com/slycrel/slycrel-rpg/internal/thread"
 )
 
 // Tables is every content table the game needs, loaded once at boot.
@@ -33,6 +34,10 @@ type Tables struct {
 	Affixes []model.Affix
 
 	Text Text
+	// Threads are the authored companion backstories, before anybody is cast
+	// in one. They live beside the rest of the writing rather than in the
+	// binary for the same reason everything else here does.
+	Threads thread.Book
 }
 
 // Text is the writing room: word banks the generators recombine at runtime.
@@ -184,6 +189,9 @@ func Load(root string) (*Tables, error) {
 		return nil, err
 	}
 	if err := readJSON(filepath.Join(dd, "text", "flavor.json"), &t.Text); err != nil {
+		return nil, err
+	}
+	if err := readJSON(filepath.Join(dd, "text", "threads.json"), &t.Threads); err != nil {
 		return nil, err
 	}
 

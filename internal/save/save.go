@@ -24,15 +24,19 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
+	"github.com/slycrel/slycrel-rpg/internal/thread"
 )
 
 // Version is the save format revision. Load refuses anything it does not know,
 // rather than silently misreading an older layout.
 //
-// v2 added the party. A v1 save is still read — it simply describes a run with
-// no companions in it, which is a lossless reading rather than a guess — so the
-// bump is about refusing a *future* format, not about abandoning old files.
-const Version = 2
+// v2 added the party. v3 added the companions' backstories. Older saves are
+// still read: a v1 file describes a run with no companions in it and a v2 file
+// a company nobody has asked about themselves yet, both of which are lossless
+// readings rather than guesses. The bump is about refusing a *future* format,
+// not about abandoning old files — and a v2 company is handed threads on the
+// way in, so an old save is not stuck without them either.
+const Version = 3
 
 // minVersion is the oldest layout this build can still read correctly.
 const minVersion = 1
@@ -77,6 +81,11 @@ type File struct {
 	// there is nothing to reconstruct and nothing that can drift out of step
 	// with a regenerated world.
 	Quests []*quest.Quest `json:"quests,omitempty"`
+
+	// Threads are the companions' backstories, keyed to their owner by name.
+	// Like quests they are stored whole, because the cast was frozen when the
+	// thread was first handed out and re-deriving it would be re-rolling it.
+	Threads []*thread.Thread `json:"threads,omitempty"`
 }
 
 // Inside records a position within a location's interior.

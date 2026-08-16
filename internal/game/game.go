@@ -23,6 +23,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/party"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/render"
+	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/tiles"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
@@ -67,6 +68,17 @@ type Game struct {
 
 	// Quests the player has taken on.
 	Quests quest.Log
+
+	// Threads are the companions' backstories, one apiece.
+	Threads thread.Log
+
+	// pendingBeats are backstory beats that have come due but not yet been
+	// said. They queue because a beat can fire mid-battle, and are drained
+	// somewhere it is safe to put a box over.
+	pendingBeats []thread.Fired
+	// remindEndings is set on walking into a settlement, and is what makes a
+	// deferred ending come up again there rather than on the road.
+	remindEndings bool
 
 	// Steps since the last encounter, so fights cannot chain immediately.
 	sinceFight int
