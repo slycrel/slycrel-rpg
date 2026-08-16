@@ -711,6 +711,8 @@ func (b *battleScene) allyTurn(g *Game, c *model.Character) {
 		b.castSpell(g, cast{
 			by: c, spell: move.Spell, foe: b.weakestLiving(), ally: move.Ally,
 		})
+	case rules.AllyUse:
+		b.useItemFrom(g, c, move.Item, c)
 	case rules.AllyGuard:
 		b.guarding[c] = true
 		b.log.AddColor(render.ColInkDim, "%s gets behind %s and stays there.", c.Name, c.Armor.Name)
@@ -927,14 +929,25 @@ func (b *battleScene) castOnFoes(g *Game, c cast) {
 }
 
 // useItem spends one item out of the hero's pack on whoever it was aimed at.
-// The pack is always the hero's; the target need not be.
 func (b *battleScene) useItem(g *Game, idx int, t *model.Character) {
-	it, ok := g.Player.TakeItem(idx)
+	b.useItemFrom(g, g.Player, idx, t)
+}
+
+// useItemFrom spends one item out of a named pack.
+//
+// The holder and the target are separate because both directions happen: the
+// hero hands a companion a potion out of his own bag, and a companion drinks
+// one out of theirs without asking anybody.
+func (b *battleScene) useItemFrom(g *Game, holder *model.Character, idx int, t *model.Character) {
+	if holder == nil {
+		holder = g.Player
+	}
+	it, ok := holder.TakeItem(idx)
 	if !ok {
 		return
 	}
 	if t == nil {
-		t = g.Player
+		t = holder
 	}
 	// You aim at somebody standing and the monsters get to them first. Only a
 	// revive works on the fallen; without this, Character.Heal would clamp a
@@ -946,7 +959,7 @@ func (b *battleScene) useItem(g *Game, idx int, t *model.Character) {
 	}
 
 	who := "%s downs the %s"
-	if t != g.Player {
+	if t != holder {
 		who = "%s is handed the %s"
 	}
 	fx, fy := b.memberFloat(t)
@@ -992,7 +1005,7 @@ func (b *battleScene) useItem(g *Game, idx int, t *model.Character) {
 			b.log.Add("%s feels stronger and considerably angrier.", t.Name)
 		}
 	default:
-		b.log.Add("%s waves the %s at the problem. It does not help.", g.Player.Name, it.Name)
+		b.log.Add("%s waves the %s at the problem. It does not help.", holder.Name, it.Name)
 	}
 }
 

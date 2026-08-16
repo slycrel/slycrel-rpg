@@ -315,6 +315,7 @@ const (
 	AllySwing AllyMoveKind = iota // attack with the weapon
 	AllyCast                      // use the technique in AllyMove.Spell
 	AllyGuard                     // brace, halving what lands this round
+	AllyUse                       // drink something out of their own pack
 )
 
 // AllyMove is a companion's decision for one turn.
@@ -329,6 +330,8 @@ type AllyMove struct {
 	// pointed at the monsters, and for a self-targeted technique it is the
 	// caster, so the battle screen never has to work out who was meant.
 	Ally *model.Character
+	// Item indexes the companion's own bag, for AllyUse.
+	Item int
 }
 
 // ChooseAllyMove picks a companion's action for the round.
@@ -357,6 +360,15 @@ func ChooseAllyMove(g *core.RNG, c *model.Character, spells []model.Spell, party
 		}
 	}
 
+	// No technique for it, but something in their own pack. A companion never
+	// reaches into the hero's bag — what they drink is what they were given or
+	// bought, which is the whole reason to supply one.
+	if c.HPFrac() < healBelow {
+		if i, ok := bestRestorative(c); ok {
+			return AllyMove{Kind: AllyUse, Item: i, Ally: c}
+		}
+	}
+
 	// Nothing urgent. Hit something, unless a technique beats the weapon.
 	if s, ok := bestAttack(c, spells); ok {
 		return AllyMove{Kind: AllyCast, Spell: s}
@@ -376,6 +388,39 @@ func ChooseAllyMove(g *core.RNG, c *model.Character, spells []model.Spell, party
 		return AllyMove{Kind: AllyGuard}
 	}
 	return AllyMove{Kind: AllySwing}
+}
+
+// bestRestorative picks which of a companion's own healing items to drink: the
+// smallest one that covers the damage taken, or the biggest they have if none
+// does.
+//
+// Reaching for the strongest bottle every time is how a party burns a
+// Physician's Draught on a scratch. Picking the smallest that does the job is
+// what a person who paid for them would do.
+func bestRestorative(c *model.Character) (int, bool) {
+	missing := c.MaxHP - c.HP
+	best, biggest := -1, -1
+	for i, it := range c.Bag {
+		if it.Kind != model.ItemHeal || it.Count <= 0 {
+			continue
+		}
+		if biggest < 0 || it.Power > c.Bag[biggest].Power {
+			biggest = i
+		}
+		if it.Power < missing {
+			continue
+		}
+		if best < 0 || it.Power < c.Bag[best].Power {
+			best = i
+		}
+	}
+	if best >= 0 {
+		return best, true
+	}
+	if biggest >= 0 {
+		return biggest, true
+	}
+	return 0, false
 }
 
 // healBelow is how hurt somebody has to be before healing them beats acting.
@@ -489,7 +534,8 @@ func Recruit(g *core.RNG, name string, class model.Class, blood model.MonsterKin
 	// that raises the maximum would otherwise hand over somebody who arrives
 	// already short of the hit points they are being paid for.
 	c.HP, c.Psyche = c.MaxHP, c.MaxPsyche
-	// The pack, the purse and the errands stay with the hero.
+	// A hireling arrives with nothing but what they are wearing. The purse and
+	// the errands stay the hero's for good; the pack is theirs to be given.
 	c.Coins, c.Bag, c.SpendXP = 0, nil, 0
 	return c
 }

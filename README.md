@@ -64,7 +64,9 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 | X, Esc | back out |
 | M | the map of everywhere you have been |
 | C or I | character sheet and pack; left/right pages through the company |
+| G / T | on a companion's sheet, give them the selected item or take it all back |
 | R | on a companion's sheet, let them go |
+| Tab | at a shop counter, change who you are buying for |
 | J | the errands you agreed to |
 | Esc | pause: sound, save, load, abandon the run |
 | `\` or F12 | screenshot to `shots/` (F12 needs standard function keys on macOS) |
@@ -91,6 +93,12 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
   hits that would otherwise be yours, level on their own curve, and spend their
   cut re-arming so a companion hired at level three is still worth having at
   twelve.
+- **Outfitting the company** — the shop counter turns to whoever you point it
+  at with Tab, so a hireling can be given a weapon, a shield or a charm out of
+  your purse. Supplies bought for them go in *their* pack, and they drink them
+  without asking when a fight turns: a companion never reaches into yours, so
+  what they have is what you gave them. Everything comes back when you let them
+  go, which is what makes stocking somebody up a purchase rather than a bet.
 - **Hirelings who are not entirely people** — about one in three is part beast,
   fey, undead, demon, ooze or something nobody has established. Each lineage
   shifts the stat line in both directions, comes with a discount because nobody

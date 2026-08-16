@@ -154,3 +154,43 @@ func TestTheDeadDoNotTakeTheirTurn(t *testing.T) {
 		t.Fatalf("%d of the party acted; only the one still standing should have", acted)
 	}
 }
+
+// Supplies bought for a companion must come back when they are let go, or
+// stocking anybody up is a bet rather than a purchase.
+func TestDismissingReturnsTheirSupplies(t *testing.T) {
+	hero := &model.Character{Name: "Bosk"}
+	mate := &model.Character{Name: "Nessa", Ally: true, Bag: []model.Item{
+		{Name: "Field Poultice", Kind: model.ItemHeal, Power: 20, Count: 2},
+		{Name: "Small Beer", Kind: model.ItemHeal, Power: 8, Count: 1},
+	}}
+	g := &Game{Player: hero, Allies: []*model.Character{mate}}
+
+	if n := g.reclaim(mate); n != 3 {
+		t.Fatalf("reclaimed %d items, want 3", n)
+	}
+	if len(mate.Bag) != 0 {
+		t.Errorf("the companion still carries %d stacks", len(mate.Bag))
+	}
+	if len(hero.Bag) != 2 {
+		t.Fatalf("the hero got back %d stacks, want 2", len(hero.Bag))
+	}
+	var total int
+	for _, it := range hero.Bag {
+		total += it.Count
+	}
+	if total != 3 {
+		t.Errorf("the hero got back %d items, want 3", total)
+	}
+
+	// And it stacks with what the hero already had rather than duplicating.
+	mate.Bag = []model.Item{{Name: "Small Beer", Kind: model.ItemHeal, Power: 8, Count: 4}}
+	g.reclaim(mate)
+	for _, it := range hero.Bag {
+		if it.Name == "Small Beer" && it.Count != 5 {
+			t.Errorf("Small Beer came back as %d, want 5 stacked", it.Count)
+		}
+	}
+	if len(hero.Bag) != 2 {
+		t.Errorf("reclaiming created a duplicate stack: %d kinds", len(hero.Bag))
+	}
+}

@@ -169,10 +169,11 @@ func TestFixturesHoldTheRunInvariants(t *testing.T) {
 			switch {
 			case !c.Ally:
 				t.Errorf("%s: %s is in the company but not marked a hireling", name, c.Name)
-			case c.Coins != 0 || len(c.Bag) != 0:
-				// The purse and the pack are the hero's. A companion holding
-				// either means money that vanishes the moment they are let go.
-				t.Errorf("%s: %s carries %d coins and %d items", name, c.Name, c.Coins, len(c.Bag))
+			case c.Coins != 0:
+				// The purse stays the hero's. A companion holding coin means
+				// money that vanishes the moment they are let go — supplies do
+				// not, because dismissal hands those back.
+				t.Errorf("%s: %s is carrying %d coins", name, c.Name, c.Coins)
 			case c.HP > c.MaxHP || c.Psyche > c.MaxPsyche:
 				t.Errorf("%s: %s is at %d/%d hit points", name, c.Name, c.HP, c.MaxHP)
 			case c.Blood != "":

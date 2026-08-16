@@ -69,6 +69,9 @@ Built and running:
   is a trade. Sidearms sit a band behind the main gear in the "on curve"
   assumption, and are absent from the first band entirely, which is what kept
   the tuned curve intact
+- Outfitting the company: the shop counter turns to any party member, supplies
+  bought for a hireling go in their own pack and are drunk without asking, and
+  everything comes back on dismissal
 - Getting back up: a fallen companion is out of the fight rather than dead and
   stands up afterwards, or sooner via an item or Reknit. A hero who falls with
   somebody still standing is carried to the nearest town for a large share of
@@ -136,9 +139,9 @@ than by tests, became something a test can reach.
 
 ### Phase 2 — depth
 
-1. **Party, third pass.** What the targeting rework did not reach: outfitting a
-   companion at a shop rather than letting them re-arm off-screen out of their
-   cut, and letting a companion carry a pack of their own.
+1. **Party, fourth pass.** What is left after outfitting: letting a companion
+   spend their own cut between towns rather than only re-arming on level-up,
+   and giving them an opinion about the gear you hand them.
 
    A resurrecting NPC was considered here and deliberately left out. With the
    fallen standing up when a fight ends and a fallen hero carried to town by
@@ -167,18 +170,42 @@ than by tests, became something a test can reach.
 
 ### Phase 3 — the world reacting
 
-4. **Day/night and weather.** The tileset collection includes a weather-effects
+4. **Alternative progression arcs.** *(Jeremy's idea; acknowledged as a rabbit
+   hole, so scoped deliberately.)* Right now there is one way to be correctly
+   levelled, and `gamedata.Equip` is where it is written down: best weapon and
+   armour of your tier, sidearms a band behind. The balance report measures that
+   one build, so "on curve" and "the way we expect you to play" are the same
+   sentence — and the equipment pass showed how load-bearing that is, since
+   changing the assumption moved the whole report without a single stat
+   changing.
+
+   The goal is two or three builds that are each viable rather than one that is
+   correct: something like an attrition build (heavy armour, a shield, low
+   damage, long fights), a glass cannon (best weapon, charms that trade defence
+   for strike, fights that end in two rounds or badly), and a company build
+   (cheaper personal gear, coin spent on hirelings and their supplies).
+
+   The mechanism is the same shape as what exists: `Equip` becomes several named
+   archetypes, and the report grows a column per archetype instead of one set of
+   numbers. That is the cheap part and worth doing on its own, because it turns
+   "is this balanced" into "is each of these playable", which is the actual
+   question. The expensive part is making the content support all three — the
+   charm and affix tables would need enough spread that a glass cannon has
+   something to buy — and that is where the rabbit hole is. Do the report first
+   and let it say whether the content already supports more than one arc.
+
+5. **Day/night and weather.** The tileset collection includes a weather-effects
    pack. Changes encounter tables and which NPCs are out.
-5. **Faction and reputation.** `Fame`, `Honor`, `Faith` and `Shame` exist on
+6. **Faction and reputation.** `Fame`, `Honor`, `Faith` and `Shame` exist on
    the character and currently do almost nothing. Gate content on them.
-6. **A reason to be here.** A generated main thread that strings together
+7. **A reason to be here.** A generated main thread that strings together
    five or six POIs into something with an ending.
 
 ### Phase 4 — polish
 
-7. Curated UI art from the 4,488-file GUI Pro kit, replacing the procedural panels.
-8. Title screen art, transitions, particles from the 115-file VFX pack.
-9. Balance simulation: run 10,000 headless fights per level band against the
+8. Curated UI art from the 4,488-file GUI Pro kit, replacing the procedural panels.
+9. Title screen art, transitions, particles from the 115-file VFX pack.
+10. Balance simulation: run 10,000 headless fights per level band against the
    pure `rules` package and tune the curve.
 
 ## Open questions

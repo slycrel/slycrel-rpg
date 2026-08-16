@@ -41,8 +41,9 @@ func TestRecruitIsAnOrdinaryCharacterOfThatLevel(t *testing.T) {
 		if c.HP != c.MaxHP || c.HP <= 0 {
 			t.Errorf("level %d hireling arrived at %d/%d hit points", level, c.HP, c.MaxHP)
 		}
-		// The purse, the pack and the training debt stay with the hero. A
-		// companion carrying coins would mean money that vanishes on dismissal.
+		// A hireling arrives with nothing but what they are wearing. The purse
+		// and the training debt stay the hero's for good; the pack is theirs to
+		// be given, but not before they have been hired.
 		if c.Coins != 0 || len(c.Bag) != 0 || c.SpendXP != 0 {
 			t.Errorf("level %d hireling turned up with %d coins, %d items and %d unspent XP",
 				level, c.Coins, len(c.Bag), c.SpendXP)
@@ -396,5 +397,85 @@ func TestHealingCannotRaiseTheDead(t *testing.T) {
 	c.HP = 1
 	if got := c.Heal(5); got != 5 || c.HP != 6 {
 		t.Errorf("healing a living character restored %d, leaving %d hit points", got, c.HP)
+	}
+}
+
+// A companion drinks their own supplies rather than the hero's, and picks
+// sensibly: the smallest bottle that covers the damage, so a party does not
+// burn a Physician's Draught on a scratch.
+func TestCompanionDrinksItsOwnSuppliesSensibly(t *testing.T) {
+	g := core.NewRNG(51)
+	c := rules.BuildCharacter(g, model.ClassFighter, 6)
+	c.Weapon = model.Weapon{Name: "Sword", Strike: 40} // nothing worth casting
+	c.Psyche = 0
+	c.Bag = []model.Item{
+		{Name: "Small Beer", Kind: model.ItemHeal, Power: 8, Count: 2},
+		{Name: "Field Poultice", Kind: model.ItemHeal, Power: 20, Count: 1},
+		{Name: "Physician's Draught", Kind: model.ItemHeal, Power: 45, Count: 1},
+		{Name: "Rank Pelt", Kind: model.ItemTrinket, Count: 1},
+	}
+	party := []*model.Character{c}
+
+	// A scratch: nothing should be drunk at all.
+	c.HP = c.MaxHP - 2
+	if move := rules.ChooseAllyMove(g, c, nil, party); move.Kind == rules.AllyUse {
+		t.Errorf("a companion drank %q over a scratch", c.Bag[move.Item].Name)
+	}
+
+	// Badly hurt, and by roughly a Small Beer's worth: take the Small Beer
+	// rather than the Poultice that would also cover it.
+	c.MaxHP, c.HP = 12, 5 // 42% left, seven points missing
+	move := rules.ChooseAllyMove(g, c, nil, party)
+	if move.Kind != rules.AllyUse {
+		t.Fatalf("badly hurt with a pack full of bottles, the companion chose %+v", move)
+	}
+	if got := c.Bag[move.Item].Name; got != "Small Beer" {
+		t.Errorf("to heal 7 the companion reached for %q", got)
+	}
+
+	// Hurt worse than anything in the bag: take the biggest.
+	c.MaxHP = 400
+	c.HP = 10
+	move = rules.ChooseAllyMove(g, c, nil, party)
+	if move.Kind != rules.AllyUse {
+		t.Fatalf("nearly dead, the companion chose %+v", move)
+	}
+	if got := c.Bag[move.Item].Name; got != "Physician's Draught" {
+		t.Errorf("nearly dead the companion reached for %q, not the strongest", got)
+	}
+}
+
+// A healing technique still beats a bottle: psyche refills at a rest and
+// potions cost coin.
+func TestCompanionPrefersATechniqueToABottle(t *testing.T) {
+	g := core.NewRNG(53)
+	c := rules.BuildCharacter(g, model.ClassMage, 6)
+	c.Weapon = model.Weapon{Name: "Stick", Strike: 1}
+	c.Psyche = c.MaxPsyche
+	c.HP = 1
+	c.Bag = []model.Item{{Name: "Small Beer", Kind: model.ItemHeal, Power: 8, Count: 1}}
+
+	move := rules.ChooseAllyMove(g, c, selfOnly, []*model.Character{c})
+	if move.Kind != rules.AllyCast || move.Spell.Kind != model.SpellHeal {
+		t.Fatalf("with a heal known and psyche to spare, the companion chose %+v", move)
+	}
+}
+
+// Nothing in the pack must ever be reached for as if it were a potion.
+func TestCompanionNeverDrinksJunk(t *testing.T) {
+	g := core.NewRNG(57)
+	c := rules.BuildCharacter(g, model.ClassFighter, 4)
+	c.Weapon = model.Weapon{Name: "Sword", Strike: 40}
+	c.Psyche = 0
+	c.HP = 1
+	c.Bag = []model.Item{
+		{Name: "Rank Pelt", Kind: model.ItemTrinket, Count: 3},
+		{Name: "Bottled Nap", Kind: model.ItemPsyche, Power: 12, Count: 1},
+		{Name: "Smelling Salts", Kind: model.ItemRevive, Power: 25, Count: 1},
+	}
+	for i := 0; i < 200; i++ {
+		if move := rules.ChooseAllyMove(g, c, nil, []*model.Character{c}); move.Kind == rules.AllyUse {
+			t.Fatalf("a companion with no healing drank %q", c.Bag[move.Item].Name)
+		}
 	}
 }

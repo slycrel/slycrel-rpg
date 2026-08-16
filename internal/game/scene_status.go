@@ -45,6 +45,10 @@ func (s *statusScene) subject(g *Game) *model.Character {
 }
 
 func (s *statusScene) refresh(g *Game) {
+	// The panel is always the hero's pack, because that is the pack the player
+	// manages. What a companion is carrying shows as a line on their own sheet:
+	// two item lists on one screen would mean every key needing to say which
+	// one it meant.
 	items := make([]ui.MenuItem, 0, len(g.Player.Bag))
 	for i, it := range g.Player.Bag {
 		items = append(items, ui.MenuItem{
@@ -72,9 +76,13 @@ func (s *statusScene) Update(g *Game) error {
 			case core.DirLeft:
 				s.who = (s.who - 1 + n) % n
 				g.Sound.Play("ui/move")
+				s.bag.Index = 0
+				s.refresh(g)
 			case core.DirRight:
 				s.who = (s.who + 1) % n
 				g.Sound.Play("ui/move")
+				s.bag.Index = 0
+				s.refresh(g)
 			}
 		}
 		switch d {
@@ -89,6 +97,14 @@ func (s *statusScene) Update(g *Game) error {
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
 		s.releaseSubject(g)
+		return nil
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyG) {
+		s.give(g)
+		return nil
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyT) {
+		s.takeBack(g)
 		return nil
 	}
 
@@ -118,6 +134,56 @@ func (s *statusScene) releaseSubject(g *Game) {
 			g.dismiss(c)
 			s.who = 0
 		})
+}
+
+// give hands the selected item from the hero's pack to the companion on screen.
+//
+// Only ever in that direction, and only ever on a companion's sheet, so there
+// is never a question of who is giving what to whom. Taking back is a separate
+// key that empties their pack, which is coarse but equally unambiguous.
+func (s *statusScene) give(g *Game) {
+	who := s.subject(g)
+	if who == g.Player {
+		g.Sound.Play("ui/deny")
+		g.Log.AddColor(render.ColInkDim, "Page to somebody to hand them things.")
+		return
+	}
+	it, ok := s.bag.Selected()
+	if !ok || it.Disabled {
+		return
+	}
+	idx, ok := it.Data.(int)
+	if !ok {
+		return
+	}
+	if g.Player.Bag[idx].Kind == model.ItemTrinket {
+		g.Sound.Play("ui/deny")
+		g.Log.AddColor(render.ColInkDim, "%s has no use for a %s and says so.",
+			who.Name, g.Player.Bag[idx].Name)
+		return
+	}
+	moved, taken := g.Player.TakeItem(idx)
+	if !taken {
+		return
+	}
+	who.AddItem(moved)
+	g.Sound.Play("world/loot")
+	g.Log.AddColor(render.ColGold, "%s takes the %s, and will drink it without asking.",
+		who.Name, moved.Name)
+	s.refresh(g)
+}
+
+// takeBack empties a companion's pack into the hero's.
+func (s *statusScene) takeBack(g *Game) {
+	who := s.subject(g)
+	if who == g.Player || len(who.Bag) == 0 {
+		return
+	}
+	n := g.reclaim(who)
+	g.Sound.Play("world/loot")
+	g.Log.AddColor(render.ColGold, "%s hands back %d %s, with a look.",
+		who.Name, n, plural(n, "thing", "things"))
+	s.refresh(g)
 }
 
 // useOutOfCombat handles the item uses that make sense while walking around.
@@ -178,7 +244,10 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 	if len(party) > 1 {
 		title = fmt.Sprintf("the company (%d of %d)", s.who+1, len(party))
 	}
-	ui.TitledPanel(dst, title, 10, 16, 250, 200)
+	// 208 rather than 200: a hireling's sheet runs to four gear rows under six
+	// stat rows, and the old height clipped the last one against the frame.
+	// The footer hint sits at 232, so this still leaves a clear gap.
+	ui.TitledPanel(dst, title, 10, 16, 250, 208)
 
 	render.ScreenFit(dst, g.Assets.Get(portraitOf(p)), 0, 18, 24, 56, 56, nil)
 	render.Text(dst, p.Name, 82, 26, render.ColGold)
@@ -221,7 +290,11 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 	// standing claim on yours. Their standing in the world is nobody's concern
 	// including theirs, so Fame and Faith are the hero's row alone.
 	if p.Ally {
-		rows = append(rows, [2]string{"Their cut", fmt.Sprintf("%d%%", p.Cut)})
+		rows = append(rows,
+			[2]string{"Their cut", fmt.Sprintf("%d%%", p.Cut)},
+			// What they are carrying, because they drink it without asking and
+			// the player is the one who has to decide whether that is enough.
+			[2]string{"Carrying", carrying(p)})
 	} else {
 		rows = append(rows,
 			[2]string{"Experience", fmt.Sprintf("%d / %d", p.TotalXP, next)},
@@ -262,7 +335,7 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 	}
 
 	// Pack.
-	ui.TitledPanel(dst, "pack", 268, 16, 202, 200)
+	ui.TitledPanel(dst, "pack", 268, 16, 202, 208)
 	s.bag.Draw(dst, 282, 26, 184)
 
 	if it, ok := s.bag.Selected(); ok && !it.Disabled {
@@ -283,7 +356,7 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 	if len(party) > 1 {
 		hint = "Left / Right for the company - Z to use - X to close"
 		if p.Ally {
-			hint = "Left / Right for the company - Z to use - R to let go - X to close"
+			hint = "Left / Right - G give - T take back - R let go - X close"
 		}
 	}
 	render.TextCenter(dst, hint, render.ScreenW/2, 232, render.ColInkFaint)
@@ -312,4 +385,19 @@ func fitGear(base string, a *model.Affix, width float64) string {
 		return render.Trunc(base+suffix, width) // nothing fits; cut it anywhere
 	}
 	return render.Trunc(base, room) + suffix
+}
+
+// carrying summarises a companion's own supplies for their sheet.
+func carrying(c *model.Character) string {
+	if len(c.Bag) == 0 {
+		return "nothing"
+	}
+	n := 0
+	for _, it := range c.Bag {
+		n += it.Count
+	}
+	if len(c.Bag) == 1 {
+		return fmt.Sprintf("%s x%d", c.Bag[0].Name, c.Bag[0].Count)
+	}
+	return fmt.Sprintf("%d things, %d kinds", n, len(c.Bag))
 }

@@ -5,6 +5,7 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/render"
@@ -31,6 +32,10 @@ type shopScene struct {
 	tab   shopTab
 	menu  ui.Menu
 	note  string
+	// who is the party member being outfitted. The coin is always the hero's;
+	// what it buys need not be. Selling is always out of the hero's pack, since
+	// that is where anything worth money ends up.
+	who int
 }
 
 func newShopScene(g *Game, e *world.Entity) *shopScene {
@@ -137,9 +142,28 @@ func (s *shopScene) refresh(g *Game) {
 	s.menu.SetItems(items)
 }
 
+// buyer is the party member currently being outfitted.
+func (s *shopScene) buyer(g *Game) *model.Character {
+	party := g.Party()
+	s.who = core.Clamp(s.who, 0, len(party)-1)
+	return party[s.who]
+}
+
 func (s *shopScene) Update(g *Game) error {
 	if g.Back() {
 		g.Pop()
+		return nil
+	}
+	// Tab moves the counter along to the next member of the company. It is a
+	// separate key rather than another tab because left and right already mean
+	// buy and sell, and overloading them would make outfitting a hireling
+	// something you discovered by accident.
+	if inpututil.IsKeyJustPressed(ebiten.KeyTab) && len(g.Party()) > 1 {
+		s.who = (s.who + 1) % len(g.Party())
+		s.menu.Index = 0
+		g.Sound.Play("ui/page")
+		s.note = fmt.Sprintf("The counter turns to %s.", s.buyer(g).Name)
+		s.refresh(g)
 		return nil
 	}
 	if d, ok := MenuDir(); ok {
@@ -178,22 +202,24 @@ func (s *shopScene) Update(g *Game) error {
 }
 
 func (s *shopScene) buy(g *Game, it ui.MenuItem) {
-	p := g.Player
+	// The coin is the hero's; the gear goes on whoever is at the counter.
+	p := s.buyer(g)
+	pay := func(n int) { g.Player.Coins -= int64(n) }
 	switch v := it.Data.(type) {
 	case model.Weapon:
-		p.Coins -= int64(v.Cost)
+		pay(v.Cost)
 		old := p.Weapon
 		p.Weapon = v
 		s.note = fmt.Sprintf("You take the %s. The %s goes in the bin.", v.Titled(), old.Titled())
 		g.Sound.Play("world/equip")
 	case model.Armor:
-		p.Coins -= int64(v.Cost)
+		pay(v.Cost)
 		old := p.Armor
 		p.Armor = v
 		s.note = fmt.Sprintf("You put on the %s. The %s is not missed.", v.Titled(), old.Titled())
 		g.Sound.Play("world/equip")
 	case model.Shield:
-		p.Coins -= int64(v.Cost)
+		pay(v.Cost)
 		old := p.Shield
 		p.Shield = v
 		if old.Worn() {
@@ -203,7 +229,7 @@ func (s *shopScene) buy(g *Game, it ui.MenuItem) {
 		}
 		g.Sound.Play("world/equip")
 	case model.Charm:
-		p.Coins -= int64(v.Cost)
+		pay(v.Cost)
 		old := p.Charm
 		p.Charm = v
 		if old.Worn() {
@@ -214,9 +240,15 @@ func (s *shopScene) buy(g *Game, it ui.MenuItem) {
 		g.Sound.Play("world/equip")
 	case model.Item:
 		v.Count = 1
-		p.Coins -= int64(v.Value * 2)
+		pay(v.Value * 2)
 		p.AddItem(v)
-		s.note = fmt.Sprintf("One %s, wrapped in something.", v.Name)
+		if p == g.Player {
+			s.note = fmt.Sprintf("One %s, wrapped in something.", v.Name)
+		} else {
+			// Supplies bought for a companion go in their pack, and they drink
+			// them without asking. That is the point of buying them.
+			s.note = fmt.Sprintf("One %s, handed straight to %s.", v.Name, p.Name)
+		}
 		g.Sound.Play("world/buy")
 	}
 }
@@ -257,6 +289,12 @@ func (s *shopScene) Draw(g *Game, dst *ebiten.Image) {
 		render.Text(dst, t, 34+float64(i)*46, 28, c)
 	}
 	render.TextRight(dst, fmt.Sprintf("%d coins", g.Player.Coins), render.ScreenW-34, 28, render.ColGold)
+
+	// Who the counter is serving. Only shown once there is somebody else it
+	// could be — a solo run should not be told about a control it cannot use.
+	if buyer := s.buyer(g); len(g.Party()) > 1 {
+		render.TextCenter(dst, render.Trunc("for "+buyer.Name, 150), render.ScreenW/2, 28, render.ColInk)
+	}
 	render.Rect(dst, 30, 44, render.ScreenW-60, 1, render.ColInkFaint)
 
 	s.menu.Draw(dst, 40, 52, render.ScreenW-80)
@@ -269,6 +307,9 @@ func (s *shopScene) Draw(g *Game, dst *ebiten.Image) {
 			render.Text(dst, ln, 34, 176+float64(i)*render.LineH, render.ColInkDim)
 		}
 	}
-	render.TextCenter(dst, "left/right switch - Z to deal - X to leave",
-		render.ScreenW/2, 226, render.ColInkFaint)
+	hint := "left/right switch - Z to deal - X to leave"
+	if len(g.Party()) > 1 {
+		hint = "left/right switch - Tab: who for - Z to deal - X to leave"
+	}
+	render.TextCenter(dst, hint, render.ScreenW/2, 226, render.ColInkFaint)
 }

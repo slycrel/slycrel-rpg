@@ -24,6 +24,25 @@ func (g *Game) LivingParty() []*model.Character { return party.Living(g.Party())
 // PartyFull reports whether there is no room for another hireling.
 func (g *Game) PartyFull() bool { return party.Full(len(g.Allies)) }
 
+// reclaim moves a departing companion's supplies into the hero's pack and
+// reports how many items came back.
+func (g *Game) reclaim(c *model.Character) int {
+	n := 0
+	for _, it := range c.Bag {
+		n += it.Count
+		g.Player.AddItem(it)
+	}
+	c.Bag = nil
+	return n
+}
+
+func plural(n int, one, many string) string {
+	if n == 1 {
+		return one
+	}
+	return many
+}
+
 // uniqueName keeps two members of one company from answering to the same thing.
 func (g *Game) uniqueName(name string) string { return party.UniqueName(g.Party(), name) }
 
@@ -141,6 +160,12 @@ func (g *Game) dismiss(c *model.Character) {
 		g.Allies = append(g.Allies[:i], g.Allies[i+1:]...)
 		g.reformLines()
 		g.Log.AddColor(render.ColInkDim, "%s", g.Write.RecruitLeave(g.RNG, c.Name))
+		// Whatever you bought them comes back. They are being let go, not
+		// robbing you — and a pack that vanished on dismissal would make
+		// supplying anybody a bet rather than a purchase.
+		if n := g.reclaim(c); n > 0 {
+			g.Log.AddColor(render.ColGold, "They hand back %d %s first.", n, plural(n, "thing", "things"))
+		}
 		return
 	}
 }
