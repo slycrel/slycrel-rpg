@@ -1971,6 +1971,30 @@
     {
       "key": "portrait/male/m_43",
       "file": "assets-raw/characteravataricons_windows/characteravataricons/male/m_43.PNG"
+    },
+    {
+      "key": "prop/desert16",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/23.03a - Desert Sands/packaged/desert sheets/desert 16x16.png",
+      "frameW": 16,
+      "frameH": 16
+    },
+    {
+      "key": "prop/summer16",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.04c - Summer Forest/packaged/summer sheets/summer 16x16.png",
+      "frameW": 16,
+      "frameH": 16
+    },
+    {
+      "key": "prop/summer1632",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.04c - Summer Forest/packaged/summer sheets/summer 16x32.png",
+      "frameW": 16,
+      "frameH": 32
+    },
+    {
+      "key": "prop/summer32",
+      "file": "assets-raw/_generated/props/summer 32x32.png",
+      "frameW": 32,
+      "frameH": 32
     }
   ]
 }

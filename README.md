@@ -69,6 +69,10 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 - **54 monsters** across nine biomes, each with its own attack verbs, defensive
   flavour, taunts, death lines, and drop table.
 - **Shops, inns, chests, altars and townsfolk** who all have opinions.
+- **Scenery** — trees, boulders, ferns, reeds and cacti scattered over the
+  terrain that suits them, placed from a hash of position and world seed so a
+  wood looks the same every time you walk back into it without a byte of it
+  being stored.
 - **Blended terrain** — real pixel-art ground textures with quarter-tile
   autotiling, so grass fringes dirt and sand fringes the sea instead of meeting
   at hard grid edges. Roads outrank the land they cross; rock and snow sit on
@@ -118,6 +122,7 @@ go run ./cmd/assetpipe inventory        # writes docs/ASSET-INVENTORY.md
 go run ./cmd/assetpipe extract tier1    # the ~33 packs the game currently uses (2.8 GB)
 go run ./cmd/assetpipe manifest         # index art into assets/manifest.json
 go run ./cmd/assetpipe audio            # index sound into assets/audio.json
+go run ./cmd/assetpipe props            # rewrite prop sheets with real translucent shadows
 go run ./cmd/assetpipe find viking walk # locate a file in what is extracted
 ```
 

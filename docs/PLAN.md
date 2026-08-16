@@ -42,6 +42,9 @@ Built and running:
 - Loot, XP, banked level-ups, shops (buy/sell, stock scaling with settlement
   size), inns, chests, altars
 - Character sheet and pack with out-of-combat item use
+- Scenery: trees, boulders, ferns, water plants and cacti scattered per
+  terrain from a position hash, with a pipeline step that converts Mana Seed's
+  baked purple drop shadows into real translucent ones
 - Terrain: quarter-tile corner autotiling over Mana Seed ground textures, with
   per-tile texture and dither phase so long boundaries do not repeat; a
   priority order that puts water under sand under soil under grass, with roads
@@ -56,7 +59,7 @@ Built and running:
 - Asset pipeline: inventory, selective extraction, manifest generation, and an
   audit that reports which art keys still fall back to placeholders
 
-Deliberately not built yet: overworld decor (trees, rocks) and curated interior art.
+Deliberately not built yet: curated interior art, and decor inside locations.
 
 ## Architecture, and why
 
@@ -83,11 +86,7 @@ testable and a simulation harness is cheap to add later.
 
 ### Phase 1 — make it feel like a game *(save/load and audio done)*
 
-1. **Overworld decor.** Terrain blends, but a forest is still flat dark grass.
-   Scatter tree, rock and shrub sprites deterministically over the tiles that
-   deserve them. The packs' trees are 80x112 — five tiles wide — so this wants
-   the small object sheets, or drawn motifs, not the hero art.
-2. **Icons everywhere.** 720 spell icons, 480 stat icons, 273 loot icons are
+1. **Icons everywhere.** 720 spell icons, 480 stat icons, 273 loot icons are
    extracted. Wire `Item.Icon`, `Weapon.Icon`, `Spell.Icon` through to the menus.
 
 ### Phase 2 — depth

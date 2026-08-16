@@ -180,6 +180,9 @@ func (s *overworldScene) Draw(g *Game, dst *ebiten.Image) {
 		}
 	}
 
+	// Scenery sits between the ground and everything that walks on it.
+	g.drawDecor(dst, s.cam, x0, y0, x1, y1)
+
 	// Locations, drawn as markers on top of terrain.
 	for _, p := range g.World.POIs {
 		if p.Pos.X < x0 || p.Pos.X > x1 || p.Pos.Y < y0 || p.Pos.Y > y1 {

@@ -151,6 +151,22 @@ func buildManifest() error {
 		})
 	}
 
+	// Scenery props. These sheets are plain grids of equal frames, so the
+	// loader's row-major slicing gives stable indices to select from.
+	summerSheets := filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
+		"20.04c - Summer Forest", "packaged", "summer sheets")
+	add("prop/summer16", filepath.Join(summerSheets, "summer 16x16.png"), 16, 16)
+	// Prefer the de-shadowed copy from `assetpipe props`; fall back to the
+	// original so the manifest is still usable before that step is run.
+	summer32 := filepath.Join(genRoot, "props", "summer 32x32.png")
+	if _, err := os.Stat(summer32); err != nil {
+		summer32 = filepath.Join(summerSheets, "summer 32x32.png")
+	}
+	add("prop/summer32", summer32, 32, 32)
+	add("prop/summer1632", filepath.Join(summerSheets, "summer 16x32.png"), 16, 32)
+	add("prop/desert16", filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
+		"23.03a - Desert Sands", "packaged", "desert sheets", "desert 16x16.png"), 16, 16)
+
 	// Townspeople.
 	npcRoot := filepath.Join(rawRoot, "pixelartrpgnpc", "Pixel Art Top-Down RPG NPC - AfGameAssets - V1")
 	for _, f := range pngsIn(npcRoot) {
