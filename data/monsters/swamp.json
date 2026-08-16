@@ -80,6 +80,49 @@
     ]
   },
   {
+    "id": "swamp_insect",
+    "name": "Mire Swarm",
+    "kind": "beast",
+    "level": 4,
+    "hp": 31,
+    "offense": 12,
+    "defense": 4,
+    "speed": 16,
+    "xp": 50,
+    "coins": 6,
+    "attackWith": [
+      "ten thousand small bites",
+      "a cloud that gets in everywhere"
+    ],
+    "attackVerb": [
+      "engulfs",
+      "chews through",
+      "invades"
+    ],
+    "defendWith": "there being far too many of it",
+    "taunt": [
+      "{T} arrives as a sound before it arrives as a thing."
+    ],
+    "death": [
+      "{T} disperses. Some of it goes home. Some of it stays in your hair."
+    ],
+    "inflicts": {
+      "kind": "poison",
+      "power": 3,
+      "rounds": 3,
+      "chance": 30
+    },
+    "sprite": "mob/insect_02",
+    "loot": [
+      {
+        "item": "Chitin Scrap",
+        "chance": 60,
+        "min": 2,
+        "max": 4
+      }
+    ]
+  },
+  {
     "id": "swamp_croc",
     "name": "Crocodile, Very Patient",
     "kind": "beast",
@@ -197,45 +240,88 @@
     ]
   },
   {
-    "id": "swamp_insect",
-    "name": "Mire Swarm",
+    "id": "swamp_widow",
+    "name": "Fen Widow",
     "kind": "beast",
-    "level": 4,
-    "hp": 31,
-    "offense": 12,
-    "defense": 4,
-    "speed": 16,
-    "xp": 50,
-    "coins": 6,
+    "level": 7,
+    "hp": 50,
+    "offense": 18,
+    "defense": 9,
+    "speed": 11,
+    "xp": 104,
+    "coins": 40,
     "attackWith": [
-      "ten thousand small bites",
-      "a cloud that gets in everywhere"
+      "legs that arrive before the rest of it",
+      "a bite delivered almost politely"
     ],
     "attackVerb": [
-      "engulfs",
-      "chews through",
-      "invades"
+      "wraps",
+      "punctures",
+      "reels in"
     ],
-    "defendWith": "there being far too many of it",
+    "defendWith": "standing on water as though invited to",
     "taunt": [
-      "{T} arrives as a sound before it arrives as a thing."
+      "{T} is already on the water. It has been for some time."
     ],
     "death": [
-      "{T} disperses. Some of it goes home. Some of it stays in your hair."
+      "{T} folds up. It takes a surprisingly long while to finish folding."
     ],
     "inflicts": {
       "kind": "poison",
-      "power": 3,
+      "power": 5,
       "rounds": 3,
-      "chance": 30
+      "chance": 35
     },
-    "sprite": "mob/insect_02",
+    "sprite": "mob/spider_02",
     "loot": [
       {
-        "item": "Chitin Scrap",
-        "chance": 60,
-        "min": 2,
-        "max": 4
+        "item": "Venom Sac",
+        "chance": 70,
+        "min": 1,
+        "max": 3
+      }
+    ]
+  },
+  {
+    "id": "swamp_drowned",
+    "name": "The Drowned Subscription",
+    "kind": "undead",
+    "level": 8,
+    "hp": 60,
+    "offense": 19,
+    "defense": 14,
+    "speed": 5,
+    "xp": 140,
+    "coins": 52,
+    "attackWith": [
+      "several sets of hands, all cold",
+      "the weight of everyone who agreed"
+    ],
+    "attackVerb": [
+      "enrols",
+      "drags under",
+      "welcomes"
+    ],
+    "defendWith": "already having drowned once and not minding",
+    "taunt": [
+      "{T} rises in parts. The parts are still holding hands."
+    ],
+    "death": [
+      "{T} goes back down together. It was always going to be together."
+    ],
+    "sprite": "mob/zombie_02",
+    "loot": [
+      {
+        "item": "Grave Wrappings",
+        "chance": 65,
+        "min": 1,
+        "max": 3
+      },
+      {
+        "item": "Waterlogged Purse",
+        "chance": 45,
+        "min": 1,
+        "max": 2
       }
     ]
   },

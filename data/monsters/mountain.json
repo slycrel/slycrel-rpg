@@ -112,6 +112,43 @@
     ]
   },
   {
+    "id": "mtn_golem",
+    "name": "Crystal Golem, Mid-Renovation",
+    "kind": "construct",
+    "level": 10,
+    "hp": 88,
+    "offense": 24,
+    "defense": 18,
+    "speed": 4,
+    "xp": 205,
+    "coins": 90,
+    "attackWith": [
+      "a fist of raw quartz",
+      "an arm that reassembles mid-swing"
+    ],
+    "attackVerb": [
+      "hammers",
+      "grinds",
+      "resurfaces"
+    ],
+    "defendWith": "load-bearing crystal",
+    "taunt": [
+      "{T} was built to guard something. Nobody has told it that thing is gone."
+    ],
+    "death": [
+      "{T} comes apart into very valuable rubble."
+    ],
+    "sprite": "mob/crystal_golem_01",
+    "loot": [
+      {
+        "item": "Cracked Crystal",
+        "chance": 85,
+        "min": 2,
+        "max": 4
+      }
+    ]
+  },
+  {
     "id": "mtn_giant",
     "name": "Frost Giant, Emotionally Cold",
     "kind": "humanoid",
@@ -150,39 +187,82 @@
     ]
   },
   {
-    "id": "mtn_golem",
-    "name": "Crystal Golem, Mid-Renovation",
-    "kind": "construct",
-    "level": 10,
-    "hp": 88,
-    "offense": 24,
-    "defense": 18,
-    "speed": 4,
-    "xp": 205,
-    "coins": 90,
+    "id": "mtn_hillthing",
+    "name": "Hill Thing, Larger",
+    "kind": "aberrant",
+    "level": 11,
+    "hp": 83,
+    "offense": 26,
+    "defense": 13,
+    "speed": 8,
+    "xp": 238,
+    "coins": 95,
     "attackWith": [
-      "a fist of raw quartz",
-      "an arm that reassembles mid-swing"
+      "a limb that was not there a moment ago",
+      "a mouth running the wrong way"
     ],
     "attackVerb": [
-      "hammers",
-      "grinds",
-      "resurfaces"
+      "mangles",
+      "refolds",
+      "reconsiders"
     ],
-    "defendWith": "load-bearing crystal",
+    "defendWith": "a shape that will not hold still to be hit",
     "taunt": [
-      "{T} was built to guard something. Nobody has told it that thing is gone."
+      "{T} is the same thing as the small one, and that is the upsetting part."
     ],
     "death": [
-      "{T} comes apart into very valuable rubble."
+      "{T} comes apart into several smaller wrong things, which leave."
     ],
-    "sprite": "mob/crystal_golem_01",
+    "sprite": "mob/beest_02",
     "loot": [
       {
-        "item": "Cracked Crystal",
-        "chance": 85,
+        "item": "Wrong Meat",
+        "chance": 70,
         "min": 2,
         "max": 4
+      }
+    ]
+  },
+  {
+    "id": "mtn_provisional",
+    "name": "Provisional Dragon",
+    "kind": "beast",
+    "level": 12,
+    "hp": 91,
+    "offense": 30,
+    "defense": 15,
+    "speed": 13,
+    "xp": 315,
+    "coins": 185,
+    "attackWith": [
+      "a breath it is fairly sure about",
+      "claws, pending confirmation"
+    ],
+    "attackVerb": [
+      "scorches",
+      "tests",
+      "provisionally destroys"
+    ],
+    "defendWith": "scales that have not been formally assessed",
+    "taunt": [
+      "{T} has not been confirmed as a dragon. {T} is proceeding as though it has."
+    ],
+    "death": [
+      "{T} dies unconfirmed. Nobody comes to file anything."
+    ],
+    "sprite": "mob/dragon_04",
+    "loot": [
+      {
+        "item": "Dragon Scale",
+        "chance": 60,
+        "min": 1,
+        "max": 2
+      },
+      {
+        "item": "Hoard Coin",
+        "chance": 80,
+        "min": 3,
+        "max": 6
       }
     ]
   },
@@ -281,43 +361,6 @@
       {
         "item": "Hoard Coin",
         "chance": 80,
-        "min": 2,
-        "max": 4
-      }
-    ]
-  },
-  {
-    "id": "mtn_hillthing",
-    "name": "Hill Thing, Larger",
-    "kind": "aberrant",
-    "level": 11,
-    "hp": 83,
-    "offense": 26,
-    "defense": 13,
-    "speed": 8,
-    "xp": 238,
-    "coins": 95,
-    "attackWith": [
-      "a limb that was not there a moment ago",
-      "a mouth running the wrong way"
-    ],
-    "attackVerb": [
-      "mangles",
-      "refolds",
-      "reconsiders"
-    ],
-    "defendWith": "a shape that will not hold still to be hit",
-    "taunt": [
-      "{T} is the same thing as the small one, and that is the upsetting part."
-    ],
-    "death": [
-      "{T} comes apart into several smaller wrong things, which leave."
-    ],
-    "sprite": "mob/beest_02",
-    "loot": [
-      {
-        "item": "Wrong Meat",
-        "chance": 70,
         "min": 2,
         "max": 4
       }

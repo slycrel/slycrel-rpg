@@ -476,37 +476,61 @@ func reportMonsterSpread(out *os.File, t *gamedata.Tables) {
 	fmt.Fprintf(out, "\nholes where the player is actually sent\n")
 	holes := 0
 	for l := 1; l <= maxLevel; l++ {
-		b := biomeForLevel(l)
-		n := 0
-		for _, d := range t.Monsters[b] {
-			if d.Level == l {
-				n++
+		if b, lo, hi, ok := hole(t, biomeForLevel(l), l); !ok {
+			holes++
+			if hi == 0 {
+				fmt.Fprintf(out, "  level %-3d %-10s nothing within three levels either\n", l, b)
+				continue
 			}
+			fmt.Fprintf(out, "  level %-3d %-10s falls back to levels %d-%d\n", l, b, lo, hi)
 		}
-		if n > 0 {
-			continue
-		}
-		holes++
-		// Say what the player fights instead, since that is the actual effect.
-		lo, hi := maxLevel, 0
-		for _, d := range t.Monsters[b] {
-			if core.Abs(d.Level-l) <= 3 {
-				if d.Level < lo {
-					lo = d.Level
-				}
-				if d.Level > hi {
-					hi = d.Level
-				}
-			}
-		}
-		if hi == 0 {
-			fmt.Fprintf(out, "  level %-3d %-10s nothing within three levels either\n", l, b)
-			continue
-		}
-		fmt.Fprintf(out, "  level %-3d %-10s falls back to levels %d-%d\n", l, b, lo, hi)
 	}
 	if holes == 0 {
 		fmt.Fprintln(out, "  none")
 	}
+
+	// And the same question asked of the stretch probe. COMBAT and ARCS both
+	// measure "a fight three levels over" by rolling the *local* biome at
+	// level+3, so wherever that biome tops out below level+3 the column is
+	// quietly reporting an easier fight than it claims to. It reads as a band
+	// where nothing can hurt you.
+	//
+	// Whether probing the local biome is the right model for "wandering
+	// somewhere you should not be" is a separate question — in the world proper
+	// that means walking into a different region, not meeting an inflated
+	// version of the one you are in. This at least says when the column is not
+	// measuring what it says.
+	fmt.Fprintf(out, "\nstretch probes (level+3) that cannot be filled at that level\n")
+	short := 0
+	for l := 1; l <= maxLevel; l++ {
+		if b, _, hi, ok := hole(t, biomeForLevel(l), l+3); !ok {
+			short++
+			fmt.Fprintf(out, "  level %-3d %-10s tops out at %d, so \"three over\" is really %+d\n",
+				l, b, hi, hi-l)
+		}
+	}
+	if short == 0 {
+		fmt.Fprintln(out, "  none")
+	}
 	fmt.Fprintln(out)
+}
+
+// hole reports whether a biome has anything at exactly this level, and what the
+// ±3 fallback pool spans when it does not.
+func hole(t *gamedata.Tables, biome string, level int) (b string, lo, hi int, ok bool) {
+	lo, hi = maxLevel, 0
+	for _, d := range t.Monsters[biome] {
+		if d.Level == level {
+			ok = true
+		}
+		if core.Abs(d.Level-level) <= 3 {
+			if d.Level < lo {
+				lo = d.Level
+			}
+			if d.Level > hi {
+				hi = d.Level
+			}
+		}
+	}
+	return biome, lo, hi, ok
 }

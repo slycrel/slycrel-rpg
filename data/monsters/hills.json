@@ -118,6 +118,49 @@
     ]
   },
   {
+    "id": "hills_tollman",
+    "name": "Collector of the Path",
+    "kind": "humanoid",
+    "level": 6,
+    "hp": 45,
+    "offense": 17,
+    "defense": 7,
+    "speed": 10,
+    "xp": 85,
+    "coins": 30,
+    "attackWith": [
+      "a ledger with a spike through it",
+      "the authority he has assigned himself"
+    ],
+    "attackVerb": [
+      "invoices",
+      "assesses",
+      "surcharges"
+    ],
+    "defendWith": "a great deal of paperwork held at chest height",
+    "taunt": [
+      "{T} explains that the path is a bridge, and that bridges have tolls."
+    ],
+    "death": [
+      "{T} goes down still itemising. The path remains a path."
+    ],
+    "sprite": "mob/orc_02",
+    "loot": [
+      {
+        "item": "Crumpled Writ",
+        "chance": 70,
+        "min": 1,
+        "max": 3
+      },
+      {
+        "item": "Stolen Trinket",
+        "chance": 35,
+        "min": 1,
+        "max": 1
+      }
+    ]
+  },
+  {
     "id": "hills_ogre",
     "name": "Ogre, Recently Dumped",
     "kind": "humanoid",
