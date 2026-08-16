@@ -84,7 +84,9 @@ func biomeForLevel(level int) string {
 
 func reportCombat(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "COMBAT — on-curve gear, techniques used, no potions\n")
-	fmt.Fprintf(out, "win rates against an encounter at your level, two under, and three over\n\n")
+	fmt.Fprintf(out, "win rates against an encounter at your level, two under, and three over\n")
+	fmt.Fprintf(out, "the biome column is where you are; \"over\" is measured in the region three\n")
+	fmt.Fprintf(out, "levels further out, because that is what straying actually means\n\n")
 	fmt.Fprintf(out, "%-5s %-9s %-10s %8s %8s %8s %7s %8s\n",
 		"level", "class", "biome", "under", "on-level", "over", "rounds", "hp left%")
 	fmt.Fprintln(out, strings.Repeat("-", 74))
@@ -92,7 +94,7 @@ func reportCombat(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 	for level := 1; level <= maxLevel; level++ {
 		biome := biomeForLevel(level)
 		for _, class := range model.AllClasses {
-			rate := func(encLevel int) (winPct float64, rounds float64, hp int) {
+			rate := func(biome string, encLevel int) (winPct float64, rounds float64, hp int) {
 				var wins, totalRounds, totalHP int
 				for i := 0; i < fights; i++ {
 					c := rules.BuildCharacter(g, class, level)
@@ -113,9 +115,17 @@ func reportCombat(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 				return float64(wins) * 100 / float64(fights),
 					float64(totalRounds) / float64(fights), totalHP / fights
 			}
-			under, _, _ := rate(core.Max(1, level-2))
-			on, rounds, hp := rate(level)
-			over, _, _ := rate(level + 3)
+			// Under and on-level happen where you already are. Three over
+			// does not: in the world proper the encounter level is blended
+			// with the danger of the region you are standing in, so straying
+			// three levels up means having walked into the next region, not
+			// meeting an inflated version of the local wildlife. Rolling the
+			// local table at level+3 was measuring a fight that mostly cannot
+			// be rolled — eight of fourteen biomes top out before level+3, and
+			// the column was quietly reporting a near-on-level fight.
+			under, _, _ := rate(biome, core.Max(1, level-2))
+			on, rounds, hp := rate(biome, level)
+			over, _, _ := rate(biomeForLevel(level+3), level+3)
 			fmt.Fprintf(out, "%-5d %-9s %-10s %7.1f%% %7.1f%% %7.1f%% %7.1f %7d%%\n",
 				level, class, biome, under, on, over, rounds, hp)
 		}
@@ -140,7 +150,8 @@ func reportCombat(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 // to paper over with a guess — it needs SimulateFight to take a party first.
 func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "ARCS — is there more than one way to be correctly levelled?\n")
-	fmt.Fprintf(out, "win rates averaged across the three classes, on-level and three over\n\n")
+	fmt.Fprintf(out, "win rates averaged across the three classes, on-level where you are and\n")
+	fmt.Fprintf(out, "three over in the region that far out\n\n")
 	for _, a := range gamedata.Archetypes {
 		fmt.Fprintf(out, "  %-10s %s\n", a.Name, a.Note)
 	}
@@ -168,7 +179,7 @@ func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 		biome := biomeForLevel(level)
 		for _, a := range gamedata.Archetypes {
 			var cost int
-			rate := func(encLevel int) (winPct, rounds float64, hp int) {
+			rate := func(biome string, encLevel int) (winPct, rounds float64, hp int) {
 				var wins, totalRounds, totalHP, n int
 				for _, class := range model.AllClasses {
 					for i := 0; i < fights; i++ {
@@ -196,8 +207,8 @@ func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 				return float64(wins) * 100 / float64(n),
 					float64(totalRounds) / float64(n), totalHP / n
 			}
-			on, rounds, hp := rate(level)
-			over, _, _ := rate(level + 3)
+			on, rounds, hp := rate(biome, level)
+			over, _, _ := rate(biomeForLevel(level+3), level+3)
 
 			stretch[level] = append(stretch[level], row{a.Name, over})
 			fmt.Fprintf(out, "%-5d %-10s %7d %8.1f%% %7.1f%% %8.1f %8d%%\n",
@@ -489,21 +500,16 @@ func reportMonsterSpread(out *os.File, t *gamedata.Tables) {
 		fmt.Fprintln(out, "  none")
 	}
 
-	// And the same question asked of the stretch probe. COMBAT and ARCS both
-	// measure "a fight three levels over" by rolling the *local* biome at
-	// level+3, so wherever that biome tops out below level+3 the column is
-	// quietly reporting an easier fight than it claims to. It reads as a band
-	// where nothing can hurt you.
-	//
-	// Whether probing the local biome is the right model for "wandering
-	// somewhere you should not be" is a separate question — in the world proper
-	// that means walking into a different region, not meeting an inflated
-	// version of the one you are in. This at least says when the column is not
-	// measuring what it says.
-	fmt.Fprintf(out, "\nstretch probes (level+3) that cannot be filled at that level\n")
+	// And the same question asked of the stretch probe, which COMBAT and ARCS
+	// use for the "three levels over" column. That probe now rolls the region a
+	// level+3 character would be in rather than the local one, because straying
+	// three levels up means having walked somewhere else — but the check still
+	// has to be made, since a region that tops out below the level being asked
+	// for reports an easier fight than the column claims.
+	fmt.Fprintf(out, "\nstretch probes (three levels over, in the region that far out)\n")
 	short := 0
 	for l := 1; l <= maxLevel; l++ {
-		if b, _, hi, ok := hole(t, biomeForLevel(l), l+3); !ok {
+		if b, _, hi, ok := hole(t, biomeForLevel(l+3), l+3); !ok {
 			short++
 			fmt.Fprintf(out, "  level %-3d %-10s tops out at %d, so \"three over\" is really %+d\n",
 				l, b, hi, hi-l)
