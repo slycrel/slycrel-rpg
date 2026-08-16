@@ -212,20 +212,58 @@ func PlayerAttack(g *core.RNG, c *model.Character, m *model.Monster, buffStr, bu
 
 // MonsterDamage rolls the damage a monster deals to a character.
 // Original: DoDamage(false).
+//
+// A magical attacker is stopped by the target's ward rather than their armour,
+// which is what makes ward worth a slot. Ignoring it entirely stays a viable
+// choice — nothing early in the game attacks that way — but it is a bet that
+// gets worse the further out you go.
 func MonsterDamage(g *core.RNG, c *model.Character, m *model.Monster) int {
-	lo := int(float64(m.Offense) * 0.35)
-	hi := int(float64(m.Offense) * 1.35)
-	return core.Max(0, g.Between(lo, hi)-c.Defense())
+	lo, hi := float64(m.Offense)*0.35, float64(m.Offense)*1.35
+	guard := c.Defense()
+	if m.Def != nil && m.Def.Magic {
+		// A magical attack is weaker before it is resisted, because it is
+		// going to be resisted by a great deal less. Going through armour
+		// instead of into it is worth something, and if it were worth nothing
+		// extra as well then every magical attacker would simply be a stronger
+		// one: against a player wearing no ward at all — which the game allows,
+		// and which the on-curve build does — an unscaled magical hit landed
+		// for about two and a half times what the same creature's fists would
+		// have, and the choice to skip ward stopped being a risk and became a
+		// wall. The player who does buy ward comes out ahead of where armour
+		// would have left them, which is the trade being worth making.
+		lo, hi = lo*magicBite, hi*magicBite
+		guard = c.Ward()
+	}
+	return core.Max(0, g.Between(int(lo), int(hi))-guard)
 }
+
+// magicBite is how hard a magical attack hits before resistance, relative to
+// the same creature swinging. Tuned against the DANGER section rather than
+// picked: it is the value that keeps an unwarded character inside the brief at
+// every level while still leaving ward clearly worth a charm slot.
+const magicBite = 0.62
 
 // SpellDamage rolls a spell's magnitude, scaled by the caster's psyche pool so
 // mages keep pace without needing a separate spellpower stat.
+//
+// This is the raw magnitude and nothing is subtracted from it, because the same
+// roll is what a heal restores. Damage spells go through AfterWard on the way
+// to a target; healing must not.
 func SpellDamage(g *core.RNG, c *model.Character, s model.Spell) int {
 	base := float64(s.Power) + float64(c.MaxPsy())*0.6 + float64(c.Level)*0.8
 	lo := int(base * 0.8)
 	hi := int(base * 1.3)
 	return core.Max(1, g.Between(lo, hi))
 }
+
+// AfterWard reduces a magical hit by the target's resistance to magic.
+//
+// It floors at one rather than zero, unlike armour against a sword. A warded
+// creature is meant to be the wrong target for a caster, not an invulnerable
+// one: a mage who has walked into a room full of warded things should be having
+// a bad time, not an unwinnable one, and the answer is supposed to be "draw
+// your sword" rather than "reload".
+func AfterWard(raw, ward int) int { return core.Max(1, raw-ward) }
 
 // Initiative reports whether the player acts before the monster.
 // Original: RollInitiative() — a speed difference plus a d4 fudge.
@@ -706,19 +744,19 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 				case model.SpellHeal:
 					sim.HP = core.Clamp(sim.HP+SpellDamage(g, sim, s), 0, sim.MaxHP)
 				case model.SpellDrain:
-					d := SpellDamage(g, sim, s)
+					d := AfterWard(SpellDamage(g, sim, s), target.Ward)
 					hurt(target, d)
 					sim.HP = core.Clamp(sim.HP+d/2, 0, sim.MaxHP)
 				default:
-					d := SpellDamage(g, sim, s)
+					raw := SpellDamage(g, sim, s)
 					if s.Target == model.TargetAll {
 						for _, m := range living {
 							if !m.Dead {
-								hurt(m, d)
+								hurt(m, AfterWard(raw, m.Ward))
 							}
 						}
 					} else {
-						hurt(target, d)
+						hurt(target, AfterWard(raw, target.Ward))
 					}
 				}
 				return

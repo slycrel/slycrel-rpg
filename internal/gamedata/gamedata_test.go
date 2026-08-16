@@ -841,7 +841,7 @@ func TestSidearmsAreSaneAndAffordableInOrder(t *testing.T) {
 		// A charm is a trade, like an affix and like a lineage.
 		var gives, takes bool
 		for _, n := range []int{c.Bonus.Strike, c.Bonus.Defense, c.Bonus.Strength,
-			c.Bonus.Dexterity, c.Bonus.Speed, c.Bonus.Psyche} {
+			c.Bonus.Dexterity, c.Bonus.Speed, c.Bonus.Psyche, c.Bonus.Ward} {
 			if n > 0 {
 				gives = true
 			}
@@ -1069,5 +1069,62 @@ func TestTheNearestMonsterStaysLikeliestEvenFarOutOfRange(t *testing.T) {
 		t.Errorf("asking for level %d drew the level-%d creature %d times and the "+
 			"level-%d one %d times; closeness has stopped ranking",
 			level, highest, counts[highest], lowest, counts[lowest])
+	}
+}
+
+// Ward is a slot the player is allowed to ignore, and that is only a fair offer
+// if the threat it answers arrives after the answer is purchasable. A creature
+// that goes through armour instead of into it turning up before any shop sells
+// resistance is the un-fun surprise the difficulty brief rules out: there was
+// no choice to make, only an outcome.
+func TestMagicAttackersArriveAfterTheAnswerIsForSale(t *testing.T) {
+	tables := load(t)
+
+	// The level at which the first anti-magic charm is on a shelf.
+	firstWard := 1 << 30
+	for _, c := range tables.Charms {
+		if c.Bonus.Ward <= 0 {
+			continue
+		}
+		// A tier is three levels; a tier-3 charm is stocked from level 7.
+		if lv := (c.Tier-1)*3 + 1; lv < firstWard {
+			firstWard = lv
+		}
+	}
+	if firstWard == 1<<30 {
+		t.Fatal("nothing in the game grants ward, so nothing can answer a magical attacker")
+	}
+
+	// A player straying three levels is still making a choice; being ambushed
+	// by a mechanic they could not have prepared for is not.
+	const stray = 3
+	for _, defs := range tables.Monsters {
+		for _, d := range defs {
+			if !d.Magic {
+				continue
+			}
+			if d.Level-stray < firstWard {
+				t.Errorf("%s attacks with magic at level %d, but the first ward charm "+
+					"is not sold until level %d — a level %d character can meet it "+
+					"with no way to have answered",
+					d.Name, d.Level, firstWard, d.Level-stray)
+			}
+		}
+	}
+}
+
+// Ward has to scale with the encounter like every other combat stat, or a
+// warded creature met deep in the world stops being warded.
+func TestSpawnScalesWard(t *testing.T) {
+	g := core.NewRNG(31)
+	def := &model.MonsterDef{Name: "Test", Level: 4, HP: 40, Offense: 10, Defense: 5, Ward: 8, Speed: 8}
+	near := def.Spawn(g, 4)
+	far := def.Spawn(g, 12)
+	if near.Ward != def.Ward {
+		t.Errorf("met at its own level, ward is %d and should be %d", near.Ward, def.Ward)
+	}
+	if far.Ward <= near.Ward {
+		t.Errorf("met eight levels up, ward is %d against %d at home; it did not scale",
+			far.Ward, near.Ward)
 	}
 }

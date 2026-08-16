@@ -882,11 +882,14 @@ func (b *battleScene) castOnFoes(g *Game, c cast) {
 		m := b.mons[i]
 		switch s.Kind {
 		case model.SpellDamage:
-			d := rules.SpellDamage(g.RNG, p, s)
+			// Ward is what the target has instead of armour against this, and
+			// it is applied per target rather than to the roll: a fireball that
+			// hits three things is resisted three times, once by each of them.
+			d := rules.AfterWard(rules.SpellDamage(g.RNG, p, s), m.Ward)
 			b.damageMonster(g, i, d)
 			b.log.Add("%s takes %d.", m.Name, d)
 		case model.SpellDrain:
-			d := rules.SpellDamage(g.RNG, p, s)
+			d := rules.AfterWard(rules.SpellDamage(g.RNG, p, s), m.Ward)
 			b.damageMonster(g, i, d)
 			healed := p.Heal(d / 2)
 			b.log.Add("%s takes %d; %s recovers %d of it.", m.Name, d, p.Name, healed)

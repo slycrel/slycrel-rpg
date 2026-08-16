@@ -55,6 +55,17 @@
     }
   },
   {
+    "name": "Saint's Fingerbone, Disputed",
+    "cost": 110,
+    "tier": 3,
+    "icon": "icon/loot/monster_bone",
+    "desc": "Somebody's. The paperwork proving whose burned down with the abbey.",
+    "bonus": {
+      "ward": 6,
+      "dexterity": -1
+    }
+  },
+  {
     "name": "The Quiet Stone",
     "cost": 120,
     "tier": 3,
@@ -77,6 +88,18 @@
     }
   },
   {
+    "name": "Earplugs of the Unmoved",
+    "cost": 320,
+    "tier": 4,
+    "icon": "icon/loot/moon_stone",
+    "desc": "You cannot hear the words. It transpires the words were the problem.",
+    "bonus": {
+      "ward": 9,
+      "psyche": -2,
+      "dexterity": -1
+    }
+  },
+  {
     "name": "Somebody Else's Medal",
     "cost": 340,
     "tier": 4,
@@ -86,6 +109,18 @@
       "defense": 1,
       "speed": -2,
       "strength": 2
+    }
+  },
+  {
+    "name": "Cold Iron Collar",
+    "cost": 660,
+    "tier": 5,
+    "icon": "icon/loot/human_skull",
+    "desc": "Nothing gets in. Very little gets out. It was not designed for you.",
+    "bonus": {
+      "ward": 14,
+      "psyche": -4,
+      "speed": -1
     }
   },
   {

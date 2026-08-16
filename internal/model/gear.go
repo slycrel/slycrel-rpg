@@ -15,6 +15,11 @@ type Bonus struct {
 	Dexterity int `json:"dexterity,omitempty"`
 	Speed     int `json:"speed,omitempty"`
 	Psyche    int `json:"psyche,omitempty"`
+	// Ward is protection from magic, and it is the only defensive stat that
+	// cannot be got from body armour. Steel does not stop a curse, so a
+	// character who wants to be hard to burn has to spend a slot on it — which
+	// is the point: generalising costs something.
+	Ward int `json:"ward,omitempty"`
 }
 
 // Add returns the two bundles combined.
@@ -26,6 +31,7 @@ func (b Bonus) Add(o Bonus) Bonus {
 		Dexterity: b.Dexterity + o.Dexterity,
 		Speed:     b.Speed + o.Speed,
 		Psyche:    b.Psyche + o.Psyche,
+		Ward:      b.Ward + o.Ward,
 	}
 }
 
@@ -154,6 +160,15 @@ func (c *Character) Strike() int { return max0(c.Weapon.Strike + c.Gear().Strike
 
 // Defense returns the armour rating including the shield and everything worn.
 func (c *Character) Defense() int { return max0(c.Armor.Defense + c.Gear().Defense) }
+
+// Ward returns protection from magic, which comes only from what is worn.
+//
+// There is no base ward from class or level on purpose. Defense arrives free
+// with any coat, so a character is never wholly unarmoured; ward is bought or
+// it is absent, which makes "am I protected against the other kind of damage"
+// a question the player answers with a slot rather than one the sheet answers
+// for them.
+func (c *Character) Ward() int { return max0(c.Gear().Ward) }
 
 // MaxPsy returns the psyche pool as the spell maths should read it.
 //

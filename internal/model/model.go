@@ -245,8 +245,23 @@ type MonsterDef struct {
 	Offense int         `json:"offense"`
 	Defense int         `json:"defense"`
 	Speed   int         `json:"speed"`
-	XP      int         `json:"xp"`
-	Coins   int         `json:"coins"`
+
+	// Ward is armour against magic, and Defense is armour against everything
+	// else. Keeping them separate is the whole matchup axis: a plated knight
+	// stops swords and nothing else, a bound spirit is the other way round, and
+	// which one you are looking at decides whether you should be swinging or
+	// casting.
+	//
+	// Magic used to be untaxed — SpellDamage subtracted nothing at all — so a
+	// caster's output overtook a fighter's at level 7 and nearly tripled it by
+	// level 11. This is the missing side of that.
+	Ward int `json:"ward"`
+	// Magic reports that this creature's attacks are magical, so they are
+	// reduced by the target's Ward instead of their Defense. A player in full
+	// plate is not protected from a curse by the plate.
+	Magic bool `json:"magic,omitempty"`
+	XP    int  `json:"xp"`
+	Coins int  `json:"coins"`
 
 	// Flavor drives the combat log. AttackWith/AttackVerb combine as
 	// "The Gutter Troll <verb> you with its <with>".
@@ -296,6 +311,7 @@ type Monster struct {
 
 	Offense int
 	Defense int
+	Ward    int
 	Speed   int
 	XP      int
 	Coins   int
@@ -336,7 +352,9 @@ func (d *MonsterDef) Spawn(g *core.RNG, level int) *Monster {
 		Def: d, Name: d.Name, HP: hp, MaxHP: hp,
 		Offense: scaled(d.Offense, 0.12),
 		Defense: scaled(d.Defense, 0.09),
-		Speed:   scaled(d.Speed, 0.05),
+		// Ward scales with defense, being the same idea pointed elsewhere.
+		Ward:  scaled(d.Ward, 0.09),
+		Speed: scaled(d.Speed, 0.05),
 		// Rewards track the effort, or fighting a scaled-up creature would
 		// pay the same as the easy version of it.
 		XP:    scaled(d.XP, 0.28),

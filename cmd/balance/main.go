@@ -52,6 +52,7 @@ func main() {
 	// there is, which is diffing the report against the last one.
 	reportArcs(out, core.NewRNG(*seed^0x5ACB), t, *fights/2)
 	reportDanger(out, core.NewRNG(*seed^0xD1E), t, *fights/3)
+	reportWard(out, core.NewRNG(*seed^0x3A7D), t, *fights)
 	reportEndurance(out, g, t, *fights/4)
 	reportProgression(out, g, t)
 	reportEconomy(out, t)
@@ -255,6 +256,123 @@ func reportDanger(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 		fmt.Fprintf(out, "\n  the curve matches the brief.\n")
 	}
 	fmt.Fprintln(out)
+}
+
+// reportWard measures what ignoring the ward slot costs, which is the whole
+// design of the matchup axis: a player is allowed to skip it, and skipping it
+// is supposed to be free early and progressively worse later.
+//
+// Two things have to be true for that to work, and neither is visible in the
+// DANGER table because both are averaged away there. Magical attackers have to
+// be rare at the bottom of the game and common at the top. And wearing ward has
+// to be worth the slot when they are common, without being mandatory.
+func reportWard(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+	fmt.Fprintf(out, "WARD — what skipping the anti-magic slot costs\n")
+	fmt.Fprintf(out, "death rate three levels over, against magical attackers only, with the\n")
+	fmt.Fprintf(out, "on-curve charm and with the best ward charm of the same tier\n\n")
+	fmt.Fprintf(out, "%-6s %-9s %10s %10s %10s %10s\n",
+		"level", "class", "magic %", "no ward", "warded", "slot worth")
+	fmt.Fprintln(out, strings.Repeat("-", 60))
+
+	for level := 3; level <= maxLevel; level += 2 {
+		enc := level + 3
+		biome := biomeForLevel(enc)
+
+		// How much of what lives out there attacks that way at all. Zero here
+		// means the slot is dead weight at this level, which is intended low
+		// down and a problem high up.
+		magicShare := 0.0
+		if defs := t.Monsters[biome]; len(defs) > 0 {
+			n := 0
+			for _, d := range defs {
+				if core.Abs(d.Level-enc) <= 3 && d.Magic {
+					n++
+				}
+			}
+			total := 0
+			for _, d := range defs {
+				if core.Abs(d.Level-enc) <= 3 {
+					total++
+				}
+			}
+			if total > 0 {
+				magicShare = float64(n) * 100 / float64(total)
+			}
+		}
+
+		for _, class := range model.AllClasses {
+			// Only magical attackers: the question is what the slot is for,
+			// and a table that mixed in the creatures it does nothing against
+			// would report the answer diluted by however many of those there
+			// happen to be.
+			rate := func(withWard bool) float64 {
+				var deaths, n int
+				for i := 0; i < fights; i++ {
+					c := rules.BuildCharacter(g, class, level)
+					equip(t, c)
+					if withWard {
+						if ch, ok := bestWardCharm(t, gamedata.GearTierFor(level)); ok {
+							c.Charm = ch
+						}
+					}
+					mons := t.PickMonsters(g, biome, enc, 1)
+					if len(mons) == 0 || !mons[0].Def.Magic {
+						continue
+					}
+					fresh := *c
+					r := rules.SimulateFight(g, &fresh, []*model.MonsterDef{mons[0].Def},
+						enc, 60, t.SpellsFor(c))
+					if !r.Won {
+						deaths++
+					}
+					n++
+				}
+				if n == 0 {
+					return -1
+				}
+				return float64(deaths) * 100 / float64(n)
+			}
+			// When no ward charm exists at this tier the two columns are the
+			// same build measured twice, and the gap between them is noise.
+			// Say so rather than printing a delta that means nothing.
+			if _, ok := bestWardCharm(t, gamedata.GearTierFor(level)); !ok {
+				bare := rate(false)
+				if bare < 0 {
+					fmt.Fprintf(out, "%-6d %-9s %9.0f%% %10s %10s %10s\n",
+						level, class, magicShare, "-", "-", "nothing out there")
+					continue
+				}
+				fmt.Fprintf(out, "%-6d %-9s %9.0f%% %9.1f%% %10s %10s\n",
+					level, class, magicShare, bare, "-", "none sold yet")
+				continue
+			}
+			bare, warded := rate(false), rate(true)
+			if bare < 0 || warded < 0 {
+				fmt.Fprintf(out, "%-6d %-9s %9.0f%% %10s %10s %10s\n",
+					level, class, magicShare, "-", "-", "nothing out there")
+				continue
+			}
+			fmt.Fprintf(out, "%-6d %-9s %9.0f%% %9.1f%% %9.1f%% %9.1f pts\n",
+				level, class, magicShare, bare, warded, bare-warded)
+		}
+	}
+	fmt.Fprintln(out)
+}
+
+// bestWardCharm returns the strongest anti-magic charm a shop of this tier
+// carries, which is what a player who decided to answer the axis would buy.
+func bestWardCharm(t *gamedata.Tables, tier int) (model.Charm, bool) {
+	var best model.Charm
+	found := false
+	for _, c := range t.Charms {
+		if c.Tier > tier || c.Bonus.Ward <= 0 {
+			continue
+		}
+		if !found || c.Bonus.Ward > best.Bonus.Ward {
+			best, found = c, true
+		}
+	}
+	return best, found
 }
 
 // reportArcs asks whether there is more than one way to be correctly levelled.
