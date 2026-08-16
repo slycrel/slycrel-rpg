@@ -683,11 +683,67 @@ func GetDisposition(playerFrac, monsterFrac float64) Disposition {
 
 // FightResult is the outcome of a simulated encounter.
 type FightResult struct {
-	Won         bool
+	Won bool
+	// Fled reports that the fight was abandoned rather than lost. It is not a
+	// win — nothing was killed and nothing was paid out — but it is emphatically
+	// not a death either, and a report that conflated the two was measuring a
+	// game nobody plays.
+	Fled        bool
 	Rounds      int
 	DamageDealt int
 	DamageTaken int
 	HPLeft      int
+}
+
+// Died reports the outcome that actually costs a run.
+func (r FightResult) Died() bool { return !r.Won && !r.Fled }
+
+// wantsOut decides whether the simulated player should be trying to leave.
+//
+// Deliberately late and conservative: badly hurt, losing on exchange, and out
+// of anything that would turn it round. A policy that ran at the first scratch
+// would report a game with no danger in it at all, and the point is to measure
+// what a competent player survives rather than what a cautious one avoids.
+func wantsOut(c *model.Character, living []*model.Monster) bool {
+	if c.MaxHP <= 0 || len(living) == 0 {
+		return false
+	}
+
+	// Measured in rounds left rather than as a fraction of health, because a
+	// fraction is the wrong unit for the decision. A flat "below 22%" had the
+	// thief waiting until 22% of a small pool, by which point one hit finished
+	// it — so the class with by far the best escape odds per attempt got fewer
+	// attempts than the fighter and escaped *less often*. Nobody plays that
+	// way. You leave while leaving is still possible.
+	incoming := 0
+	for _, m := range living {
+		if m.Dead {
+			continue
+		}
+		guard := c.Defense()
+		if m.Def != nil && m.Def.Magic {
+			guard = c.Ward()
+		}
+		incoming += core.Max(1, int(float64(m.Offense)*0.85)-guard)
+	}
+	if c.HP > incoming*3/2 {
+		return false
+	}
+
+	// Still winning the race? Then finish it. Being close to death is only a
+	// reason to leave if the thing opposite is not closer.
+	//
+	// Half rather than a third: at a third the simulator bailed out of fights
+	// it was about to win, and a level 13 fighter's run of fights on one rest
+	// fell to 2.3 before it broke the endurance floor. Retreating is supposed
+	// to be the answer to losing, not to being hurt.
+	var worst float64
+	for _, m := range living {
+		if f := m.HPFrac(); f > worst {
+			worst = f
+		}
+	}
+	return worst > 0.5
 }
 
 // SimulateFight plays an encounter to the end, mutating nothing the caller owns.
@@ -792,12 +848,42 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 			}
 		}
 
+		// Run, if running is what a person would do.
+		//
+		// Without this the simulator measured a game in which nobody ever walks
+		// away, which flattered every class that can stand and trade and
+		// libelled the one built to leave. The thief has the best speed in the
+		// game and speed is what FleeChance reads, so its whole survival plan
+		// was invisible: it was being scored on how well it dies in fights it
+		// would never have finished.
+		//
+		// Trying to leave *is* the player's action for the round, and failing
+		// to leave spends it. Skipping the monsters' turn as well made escape
+		// free and eventually certain, which is a different lie from the one it
+		// replaced.
+		act := strike
+		if wantsOut(sim, living) {
+			act = func() {
+				if g.Chance(FleeChance(sim.Spd(), fastest)) {
+					res.Fled = true
+				}
+			}
+		}
+
 		if playerFirst {
-			strike()
+			act()
+			if res.Fled {
+				break
+			}
 			monsterTurns()
 		} else {
 			monsterTurns()
-			strike()
+			if sim.HP > 0 {
+				act()
+			}
+			if res.Fled {
+				break
+			}
 		}
 
 		// Conditions bite at the end of the round on both sides, exactly as

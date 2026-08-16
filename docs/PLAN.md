@@ -270,9 +270,35 @@ than by tests, became something a test can reach.
    The only remaining short probes are levels 12-14, where mountain is already
    the outermost region and there is nowhere further to stray.
 
-5. **Day/night and weather.** The tileset collection includes a weather-effects
+5. **Fleeing should pay something, and the thief should be the one it pays.**
+   *(Jeremy's, in response to the flee work: "fake flee + backstab might be a
+   way around 0 rewards at the cost of survivability; having to run away might
+   not be enjoyable.")*
+
+   The point stands and it is a hole in what was just built. Teaching the
+   simulator to run fixed a measurement — the thief's speed was invisible and
+   it was being scored on how well it dies in fights it would never have
+   finished — but it does not make running *fun*. A retreat currently pays
+   nothing at all: no experience, no coin, no drop, and the fight was still
+   fought. The class whose survival plan is leaving is the class whose plan is
+   to come away empty.
+
+   The proposal: a thief manoeuvre that spends the escape rather than taking
+   it. Feign the rout, and if it lands you get a strike at backstab damage
+   against a creature that has stopped defending; if it does not, you have
+   spent your round pretending and the thing opposite gets a free one. So the
+   trade is the reward you would have forfeited against the survivability you
+   would have banked, chosen in the moment rather than by class.
+
+   Two things to get right. It has to be *worse* than fleeing on average or it
+   is not a gamble, it is the correct move every time. And the simulator has to
+   know about it, or the balance report goes back to lying about the thief in
+   the opposite direction — `wantsOut` would need a third answer beyond fight
+   and run.
+
+6. **Day/night and weather.** The tileset collection includes a weather-effects
    pack. Changes encounter tables and which NPCs are out.
-6. **Faction and reputation.** `Fame`, `Honor`, `Faith` and `Shame` exist on
+7. **Faction and reputation.** `Fame`, `Honor`, `Faith` and `Shame` exist on
    the character and currently do almost nothing — and backstory endings now
    hand out Fame and Shame, so they are easier to earn than ever and still
    inert.
@@ -294,12 +320,12 @@ than by tests, became something a test can reach.
    something like `Renown` for how well the face is known, and let an NPC's
    reaction read both. Being known without being placed is its own playstyle,
    and it gives the Shame from a backstory ending somewhere to land.
-7. **A reason to be here.** A generated main thread that strings together
+8. **A reason to be here.** A generated main thread that strings together
    five or six POIs into something with an ending.
 
 ### Phase 4 — polish
 
-8. **A UX pass, held until the features stop moving.** *(Jeremy's call, and the
+9. **A UX pass, held until the features stop moving.** *(Jeremy's call, and the
    right one: interface work done against a moving target gets redone.)* Things
    are being noticed as they turn up and parked here rather than fixed one at a
    time, because half of them are the same missing capability wearing different
@@ -323,9 +349,9 @@ than by tests, became something a test can reach.
    Jeremy has his own list from playing. Add to this as things turn up; do not
    fix them in ones.
 
-9. Curated UI art from the 4,488-file GUI Pro kit, replacing the procedural panels.
-10. Title screen art, transitions, particles from the 115-file VFX pack.
-11. Balance simulation: run 10,000 headless fights per level band against the
+10. Curated UI art from the 4,488-file GUI Pro kit, replacing the procedural panels.
+11. Title screen art, transitions, particles from the 115-file VFX pack.
+12. Balance simulation: run 10,000 headless fights per level band against the
    pure `rules` package and tune the curve.
 
 ## Open questions

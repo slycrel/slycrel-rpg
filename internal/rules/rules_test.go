@@ -204,3 +204,70 @@ func TestSpawnScalesEveryCombatStat(t *testing.T) {
 			atkGrowth, hpGrowth)
 	}
 }
+
+// The simulator has to be willing to walk away, or every number it produces
+// describes a game in which nobody ever does.
+//
+// This was not a small error. FleeChance reads speed, the thief has the best
+// speed in the game, and the simulator never called it — so the thief's entire
+// survival plan was invisible and it was being scored on how well it dies in
+// fights it would never have finished. It came out the most fragile class at
+// nearly every level, which was an artefact of the measurement rather than a
+// fact about the class: with running restored it stops being the outlier.
+func TestTheSimulatedPlayerRunsFromALostFight(t *testing.T) {
+	g := core.NewRNG(17)
+	// Something far too big, met by someone far too small.
+	boss := &model.MonsterDef{
+		Name: "Much Too Large", Level: 12, HP: 400, Offense: 40, Defense: 6, Speed: 6,
+	}
+
+	outcomes := func(class model.Class) (fled, died int) {
+		for i := 0; i < 400; i++ {
+			c := rules.BuildCharacter(g, class, 3)
+			c.Weapon = model.Weapon{Name: "Test", Strike: 4}
+			r := rules.SimulateFight(g, c, []*model.MonsterDef{boss}, 12, 60, nil)
+			switch {
+			case r.Fled:
+				fled++
+			case r.Died():
+				died++
+			}
+		}
+		return
+	}
+
+	fled, died := outcomes(model.ClassFighter)
+	if fled == 0 {
+		t.Fatalf("a hopeless fight ended in %d deaths and no escapes at all", died)
+	}
+
+	// And speed has to be worth something: the class built to leave should
+	// leave more often than the class built to stand there.
+	thiefFled, _ := outcomes(model.ClassThief)
+	fighterFled, _ := outcomes(model.ClassFighter)
+	if thiefFled <= fighterFled {
+		t.Errorf("the thief escaped %d times and the fighter %d; speed is buying nothing",
+			thiefFled, fighterFled)
+	}
+}
+
+// A fight walked away from is not a win and not a death, and the three have to
+// stay distinguishable — a report that counted an escape as a death is exactly
+// what libelled the thief.
+func TestFledIsNeitherWonNorDied(t *testing.T) {
+	for _, r := range []rules.FightResult{
+		{Won: true},
+		{Fled: true},
+		{},
+	} {
+		n := 0
+		for _, b := range []bool{r.Won, r.Fled, r.Died()} {
+			if b {
+				n++
+			}
+		}
+		if n != 1 {
+			t.Errorf("%+v reports %d of won/fled/died; the three are meant to partition", r, n)
+		}
+	}
+}

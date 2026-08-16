@@ -161,7 +161,13 @@ var dangerTargets = []struct {
 	{0, 5, 0, "on-level, very rare deaths"},
 	{2, 20, 2, "starting to cost something"},
 	{3, 35, 5, "challenging, and the last comfortable warning"},
-	{5, 100, 55, "likely to kill you, and visibly so on the way in"},
+	// The floor here is low on purpose now that the simulator runs away when a
+	// competent player would. "Likely to kill you" cannot mean "kills you
+	// whatever you do" in a game with a flee button — it means you cannot win
+	// it and getting out costs you. The outcome table under this one is where
+	// that is actually checked: what should be near zero at +5 is the *win*
+	// rate, not the survival rate.
+	{5, 100, 20, "unwinnable, and expensive to walk away from"},
 }
 
 // reportDanger measures the death curve against the brief above.
@@ -206,7 +212,7 @@ func reportDanger(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 					fresh := *c
 					r := rules.SimulateFight(g, &fresh, []*model.MonsterDef{mons[0].Def},
 						enc, 60, t.SpellsFor(c))
-					if !r.Won {
+					if r.Died() {
 						deaths++
 					}
 					n++
@@ -254,6 +260,50 @@ func reportDanger(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 	}
 	if ok {
 		fmt.Fprintf(out, "\n  the curve matches the brief.\n")
+	}
+
+	// What actually happens five levels over, split three ways.
+	//
+	// "A death you chose" is the whole clause the brief turns on, and it is
+	// only checkable here: if the player can see it going badly and leave, then
+	// dying at +5 means having stayed. A band where death and escape are both
+	// common is a band with a decision in it. One where death is the only
+	// outcome is an ambush with extra steps.
+	fmt.Fprintf(out, "\nfive levels over: what happens\n")
+	fmt.Fprintf(out, "%-6s %-9s %9s %9s %9s\n", "level", "class", "won", "fled", "died")
+	fmt.Fprintln(out, strings.Repeat("-", 46))
+	for level := 1; level <= maxLevel; level += 4 {
+		enc := level + 5
+		biome := biomeForLevel(enc)
+		for _, class := range model.AllClasses {
+			var won, fled, died, n int
+			for k := 0; k < fights; k++ {
+				c := rules.BuildCharacter(g, class, level)
+				equip(t, c)
+				mons := t.PickMonsters(g, biome, enc, 1)
+				if len(mons) == 0 {
+					continue
+				}
+				fresh := *c
+				r := rules.SimulateFight(g, &fresh, []*model.MonsterDef{mons[0].Def},
+					enc, 60, t.SpellsFor(c))
+				switch {
+				case r.Won:
+					won++
+				case r.Fled:
+					fled++
+				default:
+					died++
+				}
+				n++
+			}
+			if n == 0 {
+				continue
+			}
+			f := func(v int) float64 { return float64(v) * 100 / float64(n) }
+			fmt.Fprintf(out, "%-6d %-9s %8.1f%% %8.1f%% %8.1f%%\n",
+				level, class, f(won), f(fled), f(died))
+		}
 	}
 	fmt.Fprintln(out)
 }
@@ -322,7 +372,7 @@ func reportWard(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 					fresh := *c
 					r := rules.SimulateFight(g, &fresh, []*model.MonsterDef{mons[0].Def},
 						enc, 60, t.SpellsFor(c))
-					if !r.Won {
+					if r.Died() {
 						deaths++
 					}
 					n++
