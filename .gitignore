@@ -7,9 +7,12 @@ assets-raw/
 /slycrel
 /dist/
 
-# Save games
+# Save games. Play saves are scratch; the hand-curated fixtures under
+# saves/fixtures/ are committed, because they are what the regression tests
+# load and what a playtest starts from to reach a specific state.
 *.save.json
-/saves/
+/saves/*
+!/saves/fixtures/
 
 .DS_Store
 

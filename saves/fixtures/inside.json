@@ -1,0 +1,283 @@
+{
+  "version": 2,
+  "saved": "2026-08-16T12:00:00Z",
+  "summary": "a level 4 company standing inside a location",
+  "seed": 1994,
+  "player": {
+    "name": "Bosk",
+    "class": "Fighter",
+    "epithet": "the Regrettable",
+    "level": 4,
+    "totalXP": 0,
+    "spendXP": 0,
+    "hp": 38,
+    "maxHP": 38,
+    "psyche": 5,
+    "maxPsyche": 5,
+    "strength": 13,
+    "dexterity": 7,
+    "speed": 12,
+    "fame": 3,
+    "honor": 3,
+    "faith": 3,
+    "shame": 0,
+    "coins": 250,
+    "weapon": {
+      "name": "Spear, Regrettably Long",
+      "strike": 7,
+      "range": 3,
+      "cost": 82,
+      "quality": 68,
+      "verb": "skewer",
+      "tier": 2,
+      "icon": "icon/ab/2_weapon_sword"
+    },
+    "armor": {
+      "name": "Ringmail, Secondhand",
+      "defense": 6,
+      "cost": 90,
+      "quality": 68,
+      "verb": "catches",
+      "tier": 2,
+      "icon": "icon/loot/blackbear_pelt"
+    },
+    "bag": [
+      {
+        "name": "Small Beer",
+        "kind": "heal",
+        "power": 8,
+        "value": 6,
+        "count": 3,
+        "desc": "Warm, flat, and load-bearing. Restores a little health and a lot of resolve.",
+        "icon": "icon/loot/health_potion"
+      },
+      {
+        "name": "Smelling Salts, Militant",
+        "kind": "revive",
+        "power": 25,
+        "value": 55,
+        "count": 1,
+        "desc": "Brings a person round by making unconsciousness the worse option.",
+        "icon": "icon/loot/antidote"
+      }
+    ],
+    "sprite": "",
+    "portrait": ""
+  },
+  "allies": [
+    {
+      "name": "Hireling 1",
+      "class": "Fighter",
+      "epithet": "",
+      "level": 4,
+      "totalXP": 0,
+      "spendXP": 0,
+      "hp": 37,
+      "maxHP": 37,
+      "psyche": 5,
+      "maxPsyche": 5,
+      "strength": 17,
+      "dexterity": 10,
+      "speed": 9,
+      "fame": 3,
+      "honor": 3,
+      "faith": 1,
+      "shame": 0,
+      "coins": 0,
+      "weapon": {
+        "name": "Spear, Regrettably Long",
+        "strike": 7,
+        "range": 3,
+        "cost": 82,
+        "quality": 68,
+        "verb": "skewer",
+        "tier": 2,
+        "icon": "icon/ab/2_weapon_sword"
+      },
+      "armor": {
+        "name": "Ringmail, Secondhand",
+        "defense": 6,
+        "cost": 90,
+        "quality": 68,
+        "verb": "catches",
+        "tier": 2,
+        "icon": "icon/loot/blackbear_pelt"
+      },
+      "bag": null,
+      "ally": true,
+      "cut": 18,
+      "sprite": "hero/druid",
+      "portrait": "portrait/female/f_08"
+    }
+  ],
+  "at": {
+    "X": 80,
+    "Y": 67
+  },
+  "facing": 0,
+  "inside": {
+    "poi": 0,
+    "at": {
+      "X": 10,
+      "Y": 12
+    },
+    "facing": 0
+  },
+  "pois": [
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    }
+  ],
+  "fog": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAA4A8AAAAAAAAAAAAAAAAAAAAAAAD4PwAAAAAAAAAAAAAAAAAAAAAAAPx/AAAAAAAAAAAAAAAAAAAAAAAA/H8AAAAAAAAAAAAAAAAAAAAAAAD+/wAAAAAAAAAAAAAAAAAAAAAAAP7/AAAAAAAAAAAAAAAAAAAAAAAA/v8AAAAAAAAAAAAAAAAAAAAAAAD//wEAAAAAAAAAAAAAAAAAAAAAAP7/AAAAAAAAAAAAAAAAAAAAAAAA/v8AAAAAAAAAAAAAAAAAAAAAAAD+/wAAAAAAAAAAAAAAAAAAAAAAAPx/AAAAAAAAAAAAAAAAAAAAAAAA/H8AAAAAAAAAAAAAAAAAAAAAAAD4PwAAAAAAAAAAAAAAAAAAAAAAAOAPAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "sinceFight": 0,
+  "quests": [
+    {
+      "id": "fetch-0-14926206",
+      "kind": "fetch",
+      "state": "active",
+      "title": "5 x Moon-Bleached Feather",
+      "ask": "\"5 Moon-Bleached Feather. That's the order. My supplier was eaten, which is the third time this year.\"",
+      "nag": "\"Still 5 Moon-Bleached Feather. The number has not changed. I would have mentioned.\"",
+      "thank": "\"All 5. You actually did it. I had a whole speech ready for if you didn't.\"",
+      "giver": "Person",
+      "giverPOI": 0,
+      "item": "Moon-Bleached Feather",
+      "need": 5,
+      "have": 0,
+      "rewardCoins": 90,
+      "rewardXP": 60
+    }
+  ]
+}

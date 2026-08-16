@@ -40,10 +40,18 @@ go run ./cmd/slycrel -load saves/demo.json   # start from a save
 go run ./cmd/slycrel -mute        # run silent
 ```
 
-`-load` takes any save file, which makes saves useful as test fixtures: the
-`-demo` tour leaves one at `saves/demo.json` with coins, loot, a partly
-explored map and a half-looted dungeon, so a playtest can start somewhere
-interesting instead of at level one.
+`-load` takes any save file, which makes saves useful as test fixtures. The
+`-demo` tour leaves one at `saves/demo.json`, and `saves/fixtures/` holds a
+hand-curated set parked in the states that are otherwise a chore to reach:
+
+```bash
+go run ./cmd/slycrel -load saves/fixtures/full-company.json  # party at the cap, one part demon
+go run ./cmd/slycrel -load saves/fixtures/battered.json      # nearly dead, one companion down
+go run ./cmd/slycrel -load saves/fixtures/inside.json        # standing inside a location
+go run ./cmd/slycrel -load saves/fixtures/v1-solo.json       # a save from before the party existed
+```
+
+They are also a regression net that needs no display — see **Testing** below.
 
 Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 
@@ -148,6 +156,8 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 cmd/
   slycrel/            the game
   assetpipe/          inventory, extract, and index the source art bundle
+  balance/            simulate the curve over the real rules
+  genfixtures/        rewrite the save fixtures after a world-generation change
 internal/
   core/               RNG that forks deterministically, grid maths, the tile walker
   model/              characters, monsters, gear, spells, conditions
@@ -267,6 +277,28 @@ policy.
 ```bash
 go test ./internal/...
 ```
+
+The save fixtures in `saves/fixtures/` are the cheapest coverage in the project.
+A save is the world seed plus what the player changed, so loading one asserts
+three things that otherwise rot in silence: that the seed still generates the
+same continent, that the content the file names by string still exists, and that
+the format is still readable. Between them the set covers a full company, a
+part-monster hireling, a companion on the floor, a party inside a location, a
+solo run, and a file written before the party existed — and a test asserts that
+coverage, so the set cannot quietly decay into six copies of "level one,
+standing in a field".
+
+Regenerate them with `go run ./cmd/genfixtures` after a deliberate change to
+world generation. It leaves `v1-solo.json` alone: that file's job is to *be* an
+old save, and rewriting it at the current version would delete the only evidence
+that the loader still reads the previous format.
+
+The first thing the fixtures caught was a flaw in themselves. They were
+generated against a stub namer, and because location names are drawn from the
+same generator that places the locations, a namer consuming no randomness builds
+a *different* continent — so the game rejected the fixture as predating a world
+change that had never happened. Anything checking a save against its world has
+to regenerate the world the game would, with the real writer.
 
 Six of the nine packages have no path to Ebitengine and run anywhere — `core`,
 `model`, `rules`, `party`, `gamedata`, `save` and `quest` between them hold most
