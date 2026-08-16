@@ -166,6 +166,22 @@ a double-clicked build works even though its working directory is `/`.
 Builds contain third-party art and audio. Shipping that inside a game is
 licensed; publishing the folder as an asset pack is not. `dist/` is gitignored.
 
+## Balance
+
+```bash
+go run ./cmd/balance          # win rates, endurance, progression, economy
+```
+
+The formulas in `internal/rules` are ported from the original; everything
+around them — 62 monsters' stats, the gear tables, prices — was invented, and
+the simulator is how those get checked against each other. It runs the same
+code the game plays rather than a copy of it, so what it measures is the game.
+
+Its findings are kept honest by tests: `TestDamageHasNoCliff`,
+`TestOnLevelFightsAreWinnable`, `TestDangerRadiatesOutward` and
+`TestEnduranceHoldsAcrossLevels` assert the *shape* of the curve, so content
+can be added freely but progression cannot silently break.
+
 ## Testing
 
 ```bash

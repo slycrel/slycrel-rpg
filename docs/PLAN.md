@@ -42,6 +42,9 @@ Built and running:
 - Loot, XP, banked level-ups, shops (buy/sell, stock scaling with settlement
   size), inns, chests, altars
 - Character sheet and pack with out-of-combat item use
+- Balance: a simulator over the real rules, and a tuning pass that removed a
+  damage cliff at level 5, made monsters scale with the encounter, and flattened
+  endurance from 12-fights-then-3 to a steady 4-9 per rest
 - Icons: 229 indexed across three sets, wired through items, gear and
   techniques, box-reduced to 16px at pipeline time
 - Scenery: trees, boulders, ferns, water plants and cacti scattered per
@@ -61,7 +64,7 @@ Built and running:
 - Asset pipeline: inventory, selective extraction, manifest generation, and an
   audit that reports which art keys still fall back to placeholders
 
-Deliberately not built yet: quests, and a balance pass over the invented numbers.
+Deliberately not built yet: quests.
 
 ## Architecture, and why
 
@@ -88,9 +91,8 @@ testable and a simulation harness is cheap to add later.
 
 ### Phase 1 — make it feel like a game *(save/load and audio done)*
 
-1. **Balance.** The formulas are ported from the original, but every monster
-   stat, weapon strike and price was invented and never checked against the
-   others. Simulate fights against the pure rules package and fix the gaps.
+1. **Quests.** Generated from location pairs: someone in a town wants a thing
+   from a dungeon. The world already has everything a quest needs to point at.
 
 ### Phase 2 — depth
 

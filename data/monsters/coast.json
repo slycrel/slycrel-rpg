@@ -3,52 +3,149 @@
     "id": "coast_crab",
     "name": "Crab, Territorial",
     "kind": "beast",
-    "level": 1, "hp": 12, "offense": 5, "defense": 6, "speed": 6, "xp": 16, "coins": 3,
-    "attackWith": ["a claw with real conviction", "a sideways charge"],
-    "attackVerb": ["pinches", "scuttles into", "clamps onto"],
+    "level": 1,
+    "hp": 20,
+    "offense": 5,
+    "defense": 6,
+    "speed": 6,
+    "xp": 16,
+    "coins": 3,
+    "attackWith": [
+      "a claw with real conviction",
+      "a sideways charge"
+    ],
+    "attackVerb": [
+      "pinches",
+      "scuttles into",
+      "clamps onto"
+    ],
     "defendWith": "a shell and a bad attitude",
-    "taunt": ["{T} raises both claws. It is smaller than your boot. It does not care."],
-    "death": ["{T} goes still, claws up, still winning as far as it is concerned."],
+    "taunt": [
+      "{T} raises both claws. It is smaller than your boot. It does not care."
+    ],
+    "death": [
+      "{T} goes still, claws up, still winning as far as it is concerned."
+    ],
     "sprite": "mob/bug",
-    "loot": [{ "item": "Chitin Scrap", "chance": 60, "min": 1, "max": 2 }]
+    "loot": [
+      {
+        "item": "Chitin Scrap",
+        "chance": 60,
+        "min": 1,
+        "max": 2
+      }
+    ]
   },
   {
     "id": "coast_gull",
     "name": "Gull, Emboldened",
     "kind": "beast",
-    "level": 2, "hp": 13, "offense": 7, "defense": 2, "speed": 15, "xp": 20, "coins": 4,
-    "attackWith": ["a beak aimed at your lunch", "wings, in your face"],
-    "attackVerb": ["mugs", "harasses", "robs"],
+    "level": 2,
+    "hp": 19,
+    "offense": 7,
+    "defense": 2,
+    "speed": 15,
+    "xp": 20,
+    "coins": 4,
+    "attackWith": [
+      "a beak aimed at your lunch",
+      "wings, in your face"
+    ],
+    "attackVerb": [
+      "mugs",
+      "harasses",
+      "robs"
+    ],
     "defendWith": "flight and total shamelessness",
-    "taunt": ["{T} has done this before. {T} has done this to armed men."],
-    "death": ["{T} drops your sandwich as it goes. Small mercies."],
+    "taunt": [
+      "{T} has done this before. {T} has done this to armed men."
+    ],
+    "death": [
+      "{T} drops your sandwich as it goes. Small mercies."
+    ],
     "sprite": "mob/bird_01",
-    "loot": [{ "item": "Stolen Trinket", "chance": 40, "min": 1, "max": 1 }]
+    "loot": [
+      {
+        "item": "Stolen Trinket",
+        "chance": 40,
+        "min": 1,
+        "max": 1
+      }
+    ]
   },
   {
     "id": "coast_snail",
     "name": "Tidepool Snail, Enormous",
     "kind": "beast",
-    "level": 3, "hp": 30, "offense": 8, "defense": 12, "speed": 2, "xp": 34, "coins": 7,
-    "attackWith": ["a rasping tongue", "the slow application of its whole mass"],
-    "attackVerb": ["rasps", "leans onto", "gets around to"],
+    "level": 3,
+    "hp": 37,
+    "offense": 8,
+    "defense": 12,
+    "speed": 2,
+    "xp": 34,
+    "coins": 7,
+    "attackWith": [
+      "a rasping tongue",
+      "the slow application of its whole mass"
+    ],
+    "attackVerb": [
+      "rasps",
+      "leans onto",
+      "gets around to"
+    ],
     "defendWith": "a shell you could shelter in",
-    "taunt": ["{T} is coming for you. {T} will arrive next Tuesday."],
-    "death": ["{T} retracts. Permanently."],
+    "taunt": [
+      "{T} is coming for you. {T} will arrive next Tuesday."
+    ],
+    "death": [
+      "{T} retracts. Permanently."
+    ],
     "sprite": "mob/snail_02",
-    "loot": [{ "item": "Ancient Shell", "chance": 55, "min": 1, "max": 1 }]
+    "loot": [
+      {
+        "item": "Ancient Shell",
+        "chance": 55,
+        "min": 1,
+        "max": 1
+      }
+    ]
   },
   {
     "id": "coast_diver",
     "name": "Something That Was A Diver",
     "kind": "undead",
-    "level": 6, "hp": 44, "offense": 16, "defense": 8, "speed": 8, "xp": 86, "coins": 35,
-    "attackWith": ["a rusted hook", "a lungful of brine", "a weighted boot"],
-    "attackVerb": ["hooks", "drowns", "drags under"],
+    "level": 6,
+    "hp": 48,
+    "offense": 16,
+    "defense": 8,
+    "speed": 8,
+    "xp": 86,
+    "coins": 35,
+    "attackWith": [
+      "a rusted hook",
+      "a lungful of brine",
+      "a weighted boot"
+    ],
+    "attackVerb": [
+      "hooks",
+      "drowns",
+      "drags under"
+    ],
     "defendWith": "a suit that no longer holds anything human",
-    "taunt": ["{T} is still looking for the surface. It has been looking a long time."],
-    "death": ["{T} sinks where it stands, on dry sand."],
+    "taunt": [
+      "{T} is still looking for the surface. It has been looking a long time."
+    ],
+    "death": [
+      "{T} sinks where it stands, on dry sand."
+    ],
     "sprite": "mob/diver_01",
-    "loot": [{ "item": "Waterlogged Purse", "chance": 65, "min": 1, "max": 2 }]
+    "loot": [
+      {
+        "item": "Waterlogged Purse",
+        "chance": 65,
+        "min": 1,
+        "max": 2
+      }
+    ]
   }
 ]

@@ -3,78 +3,259 @@
     "id": "swamp_frog",
     "name": "Frog of Unusual Size",
     "kind": "beast",
-    "level": 2, "hp": 18, "offense": 8, "defense": 3, "speed": 10, "xp": 24, "coins": 5,
-    "attackWith": ["a tongue like a wet whip", "a full-body slam"],
-    "attackVerb": ["slaps", "swallows at", "belly-flops onto"],
+    "level": 2,
+    "hp": 27,
+    "offense": 8,
+    "defense": 3,
+    "speed": 10,
+    "xp": 24,
+    "coins": 5,
+    "attackWith": [
+      "a tongue like a wet whip",
+      "a full-body slam"
+    ],
+    "attackVerb": [
+      "slaps",
+      "swallows at",
+      "belly-flops onto"
+    ],
     "defendWith": "a coating of something you will smell for days",
-    "taunt": ["{T} croaks. Three hundred metres of mire croak back."],
-    "death": ["{T} deflates with a sound that will follow you into old age."],
+    "taunt": [
+      "{T} croaks. Three hundred metres of mire croak back."
+    ],
+    "death": [
+      "{T} deflates with a sound that will follow you into old age."
+    ],
     "sprite": "mob/frog_01",
-    "loot": [{ "item": "Bog Gland", "chance": 65, "min": 1, "max": 2 }]
+    "loot": [
+      {
+        "item": "Bog Gland",
+        "chance": 65,
+        "min": 1,
+        "max": 2
+      }
+    ]
   },
   {
     "id": "swamp_leech",
     "name": "Affectionate Parasite",
     "kind": "aberrant",
-    "level": 3, "hp": 16, "offense": 9, "defense": 2, "speed": 7, "xp": 30, "coins": 3,
-    "attackWith": ["a mouth that is only a mouth", "a suction you will remember"],
-    "attackVerb": ["latches onto", "drains", "commits to"],
+    "level": 3,
+    "hp": 20,
+    "offense": 9,
+    "defense": 2,
+    "speed": 7,
+    "xp": 30,
+    "coins": 3,
+    "attackWith": [
+      "a mouth that is only a mouth",
+      "a suction you will remember"
+    ],
+    "attackVerb": [
+      "latches onto",
+      "drains",
+      "commits to"
+    ],
     "defendWith": "being mostly liquid already",
-    "taunt": ["{T} has chosen you. {T} does not accept refusals."],
-    "death": ["{T} lets go with a noise like a boot leaving mud."],
+    "taunt": [
+      "{T} has chosen you. {T} does not accept refusals."
+    ],
+    "death": [
+      "{T} lets go with a noise like a boot leaving mud."
+    ],
     "sprite": "mob/parasit_01",
-    "loot": [{ "item": "Venom Sac", "chance": 50, "min": 1, "max": 2 }]
+    "loot": [
+      {
+        "item": "Venom Sac",
+        "chance": 50,
+        "min": 1,
+        "max": 2
+      }
+    ]
   },
   {
     "id": "swamp_croc",
     "name": "Crocodile, Very Patient",
     "kind": "beast",
-    "level": 5, "hp": 44, "offense": 15, "defense": 8, "speed": 7, "xp": 68, "coins": 12,
-    "attackWith": ["a bite with a hinge in it", "a tail that clears a room"],
-    "attackVerb": ["clamps onto", "rolls with", "sweeps"],
+    "level": 5,
+    "hp": 51,
+    "offense": 15,
+    "defense": 8,
+    "speed": 7,
+    "xp": 68,
+    "coins": 12,
+    "attackWith": [
+      "a bite with a hinge in it",
+      "a tail that clears a room"
+    ],
+    "attackVerb": [
+      "clamps onto",
+      "rolls with",
+      "sweeps"
+    ],
     "defendWith": "a back like cobblestones",
-    "taunt": ["{T} has been here the whole time. The WHOLE time."],
-    "death": ["{T} stops. It looks exactly the same. That is the problem with crocodiles."],
+    "taunt": [
+      "{T} has been here the whole time. The WHOLE time."
+    ],
+    "death": [
+      "{T} stops. It looks exactly the same. That is the problem with crocodiles."
+    ],
     "sprite": "mob/crocodile_01",
-    "loot": [{ "item": "Scaled Hide", "chance": 70, "min": 1, "max": 3 }]
+    "loot": [
+      {
+        "item": "Scaled Hide",
+        "chance": 70,
+        "min": 1,
+        "max": 3
+      }
+    ]
   },
   {
     "id": "swamp_bogard",
     "name": "Bogard the Damp",
     "kind": "aberrant",
-    "level": 6, "hp": 50, "offense": 16, "defense": 8, "speed": 6, "xp": 88, "coins": 25,
-    "attackWith": ["a fistful of mire", "a limb of pure sediment"],
-    "attackVerb": ["engulfs", "smothers", "seeps into"],
+    "level": 6,
+    "hp": 54,
+    "offense": 16,
+    "defense": 8,
+    "speed": 6,
+    "xp": 88,
+    "coins": 25,
+    "attackWith": [
+      "a fistful of mire",
+      "a limb of pure sediment"
+    ],
+    "attackVerb": [
+      "engulfs",
+      "smothers",
+      "seeps into"
+    ],
     "defendWith": "not having anywhere solid to hit",
-    "taunt": ["{T} rises out of the water in a way that suggests it lives there voluntarily."],
-    "death": ["{T} returns to the swamp. The swamp does not want it back."],
+    "taunt": [
+      "{T} rises out of the water in a way that suggests it lives there voluntarily."
+    ],
+    "death": [
+      "{T} returns to the swamp. The swamp does not want it back."
+    ],
     "sprite": "mob/bogard",
-    "loot": [{ "item": "Bog Gland", "chance": 70, "min": 2, "max": 3 }]
+    "loot": [
+      {
+        "item": "Bog Gland",
+        "chance": 70,
+        "min": 2,
+        "max": 3
+      }
+    ]
   },
   {
     "id": "swamp_snake",
     "name": "Snake With a Reputation",
     "kind": "beast",
-    "level": 6, "hp": 36, "offense": 18, "defense": 5, "speed": 14, "xp": 84, "coins": 16,
-    "attackWith": ["fangs and a full dose", "a coil that finds ribs"],
-    "attackVerb": ["strikes", "constricts", "envenoms"],
+    "level": 6,
+    "hp": 39,
+    "offense": 18,
+    "defense": 5,
+    "speed": 14,
+    "xp": 84,
+    "coins": 16,
+    "attackWith": [
+      "fangs and a full dose",
+      "a coil that finds ribs"
+    ],
+    "attackVerb": [
+      "strikes",
+      "constricts",
+      "envenoms"
+    ],
     "defendWith": "being somewhere else already",
-    "taunt": ["{T} is exactly as long as the rumours say. Somehow that is worse."],
-    "death": ["{T} unwinds slowly, all the way down."],
+    "taunt": [
+      "{T} is exactly as long as the rumours say. Somehow that is worse."
+    ],
+    "death": [
+      "{T} unwinds slowly, all the way down."
+    ],
     "sprite": "mob/snake_01",
-    "loot": [{ "item": "Venom Sac", "chance": 75, "min": 1, "max": 3 }]
+    "loot": [
+      {
+        "item": "Venom Sac",
+        "chance": 75,
+        "min": 1,
+        "max": 3
+      }
+    ]
   },
   {
     "id": "swamp_insect",
     "name": "Mire Swarm",
     "kind": "beast",
-    "level": 4, "hp": 28, "offense": 12, "defense": 4, "speed": 16, "xp": 50, "coins": 6,
-    "attackWith": ["ten thousand small bites", "a cloud that gets in everywhere"],
-    "attackVerb": ["engulfs", "chews through", "invades"],
+    "level": 4,
+    "hp": 31,
+    "offense": 12,
+    "defense": 4,
+    "speed": 16,
+    "xp": 50,
+    "coins": 6,
+    "attackWith": [
+      "ten thousand small bites",
+      "a cloud that gets in everywhere"
+    ],
+    "attackVerb": [
+      "engulfs",
+      "chews through",
+      "invades"
+    ],
     "defendWith": "there being far too many of it",
-    "taunt": ["{T} arrives as a sound before it arrives as a thing."],
-    "death": ["{T} disperses. Some of it goes home. Some of it stays in your hair."],
+    "taunt": [
+      "{T} arrives as a sound before it arrives as a thing."
+    ],
+    "death": [
+      "{T} disperses. Some of it goes home. Some of it stays in your hair."
+    ],
     "sprite": "mob/insect_02",
-    "loot": [{ "item": "Chitin Scrap", "chance": 60, "min": 2, "max": 4 }]
+    "loot": [
+      {
+        "item": "Chitin Scrap",
+        "chance": 60,
+        "min": 2,
+        "max": 4
+      }
+    ]
+  },
+  {
+    "id": "swamp_mirehorror",
+    "name": "Mire Horror",
+    "kind": "aberrant",
+    "level": 9,
+    "hp": 67,
+    "offense": 22,
+    "defense": 10,
+    "speed": 9,
+    "xp": 170,
+    "coins": 58,
+    "attackWith": [
+      "something long out of the water",
+      "a grip that does not let go"
+    ],
+    "attackVerb": [
+      "seizes",
+      "submerges",
+      "absorbs"
+    ],
+    "defendWith": "most of itself being under the surface",
+    "taunt": [
+      "{T} surfaces. It keeps surfacing. There is a great deal of it."
+    ],
+    "death": [
+      "{T} sinks. The water closes over it far too slowly."
+    ],
+    "sprite": "mob/parasit_02",
+    "loot": [
+      {
+        "item": "Bog Gland",
+        "chance": 75,
+        "min": 2,
+        "max": 4
+      }
+    ]
   }
 ]

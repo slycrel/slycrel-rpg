@@ -213,12 +213,23 @@ type Drop struct {
 }
 
 // Monster is a live combatant instantiated from a MonsterDef.
+//
+// It carries its own stats rather than reading the template, because a monster
+// met deep in the world is a scaled-up version of the same creature. Reading
+// Def directly is what left a biome's roster capping the difficulty of every
+// encounter in it.
 type Monster struct {
 	Def   *MonsterDef
 	Name  string // may be uniquified, e.g. "Gutter Troll B"
 	HP    int
 	MaxHP int
 	Dead  bool
+
+	Offense int
+	Defense int
+	Speed   int
+	XP      int
+	Coins   int
 }
 
 // HPFrac returns current HP as a fraction of max.
@@ -229,13 +240,33 @@ func (m *Monster) HPFrac() float64 {
 	return core.ClampF(float64(m.HP)/float64(m.MaxHP), 0, 1)
 }
 
-// Spawn instantiates a monster from its template, scaled toward level.
+// Spawn instantiates a monster from its template, scaled to the level of the
+// encounter it is appearing in.
+//
+// Only hit points used to scale, which meant a level-3 goblin met at level 10
+// was a punching bag that hit like a level-3 goblin. Every combat stat scales
+// now, at rates that keep the shape of a fight: health grows fastest so fights
+// lengthen, offense more slowly so they do not become lethal, defense slowest
+// of all because it multiplies against every hit.
 func (d *MonsterDef) Spawn(g *core.RNG, level int) *Monster {
-	scale := 1.0 + 0.18*float64(core.Max(0, level-d.Level))
-	hp := int(float64(d.HP) * scale)
+	over := float64(core.Max(0, level-d.Level))
+	scaled := func(base int, rate float64) int {
+		return core.Max(0, int(float64(base)*(1+rate*over)))
+	}
+
+	hp := scaled(d.HP, 0.18)
 	hp += g.Between(-hp/8, hp/8)
 	if hp < 1 {
 		hp = 1
 	}
-	return &Monster{Def: d, Name: d.Name, HP: hp, MaxHP: hp}
+	return &Monster{
+		Def: d, Name: d.Name, HP: hp, MaxHP: hp,
+		Offense: scaled(d.Offense, 0.12),
+		Defense: scaled(d.Defense, 0.09),
+		Speed:   scaled(d.Speed, 0.05),
+		// Rewards track the effort, or fighting a scaled-up creature would
+		// pay the same as the easy version of it.
+		XP:    scaled(d.XP, 0.28),
+		Coins: scaled(d.Coins, 0.22),
+	}
 }

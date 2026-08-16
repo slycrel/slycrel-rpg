@@ -335,3 +335,131 @@ func TestItemIconsAreDistinct(t *testing.T) {
 		seen[it.Icon] = it.Name
 	}
 }
+
+// --- balance ---------------------------------------------------------------
+//
+// These assert the shape of the difficulty curve rather than exact numbers, so
+// content can be added freely but cannot silently break progression. Run
+// `go run ./cmd/balance` for the full picture behind them.
+
+// balanceBiome mirrors the harness: roughly where a character of this level is
+// expected to be fighting.
+func balanceBiome(level int) string {
+	switch {
+	case level <= 2:
+		return "plains"
+	case level <= 4:
+		return "forest"
+	case level <= 6:
+		return "hills"
+	case level <= 8:
+		return "swamp"
+	case level <= 10:
+		return "dungeon"
+	default:
+		return "mountain"
+	}
+}
+
+func geared(t *gamedata.Tables, c *model.Character) {
+	tier := core.Clamp(1+(c.Level-1)/3, 1, 5)
+	ws, as := t.StockFor(tier)
+	if len(ws) > 0 {
+		c.Weapon = ws[len(ws)-1]
+	}
+	if len(as) > 0 {
+		c.Armor = as[len(as)-1]
+	}
+}
+
+// winRate simulates isolated on-curve fights at an encounter level.
+func winRate(g *core.RNG, tables *gamedata.Tables, class model.Class, level, encLevel, n int) float64 {
+	wins := 0
+	for i := 0; i < n; i++ {
+		c := rules.BuildCharacter(g, class, level)
+		geared(tables, c)
+		mons := tables.PickMonsters(g, balanceBiome(level), encLevel, 1)
+		if len(mons) == 0 {
+			continue
+		}
+		fresh := *c
+		if r := rules.SimulateFight(g, &fresh, []*model.MonsterDef{mons[0].Def},
+			encLevel, 60, tables.SpellsFor(c)); r.Won {
+			wins++
+		}
+	}
+	return float64(wins) / float64(n)
+}
+
+// TestOnLevelFightsAreWinnable: a random encounter where you are supposed to be
+// should almost always be survivable. Wandering is the risk, not walking.
+func TestOnLevelFightsAreWinnable(t *testing.T) {
+	tables := load(t)
+	g := core.NewRNG(11)
+	for _, level := range []int{1, 3, 5, 7, 9, 11, 13} {
+		for _, class := range model.AllClasses {
+			got := winRate(g, tables, class, level, level, 250)
+			if got < 0.85 {
+				t.Errorf("level %d %s wins only %.0f%% of on-level fights; "+
+					"the expected path should not be a coin flip", level, class, got*100)
+			}
+		}
+	}
+}
+
+// TestDangerRadiatesOutward: the world places harder locations further from the
+// capital, and that only means anything if over-level fights are actually worse.
+func TestDangerRadiatesOutward(t *testing.T) {
+	tables := load(t)
+	g := core.NewRNG(12)
+	for _, level := range []int{5, 9, 12} {
+		on := winRate(g, tables, model.ClassFighter, level, level, 250)
+		over := winRate(g, tables, model.ClassFighter, level, level+3, 250)
+		if over >= on {
+			t.Errorf("level %d fighter wins %.0f%% on-level and %.0f%% three levels up; "+
+				"straying is meant to cost something", level, on*100, over*100)
+		}
+	}
+}
+
+// TestEnduranceHoldsAcrossLevels: how many fights you get from one rest governs
+// how far you can wander, and it should not collapse as the game goes on. It
+// used to run twelve fights at level 1 and two by level 9.
+func TestEnduranceHoldsAcrossLevels(t *testing.T) {
+	tables := load(t)
+	g := core.NewRNG(13)
+	for _, level := range []int{1, 5, 9, 13} {
+		probe := rules.BuildCharacter(g, model.ClassFighter, level)
+		geared(tables, probe)
+		spells := tables.SpellsFor(probe)
+
+		total := 0
+		const runs = 60
+		for i := 0; i < runs; i++ {
+			sim := rules.BuildCharacter(g, model.ClassFighter, level)
+			geared(tables, sim)
+			survived := 0
+			for survived < 40 {
+				mons := tables.PickMonsters(g, balanceBiome(level), level, 1)
+				if len(mons) == 0 {
+					break
+				}
+				r := rules.SimulateFight(g, sim, []*model.MonsterDef{mons[0].Def}, level, 60, spells)
+				if !r.Won || sim.HP <= 0 {
+					break
+				}
+				survived++
+			}
+			total += survived
+		}
+		avg := float64(total) / runs
+		if avg < 2.5 {
+			t.Errorf("level %d fighter manages only %.1f fights per rest; "+
+				"the overworld becomes a walk back to the inn", level, avg)
+		}
+		if avg > 20 {
+			t.Errorf("level %d fighter manages %.1f fights per rest; "+
+				"resting has stopped mattering", level, avg)
+		}
+	}
+}

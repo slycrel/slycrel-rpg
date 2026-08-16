@@ -353,7 +353,7 @@ func (b *battleScene) runRound(g *Game, playerAction func(*Game)) {
 	b.menu.Visible = 0
 	fastest := 0
 	for _, i := range b.living() {
-		if s := b.mons[i].Def.Speed; s > fastest {
+		if s := b.mons[i].Speed; s > fastest {
 			fastest = s
 		}
 	}
@@ -388,21 +388,14 @@ func (b *battleScene) playerAttack(g *Game, idx int) {
 	m := b.mons[idx]
 	p := g.Player
 
-	// Miss chance from the speed/dexterity gap, floored and capped so neither
-	// side ever becomes untouchable.
-	missChance := core.ClampF(0.06+float64(m.Def.Speed-p.Dexterity-b.buffDex)*0.012, 0.03, 0.32)
-	if g.RNG.Chance(missChance) {
+	sw := rules.PlayerAttack(g.RNG, p, m, b.buffStr, b.buffDex)
+	if sw.Miss {
 		g.Sound.Play("fight/miss")
 		b.log.Add("%s", g.Write.Miss(g.RNG, p.Name, m.Name))
 		return
 	}
+	dmg, crit := sw.Damage, sw.Crit
 
-	crit := g.RNG.Chance(0.07 + float64(p.Dexterity)/400)
-	dmg := rules.PlayerDamage(g.RNG, p, m)
-	dmg += b.buffStr
-	if crit {
-		dmg = dmg*3/2 + 2
-	}
 	b.damageMonster(g, idx, dmg)
 	if crit {
 		g.Sound.Play("fight/crit")
@@ -505,7 +498,7 @@ func (b *battleScene) useItem(g *Game, idx int) {
 func (b *battleScene) attemptFlee(g *Game) {
 	fastest := 0
 	for _, i := range b.living() {
-		if s := b.mons[i].Def.Speed; s > fastest {
+		if s := b.mons[i].Speed; s > fastest {
 			fastest = s
 		}
 	}

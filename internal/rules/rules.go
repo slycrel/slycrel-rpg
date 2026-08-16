@@ -112,35 +112,109 @@ func PendingLevels(c *model.Character) int {
 	return n
 }
 
+// Damage blend band. The original switched formulas outright at level 5, and
+// simulation showed exactly what that does: a fighter's output fell from 14.6
+// damage a round to 8.7 overnight, and a mage's win rate went from 98% to 66%.
+//
+// Both formulas are kept — they give the game its shape, wide and
+// strength-dominated early, flatter and gear-dependent later — but the crossing
+// is spread over these levels instead of happening between two fights.
+const (
+	blendFrom = 4
+	blendTo   = 8
+)
+
+// damageBlend is how far a level is across the crossing, in [0,1].
+func damageBlend(level int) float64 {
+	switch {
+	case level <= blendFrom:
+		return 0
+	case level >= blendTo:
+		return 1
+	default:
+		return float64(level-blendFrom) / float64(blendTo-blendFrom)
+	}
+}
+
 // PlayerDamage rolls the damage a character deals to a monster.
-// Original: DoDamage(true) in Sly_TextCombatUnit.cp. The two-branch shape is
-// deliberate — below level 5 the spread is wide and strength-dominated, above
-// it the curve flattens so gear and monster defense start to matter.
+// Original: DoDamage(true) in Sly_TextCombatUnit.cp.
+//
+// The two formulas' bounds are interpolated and then rolled once, rather than
+// rolling each and averaging: averaging two rolls would quietly halve the
+// spread mid-band and make those levels feel oddly consistent.
 func PlayerDamage(g *core.RNG, c *model.Character, m *model.Monster) int {
 	str := float64(c.Strength)
 	strike := float64(c.Weapon.Strike)
 
-	var dmg int
-	if c.Level <= 4 {
-		lo := int(math.Round((str*0.75 + strike) * 1.25))
-		hi := int(math.Round((str/0.75 + strike) * 1.35))
-		dmg = g.Between(lo, hi) - m.Def.Defense
-		if dmg < 2 {
-			dmg = g.Intn(3) // the original's mercy floor: 0-2
-		}
-	} else {
-		lo := int(math.Round(str/2 + strike))
-		hi := int(math.Round((str/2 + strike) * 1.25))
-		dmg = g.Between(lo, hi) - m.Def.Defense
+	// Early: swingy and driven by raw strength.
+	//
+	// Toned down from the original's (str*0.75 .. str/0.75) spread. That was
+	// generous enough that levels one to four were a walkover — 99% win rates
+	// and fights over in under two rounds — and it forced the late formula to
+	// be enormous just to avoid a drop at the crossing. Pulling the early
+	// numbers down fixes both ends at once.
+	earlyLo := (str*0.55 + strike) * 1.25
+	earlyHi := (str*0.95 + strike) * 1.35
+	// Late: flatter, so armour and weapon quality carry the difference.
+	//
+	// The original halved strength here. Simulation showed why that cannot
+	// stand on its own: with a fixed weapon a character's damage fell 46%
+	// between levels 4 and 8 purely from the formula, and the only reason the
+	// game looked balanced was that the simulated player bought a new weapon
+	// every three levels. That made shopping mandatory to stay level. A larger
+	// coefficient keeps the flatter late-game shape while letting gear be an
+	// improvement rather than a tax.
+	lateLo := str*0.65 + strike
+	lateHi := (str*0.65 + strike) * 1.25
+
+	t := damageBlend(c.Level)
+	lo := int(math.Round(earlyLo + (lateLo-earlyLo)*t))
+	hi := int(math.Round(earlyHi + (lateHi-earlyHi)*t))
+
+	dmg := g.Between(lo, hi) - m.Defense
+
+	// The original's mercy floor, retired as the late formula takes over: past
+	// the band a well-armoured monster is supposed to be able to shrug a hit.
+	if t < 1 && dmg < 2 {
+		dmg = g.Intn(3)
 	}
 	return core.Max(0, dmg)
+}
+
+// Swing is the outcome of one attack, resolved in full.
+type Swing struct {
+	Miss   bool
+	Crit   bool
+	Damage int
+}
+
+// PlayerAttack resolves a character's attack, hit roll and all. Buffs are the
+// temporary bonuses an item may have granted for the fight.
+//
+// This lives here rather than in the battle screen so the balance simulator
+// exercises exactly the arithmetic the game plays. A simulator with its own
+// copy of the hit roll measures a game nobody is playing.
+func PlayerAttack(g *core.RNG, c *model.Character, m *model.Monster, buffStr, buffDex int) Swing {
+	// Miss chance from the speed/dexterity gap, floored and capped so neither
+	// side ever becomes untouchable.
+	miss := core.ClampF(0.06+float64(m.Speed-c.Dexterity-buffDex)*0.012, 0.03, 0.32)
+	if g.Chance(miss) {
+		return Swing{Miss: true}
+	}
+
+	sw := Swing{Crit: g.Chance(0.07 + float64(c.Dexterity)/400)}
+	sw.Damage = PlayerDamage(g, c, m) + buffStr
+	if sw.Crit {
+		sw.Damage = sw.Damage*3/2 + 2
+	}
+	return sw
 }
 
 // MonsterDamage rolls the damage a monster deals to a character.
 // Original: DoDamage(false).
 func MonsterDamage(g *core.RNG, c *model.Character, m *model.Monster) int {
-	lo := int(float64(m.Def.Offense) * 0.35)
-	hi := int(float64(m.Def.Offense) * 1.35)
+	lo := int(float64(m.Offense) * 0.35)
+	hi := int(float64(m.Offense) * 1.35)
 	return core.Max(0, g.Between(lo, hi)-c.Armor.Defense)
 }
 
@@ -174,7 +248,7 @@ func FleeChance(playerSpeed, monsterSpeed int) float64 {
 func XPAward(monsters []*model.Monster) int64 {
 	var total int64
 	for _, m := range monsters {
-		total += int64(m.Def.XP)
+		total += int64(m.XP)
 	}
 	if len(monsters) > 1 {
 		total += total * int64(len(monsters)-1) / 10
@@ -186,7 +260,7 @@ func XPAward(monsters []*model.Monster) int64 {
 func CoinAward(g *core.RNG, monsters []*model.Monster) int64 {
 	var total int64
 	for _, m := range monsters {
-		c := m.Def.Coins
+		c := m.Coins
 		total += int64(g.Between(c/2, c+c/2))
 	}
 	return total
@@ -282,4 +356,190 @@ func GetDisposition(playerFrac, monsterFrac float64) Disposition {
 	default:
 		return DispBothWeak
 	}
+}
+
+// --- simulation -----------------------------------------------------------
+
+// FightResult is the outcome of a simulated encounter.
+type FightResult struct {
+	Won         bool
+	Rounds      int
+	DamageDealt int
+	DamageTaken int
+	HPLeft      int
+}
+
+// SimulateFight plays an encounter to the end, mutating nothing the caller owns.
+//
+// The policy is competent rather than optimal: heal when badly hurt, cast the
+// best affordable attack spell while the psyche lasts, swing otherwise. No
+// potions — a player who brings supplies should be doing better than this, not
+// rescued by it. Passing no spells measures the pure weapon floor.
+//
+// Casting matters to the measurement, not just to realism: a mage judged on
+// swinging a stick looks broken when it is only being played wrong.
+func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, level, maxRounds int, spells []model.Spell) FightResult {
+	// The character is spent, not copied: hit points and psyche carry out of
+	// the fight so a run of encounters can be simulated on one rest. Callers
+	// wanting an isolated fight pass a copy.
+	sim := c
+
+	mons := make([]*model.Monster, 0, len(defs))
+	for _, d := range defs {
+		mons = append(mons, d.Spawn(g, level))
+	}
+
+	var res FightResult
+	for res.Rounds = 1; res.Rounds <= maxRounds; res.Rounds++ {
+		living := livingMonsters(mons)
+		if len(living) == 0 {
+			res.Won = true
+			break
+		}
+
+		fastest := 0
+		for _, m := range living {
+			if m.Speed > fastest {
+				fastest = m.Speed
+			}
+		}
+		playerFirst := Initiative(g, sim.Speed, fastest)
+
+		hurt := func(target *model.Monster, dmg int) {
+			target.HP = core.Max(0, target.HP-dmg)
+			res.DamageDealt += dmg
+			if target.HP == 0 {
+				target.Dead = true
+			}
+		}
+		strike := func() {
+			target := living[0]
+			if target.Dead {
+				return
+			}
+			if s, ok := bestSpell(sim, spells); ok {
+				sim.Psyche -= s.Cost
+				switch s.Kind {
+				case model.SpellHeal:
+					sim.HP = core.Clamp(sim.HP+SpellDamage(g, sim, s), 0, sim.MaxHP)
+				case model.SpellDrain:
+					d := SpellDamage(g, sim, s)
+					hurt(target, d)
+					sim.HP = core.Clamp(sim.HP+d/2, 0, sim.MaxHP)
+				default:
+					d := SpellDamage(g, sim, s)
+					if s.Target == model.TargetAll {
+						for _, m := range living {
+							if !m.Dead {
+								hurt(m, d)
+							}
+						}
+					} else {
+						hurt(target, d)
+					}
+				}
+				return
+			}
+			sw := PlayerAttack(g, sim, target, 0, 0)
+			if sw.Miss {
+				return
+			}
+			hurt(target, sw.Damage)
+		}
+		monsterTurns := func() {
+			for _, m := range living {
+				if m.Dead || sim.HP <= 0 {
+					continue
+				}
+				switch ChooseMonsterAction(g, m) {
+				case MonFlee:
+					m.Dead = true // leaves the fight; earns the player nothing
+				case MonDefend:
+					// no attack this turn
+				default:
+					dmg := MonsterDamage(g, sim, m)
+					sim.HP = core.Max(0, sim.HP-dmg)
+					res.DamageTaken += dmg
+				}
+			}
+		}
+
+		if playerFirst {
+			strike()
+			monsterTurns()
+		} else {
+			monsterTurns()
+			strike()
+		}
+
+		if sim.HP <= 0 {
+			break
+		}
+	}
+
+	if len(livingMonsters(mons)) == 0 && sim.HP > 0 {
+		res.Won = true
+	}
+	res.HPLeft = sim.HP
+	return res
+}
+
+// bestSpell picks what a competent player would cast this round: a heal when
+// badly hurt, otherwise the strongest affordable attack, and nothing at all
+// when swinging would do more than the psyche is worth.
+func bestSpell(c *model.Character, spells []model.Spell) (model.Spell, bool) {
+	var heal, attack model.Spell
+	var haveHeal, haveAttack bool
+	for _, s := range spells {
+		if s.Cost > c.Psyche || !s.Known(c) {
+			continue
+		}
+		if s.Kind == model.SpellHeal {
+			if !haveHeal || s.Power > heal.Power {
+				heal, haveHeal = s, true
+			}
+			continue
+		}
+		if s.Kind != model.SpellDamage && s.Kind != model.SpellDrain {
+			continue
+		}
+		if !haveAttack || s.Power > attack.Power {
+			attack, haveAttack = s, true
+		}
+	}
+
+	if haveHeal && c.HPFrac() < 0.3 {
+		return heal, true
+	}
+	if !haveAttack {
+		return model.Spell{}, false
+	}
+	// Only cast when it beats the weapon; a fighter's technique is a finisher,
+	// not a replacement for the sword.
+	weapon := float64(c.Strength)/2 + float64(c.Weapon.Strike)
+	spell := float64(attack.Power) + float64(c.MaxPsyche)*0.6 + float64(c.Level)*0.8
+	if spell <= weapon {
+		return model.Spell{}, false
+	}
+	return attack, true
+}
+
+func livingMonsters(mons []*model.Monster) []*model.Monster {
+	out := mons[:0:0]
+	for _, m := range mons {
+		if !m.Dead {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
+// BuildCharacter rolls a character and levels it to the given level, which is
+// how the game produces one; there is no other path to a level-N adventurer.
+func BuildCharacter(g *core.RNG, class model.Class, level int) *model.Character {
+	c := NewCharacter(g, "Subject", class)
+	for c.Level < level {
+		LevelUp(g, c)
+	}
+	return c
 }

@@ -128,3 +128,79 @@ func TestMonstersFleeOnlyWhenNearlyDead(t *testing.T) {
 		t.Error("a monster at 1%% health never once considered leaving")
 	}
 }
+
+// TestDamageHasNoCliff is the direct regression for the bug the balance
+// simulator found: the original switched damage formulas outright at level 5,
+// and a fighter's output fell by a third between two fights. The formulas are
+// still both there, but the crossing is now spread across a band.
+func TestDamageHasNoCliff(t *testing.T) {
+	g := core.NewRNG(4)
+	def := &model.MonsterDef{Name: "Dummy", HP: 1000, Offense: 1, Defense: 0, Speed: 1, Level: 1}
+	m := def.Spawn(g, 1)
+
+	// Real characters, levelled the way the game levels them, carrying the
+	// same weapon throughout. Holding the weapon fixed is the point: damage
+	// must not fall as you level just because you have not been shopping.
+	avg := make([]float64, 15)
+	for level := 1; level <= 14; level++ {
+		var total, n int
+		for c := 0; c < 60; c++ {
+			ch := rules.BuildCharacter(g, model.ClassFighter, level)
+			ch.Weapon = model.Weapon{Name: "Test", Strike: 6}
+			for i := 0; i < 200; i++ {
+				total += rules.PlayerDamage(g, ch, m)
+				n++
+			}
+		}
+		avg[level] = float64(total) / float64(n)
+	}
+
+	for level := 2; level <= 14; level++ {
+		prev, cur := avg[level-1], avg[level]
+		if cur < prev*0.9 {
+			t.Errorf("damage falls %.1f%% from level %d (%.1f) to %d (%.1f); "+
+				"that is a cliff, not a curve",
+				(1-cur/prev)*100, level-1, prev, level, cur)
+		}
+	}
+	// And it should still be going up overall, not merely not falling.
+	if avg[14] <= avg[4] {
+		t.Errorf("damage at level 14 (%.1f) is no better than at level 4 (%.1f)", avg[14], avg[4])
+	}
+}
+
+// TestSpawnScalesEveryCombatStat guards the other half of that fix: only hit
+// points used to scale with the encounter, so a low-level monster met deep in
+// the world was a punching bag that still hit like a low-level monster.
+func TestSpawnScalesEveryCombatStat(t *testing.T) {
+	g := core.NewRNG(8)
+	def := &model.MonsterDef{
+		Name: "Scaler", Level: 2, HP: 40, Offense: 10, Defense: 6, Speed: 8, XP: 30, Coins: 12,
+	}
+	base := def.Spawn(g, 2)
+	deep := def.Spawn(g, 12)
+
+	for _, c := range []struct {
+		name      string
+		low, high int
+	}{
+		{"max hp", base.MaxHP, deep.MaxHP},
+		{"offense", base.Offense, deep.Offense},
+		{"defense", base.Defense, deep.Defense},
+		{"xp", base.XP, deep.XP},
+		{"coins", base.Coins, deep.Coins},
+	} {
+		if c.high <= c.low {
+			t.Errorf("%s does not scale with encounter level: %d at level 2, %d at level 12",
+				c.name, c.low, c.high)
+		}
+	}
+	// Health must outpace offense, or deep encounters become lethal rather
+	// than merely longer.
+	hpGrowth := float64(deep.MaxHP) / float64(base.MaxHP)
+	atkGrowth := float64(deep.Offense) / float64(base.Offense)
+	if atkGrowth >= hpGrowth {
+		t.Errorf("offense grows %.2fx against health's %.2fx; scaled monsters will one-shot",
+			atkGrowth, hpGrowth)
+	}
+}

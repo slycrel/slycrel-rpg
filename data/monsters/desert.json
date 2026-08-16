@@ -3,68 +3,232 @@
     "id": "desert_lizardman",
     "name": "Lizardman, Sun-Addled",
     "kind": "humanoid",
-    "level": 4, "hp": 32, "offense": 12, "defense": 6, "speed": 10, "xp": 48, "coins": 18,
-    "attackWith": ["a glass-edged spear", "a tail sweep", "a bite"],
-    "attackVerb": ["skewers", "sweeps", "snaps at"],
+    "level": 4,
+    "hp": 35,
+    "offense": 12,
+    "defense": 6,
+    "speed": 10,
+    "xp": 48,
+    "coins": 18,
+    "attackWith": [
+      "a glass-edged spear",
+      "a tail sweep",
+      "a bite"
+    ],
+    "attackVerb": [
+      "skewers",
+      "sweeps",
+      "snaps at"
+    ],
     "defendWith": "overlapping scutes",
-    "taunt": ["{T} says something in a language of clicks. The tone is not friendly."],
-    "death": ["{T} goes rigid, then still. The sand starts working on it immediately."],
+    "taunt": [
+      "{T} says something in a language of clicks. The tone is not friendly."
+    ],
+    "death": [
+      "{T} goes rigid, then still. The sand starts working on it immediately."
+    ],
     "sprite": "mob/lizardman_01",
-    "loot": [{ "item": "Scaled Hide", "chance": 65, "min": 1, "max": 2 }]
+    "loot": [
+      {
+        "item": "Scaled Hide",
+        "chance": 65,
+        "min": 1,
+        "max": 2
+      }
+    ]
   },
   {
     "id": "desert_scarab",
     "name": "Scarab, Tomb-Fed",
     "kind": "beast",
-    "level": 5, "hp": 30, "offense": 14, "defense": 9, "speed": 11, "xp": 62, "coins": 20,
-    "attackWith": ["mandibles that shear", "a carapace used as a battering ram"],
-    "attackVerb": ["shears", "rams", "burrows into"],
+    "level": 5,
+    "hp": 34,
+    "offense": 14,
+    "defense": 9,
+    "speed": 11,
+    "xp": 62,
+    "coins": 20,
+    "attackWith": [
+      "mandibles that shear",
+      "a carapace used as a battering ram"
+    ],
+    "attackVerb": [
+      "shears",
+      "rams",
+      "burrows into"
+    ],
     "defendWith": "a shell like a shield boss",
-    "taunt": ["{T} has eaten better people than you. Specifically, kings."],
-    "death": ["{T} flips onto its back and waves goodbye with everything at once."],
+    "taunt": [
+      "{T} has eaten better people than you. Specifically, kings."
+    ],
+    "death": [
+      "{T} flips onto its back and waves goodbye with everything at once."
+    ],
     "sprite": "mob/bug2",
-    "loot": [{ "item": "Chitin Scrap", "chance": 70, "min": 2, "max": 3 }]
+    "loot": [
+      {
+        "item": "Chitin Scrap",
+        "chance": 70,
+        "min": 2,
+        "max": 3
+      }
+    ]
   },
   {
     "id": "desert_mummy",
     "name": "Mummy, Poorly Wrapped",
     "kind": "undead",
-    "level": 7, "hp": 54, "offense": 17, "defense": 10, "speed": 5, "xp": 100, "coins": 55,
-    "attackWith": ["a hand with too few fingers", "a trailing bandage", "a curse, muttered"],
-    "attackVerb": ["throttles", "curses", "shambles into"],
+    "level": 7,
+    "hp": 50,
+    "offense": 17,
+    "defense": 10,
+    "speed": 5,
+    "xp": 100,
+    "coins": 55,
+    "attackWith": [
+      "a hand with too few fingers",
+      "a trailing bandage",
+      "a curse, muttered"
+    ],
+    "attackVerb": [
+      "throttles",
+      "curses",
+      "shambles into"
+    ],
     "defendWith": "several centuries of linen",
-    "taunt": ["{T} is unravelling as it walks. It is very self-conscious about this."],
-    "death": ["{T} comes apart into a pile of laundry with a grudge."],
+    "taunt": [
+      "{T} is unravelling as it walks. It is very self-conscious about this."
+    ],
+    "death": [
+      "{T} comes apart into a pile of laundry with a grudge."
+    ],
     "sprite": "mob/mummy_01",
     "loot": [
-      { "item": "Grave Wrappings", "chance": 75, "min": 1, "max": 3 },
-      { "item": "Hoard Coin", "chance": 30, "min": 1, "max": 1 }
+      {
+        "item": "Grave Wrappings",
+        "chance": 75,
+        "min": 1,
+        "max": 3
+      },
+      {
+        "item": "Hoard Coin",
+        "chance": 30,
+        "min": 1,
+        "max": 1
+      }
     ]
   },
   {
     "id": "desert_jinn",
     "name": "Jinn, Contractually Hostile",
     "kind": "demon",
-    "level": 9, "hp": 70, "offense": 22, "defense": 10, "speed": 14, "xp": 168, "coins": 110,
-    "attackWith": ["a wish, technically granted", "a blade of hot air", "the fine print"],
-    "attackVerb": ["grants", "scours", "reinterprets"],
+    "level": 9,
+    "hp": 66,
+    "offense": 22,
+    "defense": 10,
+    "speed": 14,
+    "xp": 168,
+    "coins": 110,
+    "attackWith": [
+      "a wish, technically granted",
+      "a blade of hot air",
+      "the fine print"
+    ],
+    "attackVerb": [
+      "grants",
+      "scours",
+      "reinterprets"
+    ],
     "defendWith": "not being entirely present",
-    "taunt": ["\"You did not read clause nine. Nobody reads clause nine.\""],
-    "death": ["{T} disperses, still citing precedent."],
+    "taunt": [
+      "\"You did not read clause nine. Nobody reads clause nine.\""
+    ],
+    "death": [
+      "{T} disperses, still citing precedent."
+    ],
     "sprite": "mob/jin",
-    "loot": [{ "item": "Brass Fragment", "chance": 65, "min": 1, "max": 2 }]
+    "loot": [
+      {
+        "item": "Brass Fragment",
+        "chance": 65,
+        "min": 1,
+        "max": 2
+      }
+    ]
   },
   {
     "id": "desert_turtle",
     "name": "Ancient Tortoise, Furious",
     "kind": "beast",
-    "level": 8, "hp": 90, "offense": 16, "defense": 20, "speed": 3, "xp": 140, "coins": 40,
-    "attackWith": ["a beak that takes fingers", "the slow inevitability of its whole body"],
-    "attackVerb": ["snaps at", "leans on", "eventually reaches"],
+    "level": 8,
+    "hp": 67,
+    "offense": 16,
+    "defense": 20,
+    "speed": 3,
+    "xp": 140,
+    "coins": 40,
+    "attackWith": [
+      "a beak that takes fingers",
+      "the slow inevitability of its whole body"
+    ],
+    "attackVerb": [
+      "snaps at",
+      "leans on",
+      "eventually reaches"
+    ],
     "defendWith": "the best shell in the province",
-    "taunt": ["{T} has been angry since before your kingdom had a name. It has not hurried."],
-    "death": ["{T} withdraws for the last time."],
+    "taunt": [
+      "{T} has been angry since before your kingdom had a name. It has not hurried."
+    ],
+    "death": [
+      "{T} withdraws for the last time."
+    ],
     "sprite": "mob/turtle_01",
-    "loot": [{ "item": "Ancient Shell", "chance": 70, "min": 1, "max": 2 }]
+    "loot": [
+      {
+        "item": "Ancient Shell",
+        "chance": 70,
+        "min": 1,
+        "max": 2
+      }
+    ]
+  },
+  {
+    "id": "desert_phoenix",
+    "name": "Phoenix, Mid-Molt",
+    "kind": "demon",
+    "level": 12,
+    "hp": 91,
+    "offense": 29,
+    "defense": 12,
+    "speed": 16,
+    "xp": 320,
+    "coins": 175,
+    "attackWith": [
+      "a wing that is mostly fire",
+      "a beak",
+      "an updraft"
+    ],
+    "attackVerb": [
+      "scorches",
+      "buffets",
+      "rekindles on"
+    ],
+    "defendWith": "coming back from things",
+    "taunt": [
+      "{T} is halfway through dying of old age and furious about the timing."
+    ],
+    "death": [
+      "{T} burns down to an ember, which glares."
+    ],
+    "sprite": "mob/phoenix_01",
+    "loot": [
+      {
+        "item": "Ember of Sleep",
+        "chance": 75,
+        "min": 1,
+        "max": 3
+      }
+    ]
   }
 ]

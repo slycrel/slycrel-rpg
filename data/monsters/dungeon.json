@@ -3,107 +3,389 @@
     "id": "dun_skeleton",
     "name": "Skeleton, Union Member",
     "kind": "undead",
-    "level": 3, "hp": 22, "offense": 10, "defense": 6, "speed": 9, "xp": 34, "coins": 10,
-    "attackWith": ["a chipped shortsword", "a femur, borrowed", "a headbutt with no head padding"],
-    "attackVerb": ["hacks at", "clatters into", "files a grievance against"],
+    "level": 3,
+    "hp": 27,
+    "offense": 10,
+    "defense": 6,
+    "speed": 9,
+    "xp": 34,
+    "coins": 10,
+    "attackWith": [
+      "a chipped shortsword",
+      "a femur, borrowed",
+      "a headbutt with no head padding"
+    ],
+    "attackVerb": [
+      "hacks at",
+      "clatters into",
+      "files a grievance against"
+    ],
     "defendWith": "having very little left to damage",
-    "taunt": ["\"Forty years guarding this corridor. No pension. No windows.\""],
-    "death": ["{T} falls into its component parts, which continue to complain."],
+    "taunt": [
+      "\"Forty years guarding this corridor. No pension. No windows.\""
+    ],
+    "death": [
+      "{T} falls into its component parts, which continue to complain."
+    ],
     "sprite": "mob/skeleton_01",
-    "loot": [{ "item": "Femur, Unclaimed", "chance": 60, "min": 1, "max": 2 }]
+    "loot": [
+      {
+        "item": "Femur, Unclaimed",
+        "chance": 60,
+        "min": 1,
+        "max": 2
+      }
+    ]
   },
   {
     "id": "dun_ghost",
     "name": "Ghost With Unfinished Business",
     "kind": "undead",
-    "level": 5, "hp": 30, "offense": 15, "defense": 4, "speed": 13, "xp": 66, "coins": 22,
-    "attackWith": ["a cold hand through the ribs", "a grievance, aired at length"],
-    "attackVerb": ["chills", "passes through", "unburdens itself onto"],
+    "level": 5,
+    "hp": 34,
+    "offense": 15,
+    "defense": 4,
+    "speed": 13,
+    "xp": 66,
+    "coins": 22,
+    "attackWith": [
+      "a cold hand through the ribs",
+      "a grievance, aired at length"
+    ],
+    "attackVerb": [
+      "chills",
+      "passes through",
+      "unburdens itself onto"
+    ],
     "defendWith": "not being entirely solid",
-    "taunt": ["\"Do you have a moment? It's about my will.\""],
-    "death": ["{T} finishes its sentence and stops existing, in that order."],
+    "taunt": [
+      "\"Do you have a moment? It's about my will.\""
+    ],
+    "death": [
+      "{T} finishes its sentence and stops existing, in that order."
+    ],
     "sprite": "mob/ghost_01",
-    "loot": [{ "item": "Cold Residue", "chance": 55, "min": 1, "max": 2 }]
+    "loot": [
+      {
+        "item": "Cold Residue",
+        "chance": 55,
+        "min": 1,
+        "max": 2
+      }
+    ]
   },
   {
     "id": "dun_armor",
     "name": "Living Armour, Nobody Inside",
     "kind": "construct",
-    "level": 7, "hp": 60, "offense": 18, "defense": 14, "speed": 7, "xp": 108, "coins": 45,
-    "attackWith": ["a longsword swung by nothing", "a gauntlet", "a shield edge"],
-    "attackVerb": ["cleaves", "shield-bashes", "runs through"],
+    "level": 7,
+    "hp": 56,
+    "offense": 18,
+    "defense": 14,
+    "speed": 7,
+    "xp": 108,
+    "coins": 45,
+    "attackWith": [
+      "a longsword swung by nothing",
+      "a gauntlet",
+      "a shield edge"
+    ],
+    "attackVerb": [
+      "cleaves",
+      "shield-bashes",
+      "runs through"
+    ],
     "defendWith": "being nothing but armour",
-    "taunt": ["{T} salutes. The visor is empty. The salute is perfect."],
-    "death": ["{T} collapses into a heap of very good steel."],
+    "taunt": [
+      "{T} salutes. The visor is empty. The salute is perfect."
+    ],
+    "death": [
+      "{T} collapses into a heap of very good steel."
+    ],
     "sprite": "mob/living_armor_01",
-    "loot": [{ "item": "Salvaged Steel", "chance": 55, "min": 1, "max": 1 }]
+    "loot": [
+      {
+        "item": "Salvaged Steel",
+        "chance": 55,
+        "min": 1,
+        "max": 1
+      }
+    ]
   },
   {
     "id": "dun_doll",
     "name": "Doll, Recently Repaired",
     "kind": "construct",
-    "level": 6, "hp": 34, "offense": 19, "defense": 5, "speed": 14, "xp": 92, "coins": 33,
-    "attackWith": ["a porcelain hand", "a sewing needle the length of your arm", "a smile"],
-    "attackVerb": ["mends", "punctures", "hugs"],
+    "level": 6,
+    "hp": 37,
+    "offense": 19,
+    "defense": 5,
+    "speed": 14,
+    "xp": 92,
+    "coins": 33,
+    "attackWith": [
+      "a porcelain hand",
+      "a sewing needle the length of your arm",
+      "a smile"
+    ],
+    "attackVerb": [
+      "mends",
+      "punctures",
+      "hugs"
+    ],
     "defendWith": "being much harder than porcelain ought to be",
-    "taunt": ["{T} says it missed you. You have never owned a doll."],
-    "death": ["{T} cracks down the middle. Both halves keep smiling."],
+    "taunt": [
+      "{T} says it missed you. You have never owned a doll."
+    ],
+    "death": [
+      "{T} cracks down the middle. Both halves keep smiling."
+    ],
     "sprite": "mob/doll_01",
-    "loot": [{ "item": "Porcelain Shard", "chance": 65, "min": 1, "max": 2 }]
+    "loot": [
+      {
+        "item": "Porcelain Shard",
+        "chance": 65,
+        "min": 1,
+        "max": 2
+      }
+    ]
   },
   {
     "id": "dun_eye",
     "name": "The Eye, Judging",
     "kind": "aberrant",
-    "level": 9, "hp": 58, "offense": 25, "defense": 9, "speed": 11, "xp": 176, "coins": 80,
-    "attackWith": ["a beam of concentrated disappointment", "a stare"],
-    "attackVerb": ["scrutinises", "withers", "sees right through"],
+    "level": 9,
+    "hp": 54,
+    "offense": 25,
+    "defense": 9,
+    "speed": 11,
+    "xp": 176,
+    "coins": 80,
+    "attackWith": [
+      "a beam of concentrated disappointment",
+      "a stare"
+    ],
+    "attackVerb": [
+      "scrutinises",
+      "withers",
+      "sees right through"
+    ],
     "defendWith": "an eyelid the size of a door",
-    "taunt": ["{T} looks at your build. {T} looks at your gear. {T} blinks slowly."],
-    "death": ["{T} closes. The relief is enormous."],
+    "taunt": [
+      "{T} looks at your build. {T} looks at your gear. {T} blinks slowly."
+    ],
+    "death": [
+      "{T} closes. The relief is enormous."
+    ],
     "sprite": "mob/eye_01",
-    "loot": [{ "item": "Enormous Eye", "chance": 70, "min": 1, "max": 1 }]
+    "loot": [
+      {
+        "item": "Enormous Eye",
+        "chance": 70,
+        "min": 1,
+        "max": 1
+      }
+    ]
   },
   {
     "id": "dun_banshee",
     "name": "Banshee, Off Key",
     "kind": "undead",
-    "level": 10, "hp": 66, "offense": 27, "defense": 8, "speed": 15, "xp": 210, "coins": 95,
-    "attackWith": ["a note held far too long", "a wail that finds your teeth"],
-    "attackVerb": ["shrieks at", "deafens", "serenades"],
+    "level": 10,
+    "hp": 61,
+    "offense": 27,
+    "defense": 8,
+    "speed": 15,
+    "xp": 210,
+    "coins": 95,
+    "attackWith": [
+      "a note held far too long",
+      "a wail that finds your teeth"
+    ],
+    "attackVerb": [
+      "shrieks at",
+      "deafens",
+      "serenades"
+    ],
     "defendWith": "a form that keeps blurring",
-    "taunt": ["{T} takes a breath. There is no good outcome to that."],
-    "death": ["{T} cuts off mid-note. The silence is the best part of your week."],
+    "taunt": [
+      "{T} takes a breath. There is no good outcome to that."
+    ],
+    "death": [
+      "{T} cuts off mid-note. The silence is the best part of your week."
+    ],
     "sprite": "mob/banshee",
-    "loot": [{ "item": "Cold Residue", "chance": 70, "min": 1, "max": 3 }]
+    "loot": [
+      {
+        "item": "Cold Residue",
+        "chance": 70,
+        "min": 1,
+        "max": 3
+      }
+    ]
   },
   {
     "id": "dun_darkknight",
     "name": "Dark Knight, Method Acting",
     "kind": "humanoid",
-    "level": 12, "hp": 100, "offense": 31, "defense": 17, "speed": 10, "xp": 320, "coins": 200,
-    "attackWith": ["a greatsword with a name", "a gauntlet", "a monologue"],
-    "attackVerb": ["cleaves", "bears down on", "explains at"],
+    "level": 12,
+    "hp": 89,
+    "offense": 31,
+    "defense": 17,
+    "speed": 10,
+    "xp": 320,
+    "coins": 200,
+    "attackWith": [
+      "a greatsword with a name",
+      "a gauntlet",
+      "a monologue"
+    ],
+    "attackVerb": [
+      "cleaves",
+      "bears down on",
+      "explains at"
+    ],
     "defendWith": "plate that has never been dented from the front",
-    "taunt": ["\"I too was once a hero.\" {T} has said this eleven times today."],
-    "death": ["{T} kneels, removes the helm, and it is nobody at all."],
+    "taunt": [
+      "\"I too was once a hero.\" {T} has said this eleven times today."
+    ],
+    "death": [
+      "{T} kneels, removes the helm, and it is nobody at all."
+    ],
     "sprite": "mob/dark_knight_01",
     "loot": [
-      { "item": "Salvaged Steel", "chance": 60, "min": 1, "max": 1 },
-      { "item": "Hoard Coin", "chance": 50, "min": 1, "max": 2 }
+      {
+        "item": "Salvaged Steel",
+        "chance": 60,
+        "min": 1,
+        "max": 1
+      },
+      {
+        "item": "Hoard Coin",
+        "chance": 50,
+        "min": 1,
+        "max": 2
+      }
     ]
   },
   {
     "id": "dun_tentacle",
     "name": "Tentacle, Attached To Something",
     "kind": "aberrant",
-    "level": 8, "hp": 70, "offense": 21, "defense": 12, "speed": 8, "xp": 150, "coins": 50,
-    "attackWith": ["a coil", "a sucker that leaves rings", "a second tentacle you had not counted"],
-    "attackVerb": ["seizes", "constricts", "explores"],
+    "level": 8,
+    "hp": 52,
+    "offense": 21,
+    "defense": 12,
+    "speed": 8,
+    "xp": 150,
+    "coins": 50,
+    "attackWith": [
+      "a coil",
+      "a sucker that leaves rings",
+      "a second tentacle you had not counted"
+    ],
+    "attackVerb": [
+      "seizes",
+      "constricts",
+      "explores"
+    ],
     "defendWith": "the rest of it being somewhere you cannot reach",
-    "taunt": ["{T} emerges from a hole too small for it. It keeps emerging."],
-    "death": ["{T} withdraws. It is not dead. It is simply finished with you."],
+    "taunt": [
+      "{T} emerges from a hole too small for it. It keeps emerging."
+    ],
+    "death": [
+      "{T} withdraws. It is not dead. It is simply finished with you."
+    ],
     "sprite": "mob/tentacle_01",
-    "loot": [{ "item": "Wrong Meat", "chance": 65, "min": 1, "max": 3 }]
+    "loot": [
+      {
+        "item": "Wrong Meat",
+        "chance": 65,
+        "min": 1,
+        "max": 3
+      }
+    ]
+  },
+  {
+    "id": "dun_vampire",
+    "name": "Ancient Vampire, Landlord",
+    "kind": "undead",
+    "level": 13,
+    "hp": 100,
+    "offense": 33,
+    "defense": 15,
+    "speed": 14,
+    "xp": 405,
+    "coins": 280,
+    "attackWith": [
+      "a grip like a closing contract",
+      "teeth",
+      "four centuries of grievance"
+    ],
+    "attackVerb": [
+      "drains",
+      "evicts",
+      "charges"
+    ],
+    "defendWith": "not being entirely subject to time",
+    "taunt": [
+      "\"You are, I'm afraid, three hundred years in arrears.\""
+    ],
+    "death": [
+      "{T} crumbles, muttering about the paperwork."
+    ],
+    "sprite": "mob/ancient_vampire",
+    "loot": [
+      {
+        "item": "Hoard Coin",
+        "chance": 75,
+        "min": 2,
+        "max": 4
+      },
+      {
+        "item": "Cold Residue",
+        "chance": 60,
+        "min": 1,
+        "max": 3
+      }
+    ]
+  },
+  {
+    "id": "dun_armor_two",
+    "name": "Living Armour, Two People Inside",
+    "kind": "construct",
+    "level": 11,
+    "hp": 83,
+    "offense": 26,
+    "defense": 17,
+    "speed": 6,
+    "xp": 242,
+    "coins": 100,
+    "attackWith": [
+      "two swords at once",
+      "a shield used as a door",
+      "an argument"
+    ],
+    "attackVerb": [
+      "cleaves",
+      "bulldozes",
+      "disagrees with"
+    ],
+    "defendWith": "twice the plate it should need",
+    "taunt": [
+      "{T} moves like a thing operated by committee, and lands like one anyway."
+    ],
+    "death": [
+      "{T} falls apart. Nobody gets out, because nobody was in there."
+    ],
+    "sprite": "mob/living_armor_03",
+    "loot": [
+      {
+        "item": "Salvaged Steel",
+        "chance": 70,
+        "min": 2,
+        "max": 3
+      }
+    ]
   }
 ]
