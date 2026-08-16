@@ -222,9 +222,33 @@ than by tests, became something a test can reach.
 
 ### Phase 4 — polish
 
-8. Curated UI art from the 4,488-file GUI Pro kit, replacing the procedural panels.
-9. Title screen art, transitions, particles from the 115-file VFX pack.
-10. Balance simulation: run 10,000 headless fights per level band against the
+8. **A UX pass, held until the features stop moving.** *(Jeremy's call, and the
+   right one: interface work done against a moving target gets redone.)* Things
+   are being noticed as they turn up and parked here rather than fixed one at a
+   time, because half of them are the same missing capability wearing different
+   hats and a single pass will be cheaper than eight patches.
+
+   Noticed so far, from building the backstories:
+
+   - `Ask` has no disabled option. An ending the player cannot afford is
+     offered, selected, and only then refused with a line of text. The same gap
+     is why a menu section header has to be a disabled row with dashes round it
+     (`- the company -` in the journal).
+   - A price is quoted with the purse off screen. The ending menu says
+     "Buy out the terms (418)" and nothing on that screen says what you have.
+   - A companion's sheet does not mention their own backstory. There was no
+     room left on the 208-pixel panel, so the journal is the only place it
+     appears — which is the wrong place to look for "who is this person".
+   - The status panel is at its height limit generally. Four gear rows under six
+     stat rows already forced it from 200 to 208, and the next thing that wants
+     a row has nowhere to go.
+
+   Jeremy has his own list from playing. Add to this as things turn up; do not
+   fix them in ones.
+
+9. Curated UI art from the 4,488-file GUI Pro kit, replacing the procedural panels.
+10. Title screen art, transitions, particles from the 115-file VFX pack.
+11. Balance simulation: run 10,000 headless fights per level band against the
    pure `rules` package and tune the curve.
 
 ## Open questions

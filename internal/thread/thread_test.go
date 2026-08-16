@@ -387,6 +387,41 @@ func TestBeatsFireInOrderAndOnlyOnce(t *testing.T) {
 
 // A counted beat has to accept a single event worth several, or a caller that
 // batches becomes a caller that silently loses progress.
+// The journal shows a counter for what the player is deliberately doing and
+// keeps quiet about steps. "0 / 70" beside a story makes the beat that exists
+// only to let some road go by look like the demanding one.
+func TestTheJournalCountsFightsAndKillsButNotSteps(t *testing.T) {
+	b := &thread.Book{Threads: []thread.Skeleton{{
+		ID: "test", Title: "A Test",
+		Beats: []thread.Beat{
+			{Trigger: thread.Travel, Need: 70, Note: "walk with them"},
+			{Trigger: thread.Kills, Need: 3, Note: "put three down"},
+			{Trigger: thread.Reach, Note: "arrive"},
+		},
+		Endings: []thread.Ending{{Label: "yes"}, {Label: "no", Shame: 1}},
+	}}}
+	th := running("Bosk")
+	th.Have = 2
+
+	for _, c := range []struct {
+		at   int
+		want string
+	}{
+		{0, ""},      // travel: the note carries it
+		{1, "2 / 3"}, // kills: the player is doing this on purpose
+		{2, ""},      // reach: no halfway
+	} {
+		th.At = c.at
+		if got := th.Progress(b); got != c.want {
+			t.Errorf("beat %d shows progress %q, want %q", c.at, got, c.want)
+		}
+		// Whatever the counter does, the note always says what to do next.
+		if th.Note(b) == "" {
+			t.Errorf("beat %d has no journal note", c.at)
+		}
+	}
+}
+
 func TestCountedBeatsTakeTheirEventsInBulk(t *testing.T) {
 	b, l := book(), &thread.Log{}
 	l.Add(running("Bosk"))

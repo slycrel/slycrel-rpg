@@ -52,8 +52,15 @@ const (
 	Town Trigger = "town"
 )
 
-// Counted reports whether a trigger accumulates rather than simply happening.
-func (t Trigger) Counted() bool { return t == Travel || t == Fights || t == Kills }
+// Shown reports whether a trigger's counter is worth putting in the journal.
+//
+// Fights and kills are things the player does on purpose and can feel ticking
+// over. Steps are not: nobody is counting them, so "0 / 70" beside a story
+// reads as a distance to grind out rather than as a stretch of road, and it
+// makes the quiet beat — the one that is only there so the thread does not open
+// the moment you have paid — look like the demanding one. The journal note
+// carries it instead: "walk with them and let it come up".
+func (t Trigger) Shown() bool { return t == Fights || t == Kills }
 
 // Beat is one step of a thread: what has to happen, and what gets said when it
 // does.
@@ -485,14 +492,15 @@ func (t *Thread) Note(b *Book) string {
 	return t.Fill(bt.Note)
 }
 
-// Progress renders the counter for the journal, empty for the beats that are
-// not counted — "arrive at the ruin" has no halfway.
+// Progress renders the counter for the journal, empty for the beats that have
+// no meaningful halfway — "arrive at the ruin" has none, and a step count is
+// one the player is not keeping. See Trigger.Shown.
 func (t *Thread) Progress(b *Book) string {
 	if t.State != Open {
 		return ""
 	}
 	bt, ok := t.beat(b)
-	if !ok || !bt.Trigger.Counted() {
+	if !ok || !bt.Trigger.Shown() {
 		return ""
 	}
 	return fmt.Sprintf("%d / %d", core.Min(t.Have, core.Max(1, bt.Need)), core.Max(1, bt.Need))
