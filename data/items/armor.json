@@ -1,0 +1,12 @@
+[
+  { "name": "Regrettable Rags", "defense": 0, "cost": 0, "quality": 0, "verb": "flaps", "tier": 0 },
+  { "name": "Padded Jerkin", "defense": 2, "cost": 14, "quality": 40, "verb": "absorbs", "tier": 1 },
+  { "name": "Boiled Leather", "defense": 3, "cost": 30, "quality": 55, "verb": "deflects", "tier": 1 },
+  { "name": "Studded Leather", "defense": 4, "cost": 52, "quality": 62, "verb": "turns aside", "tier": 2 },
+  { "name": "Ringmail, Secondhand", "defense": 6, "cost": 90, "quality": 68, "verb": "catches", "tier": 2 },
+  { "name": "Chain Hauberk", "defense": 8, "cost": 150, "quality": 76, "verb": "shrugs off", "tier": 3 },
+  { "name": "Scale of the Overconfident", "defense": 10, "cost": 230, "quality": 80, "verb": "scatters", "tier": 3 },
+  { "name": "Half-Plate, Dented Fondly", "defense": 13, "cost": 360, "quality": 86, "verb": "ignores", "tier": 4 },
+  { "name": "Full Plate 'Do Not Perceive Me'", "defense": 16, "cost": 560, "quality": 90, "verb": "denies", "tier": 4 },
+  { "name": "Dragonscale, Ethically Sourced", "defense": 20, "cost": 900, "quality": 95, "verb": "laughs off", "tier": 5 }
+]

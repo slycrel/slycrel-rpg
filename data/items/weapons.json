@@ -1,0 +1,16 @@
+[
+  { "name": "Bare Hands", "strike": 1, "range": 0, "cost": 0, "quality": 0, "verb": "slap", "tier": 0 },
+  { "name": "Table Leg", "strike": 2, "range": 0, "cost": 4, "quality": 20, "verb": "clout", "tier": 1 },
+  { "name": "Farmer's Knife", "strike": 3, "range": 0, "cost": 11, "quality": 45, "verb": "stick", "tier": 1 },
+  { "name": "Notched Blade", "strike": 4, "range": 0, "cost": 24, "quality": 55, "verb": "hack at", "tier": 1 },
+  { "name": "Mace of Modest Ambition", "strike": 5, "range": 0, "cost": 36, "quality": 65, "verb": "clobber", "tier": 1 },
+  { "name": "Actual Sword", "strike": 6, "range": 0, "cost": 55, "quality": 75, "verb": "slash", "tier": 2 },
+  { "name": "Hand Axe, Sincere", "strike": 7, "range": 0, "cost": 74, "quality": 72, "verb": "chop", "tier": 2 },
+  { "name": "Spear, Regrettably Long", "strike": 7, "range": 3, "cost": 82, "quality": 68, "verb": "skewer", "tier": 2 },
+  { "name": "Warhammer 'Consequences'", "strike": 9, "range": 0, "cost": 130, "quality": 80, "verb": "flatten", "tier": 3 },
+  { "name": "Longsword of Adequate Repute", "strike": 10, "range": 0, "cost": 165, "quality": 85, "verb": "run through", "tier": 3 },
+  { "name": "Glaive, Overcompensating", "strike": 12, "range": 1, "cost": 240, "quality": 82, "verb": "cleave", "tier": 3 },
+  { "name": "Flamberge 'The Apology'", "strike": 14, "range": 0, "cost": 340, "quality": 90, "verb": "unmake", "tier": 4 },
+  { "name": "Runed Maul of the Last Word", "strike": 17, "range": 0, "cost": 520, "quality": 92, "verb": "conclude", "tier": 4 },
+  { "name": "Blade of Escalating Poor Decisions", "strike": 21, "range": 0, "cost": 800, "quality": 95, "verb": "resolve", "tier": 5 }
+]

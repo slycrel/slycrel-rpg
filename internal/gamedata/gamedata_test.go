@@ -1,0 +1,183 @@
+package gamedata_test
+
+import (
+	"testing"
+
+	"github.com/slycrel/slycrel-rpg/internal/core"
+	"github.com/slycrel/slycrel-rpg/internal/gamedata"
+	"github.com/slycrel/slycrel-rpg/internal/model"
+	"github.com/slycrel/slycrel-rpg/internal/rules"
+	"github.com/slycrel/slycrel-rpg/internal/world"
+)
+
+func load(t *testing.T) *gamedata.Tables {
+	t.Helper()
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Fatalf("finding repo root: %v", err)
+	}
+	tables, err := gamedata.Load(root)
+	if err != nil {
+		t.Fatalf("loading content: %v", err)
+	}
+	return tables
+}
+
+// TestLootReferencesExist catches the failure mode that is otherwise silent:
+// a monster dropping an item name that no longer appears in items.json, which
+// the loot roller quietly skips rather than reporting.
+func TestLootReferencesExist(t *testing.T) {
+	tables := load(t)
+	for biome, defs := range tables.Monsters {
+		for _, d := range defs {
+			for _, drop := range d.Loot {
+				if _, ok := tables.Item(drop.Item); !ok {
+					t.Errorf("%s/%s drops %q, which is not in items.json", biome, d.ID, drop.Item)
+				}
+			}
+		}
+	}
+}
+
+func TestMonsterDefsAreSane(t *testing.T) {
+	tables := load(t)
+	ids := map[string]string{}
+	for biome, defs := range tables.Monsters {
+		for _, d := range defs {
+			if prev, dup := ids[d.ID]; dup {
+				t.Errorf("duplicate monster id %q in %s and %s", d.ID, prev, biome)
+			}
+			ids[d.ID] = biome
+
+			if d.HP <= 0 || d.Offense <= 0 || d.Level <= 0 {
+				t.Errorf("%s: nonsense stats hp=%d off=%d lvl=%d", d.ID, d.HP, d.Offense, d.Level)
+			}
+			if d.XP <= 0 {
+				t.Errorf("%s: awards no experience", d.ID)
+			}
+			if len(d.AttackVerb) == 0 || len(d.AttackWith) == 0 {
+				t.Errorf("%s: missing attack flavor, combat log will read badly", d.ID)
+			}
+			if d.Sprite == "" {
+				t.Errorf("%s: no sprite key", d.ID)
+			}
+		}
+	}
+}
+
+// TestEveryBiomeCanSpawn guards the encounter path: every terrain the player
+// can walk on must resolve to a monster table that yields something.
+func TestEveryBiomeCanSpawn(t *testing.T) {
+	tables := load(t)
+	g := core.NewRNG(7)
+	for _, biome := range []string{
+		"plains", "forest", "hills", "mountain", "swamp",
+		"desert", "wasteland", "coast", "dungeon",
+	} {
+		mons := tables.PickMonsters(g, biome, 5, 2)
+		if len(mons) != 2 {
+			t.Errorf("biome %q produced %d monsters, want 2", biome, len(mons))
+		}
+		for _, m := range mons {
+			if m.HP <= 0 {
+				t.Errorf("biome %q spawned %s with %d hp", biome, m.Name, m.HP)
+			}
+		}
+	}
+}
+
+func TestSpellsCoverEveryClass(t *testing.T) {
+	tables := load(t)
+	g := core.NewRNG(3)
+	for _, class := range model.AllClasses {
+		c := rules.NewCharacter(g, "Test", class)
+		c.Level = 1
+		if got := tables.SpellsFor(c); len(got) == 0 {
+			t.Errorf("%s knows no techniques at level 1", class)
+		}
+		c.Level = 10
+		if got := tables.SpellsFor(c); len(got) < 4 {
+			t.Errorf("%s only knows %d techniques at level 10", class, len(got))
+		}
+	}
+}
+
+// stubNamer lets world generation run without the content package.
+type stubNamer struct{}
+
+func (stubNamer) PlaceName(*core.RNG, string) string { return "Placename" }
+func (stubNamer) PlaceTag(*core.RNG, string) string  { return "tag" }
+func (stubNamer) PersonName(*core.RNG) string        { return "Person" }
+func (stubNamer) NPCLine(*core.RNG) string           { return "line" }
+func (stubNamer) SignText(*core.RNG) string          { return "sign" }
+
+// TestWorldGenerationIsHabitable runs a spread of seeds because the failure
+// this guards against — an island so small or so waterlogged that the capital
+// has nowhere to go — only shows up on unlucky noise.
+func TestWorldGenerationIsHabitable(t *testing.T) {
+	for _, seed := range []int64{1, 2, 42, 1994, 20260815, 999999} {
+		m := world.Generate(seed, stubNamer{})
+
+		if !m.Walkable(m.Start.X, m.Start.Y) {
+			t.Errorf("seed %d: start tile is not walkable", seed)
+		}
+		if p := m.POIAt(m.Start.X, m.Start.Y); p == nil || p.Kind != world.KindCapital {
+			t.Errorf("seed %d: start tile is not the capital", seed)
+		}
+
+		land := 0
+		for y := 0; y < world.Height; y++ {
+			for x := 0; x < world.Width; x++ {
+				if m.Walkable(x, y) {
+					land++
+				}
+			}
+		}
+		frac := float64(land) / float64(world.Width*world.Height)
+		if frac < 0.15 || frac > 0.85 {
+			t.Errorf("seed %d: %.0f%% of the map is walkable, want 15-85%%", seed, frac*100)
+		}
+
+		if len(m.POIs) < 25 {
+			t.Errorf("seed %d: only %d locations placed", seed, len(m.POIs))
+		}
+		settlements := 0
+		for _, p := range m.POIs {
+			if p.Kind.Settlement() {
+				settlements++
+			}
+			if !m.At(p.Pos.X, p.Pos.Y).Passable() {
+				t.Errorf("seed %d: %s sits on impassable %s", seed, p.Name, m.At(p.Pos.X, p.Pos.Y).Name())
+			}
+		}
+		if settlements < 8 {
+			t.Errorf("seed %d: only %d settlements", seed, settlements)
+		}
+	}
+}
+
+// TestLocalMapsAreEnterable checks that every kind of location generates an
+// interior the player can actually stand in and leave again.
+func TestLocalMapsAreEnterable(t *testing.T) {
+	m := world.Generate(1994, stubNamer{})
+	seen := map[world.POIKind]bool{}
+	for _, p := range m.POIs {
+		l := world.BuildLocal(p, stubNamer{})
+		if !l.At(l.Entry.X, l.Entry.Y).Info().Passable {
+			t.Errorf("%s (%s): entry tile is solid", p.Name, p.Kind)
+		}
+		exits := 0
+		for _, e := range l.Entities {
+			if e.Kind == world.EExit {
+				exits++
+			}
+		}
+		if exits == 0 {
+			t.Errorf("%s (%s): no way out", p.Name, p.Kind)
+		}
+		seen[p.Kind] = true
+	}
+	if len(seen) < 8 {
+		t.Errorf("only exercised %d location kinds", len(seen))
+	}
+}

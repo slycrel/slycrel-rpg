@@ -1,0 +1,83 @@
+[
+  {
+    "id": "waste_zombie",
+    "name": "Zombie, Still Commuting",
+    "kind": "undead",
+    "level": 3, "hp": 26, "offense": 9, "defense": 4, "speed": 4, "xp": 34, "coins": 6,
+    "attackWith": ["a grip that does not tire", "teeth, eventually"],
+    "attackVerb": ["grabs at", "gnaws on", "shuffles into"],
+    "defendWith": "not needing most of its organs",
+    "taunt": ["{T} is walking a route it walked every morning for thirty years."],
+    "death": ["{T} finally clocks off."],
+    "sprite": "mob/zombie_01",
+    "loot": [{ "item": "Grave Wrappings", "chance": 45, "min": 1, "max": 2 }]
+  },
+  {
+    "id": "waste_ashzombie",
+    "name": "Ash-Choked Chorus",
+    "kind": "undead",
+    "level": 5, "hp": 38, "offense": 14, "defense": 6, "speed": 6, "xp": 66, "coins": 12,
+    "attackWith": ["a lungful of cinder", "many hands at once"],
+    "attackVerb": ["smothers", "drags down", "chokes"],
+    "defendWith": "there being more of it than there should be",
+    "taunt": ["{T} all say the same word. You cannot make out which one."],
+    "death": ["{T} goes quiet, one voice at a time."],
+    "sprite": "mob/ash_zombies",
+    "loot": [{ "item": "Ash Residue", "chance": 65, "min": 1, "max": 3 }]
+  },
+  {
+    "id": "waste_ghoul",
+    "name": "Red Ghoul, Peckish",
+    "kind": "undead",
+    "level": 7, "hp": 48, "offense": 19, "defense": 7, "speed": 12, "xp": 108, "coins": 28,
+    "attackWith": ["claws that go in easily", "a jaw that unhinges politely first"],
+    "attackVerb": ["rends", "opens up", "helps itself to"],
+    "defendWith": "a body that no longer cares about damage",
+    "taunt": ["{T} apologises before it starts. It does not stop."],
+    "death": ["{T} folds up, still chewing on nothing."],
+    "sprite": "mob/red_ghoul_01",
+    "loot": [{ "item": "Wrong Meat", "chance": 70, "min": 1, "max": 3 }]
+  },
+  {
+    "id": "waste_bonebeast",
+    "name": "Bone Beast, Assembled Badly",
+    "kind": "undead",
+    "level": 9, "hp": 72, "offense": 23, "defense": 12, "speed": 9, "xp": 172, "coins": 60,
+    "attackWith": ["a ribcage full of teeth", "a limb from something much larger"],
+    "attackVerb": ["gores", "crushes", "adds you to"],
+    "defendWith": "having no soft parts left to hit",
+    "taunt": ["{T} is made of at least four things. You can name two of them."],
+    "death": ["{T} clatters apart. Some of the pieces keep twitching, ambitiously."],
+    "sprite": "mob/bone_beast",
+    "loot": [{ "item": "Femur, Unclaimed", "chance": 75, "min": 1, "max": 3 }]
+  },
+  {
+    "id": "waste_nightmare",
+    "name": "Nightmare, Free-Range",
+    "kind": "demon",
+    "level": 11, "hp": 88, "offense": 28, "defense": 11, "speed": 17, "xp": 250, "coins": 130,
+    "attackWith": ["hooves of black fire", "a memory you had filed away"],
+    "attackVerb": ["tramples", "revisits", "burns through"],
+    "defendWith": "the sensible parts of your mind refusing to look",
+    "taunt": ["{T} knows the dream. The one you do not tell people about."],
+    "death": ["{T} gutters out. You will see it again around three in the morning."],
+    "sprite": "mob/nightmare_01",
+    "loot": [{ "item": "Ember of Sleep", "chance": 60, "min": 1, "max": 2 }]
+  },
+  {
+    "id": "waste_demon",
+    "name": "Demon, Mid-Level",
+    "kind": "demon",
+    "level": 12, "hp": 105, "offense": 30, "defense": 14, "speed": 12, "xp": 310, "coins": 190,
+    "attackWith": ["a blade of cooled hate", "a claw", "a contract"],
+    "attackVerb": ["carves", "eviscerates", "obligates"],
+    "defendWith": "hide that has already been through worse",
+    "taunt": ["\"I'm not even the interesting one. Wait until you meet my superior.\""],
+    "death": ["{T} is recalled. The paperwork lands somewhere else."],
+    "sprite": "mob/demon_03",
+    "loot": [
+      { "item": "Infernal Sigil", "chance": 70, "min": 1, "max": 2 },
+      { "item": "Hoard Coin", "chance": 40, "min": 1, "max": 2 }
+    ]
+  }
+]

@@ -1,0 +1,73 @@
+[
+  {
+    "id": "hills_goat",
+    "name": "Goat of Ill Repute",
+    "kind": "beast",
+    "level": 2, "hp": 18, "offense": 7, "defense": 3, "speed": 12, "xp": 22, "coins": 4,
+    "attackWith": ["a skull with no give in it", "horns at an unlikely angle"],
+    "attackVerb": ["rams", "butts", "propels itself into"],
+    "defendWith": "a rectangular pupil and zero fear",
+    "taunt": ["{T} maintains eye contact throughout. It never stops. Not once."],
+    "death": ["{T} falls off something. It was always going to end this way."],
+    "sprite": "mob/goat_01",
+    "loot": [{ "item": "Rank Pelt", "chance": 55, "min": 1, "max": 1 }]
+  },
+  {
+    "id": "hills_orc",
+    "name": "Orc, Off Duty",
+    "kind": "humanoid",
+    "level": 4, "hp": 34, "offense": 12, "defense": 6, "speed": 8, "xp": 48, "coins": 20,
+    "attackWith": ["a cleaver with a name scratched into it", "a fist", "a stool"],
+    "attackVerb": ["chops", "clobbers", "swings on"],
+    "defendWith": "boiled leather and old scars",
+    "taunt": ["\"I was having a nice day. A NICE day.\""],
+    "death": ["{T} drops. Somewhere a shift rota gets very complicated."],
+    "sprite": "mob/orc_01",
+    "loot": [
+      { "item": "Small Beer", "chance": 65, "min": 1, "max": 3 },
+      { "item": "Salvaged Steel", "chance": 25, "min": 1, "max": 1 }
+    ]
+  },
+  {
+    "id": "hills_beast",
+    "name": "Hill Thing",
+    "kind": "aberrant",
+    "level": 5, "hp": 40, "offense": 13, "defense": 7, "speed": 9, "xp": 62, "coins": 15,
+    "attackWith": ["too many limbs", "a mouth in the wrong place"],
+    "attackVerb": ["mangles", "folds", "reorganises"],
+    "defendWith": "a shape your eyes keep sliding off",
+    "taunt": ["{T} does something with its geometry. You would rather it hadn't."],
+    "death": ["{T} comes apart in a way that suggests it was never really together."],
+    "sprite": "mob/beest_01",
+    "loot": [{ "item": "Wrong Meat", "chance": 60, "min": 1, "max": 2 }]
+  },
+  {
+    "id": "hills_ogre",
+    "name": "Ogre, Recently Dumped",
+    "kind": "humanoid",
+    "level": 7, "hp": 62, "offense": 18, "defense": 8, "speed": 6, "xp": 100, "coins": 40,
+    "attackWith": ["a tree with the roots still on", "a haymaker", "a fistful of feelings"],
+    "attackVerb": ["clobbers", "hurls", "unloads on"],
+    "defendWith": "a gut you could park a cart against",
+    "taunt": ["\"SHE SAID I DON'T LISTEN.\" {T} is not listening."],
+    "death": ["{T} sits down heavily, and does not get up. It seems relieved."],
+    "sprite": "mob/ogr_01",
+    "loot": [
+      { "item": "Greasy Haunch", "chance": 70, "min": 2, "max": 3 },
+      { "item": "Someone's Locket", "chance": 45, "min": 1, "max": 1 }
+    ]
+  },
+  {
+    "id": "hills_troll",
+    "name": "Bridge Troll (Freelance)",
+    "kind": "humanoid",
+    "level": 8, "hp": 78, "offense": 20, "defense": 10, "speed": 6, "xp": 130, "coins": 65,
+    "attackWith": ["a stone the size of your torso", "a regenerating fist"],
+    "attackVerb": ["crushes", "pulps", "invoices"],
+    "defendWith": "flesh that keeps coming back",
+    "taunt": ["\"There's no bridge here. Toll stands.\""],
+    "death": ["{T} finally stays down. Give it a minute. Give it another minute."],
+    "sprite": "mob/troll_01",
+    "loot": [{ "item": "Troll Fat", "chance": 70, "min": 1, "max": 2 }]
+  }
+]

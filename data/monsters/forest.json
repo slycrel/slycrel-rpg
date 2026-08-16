@@ -1,0 +1,102 @@
+[
+  {
+    "id": "forest_goblin",
+    "name": "Goblin Middle Manager",
+    "kind": "humanoid",
+    "level": 2, "hp": 16, "offense": 7, "defense": 3, "speed": 11, "xp": 20, "coins": 12,
+    "attackWith": ["a rusted shiv", "a clipboard with a nail through it", "a stolen letter opener"],
+    "attackVerb": ["stabs", "escalates at", "reprimands"],
+    "defendWith": "a lanyard and delusions of hierarchy",
+    "taunt": ["\"I'm going to need you to die by end of day.\""],
+    "death": ["{T} collapses. Its final act is to delegate."],
+    "sprite": "mob/goblin_01",
+    "loot": [
+      { "item": "Crumpled Writ", "chance": 60, "min": 1, "max": 2 },
+      { "item": "Small Beer", "chance": 30, "min": 1, "max": 1 }
+    ]
+  },
+  {
+    "id": "forest_spider",
+    "name": "Overfamiliar Spider",
+    "kind": "beast",
+    "level": 3, "hp": 20, "offense": 9, "defense": 3, "speed": 13, "xp": 30, "coins": 6,
+    "attackWith": ["fangs", "a leg where a leg should not reach", "silk, intimately applied"],
+    "attackVerb": ["bites", "wraps up", "gets far too close to"],
+    "defendWith": "eight opportunities to dodge",
+    "taunt": ["{T} greets you by name. You have never met. You would remember."],
+    "death": ["{T} curls up like a hand closing. It somehow still fits in your nightmares."],
+    "sprite": "mob/spider_01",
+    "loot": [{ "item": "Venom Sac", "chance": 55, "min": 1, "max": 2 }]
+  },
+  {
+    "id": "forest_wolf",
+    "name": "Wolf, Deeply Unimpressed",
+    "kind": "beast",
+    "level": 3, "hp": 24, "offense": 10, "defense": 4, "speed": 14, "xp": 34, "coins": 5,
+    "attackWith": ["a jaw built for exactly this", "a shoulder check"],
+    "attackVerb": ["mauls", "drags down", "tears at"],
+    "defendWith": "a coat of matted grey",
+    "taunt": ["{T} has watched you fight before. {T} was not impressed then either."],
+    "death": ["{T} goes still. The pack, elsewhere, updates its assessment of you."],
+    "sprite": "mob/grey_wolf_02",
+    "loot": [{ "item": "Rank Pelt", "chance": 65, "min": 1, "max": 2 }]
+  },
+  {
+    "id": "forest_plant",
+    "name": "Amorous Shrub",
+    "kind": "aberrant",
+    "level": 4, "hp": 30, "offense": 10, "defense": 6, "speed": 4, "xp": 42, "coins": 8,
+    "attackWith": ["a vine with intent", "a flower that should not have teeth", "pollen, weaponised"],
+    "attackVerb": ["embraces", "entangles", "gets fresh with"],
+    "defendWith": "a truly upsetting amount of bark",
+    "taunt": ["{T} rustles suggestively. You would like it to stop. It will not stop."],
+    "death": ["{T} wilts, disappointed in you specifically."],
+    "sprite": "mob/plant_monster_01",
+    "loot": [
+      { "item": "Bitter Root", "chance": 70, "min": 1, "max": 3 },
+      { "item": "Suspicious Pollen", "chance": 40, "min": 1, "max": 1 }
+    ]
+  },
+  {
+    "id": "forest_gremlin",
+    "name": "Gremlin, Small Claims",
+    "kind": "fey",
+    "level": 4, "hp": 22, "offense": 11, "defense": 4, "speed": 16, "xp": 44, "coins": 26,
+    "attackWith": ["a tiny hammer", "your own belt pouch", "something it took from you two rounds ago"],
+    "attackVerb": ["nicks", "vandalises", "sues"],
+    "defendWith": "being extremely difficult to hit",
+    "taunt": ["{T} is already holding something of yours. You did not feel it happen."],
+    "death": ["{T} pops. Coins rain out, which raises questions about where it kept them."],
+    "sprite": "mob/gremlin_01",
+    "loot": [{ "item": "Stolen Trinket", "chance": 75, "min": 1, "max": 3 }]
+  },
+  {
+    "id": "forest_bear",
+    "name": "Bear With Boundaries",
+    "kind": "beast",
+    "level": 6, "hp": 48, "offense": 15, "defense": 7, "speed": 8, "xp": 78, "coins": 14,
+    "attackWith": ["a paw like a dropped door", "a bite that ends conversations"],
+    "attackVerb": ["clubs", "flattens", "corrects"],
+    "defendWith": "a coat you could lose a sword in",
+    "taunt": ["{T} did not want this. {T} is going to do it anyway."],
+    "death": ["{T} sighs out and stops. Somehow it is the saddest thing in the forest."],
+    "sprite": "mob/bear_01",
+    "loot": [
+      { "item": "Rank Pelt", "chance": 80, "min": 2, "max": 3 },
+      { "item": "Greasy Haunch", "chance": 60, "min": 1, "max": 2 }
+    ]
+  },
+  {
+    "id": "forest_owl",
+    "name": "Owl That Knows",
+    "kind": "fey",
+    "level": 5, "hp": 28, "offense": 13, "defense": 5, "speed": 15, "xp": 60, "coins": 18,
+    "attackWith": ["talons", "a silence that hurts", "one specific unpleasant fact about you"],
+    "attackVerb": ["stoops on", "opens up", "reminds"],
+    "defendWith": "not being where you swung",
+    "taunt": ["{T} says a thing you told nobody. Then it says it again, louder."],
+    "death": ["{T} falls without a sound, which is worse."],
+    "sprite": "mob/owl_01",
+    "loot": [{ "item": "Moon-Bleached Feather", "chance": 60, "min": 1, "max": 2 }]
+  }
+]

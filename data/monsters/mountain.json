@@ -1,0 +1,83 @@
+[
+  {
+    "id": "mtn_wolf",
+    "name": "Arctic Wolf, Underdressed",
+    "kind": "beast",
+    "level": 5, "hp": 32, "offense": 13, "defense": 5, "speed": 15, "xp": 58, "coins": 8,
+    "attackWith": ["frost-rimed teeth", "a lunge out of the white"],
+    "attackVerb": ["savages", "hamstrings", "drags down"],
+    "defendWith": "a coat you would kill for, and may have to",
+    "taunt": ["{T} is not cold. {T} wants you to know it is not cold."],
+    "death": ["{T} steams gently in the snow."],
+    "sprite": "mob/arctic_wolf",
+    "loot": [{ "item": "Rank Pelt", "chance": 75, "min": 1, "max": 3 }]
+  },
+  {
+    "id": "mtn_yeti",
+    "name": "Yeti With a Cold",
+    "kind": "beast",
+    "level": 7, "hp": 58, "offense": 17, "defense": 9, "speed": 8, "xp": 104, "coins": 30,
+    "attackWith": ["a fist packed with ice", "a truly catastrophic sneeze"],
+    "attackVerb": ["pounds", "buries", "sneezes on"],
+    "defendWith": "a metre of matted white",
+    "taunt": ["{T} sniffs wetly. It is having a worse day than you and intends to share."],
+    "death": ["{T} goes down congested and unbeloved."],
+    "sprite": "mob/yeti_01",
+    "loot": [{ "item": "Rank Pelt", "chance": 80, "min": 2, "max": 4 }]
+  },
+  {
+    "id": "mtn_cyclops",
+    "name": "Cyclops, Depth Perception Issues",
+    "kind": "humanoid",
+    "level": 9, "hp": 84, "offense": 22, "defense": 11, "speed": 6, "xp": 155, "coins": 70,
+    "attackWith": ["a club that misses spectacularly", "a boulder", "a lucky backhand"],
+    "attackVerb": ["swings wildly at", "lobs a rock at", "clouts"],
+    "defendWith": "hide like boiled leather",
+    "taunt": ["{T} squints. {T} swings at the wrong you. {T} is still terrifying."],
+    "death": ["{T} topples with a noise like a barn giving up."],
+    "sprite": "mob/cyclop_01",
+    "loot": [{ "item": "Enormous Eye", "chance": 60, "min": 1, "max": 1 }]
+  },
+  {
+    "id": "mtn_giant",
+    "name": "Frost Giant, Emotionally Cold",
+    "kind": "humanoid",
+    "level": 11, "hp": 110, "offense": 27, "defense": 14, "speed": 7, "xp": 240, "coins": 120,
+    "attackWith": ["an axe of blue ice", "a stomp", "silence"],
+    "attackVerb": ["cleaves", "stamps on", "withholds affection from"],
+    "defendWith": "armour of glacial indifference",
+    "taunt": ["{T} looks at you the way winter looks at a flower."],
+    "death": ["{T} shatters. Every piece is still disappointed in you."],
+    "sprite": "mob/frost_giant_01",
+    "loot": [{ "item": "Shard of Old Ice", "chance": 65, "min": 1, "max": 2 }]
+  },
+  {
+    "id": "mtn_golem",
+    "name": "Crystal Golem, Mid-Renovation",
+    "kind": "construct",
+    "level": 10, "hp": 96, "offense": 24, "defense": 18, "speed": 4, "xp": 205, "coins": 90,
+    "attackWith": ["a fist of raw quartz", "an arm that reassembles mid-swing"],
+    "attackVerb": ["hammers", "grinds", "resurfaces"],
+    "defendWith": "load-bearing crystal",
+    "taunt": ["{T} was built to guard something. Nobody has told it that thing is gone."],
+    "death": ["{T} comes apart into very valuable rubble."],
+    "sprite": "mob/crystal_golem_01",
+    "loot": [{ "item": "Cracked Crystal", "chance": 85, "min": 2, "max": 4 }]
+  },
+  {
+    "id": "mtn_dragon",
+    "name": "Dragon, Small But Loud",
+    "kind": "demon",
+    "level": 13, "hp": 140, "offense": 32, "defense": 16, "speed": 12, "xp": 400, "coins": 300,
+    "attackWith": ["a gout of flame", "a tail like a falling mast", "teeth, obviously"],
+    "attackVerb": ["immolates", "rakes", "backhands"],
+    "defendWith": "scales worth more than your village",
+    "taunt": ["\"Do you have ANY idea what the hoard market has done this century?\""],
+    "death": ["{T} goes out like a doused forge, complaining to the last."],
+    "sprite": "mob/dragon_03",
+    "loot": [
+      { "item": "Dragon Scale", "chance": 90, "min": 2, "max": 5 },
+      { "item": "Hoard Coin", "chance": 70, "min": 1, "max": 3 }
+    ]
+  }
+]

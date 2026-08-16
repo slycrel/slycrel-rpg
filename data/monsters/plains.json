@@ -1,0 +1,96 @@
+[
+  {
+    "id": "plains_chicken",
+    "name": "Ungovernable Rooster",
+    "kind": "beast",
+    "level": 1, "hp": 9, "offense": 4, "defense": 1, "speed": 12, "xp": 12, "coins": 2,
+    "attackWith": ["one deranged spur", "a beak with opinions", "its entire body, ballistically"],
+    "attackVerb": ["launches at", "lays into", "harasses"],
+    "defendWith": "sheer indignation",
+    "taunt": ["{T} makes a noise no rooster should be able to make."],
+    "death": ["{T} falls over. It keeps running for two more steps first, out of spite."],
+    "sprite": "mob/chicken_01",
+    "loot": [{ "item": "Suspicious Egg", "chance": 55, "min": 1, "max": 2 }]
+  },
+  {
+    "id": "plains_sheep",
+    "name": "Cursed Ewe",
+    "kind": "beast",
+    "level": 1, "hp": 14, "offense": 4, "defense": 3, "speed": 5, "xp": 14, "coins": 3,
+    "attackWith": ["a headbutt", "teeth that are wrong for a sheep", "the weight of a wet rug"],
+    "attackVerb": ["barrels into", "flattens", "chews on"],
+    "defendWith": "an unreasonable amount of wool",
+    "taunt": ["{T} bleats. It sounds like a name. It sounds like YOUR name."],
+    "death": ["{T} deflates. Somewhere, a shepherd feels a great relief and does not know why."],
+    "sprite": "mob/sheep_01",
+    "loot": [{ "item": "Damp Wool", "chance": 70, "min": 1, "max": 3 }]
+  },
+  {
+    "id": "plains_boar",
+    "name": "Hog of Poor Character",
+    "kind": "beast",
+    "level": 2, "hp": 20, "offense": 7, "defense": 3, "speed": 8, "xp": 22, "coins": 5,
+    "attackWith": ["two tusks and no plan", "a shoulder like a dropped anvil"],
+    "attackVerb": ["gores", "runs down", "shoulders"],
+    "defendWith": "a hide caked in something",
+    "taunt": ["{T} has already decided how this ends."],
+    "death": ["{T} goes down. It smells no better."],
+    "sprite": "mob/pig_01",
+    "loot": [{ "item": "Greasy Haunch", "chance": 60, "min": 1, "max": 2 }]
+  },
+  {
+    "id": "plains_crow",
+    "name": "Editorial Crow",
+    "kind": "beast",
+    "level": 2, "hp": 12, "offense": 6, "defense": 2, "speed": 14, "xp": 18, "coins": 7,
+    "attackWith": ["a beak aimed at the eyes", "stolen cutlery"],
+    "attackVerb": ["dives at", "critiques", "pecks"],
+    "defendWith": "altitude",
+    "taunt": ["{T} looks at your gear and audibly laughs. Crows should not be able to do that."],
+    "death": ["{T} drops. Four more crows arrive to take notes."],
+    "sprite": "mob/crow_01",
+    "loot": [{ "item": "Stolen Trinket", "chance": 45, "min": 1, "max": 1 }]
+  },
+  {
+    "id": "plains_bandit",
+    "name": "Freelance Tax Collector",
+    "kind": "humanoid",
+    "level": 3, "hp": 26, "offense": 9, "defense": 4, "speed": 10, "xp": 34, "coins": 22,
+    "attackWith": ["a notched shortsword", "a very official-looking cudgel", "paperwork, thrown"],
+    "attackVerb": ["assesses", "levies against", "audits"],
+    "defendWith": "a stolen tabard",
+    "taunt": ["\"By the authority of nobody, I'm afraid I'll need everything you own.\""],
+    "death": ["{T} falls, still itemising."],
+    "sprite": "mob/madman",
+    "loot": [
+      { "item": "Crumpled Writ", "chance": 80, "min": 1, "max": 1 },
+      { "item": "Small Beer", "chance": 35, "min": 1, "max": 2 }
+    ]
+  },
+  {
+    "id": "plains_ox",
+    "name": "Ox With a Grudge",
+    "kind": "beast",
+    "level": 4, "hp": 40, "offense": 11, "defense": 6, "speed": 5, "xp": 48, "coins": 9,
+    "attackWith": ["a horn the size of your forearm", "one devastating hoof"],
+    "attackVerb": ["tramples", "hooks", "shunts"],
+    "defendWith": "eleven hundred pounds of muscle",
+    "taunt": ["{T} remembers a plough. {T} blames you personally."],
+    "death": ["{T} kneels, then topples. The ground objects."],
+    "sprite": "mob/ox_01",
+    "loot": [{ "item": "Greasy Haunch", "chance": 75, "min": 2, "max": 4 }]
+  },
+  {
+    "id": "plains_dog",
+    "name": "Extremely Loose Hound",
+    "kind": "beast",
+    "level": 3, "hp": 22, "offense": 8, "defense": 3, "speed": 15, "xp": 30, "coins": 4,
+    "attackWith": ["a mouthful of teeth", "enthusiasm"],
+    "attackVerb": ["savages", "bowls over", "worries at"],
+    "defendWith": "speed and a total absence of shame",
+    "taunt": ["{T} is thrilled to meet you. {T} intends to eat you. Both are sincere."],
+    "death": ["{T} lies down. Good boy. Terrible boy. Complicated."],
+    "sprite": "mob/hound",
+    "loot": [{ "item": "Chewed Boot", "chance": 50, "min": 1, "max": 1 }]
+  }
+]

@@ -1,0 +1,180 @@
+{
+  "givenNames": [
+    "Brannoch", "Wilhelmina Quist", "Old Ferret", "Sister Agatha Blunt", "Dregg",
+    "Marisol the Younger", "Halbert Pin", "Gutter Tam", "Yvane Sallow", "Bosk",
+    "Perpetua Crane", "Little Ott", "Hendrick Vole", "Saffron Bright", "Mud",
+    "Cassien Thorn", "The Widow Pemberly", "Grist", "Nolwenn Ash", "Barrow Jack",
+    "Ilsabet Dun", "Fenwick", "Auntie Sorrow", "Radomir Tack", "Peg the Elder",
+    "Corvin Slake", "Marigold Hex", "Ruddick", "Sable Vane", "Onager Flint"
+  ],
+  "epithets": [
+    "the Regrettable", "the Barely Adequate", "the Recently Bathed", "the Unbanned",
+    "the Emotionally Available", "Who Owes Everyone", "the Structurally Unsound",
+    "of the Middling Reputation", "the Loud", "Two Drinks In", "the Unlicensed",
+    "the Fourth (There Were Three Before)", "the Persistent", "the Damp",
+    "Who Should Not Be Here", "the Ill-Advised", "the Well-Meaning Disaster",
+    "the Nearly Competent", "the Frequently Warned", "the Undeterred"
+  ],
+  "placePrefix": [
+    "Grim", "Mud", "Bell", "Crow", "Thistle", "Gallow", "Hollow", "Bitter", "Salt",
+    "Rook", "Ash", "Fen", "Bramble", "Cinder", "Wold", "Bone", "Ember", "Marrow",
+    "Drear", "Kettle", "Wicket", "Blight", "Tallow", "Gorse"
+  ],
+  "placeSuffix": [
+    "hollow", "ford", "barrow", "mire", "reach", "gate", "cross", "hurst", "combe",
+    "moor", "wick", "stead", "burn", "fell", "gallow", "bottom", "thorpe", "haven",
+    "dell", "shanks"
+  ],
+  "placeOf": [
+    "Regrets", "the Third Attempt", "Unpaid Debts", "the Long Excuse", "Cold Soup",
+    "Bad Weather", "the Missing Bell", "Nine Widows", "the Wrong King", "Late Harvest",
+    "the Sunken Barge", "Quiet Screaming", "the Unread Letter", "Distant Relatives",
+    "the Broken Promise", "Two Winters"
+  ],
+
+  "poiTagline": {
+    "capital": [
+      "The largest pile of people in the realm, and they all know it.",
+      "Where the laws are written, ignored, and then written again, angrier."
+    ],
+    "town": [
+      "A market, a temple, and a grudge that goes back four generations.",
+      "Prosperous enough for two taverns, which is two too many for the priest.",
+      "Everyone here is related. Nobody will say how."
+    ],
+    "village": [
+      "Eleven houses and a well that everyone is politely lying about.",
+      "The kind of place that has one road and uses it mostly for leaving.",
+      "A hamlet with a scarecrow the locals nod to."
+    ],
+    "castle": [
+      "Fortified against an enemy that stopped existing a century ago.",
+      "Somebody's ancestral seat. Somebody's, anyway. It changes hands often."
+    ],
+    "dungeon": [
+      "The stairs go down further than the hill is tall. Nobody wants to discuss this.",
+      "Sealed by royal decree. The seal is on the inside.",
+      "Three expeditions went in. Two came out. Neither of them was the second one."
+    ],
+    "cave": [
+      "A hole. A committed, ambitious hole.",
+      "Something is breathing in there, and it is doing it on purpose.",
+      "The local children dare each other to the entrance and no further."
+    ],
+    "ruin": [
+      "Stones arranged by people who had better tools than you and still lost.",
+      "The architecture is beautiful. The reason it is empty is not.",
+      "Somebody put a great deal of work into this and then something happened."
+    ],
+    "tower": [
+      "One room per floor. Each floor is worse than the one below it.",
+      "Built by a wizard with something to prove and no planning permission.",
+      "It is taller on the inside. That is not a metaphor."
+    ],
+    "shrine": [
+      "A god nobody remembers, still accepting offerings out of habit.",
+      "The altar is cracked and the crack is the important part.",
+      "Pilgrims come here to ask for things. The answers are technically yes."
+    ],
+    "camp": [
+      "Tents, a fire, and a very specific silence when strangers arrive.",
+      "Somebody is cooking. Somebody is always cooking. Nobody is eating."
+    ],
+    "oddity": [
+      "There is no good word for what is going on here.",
+      "A door standing in a field, hinged to nothing, firmly shut.",
+      "The grass grows in a perfect circle and the birds route around it."
+    ]
+  },
+
+  "poiRumor": {
+    "dungeon": [
+      "They say the bottom floor is furnished. Furnished, mind. Curtains and everything.",
+      "A fellow went in with forty men and came out with a very good soup recipe."
+    ],
+    "ruin": [
+      "My grandmother's grandmother saw the lights there. She said they waved.",
+      "Take nothing from a ruin. Or take everything. Half measures are what get you."
+    ],
+    "tower": [
+      "The wizard's still up there. Been up there since before the war. Not once come down.",
+      "Knock three times and it opens. Knock four and you're the one who answers."
+    ],
+    "oddity": [
+      "Don't go. Don't. I'm not going to explain, because I can't.",
+      "It moved last spring. Two fields east. Nobody talks about it at market."
+    ]
+  },
+
+  "hitFlavor": [
+    "{A} {V} {T} for {D}.",
+    "{A} {V} {T}. {D} damage, and a noise.",
+    "{A} {V} {T} — {D}. That will bruise in a shape.",
+    "{T} takes {D} and does not enjoy it.",
+    "{A} {V} {T} for {D}. Somewhere, a bard is already lying about this.",
+    "{D} damage. {T} reassesses.",
+    "{A} {V} {T} for {D}, with feeling."
+  ],
+  "critFlavor": [
+    "{A} {V} {T} for {D}. Something structural gives way.",
+    "{A} {V} {T} for an unreasonable {D}. Everyone present feels it.",
+    "{D}. {T} was not built for that and now demonstrably is not.",
+    "{A} {V} {T} for {D}. That was the good one.",
+    "A perfect {V}. {D} damage. {T} briefly leaves the ground."
+  ],
+  "missFlavor": [
+    "{A} swings at {T} and hits the concept of air.",
+    "{A} misses {T} entirely and has to live with that.",
+    "{T} is simply not where {A} committed to.",
+    "{A} whiffs. {T} does not even do it the courtesy of dodging.",
+    "A confident, well-executed miss from {A}."
+  ],
+  "deathFlavor": [
+    "{T} falls over and stays that way.",
+    "{T} stops. Comprehensively.",
+    "{T} goes down without ceremony, which is the only dignified way to do it.",
+    "{T} is defeated, and looks faintly relieved about it."
+  ],
+  "levelFlavor": [
+    "Level {L}. You feel marginally harder to kill.",
+    "Level {L}. Something in your back stops hurting and something else starts.",
+    "Level {L}. You have gotten better at this, which is a worrying sentence.",
+    "Level {L}. The universe files an updated assessment of you."
+  ],
+  "idleFlavor": [
+    "The wind carries something that is nearly a voice.",
+    "A crow watches you from a fence post and takes notes.",
+    "Somewhere behind you, something decides not to.",
+    "The road goes on. It is not in a hurry and neither, apparently, are you.",
+    "You smell rain, or a fire, or a very confident animal.",
+    "For a moment the whole world sounds like it is holding its breath."
+  ],
+  "npcLine": [
+    "\"You want my advice? Don't go east. Or do. I'm not your mother.\"",
+    "\"They found another one in the well. Same as the last. Same exactly.\"",
+    "\"I'd sell you something, but you've got the look of a person who haggles.\"",
+    "\"My husband went into the woods for firewood. That was in spring. We have plenty of firewood.\"",
+    "\"Don't trust the priest. Don't trust the miller. Trust the goat.\"",
+    "\"Everyone says adventurer like it's a job. It's a diagnosis.\"",
+    "\"I've seen four of you this month. I've seen one of you come back.\"",
+    "\"There's coin in monster parts, if you're not squeamish and not particular.\"",
+    "\"Beautiful weather. Absolutely rotten omens, though.\"",
+    "\"You'll want a better sword. You'll want a better everything, frankly.\"",
+    "\"Ask me about the tower. Go on. Ask me. ...No, I've changed my mind.\"",
+    "\"My cousin was eaten by something with opinions. He'd have hated that.\"",
+    "\"Gods are real, they're just not very good at their jobs.\"",
+    "\"If a door in a field is shut, friend, leave it shut.\""
+  ],
+  "signText": [
+    "NO ENTRY. THIS MEANS YOU. YES, YOU SPECIFICALLY.",
+    "Beware of the dog. The dog is fine. Beware of what the dog is afraid of.",
+    "Turn back. — the management",
+    "Lost: one sword, sentimental value, answers to 'Gerald'.",
+    "By order of the Crown, this place does not exist. Please do not tell it.",
+    "Free to a good home. Or any home. Please.",
+    "Trespassers will be prosecuted. Survivors will be prosecuted twice.",
+    "The bridge toll is one coin or one secret. Exact change appreciated.",
+    "Here lies nobody. We checked. Twice.",
+    "Do not read the next sign."
+  ]
+}

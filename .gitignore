@@ -1,0 +1,16 @@
+# Extracted source bundle. Huge, purchased, and reproducible from the zips:
+#   go run ./cmd/assetpipe extract tier1
+assets-raw/
+
+# Build output
+/slycrel
+/dist/
+
+# Save games
+*.save.json
+/saves/
+
+.DS_Store
+
+# Screenshots (F12 in game)
+/shots/
