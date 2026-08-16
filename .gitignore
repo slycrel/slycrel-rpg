@@ -12,5 +12,5 @@ assets-raw/
 
 .DS_Store
 
-# Screenshots (F12 in game)
+# Scratch screenshot output. The curated set lives in docs/screenshots/.
 /shots/

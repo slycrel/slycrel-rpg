@@ -14,6 +14,15 @@ already been playtested by a few hundred BBS users, three decades ago.
 **This game is 18+.** The humour is bawdy, the violence is comic, and the
 tone-setting rule is that nobody in the world ever acknowledges the joke.
 
+| | |
+|---|---|
+| ![The overworld: roads and terrain with locations marked](docs/screenshots/overworld.png) | ![A turn-based battle against three monsters](docs/screenshots/battle.png) |
+| Overworld — roads, terrain, points of interest | Battle — portraits, transcript, commands |
+| ![A town of red-roofed buildings along a paved street](docs/screenshots/town.png) | ![A dungeon of rooms and corridors with lurking creatures](docs/screenshots/dungeon.png) |
+| Town — generated from the location's seed | Dungeon — rooms, foes, chests, a boss |
+| ![A parchment map showing explored terrain](docs/screenshots/map.png) | ![The character sheet and pack](docs/screenshots/character.png) |
+| The map — only what you have walked past | Character sheet and pack |
+
 ## Running it
 
 ```bash
@@ -34,7 +43,7 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 | X, Esc | back out |
 | M | the map of everywhere you have been |
 | C or I | character sheet and pack |
-| F12 | screenshot to `shots/` |
+| `\` or F12 | screenshot to `shots/` (F12 needs standard function keys on macOS) |
 
 ## What is in the box
 
@@ -104,8 +113,12 @@ proceed one asset at a time without ever leaving the build broken.
 go test ./internal/...
 ```
 
-The tests cover logic. For the visual half there are two tools:
+They target the things that fail silently: loot tables referring to items that
+do not exist, a biome with no spawnable monsters, an XP curve that stops being
+monotonic, world seeds that generate an uninhabitable island, and interiors
+with no exit.
 
+For the visual half there are two more tools. 
 ```bash
 go run ./cmd/slycrel -demo     # scripted tour: one frame per screen into shots/
 go run ./cmd/slycrel -keylog   # trace every key the engine reports, to stderr
@@ -136,10 +149,12 @@ dumps the game's own framebuffer, which is cleaner than a screen grab because
 it captures exact pixels with no window chrome or display scaling. Note that
 F12 also works but only if function keys are set to standard on macOS.
 
-The tests cover the things that fail silently: loot tables referring to items
-that do not exist, a biome with no spawnable monsters, an XP curve that stops
-being monotonic, world seeds that generate an uninhabitable island, and
-interiors with no exit.
+## Licence
+
+Code, content tables and docs are MIT. **The art and audio are not** — they come
+from a separately licensed commercial bundle, are not redistributed here, and
+are not required to run the game: anything missing falls back to a generated
+placeholder. See [LICENSE](LICENSE).
 
 ## History
 
