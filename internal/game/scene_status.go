@@ -40,19 +40,12 @@ func (s *statusScene) refresh(g *Game) {
 }
 
 func (s *statusScene) Update(g *Game) error {
-	if Cancel() {
+	if g.Back() {
 		g.Pop()
 		return nil
 	}
-	if d, ok := MenuDir(); ok {
-		switch d {
-		case core.DirDown:
-			s.bag.Move(1)
-		case core.DirUp:
-			s.bag.Move(-1)
-		}
-	}
-	if Confirm() {
+	g.MenuNav(&s.bag)
+	if g.Accept() {
 		it, ok := s.bag.Selected()
 		if !ok || it.Disabled {
 			return nil
@@ -72,6 +65,7 @@ func (s *statusScene) useOutOfCombat(g *Game, idx int) {
 	case model.ItemHeal:
 		it, _ := g.Player.TakeItem(idx)
 		n := g.Player.Heal(it.Power)
+		g.Sound.Play("fight/heal")
 		g.Log.AddColor(render.ColHeal, "%s: %d hit points back.", it.Name, n)
 	case model.ItemPsyche:
 		it, _ := g.Player.TakeItem(idx)
@@ -79,6 +73,7 @@ func (s *statusScene) useOutOfCombat(g *Game, idx int) {
 		g.Player.Psyche = core.Clamp(g.Player.Psyche+it.Power, 0, g.Player.MaxPsyche)
 		g.Log.AddColor(render.ColMagic, "%s: %d psyche back.", it.Name, g.Player.Psyche-before)
 	default:
+		g.Sound.Play("ui/deny")
 		g.Log.AddColor(render.ColInkDim, "%s is for selling, not for drinking.", g.Player.Bag[idx].Name)
 	}
 	s.refresh(g)

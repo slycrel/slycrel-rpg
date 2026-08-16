@@ -68,6 +68,10 @@ func (s *overworldScene) Update(g *Game) error {
 		}
 	}
 
+	// The bed follows the ground underfoot. Ambience is a no-op when the key
+	// has not changed, so setting it every tick costs nothing.
+	g.Sound.Ambience(ambienceFor(g.World.At(g.Walk.Tile.X, g.Walk.Tile.Y).Biome()))
+
 	// Ambient colour while wandering.
 	s.idleTimer--
 	if s.idleTimer <= 0 {
@@ -119,6 +123,15 @@ func (s *overworldScene) tryStep(g *Game, d core.Dir) {
 	}
 }
 
+// ambienceFor maps a monster-table biome to a looping bed. Most of the
+// overworld gets birdsong; only the deep woods earn their own.
+func ambienceFor(biome string) string {
+	if biome == "forest" {
+		return "amb/forest"
+	}
+	return "amb/plains"
+}
+
 // encounterLevel blends the player's level with how far out they have wandered,
 // so walking somewhere you should not be is dangerous immediately rather than
 // only once the plot says so.
@@ -140,6 +153,7 @@ func (g *Game) enterPOI(poi *world.POI) {
 	g.Local = world.BuildLocal(poi, g.Write)
 	g.LocalWalk = walker{dur: 7}
 	g.LocalWalk.Place(g.Local.Entry)
+	g.Sound.Play("world/enter")
 	g.Push(newLocalScene(g))
 	g.Log.AddColor(render.ColGold, "You enter %s.", poi.Name)
 }

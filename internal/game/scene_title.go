@@ -50,21 +50,15 @@ func newTitleScene(g *Game) *titleScene {
 }
 
 func (t *titleScene) Update(g *Game) error {
+	g.Sound.Ambience("")
 	for i := range t.stars {
 		t.stars[i].x -= t.stars[i].speed
 		if t.stars[i].x < 0 {
 			t.stars[i].x += render.ScreenW
 		}
 	}
-	if d, ok := MenuDir(); ok {
-		switch d {
-		case core.DirDown:
-			t.menu.Move(1)
-		case core.DirUp:
-			t.menu.Move(-1)
-		}
-	}
-	if Confirm() {
+	g.MenuNav(&t.menu)
+	if g.Accept() {
 		switch t.menu.Index {
 		case 0:
 			g.Replace(newCreateScene(g))
@@ -139,19 +133,12 @@ func (c *createScene) reroll(g *Game) {
 }
 
 func (c *createScene) Update(g *Game) error {
-	if d, ok := MenuDir(); ok {
-		switch d {
-		case core.DirDown:
-			c.menu.Move(1)
-		case core.DirUp:
-			c.menu.Move(-1)
-		}
-	}
-	if Cancel() {
+	g.MenuNav(&c.menu)
+	if g.Back() {
 		g.Replace(newTitleScene(g))
 		return nil
 	}
-	if !Confirm() {
+	if !g.Accept() {
 		return nil
 	}
 
@@ -220,6 +207,7 @@ func (g *Game) startRun(name, epithet string, class model.Class) {
 	g.Walk = walker{dur: 9}
 	g.Walk.Place(g.World.Start)
 
+	g.Sound.Play("vo/welcome")
 	g.Log.Clear()
 	g.Log.AddColor(render.ColGold, "%s %s steps out into a world that did not ask for them.",
 		g.Player.Name, g.Player.Epithet)

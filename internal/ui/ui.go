@@ -186,12 +186,19 @@ func (m *Menu) Draw(dst *ebiten.Image, x, y, w float64) {
 			render.Text(dst, ">", x-8, ly, render.ColGold)
 		}
 		render.Text(dst, it.Label, x, ly, col)
+
+		// The detail column gets whatever the label leaves, minus a gap. Sizing
+		// it as a fixed fraction of the row instead is what let "Abandon the
+		// run" and "back to the title" draw through each other.
 		if it.Detail != "" {
-			d := render.ColInkDim
-			if it.Disabled {
-				d = render.ColInkFaint
+			avail := detailRight - (x + render.TextW(it.Label)) - 10
+			if avail >= 20 {
+				d := render.ColInkDim
+				if it.Disabled {
+					d = render.ColInkFaint
+				}
+				render.TextRight(dst, render.Trunc(it.Detail, avail), detailRight, ly, d)
 			}
-			render.TextRight(dst, render.Trunc(it.Detail, w*0.6), detailRight, ly, d)
 		}
 	}
 	// Scroll hints when the list runs past the window.

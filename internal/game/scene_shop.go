@@ -115,7 +115,7 @@ func (s *shopScene) refresh(g *Game) {
 }
 
 func (s *shopScene) Update(g *Game) error {
-	if Cancel() {
+	if g.Back() {
 		g.Pop()
 		return nil
 	}
@@ -123,9 +123,12 @@ func (s *shopScene) Update(g *Game) error {
 		switch d {
 		case core.DirDown:
 			s.menu.Move(1)
+			g.Sound.Play("ui/move")
 		case core.DirUp:
 			s.menu.Move(-1)
+			g.Sound.Play("ui/move")
 		case core.DirLeft, core.DirRight:
+			g.Sound.Play("ui/page")
 			if s.tab == tabBuy {
 				s.tab = tabSell
 			} else {
@@ -135,9 +138,10 @@ func (s *shopScene) Update(g *Game) error {
 			s.refresh(g)
 		}
 	}
-	if Confirm() {
+	if g.Accept() {
 		it, ok := s.menu.Selected()
 		if !ok || it.Disabled {
+			g.Sound.Play("ui/deny")
 			return nil
 		}
 		if s.tab == tabBuy {
@@ -158,16 +162,19 @@ func (s *shopScene) buy(g *Game, it ui.MenuItem) {
 		old := p.Weapon
 		p.Weapon = v
 		s.note = fmt.Sprintf("You take the %s. The %s goes in the bin.", v.Name, old.Name)
+		g.Sound.Play("world/equip")
 	case model.Armor:
 		p.Coins -= int64(v.Cost)
 		old := p.Armor
 		p.Armor = v
 		s.note = fmt.Sprintf("You put on the %s. The %s is not missed.", v.Name, old.Name)
+		g.Sound.Play("world/equip")
 	case model.Item:
 		v.Count = 1
 		p.Coins -= int64(v.Value * 2)
 		p.AddItem(v)
 		s.note = fmt.Sprintf("One %s, wrapped in something.", v.Name)
+		g.Sound.Play("world/buy")
 	}
 }
 
@@ -185,6 +192,7 @@ func (s *shopScene) sell(g *Game, mi ui.MenuItem) {
 		price = 1
 	}
 	g.Player.Coins += int64(price)
+	g.Sound.Play("world/coins")
 	s.note = fmt.Sprintf("%s, for %d. The shopkeeper does not meet your eye.", it.Name, price)
 }
 

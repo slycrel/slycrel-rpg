@@ -45,6 +45,12 @@ func (s *localScene) Update(g *Game) error {
 		return nil
 	}
 
+	if g.Local.POI.Kind.Settlement() {
+		g.Sound.Ambience("amb/town")
+	} else {
+		g.Sound.Ambience("amb/dungeon")
+	}
+
 	// Wandering foes drift on a slow tick so they are avoidable but present.
 	s.foeTimer--
 	if s.foeTimer <= 0 {
@@ -117,6 +123,7 @@ func (s *localScene) tryStep(g *Game, d core.Dir) {
 func (g *Game) interact(e *world.Entity) {
 	switch e.Kind {
 	case world.EExit:
+		g.Sound.Play("world/enter")
 		g.Local = nil
 		g.Pop()
 
@@ -206,6 +213,7 @@ func (g *Game) spend(e *world.Entity) {
 func (g *Game) openChest(e *world.Entity) {
 	coins := int64(g.RNG.Between(8, 25) * core.Max(1, g.Local.POI.Level))
 	g.Player.Coins += coins
+	g.Sound.Play("world/chest")
 
 	// One consumable, and a decent chance of something sellable.
 	pool := []string{"Small Beer", "Field Poultice", "Bottled Nap", "Bitter Root", "Suspicious Pollen"}

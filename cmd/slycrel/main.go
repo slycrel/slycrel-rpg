@@ -20,6 +20,7 @@ func main() {
 	fullscreen := flag.Bool("fullscreen", false, "start fullscreen")
 	audit := flag.Bool("audit", false, "report which asset keys are falling back to placeholders, then exit")
 	load := flag.String("load", "", "start from a save file instead of the title screen")
+	mute := flag.Bool("mute", false, "run silent")
 	keylog := flag.Bool("keylog", false, "trace every key the engine reports, to stderr")
 	demo := flag.Bool("demo", false, "run a scripted tour, writing a frame per screen to shots/, then exit")
 	flag.Parse()
@@ -46,6 +47,9 @@ func main() {
 	}
 
 	game.KeyLog = *keylog
+	if *mute {
+		g.Sound.Silence()
+	}
 	if *load != "" {
 		if err := g.LoadPath(*load); err != nil {
 			log.Fatalf("slycrel: %v", err)

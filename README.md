@@ -31,6 +31,7 @@ go run ./cmd/slycrel -seed 1994    # the same continent every time
 go run ./cmd/slycrel -scale 4      # bigger window (integer scales only)
 go run ./cmd/slycrel -audit        # check content against the art manifest, then exit
 go run ./cmd/slycrel -load saves/demo.json   # start from a save
+go run ./cmd/slycrel -mute        # run silent
 ```
 
 `-load` takes any save file, which makes saves useful as test fixtures: the
@@ -49,7 +50,7 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 | X, Esc | back out |
 | M | the map of everywhere you have been |
 | C or I | character sheet and pack |
-| Esc | pause: save, load, abandon the run |
+| Esc | pause: sound, save, load, abandon the run |
 | `\` or F12 | screenshot to `shots/` (F12 needs standard function keys on macOS) |
 
 ## What is in the box
@@ -68,6 +69,11 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 - **54 monsters** across nine biomes, each with its own attack verbs, defensive
   flavour, taunts, death lines, and drop table.
 - **Shops, inns, chests, altars and townsfolk** who all have opinions.
+- **Sound** — 33 cues drawn from the bundle's sound packs: combat impacts,
+  interface clicks, coins, chests, and four looping ambience beds that follow
+  the ground underfoot. Each cue has several source files and picks one at
+  random, so a sword landing forty times does not click the same way twice.
+  There is also a retired magician who occasionally comments on your victories.
 - **Save and load** — three slots, reachable from the pause menu (Escape) or
   Continue on the title. A save is the seed plus whatever you changed, so it is
   a few kilobytes of readable JSON rather than a dump of the map.
@@ -106,7 +112,8 @@ rebuilt from the purchased zips on demand:
 ```bash
 go run ./cmd/assetpipe inventory        # writes docs/ASSET-INVENTORY.md
 go run ./cmd/assetpipe extract tier1    # the ~33 packs the game currently uses (2.8 GB)
-go run ./cmd/assetpipe manifest         # index them into assets/manifest.json
+go run ./cmd/assetpipe manifest         # index art into assets/manifest.json
+go run ./cmd/assetpipe audio            # index sound into assets/audio.json
 go run ./cmd/assetpipe find viking walk # locate a file in what is extracted
 ```
 
@@ -115,7 +122,9 @@ Set `SLYCREL_BUNDLE` if the bundle is not at `~/Desktop/RPG Maker Stuff`.
 Anything the manifest does not cover is generated procedurally at runtime — the
 overworld terrain currently is — so the game always runs, and curation can
 proceed one asset at a time without ever leaving the build broken.
-`-audit` reports exactly what is still falling back.
+`-audit` reports exactly what is still falling back, and decodes every sound
+file to prove the cues will actually play rather than just that the JSON
+parsed.
 
 ## Testing
 

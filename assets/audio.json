@@ -1,0 +1,254 @@
+{
+  "entries": [
+    {
+      "key": "amb/dungeon",
+      "files": [
+        "assets-raw/ambiencesoundspack/The_Sound_Guild_Ambience_Sounds/WAV - 44100 Hz - 16 Bit/Ambience_Dungeon_01_Loop.wav"
+      ],
+      "loop": true
+    },
+    {
+      "key": "amb/forest",
+      "files": [
+        "assets-raw/ambiencesoundspack/The_Sound_Guild_Ambience_Sounds/WAV - 44100 Hz - 16 Bit/Ambience_Forest_Loop.wav"
+      ],
+      "loop": true
+    },
+    {
+      "key": "amb/plains",
+      "files": [
+        "assets-raw/ambiencesoundspack/The_Sound_Guild_Ambience_Sounds/WAV - 44100 Hz - 16 Bit/Ambience_Birds_Loop.wav"
+      ],
+      "loop": true
+    },
+    {
+      "key": "amb/town",
+      "files": [
+        "assets-raw/ambiencesoundspack/The_Sound_Guild_Ambience_Sounds/WAV - 44100 Hz - 16 Bit/Ambience_Crowd_02_Loop.wav"
+      ],
+      "loop": true
+    },
+    {
+      "key": "fight/crit",
+      "files": [
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Attack_Critical.wav"
+      ]
+    },
+    {
+      "key": "fight/defeat",
+      "files": [
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Explosion_Aftermath.wav"
+      ]
+    },
+    {
+      "key": "fight/die",
+      "files": [
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Destruction_01.wav",
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Destruction_02.wav",
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Destruction_03.wav"
+      ]
+    },
+    {
+      "key": "fight/flee",
+      "files": [
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Movement_Teleport_01.wav",
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Movement_Teleport_02.wav"
+      ]
+    },
+    {
+      "key": "fight/heal",
+      "files": [
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Energy_Up_01_Variation_01.wav",
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Energy_Up_01_Variation_02.wav",
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Energy_Up_02.wav"
+      ]
+    },
+    {
+      "key": "fight/hit",
+      "files": [
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Combat_Hit_01.wav",
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Combat_Hit_02.wav",
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Combat_Hit_03.wav",
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Combat_Hit_04.wav",
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Combat_Hit_05.wav"
+      ]
+    },
+    {
+      "key": "fight/hurt",
+      "files": [
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Armour_Impact.wav"
+      ]
+    },
+    {
+      "key": "fight/levelup",
+      "files": [
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/RPG_Inventory_Sounds/UI_Reward_Obtained.wav"
+      ]
+    },
+    {
+      "key": "fight/miss",
+      "files": [
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Combat_Whoosh_01.wav",
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Combat_Whoosh_02.wav",
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Combat_Whoosh_03.wav"
+      ]
+    },
+    {
+      "key": "fight/monster",
+      "files": [
+        "assets-raw/monstersoundsvolume1/The_Sound_Guild_Monster_Sounds_Volume_01/WAV - 44100 Hz - 16 Bit/Ancestral_Monster_Attack_01.wav",
+        "assets-raw/monstersoundsvolume1/The_Sound_Guild_Monster_Sounds_Volume_01/WAV - 44100 Hz - 16 Bit/Ancestral_Monster_Attack_02.wav",
+        "assets-raw/monstersoundsvolume1/The_Sound_Guild_Monster_Sounds_Volume_01/WAV - 44100 Hz - 16 Bit/Ancestral_Monster_Attack_03.wav",
+        "assets-raw/monstersoundsvolume1/The_Sound_Guild_Monster_Sounds_Volume_01/WAV - 44100 Hz - 16 Bit/Arachnid_Attack_Double.wav",
+        "assets-raw/monstersoundsvolume1/The_Sound_Guild_Monster_Sounds_Volume_01/WAV - 44100 Hz - 16 Bit/Arachnid_Fast_Attack_01.wav",
+        "assets-raw/monstersoundsvolume1/The_Sound_Guild_Monster_Sounds_Volume_01/WAV - 44100 Hz - 16 Bit/Arachnid_Fast_Attack_02.wav",
+        "assets-raw/monstersoundsvolume1/The_Sound_Guild_Monster_Sounds_Volume_01/WAV - 44100 Hz - 16 Bit/Attack_01.wav",
+        "assets-raw/monstersoundsvolume1/The_Sound_Guild_Monster_Sounds_Volume_01/WAV - 44100 Hz - 16 Bit/Attack_02.wav"
+      ]
+    },
+    {
+      "key": "fight/spell",
+      "files": [
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Aggressive_Spell_01.wav",
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Aggressive_Spell_02.wav",
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Aggressive_Spell_03.wav"
+      ]
+    },
+    {
+      "key": "fight/start",
+      "files": [
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Clash_01.wav",
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Clash_01_Shorter.wav",
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Clash_02.wav"
+      ]
+    },
+    {
+      "key": "fight/victory",
+      "files": [
+        "assets-raw/combatsoundsbundlecollection/The_Sound_Guild_Combat_Sounds_Bundle/WAV - 44100 Hz - 16 Bit/Anime_Combat_Sounds/Anime_Power_Up.wav"
+      ]
+    },
+    {
+      "key": "ui/cancel",
+      "files": [
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Clicks_Sounds/Click_Negative_01.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Clicks_Sounds/Click_Negative_02.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Clicks_Sounds/Click_Negative_03.wav"
+      ]
+    },
+    {
+      "key": "ui/confirm",
+      "files": [
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Clicks_Sounds/Click_Fantasy_RPG_01.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Clicks_Sounds/Click_Fantasy_RPG_02.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Clicks_Sounds/Click_Fantasy_RPG_03.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Clicks_Sounds/Click_Fantasy_RPG_04.wav"
+      ]
+    },
+    {
+      "key": "ui/deny",
+      "files": [
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Clicks_Sounds/Click_Negative_01.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Clicks_Sounds/Click_Negative_02.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Clicks_Sounds/Click_Negative_03.wav"
+      ]
+    },
+    {
+      "key": "ui/move",
+      "files": [
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Clicks_Sounds/Click_Minimalistic_01.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Clicks_Sounds/Click_Minimalistic_02.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Clicks_Sounds/Click_Minimalistic_03.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Clicks_Sounds/Click_Minimalistic_04.wav"
+      ]
+    },
+    {
+      "key": "ui/page",
+      "files": [
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/RPG_Inventory_Sounds/Pass_Page_01.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/RPG_Inventory_Sounds/Pass_Page_02.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/RPG_Inventory_Sounds/Pass_Page_03.wav"
+      ]
+    },
+    {
+      "key": "vo/death",
+      "files": [
+        "assets-raw/oldmagicianvoicepack/The_Sound_Guild_Magician_VO/WAV - 44100 Hz - 16 Bit/Magician_Death_01.wav",
+        "assets-raw/oldmagicianvoicepack/The_Sound_Guild_Magician_VO/WAV - 44100 Hz - 16 Bit/Magician_Death_02.wav",
+        "assets-raw/oldmagicianvoicepack/The_Sound_Guild_Magician_VO/WAV - 44100 Hz - 16 Bit/Magician_Death_03.wav",
+        "assets-raw/oldmagicianvoicepack/The_Sound_Guild_Magician_VO/WAV - 44100 Hz - 16 Bit/Magician_Death_04.wav",
+        "assets-raw/oldmagicianvoicepack/The_Sound_Guild_Magician_VO/WAV - 44100 Hz - 16 Bit/Magician_Death_05.wav",
+        "assets-raw/oldmagicianvoicepack/The_Sound_Guild_Magician_VO/WAV - 44100 Hz - 16 Bit/Magician_Death_06.wav"
+      ]
+    },
+    {
+      "key": "vo/greet",
+      "files": [
+        "assets-raw/oldmagicianvoicepack/The_Sound_Guild_Magician_VO/WAV - 44100 Hz - 16 Bit/Magician_Line_30_Greeting_Traveler.wav"
+      ]
+    },
+    {
+      "key": "vo/victory",
+      "files": [
+        "assets-raw/oldmagicianvoicepack/The_Sound_Guild_Magician_VO/WAV - 44100 Hz - 16 Bit/Magician_Line_61_Another_Victory_For_This_Magician.wav"
+      ]
+    },
+    {
+      "key": "vo/welcome",
+      "files": [
+        "assets-raw/oldmagicianvoicepack/The_Sound_Guild_Magician_VO/WAV - 44100 Hz - 16 Bit/Magician_Line_29_Welcome_V1.wav",
+        "assets-raw/oldmagicianvoicepack/The_Sound_Guild_Magician_VO/WAV - 44100 Hz - 16 Bit/Magician_Line_29_Welcome_V2.wav",
+        "assets-raw/oldmagicianvoicepack/The_Sound_Guild_Magician_VO/WAV - 44100 Hz - 16 Bit/Magician_Line_29_Welcome_V3.wav"
+      ]
+    },
+    {
+      "key": "world/buy",
+      "files": [
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Clicks_Sounds/Click_Coins_01.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Coins_Sounds/A_Lot_Of_Coins_01.wav"
+      ]
+    },
+    {
+      "key": "world/chest",
+      "files": [
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/RPG_Shop_Sounds/Chest_Open.wav"
+      ]
+    },
+    {
+      "key": "world/coins",
+      "files": [
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Coins_Sounds/A_Lot_Of_Coins_01.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Coins_Sounds/A_Lot_Of_Coins_02.wav"
+      ]
+    },
+    {
+      "key": "world/enter",
+      "files": [
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Inventory_Sounds_Volume_01/Wood_Interaction_01.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Inventory_Sounds_Volume_01/Wood_Interaction_02.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Inventory_Sounds_Volume_01/Wood_Interaction_03.wav"
+      ]
+    },
+    {
+      "key": "world/equip",
+      "files": [
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/RPG_Inventory_Sounds/Change_Weapon_01.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/RPG_Inventory_Sounds/Change_Weapon_02.wav"
+      ]
+    },
+    {
+      "key": "world/loot",
+      "files": [
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/RPG_Inventory_Sounds/Bag_Interaction_Soft_01.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/RPG_Inventory_Sounds/Bag_Interaction_Soft_02.wav"
+      ]
+    },
+    {
+      "key": "world/rest",
+      "files": [
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Inventory_Sounds_Volume_01/Book_Interaction_01.wav",
+        "assets-raw/userinterfacesfxbundle/The_Sound_Guild_User_Interface_SFX_Bundle/WAV - 44100 Hz - 16 Bit/Inventory_Sounds_Volume_01/Book_Interaction_02.wav"
+      ]
+    }
+  ]
+}

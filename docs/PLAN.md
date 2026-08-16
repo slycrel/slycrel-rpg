@@ -42,6 +42,9 @@ Built and running:
 - Loot, XP, banked level-ups, shops (buy/sell, stock scaling with settlement
   size), inns, chests, altars
 - Character sheet and pack with out-of-combat item use
+- Sound: 33 cues over 81 source files — combat, interface, world and four
+  ambience beds — with per-cue variant selection, a persisted volume/mute
+  setting, and an audit pass that decodes every file
 - Save and load: three slots, a pause menu, and `-load` to boot straight into a
   save. A save is the seed plus what the player changed, so it is ~6 KB of
   mostly readable JSON and doubles as a test fixture
@@ -49,7 +52,7 @@ Built and running:
 - Asset pipeline: inventory, selective extraction, manifest generation, and an
   audit that reports which art keys still fall back to placeholders
 
-Deliberately not built yet: audio and curated tile art.
+Deliberately not built yet: curated tile art.
 
 ## Architecture, and why
 
@@ -74,16 +77,12 @@ testable and a simulation harness is cheap to add later.
 
 ## Roadmap
 
-### Phase 1 — make it feel like a game *(next session)*
+### Phase 1 — make it feel like a game *(save/load and audio done)*
 
-1. **Audio.** The bundle has ~11,000 sounds already extracted: 719 combat, 883
-   UI, 132 monster, 100 ambience, and a 291-file "old magician" voice pack that
-   is begging to be a narrator. Ebitengine wants Vorbis or WAV; a batch
-   convert into `assets/audio/` plus a small mixer package.
-2. **Real overworld tiles.** Mana Seed ships 22 Tiled `.tmx` maps and 127 `.tsx`
+1. **Real overworld tiles.** Mana Seed ships 22 Tiled `.tmx` maps and 127 `.tsx`
    tilesets on a 16px grid. Write a `.tsx` reader and an autotile/Wang lookup so
    coast, forest edges and cliffs blend instead of tiling flat.
-3. **Icons everywhere.** 720 spell icons, 480 stat icons, 273 loot icons are
+2. **Icons everywhere.** 720 spell icons, 480 stat icons, 273 loot icons are
    extracted. Wire `Item.Icon`, `Weapon.Icon`, `Spell.Icon` through to the menus.
 
 ### Phase 2 — depth

@@ -43,6 +43,13 @@ func (g *Game) Audit(w io.Writer) error {
 		total, len(g.Data.Monsters), len(g.Data.Weapons), len(g.Data.Armors), len(g.Data.Items), len(g.Data.Spells))
 	fmt.Fprintf(w, "assets:  %d keys in manifest, %d checked\n", g.Assets.Count(), len(seen))
 
+	sfx, files := g.Sound.Inventory()
+	soundErrs := g.Sound.Verify()
+	fmt.Fprintf(w, "sound:   %d cues, %d files, %d decode failures\n", sfx, files, len(soundErrs))
+	for _, e := range soundErrs {
+		fmt.Fprintf(w, "  %v\n", e)
+	}
+
 	if len(missing) == 0 {
 		fmt.Fprintln(w, "all referenced art resolves.")
 		return nil

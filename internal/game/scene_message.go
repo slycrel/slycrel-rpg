@@ -2,7 +2,6 @@ package game
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 )
@@ -50,7 +49,7 @@ func (g *Game) Ask(speaker, body string, choices []string, onChoose func(*Game, 
 
 func (m *messageScene) Update(g *Game) error {
 	if len(m.choices) == 0 {
-		if Confirm() || Cancel() {
+		if g.Accept() || Cancel() {
 			g.Pop()
 			if m.onChoose != nil {
 				m.onChoose(g, 0)
@@ -59,21 +58,14 @@ func (m *messageScene) Update(g *Game) error {
 		return nil
 	}
 
-	if d, ok := MenuDir(); ok {
-		switch d {
-		case core.DirDown:
-			m.menu.Move(1)
-		case core.DirUp:
-			m.menu.Move(-1)
-		}
-	}
-	if Confirm() {
+	g.MenuNav(&m.menu)
+	if g.Accept() {
 		i := m.menu.Index
 		g.Pop()
 		if m.onChoose != nil {
 			m.onChoose(g, i)
 		}
-	} else if Cancel() {
+	} else if g.Back() {
 		g.Pop()
 		if m.onChoose != nil {
 			m.onChoose(g, -1)

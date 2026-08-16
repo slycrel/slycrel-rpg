@@ -90,6 +90,7 @@ func newBattleScene(g *Game, mons []*model.Monster, where string) *battleScene {
 	if len(mons) > 1 {
 		names = fmt.Sprintf("%d of them", len(mons))
 	}
+	g.Sound.Play("fight/start")
 	b.log.AddColor(render.ColGold, "Out of the %s: %s.", where, names)
 	if t := g.Write.Taunt(g.RNG, mons[0]); t != "" {
 		b.log.Add("%s", t)
@@ -152,7 +153,7 @@ func (b *battleScene) Update(g *Game) error {
 	case modeBusy:
 		b.updateBusy(g)
 	case modeDone:
-		if Confirm() || Cancel() {
+		if g.Accept() || Cancel() {
 			g.Pop()
 			b.onPopped(g)
 		}
@@ -200,21 +201,25 @@ func (b *battleScene) updateMenus(g *Game) {
 				switch d {
 				case core.DirLeft:
 					b.target = prevIn(l, b.target)
+					g.Sound.Play("ui/move")
 				case core.DirRight:
 					b.target = nextIn(l, b.target)
+					g.Sound.Play("ui/move")
 				}
 			}
 		default:
 			switch d {
 			case core.DirDown:
 				b.menu.Move(1)
+				g.Sound.Play("ui/move")
 			case core.DirUp:
 				b.menu.Move(-1)
+				g.Sound.Play("ui/move")
 			}
 		}
 	}
 
-	if Cancel() {
+	if g.Back() {
 		switch b.mode {
 		case modeSpell, modeItem:
 			b.setRootMenu(g)
@@ -227,7 +232,7 @@ func (b *battleScene) updateMenus(g *Game) {
 		}
 		return
 	}
-	if !Confirm() {
+	if !g.Accept() {
 		return
 	}
 
@@ -382,6 +387,7 @@ func (b *battleScene) playerAttack(g *Game, idx int) {
 	// side ever becomes untouchable.
 	missChance := core.ClampF(0.06+float64(m.Def.Speed-p.Dexterity-b.buffDex)*0.012, 0.03, 0.32)
 	if g.RNG.Chance(missChance) {
+		g.Sound.Play("fight/miss")
 		b.log.Add("%s", g.Write.Miss(g.RNG, p.Name, m.Name))
 		return
 	}
@@ -393,10 +399,13 @@ func (b *battleScene) playerAttack(g *Game, idx int) {
 		dmg = dmg*3/2 + 2
 	}
 	b.damageMonster(g, idx, dmg)
-	b.log.Add("%s", g.Write.Hit(g.RNG, p.Name, p.Weapon.Verb, m.Name, dmg, crit))
 	if crit {
+		g.Sound.Play("fight/crit")
 		b.cam.Shake(3)
+	} else {
+		g.Sound.Play("fight/hit")
 	}
+	b.log.Add("%s", g.Write.Hit(g.RNG, p.Name, p.Weapon.Verb, m.Name, dmg, crit))
 }
 
 func (b *battleScene) castSpell(g *Game, s model.Spell, idx int) {
@@ -406,6 +415,11 @@ func (b *battleScene) castSpell(g *Game, s model.Spell, idx int) {
 		return
 	}
 	p.Psyche -= s.Cost
+	if s.Kind == model.SpellHeal {
+		g.Sound.Play("fight/heal")
+	} else {
+		g.Sound.Play("fight/spell")
+	}
 	if s.Cast != "" {
 		b.log.AddColor(render.ColMagic, "%s", fmt.Sprintf(s.Cast, p.Name))
 	}
@@ -463,6 +477,7 @@ func (b *battleScene) useItem(g *Game, idx int) {
 	switch it.Kind {
 	case model.ItemHeal:
 		healed := p.Heal(it.Power)
+		g.Sound.Play("fight/heal")
 		b.log.AddColor(render.ColHeal, "%s downs the %s. %d back.", p.Name, it.Name, healed)
 		b.addFloater(heroSlotX(), 200, fmt.Sprintf("+%d", healed), render.ColHeal)
 	case model.ItemPsyche:
@@ -491,6 +506,7 @@ func (b *battleScene) attemptFlee(g *Game) {
 	}
 	if g.RNG.Chance(rules.FleeChance(g.Player.Speed, fastest)) {
 		b.result = 3
+		g.Sound.Play("fight/flee")
 		b.log.AddColor(render.ColGold, "%s leaves with what dignity remains. Which is none.", g.Player.Name)
 		b.queue = nil
 		b.finish(g)
@@ -531,12 +547,14 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 	}
 
 	verb, with := g.Write.MonsterAttack(g.RNG, m)
+	g.Sound.Play("fight/monster")
 	if dmg == 0 {
 		b.log.Add("%s %s at %s with %s. %s %s it.",
 			m.Name, verb, g.Player.Name, with, g.Player.Armor.Name, g.Player.Armor.Verb)
 		return
 	}
 	g.Player.HP = core.Max(0, g.Player.HP-dmg)
+	g.Sound.Play("fight/hurt")
 	b.heroHurt = 14
 	b.cam.Shake(float64(dmg) / 6)
 	b.addFloater(heroSlotX(), 200, fmt.Sprintf("-%d", dmg), render.ColBlood)
@@ -551,6 +569,7 @@ func (b *battleScene) damageMonster(g *Game, idx, dmg int) {
 	b.addFloater(monSlotX(idx, len(b.mons)), 88, fmt.Sprintf("-%d", dmg), render.ColGold)
 	if m.HP == 0 && !m.Dead {
 		m.Dead = true
+		g.Sound.Play("fight/die")
 		b.log.AddColor(render.ColGold, "%s", g.Write.Death(g.RNG, m))
 	}
 }
@@ -595,6 +614,7 @@ func (b *battleScene) awardSpoils(g *Game) {
 	p.TotalXP += xp
 	p.SpendXP += xp
 	p.Coins += coins
+	g.Sound.Play("world/coins")
 	b.log.AddColor(render.ColGold, "%d experience. %d coins.", xp, coins)
 
 	for _, m := range killed {
@@ -605,12 +625,14 @@ func (b *battleScene) awardSpoils(g *Game) {
 			}
 			it.Count = n
 			p.AddItem(it)
+			g.Sound.Play("world/loot")
 			b.log.Add("Picked up %s x%d.", name, n)
 		}
 	}
 
 	for rules.PendingLevels(p) > 0 {
 		rules.LevelUp(g.RNG, p)
+		g.Sound.Play("fight/levelup")
 		b.log.AddColor(render.ColHeal, "%s", g.Write.LevelUpLine(g.RNG, p.Level))
 	}
 }
@@ -619,8 +641,16 @@ func (b *battleScene) finish(g *Game) {
 	b.mode = modeDone
 	switch b.result {
 	case 1:
+		g.Sound.Play("fight/victory")
+		// The old magician chips in now and then, not every single time; a
+		// catchphrase stops being funny the fourth time you hear it.
+		if g.RNG.Chance(0.25) {
+			g.Sound.Play("vo/victory")
+		}
 		b.log.AddColor(render.ColGold, "Victory. Press Z.")
 	case 2:
+		g.Sound.Play("fight/defeat")
+		g.Sound.Play("vo/death")
 		b.log.AddColor(render.ColBlood, "You die. Press Z.")
 	case 3:
 		b.log.AddColor(render.ColGold, "Escaped. Press Z.")

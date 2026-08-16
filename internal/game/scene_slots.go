@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/save"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
@@ -84,19 +83,12 @@ func humanAge(t time.Time) string {
 }
 
 func (s *slotScene) Update(g *Game) error {
-	if Cancel() {
+	if g.Back() {
 		g.Pop()
 		return nil
 	}
-	if d, ok := MenuDir(); ok {
-		switch d {
-		case core.DirDown:
-			s.menu.Move(1)
-		case core.DirUp:
-			s.menu.Move(-1)
-		}
-	}
-	if !Confirm() {
+	g.MenuNav(&s.menu)
+	if !g.Accept() {
 		return nil
 	}
 
@@ -157,29 +149,41 @@ type pauseScene struct {
 
 func newPauseScene(g *Game) *pauseScene {
 	p := &pauseScene{under: g.Top()}
-	p.menu.SetItems([]ui.MenuItem{
-		{Label: "Resume"},
-		{Label: "Save"},
-		{Label: "Load"},
-		{Label: "Abandon the run", Detail: "back to the title"},
-	})
+	p.refresh(g)
 	return p
 }
 
+// refresh rebuilds the rows so the sound line reflects the current setting.
+func (p *pauseScene) refresh(g *Game) {
+	idx := p.menu.Index
+	p.menu.SetItems([]ui.MenuItem{
+		{Label: "Resume"},
+		{Label: "Sound", Detail: soundLabel(g)},
+		{Label: "Save"},
+		{Label: "Load"},
+		{Label: "Abandon run", Detail: "to the title"},
+	})
+	p.menu.Index = idx
+}
+
+func soundLabel(g *Game) string {
+	switch {
+	case !g.Sound.Enabled() && g.Sound.Muted():
+		return "off"
+	case !g.Sound.Enabled():
+		return "unavailable"
+	default:
+		return fmt.Sprintf("%d%%", int(g.Sound.Volume()*100+0.5))
+	}
+}
+
 func (p *pauseScene) Update(g *Game) error {
-	if Cancel() {
+	if g.Back() {
 		g.Pop()
 		return nil
 	}
-	if d, ok := MenuDir(); ok {
-		switch d {
-		case core.DirDown:
-			p.menu.Move(1)
-		case core.DirUp:
-			p.menu.Move(-1)
-		}
-	}
-	if !Confirm() {
+	g.MenuNav(&p.menu)
+	if !g.Accept() {
 		return nil
 	}
 	switch p.menu.Index {
@@ -209,9 +213,12 @@ func (p *pauseScene) Draw(g *Game, dst *ebiten.Image) {
 	}
 	render.Rect(dst, 0, 0, render.ScreenW, render.ScreenH, color.RGBA{0x0A, 0x08, 0x10, 0xD0})
 
-	ui.TitledPanel(dst, "paused", render.ScreenW/2-108, 82, 216, 76)
-	p.menu.Draw(dst, render.ScreenW/2-84, 94, 184)
+	ui.TitledPanel(dst, "paused", render.ScreenW/2-108, 76, 216, 88)
+	p.menu.Draw(dst, render.ScreenW/2-84, 88, 184)
 
-	render.TextCenter(dst, g.summary(), render.ScreenW/2, 172, render.ColInkDim)
-	render.TextCenter(dst, fmt.Sprintf("seed %d", g.Seed), render.ScreenW/2, 188, render.ColInkFaint)
+	render.TextCenter(dst, g.summary(), render.ScreenW/2, 176, render.ColInkDim)
+	render.TextCenter(dst, fmt.Sprintf("seed %d", g.Seed), render.ScreenW/2, 190, render.ColInkFaint)
+	if p.menu.Index == 1 {
+		render.TextCenter(dst, "left/right adjusts - Z mutes", render.ScreenW/2, 206, render.ColInkFaint)
+	}
 }

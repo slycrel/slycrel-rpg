@@ -15,6 +15,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/slycrel/slycrel-rpg/internal/assetsys"
+	"github.com/slycrel/slycrel-rpg/internal/audiosys"
 	"github.com/slycrel/slycrel-rpg/internal/content"
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/gamedata"
@@ -34,6 +35,7 @@ type Scene interface {
 type Game struct {
 	Root   string
 	Assets *assetsys.Registry
+	Sound  *audiosys.Bank
 	Data   *gamedata.Tables
 	Write  *content.Writer
 	RNG    *core.RNG
@@ -76,6 +78,7 @@ func New(root string, seed int64) (*Game, error) {
 		Seed:   seed,
 		Log:    ui.NewLog(200),
 	}
+	g.Sound = audiosys.New(root, seed)
 	g.Push(newTitleScene(g))
 	return g, nil
 }
@@ -141,6 +144,7 @@ func (g *Game) Update() error {
 	if g.quit {
 		return ebiten.Termination
 	}
+	g.Sound.Update()
 	if g.demo != nil {
 		g.updateDemo()
 	}
@@ -293,6 +297,44 @@ func anyJustPressed(keys []ebiten.Key) bool {
 		if inpututil.IsKeyJustPressed(k) {
 			return true
 		}
+	}
+	return false
+}
+
+// MenuNav moves a cursor from directional input and clicks when it does.
+// Every menu in the game routes through this, so the navigation feel and the
+// sound that goes with it are defined once rather than in each screen.
+func (g *Game) MenuNav(m *ui.Menu) bool {
+	d, ok := MenuDir()
+	if !ok {
+		return false
+	}
+	switch d {
+	case core.DirDown:
+		m.Move(1)
+	case core.DirUp:
+		m.Move(-1)
+	default:
+		return false
+	}
+	g.Sound.Play("ui/move")
+	return true
+}
+
+// Accept reports a confirm press, with the click.
+func (g *Game) Accept() bool {
+	if Confirm() {
+		g.Sound.Play("ui/confirm")
+		return true
+	}
+	return false
+}
+
+// Back reports a cancel press, with the click.
+func (g *Game) Back() bool {
+	if Cancel() {
+		g.Sound.Play("ui/cancel")
+		return true
 	}
 	return false
 }
