@@ -42,6 +42,17 @@ func (k POIKind) Settlement() bool {
 	return false
 }
 
+// UsedKey identifies one spent interactable inside a location.
+//
+// Keyed by kind and position rather than by index into the entity list,
+// because that list is not stable: clearing a dungeon drops its boss from
+// generation and shifts every index after it. A position never moves.
+type UsedKey struct {
+	Kind string `json:"kind"`
+	X    int    `json:"x"`
+	Y    int    `json:"y"`
+}
+
 // POI is one visitable location on the overworld.
 type POI struct {
 	Pos   core.Point
@@ -54,6 +65,32 @@ type POI struct {
 	Discovered bool
 	Visited    bool
 	Cleared    bool
+
+	// Used survives leaving and re-entering. Interiors are regenerated from
+	// Seed rather than stored, so without this an emptied chest would refill
+	// itself the moment you stepped outside.
+	Used []UsedKey
+}
+
+// MarkUsed records that an interactable has been spent.
+func (p *POI) MarkUsed(kind string, at core.Point) {
+	k := UsedKey{Kind: kind, X: at.X, Y: at.Y}
+	for _, u := range p.Used {
+		if u == k {
+			return
+		}
+	}
+	p.Used = append(p.Used, k)
+}
+
+// IsUsed reports whether an interactable has already been spent.
+func (p *POI) IsUsed(kind string, at core.Point) bool {
+	for _, u := range p.Used {
+		if u.Kind == kind && u.X == at.X && u.Y == at.Y {
+			return true
+		}
+	}
+	return false
 }
 
 // Map is a generated continent.

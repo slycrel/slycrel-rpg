@@ -30,7 +30,13 @@ go run ./cmd/slycrel               # a new continent every launch
 go run ./cmd/slycrel -seed 1994    # the same continent every time
 go run ./cmd/slycrel -scale 4      # bigger window (integer scales only)
 go run ./cmd/slycrel -audit        # check content against the art manifest, then exit
+go run ./cmd/slycrel -load saves/demo.json   # start from a save
 ```
+
+`-load` takes any save file, which makes saves useful as test fixtures: the
+`-demo` tour leaves one at `saves/demo.json` with coins, loot, a partly
+explored map and a half-looted dungeon, so a playtest can start somewhere
+interesting instead of at level one.
 
 Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 
@@ -43,6 +49,7 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 | X, Esc | back out |
 | M | the map of everywhere you have been |
 | C or I | character sheet and pack |
+| Esc | pause: save, load, abandon the run |
 | `\` or F12 | screenshot to `shots/` (F12 needs standard function keys on macOS) |
 
 ## What is in the box
@@ -61,6 +68,9 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 - **54 monsters** across nine biomes, each with its own attack verbs, defensive
   flavour, taunts, death lines, and drop table.
 - **Shops, inns, chests, altars and townsfolk** who all have opinions.
+- **Save and load** — three slots, reachable from the pause menu (Escape) or
+  Continue on the title. A save is the seed plus whatever you changed, so it is
+  a few kilobytes of readable JSON rather than a dump of the map.
 
 ## Project layout
 

@@ -181,3 +181,83 @@ func TestLocalMapsAreEnterable(t *testing.T) {
 		t.Errorf("only exercised %d location kinds", len(seen))
 	}
 }
+
+// TestSpentInteractablesSurviveLeaving pins the bug that persistence had to fix
+// first: interiors are regenerated from their seed on every visit, so without
+// the location remembering what has been used, an emptied chest refills itself
+// the moment the player steps outside.
+func TestSpentInteractablesSurviveLeaving(t *testing.T) {
+	m := world.Generate(1994, stubNamer{})
+
+	var poi *world.POI
+	for _, p := range m.POIs {
+		if p.Kind == world.KindDungeon {
+			poi = p
+			break
+		}
+	}
+	if poi == nil {
+		t.Skip("seed produced no dungeon")
+	}
+
+	first := world.BuildLocal(poi, stubNamer{})
+	var spent []*world.Entity
+	for _, e := range first.Entities {
+		if e.Kind == world.EChest || e.Kind == world.EFoe {
+			e.Used = true
+			poi.MarkUsed(string(e.Kind), e.Pos)
+			spent = append(spent, e)
+		}
+	}
+	if len(spent) == 0 {
+		t.Skip("dungeon had nothing to spend")
+	}
+
+	// Walk out and back in.
+	again := world.BuildLocal(poi, stubNamer{})
+	for _, e := range spent {
+		found := false
+		for _, r := range again.Entities {
+			if r.Kind == e.Kind && r.Pos == e.Pos {
+				found = true
+				if !r.Used {
+					t.Errorf("%s at %v came back unused after re-entering", r.Kind, r.Pos)
+				}
+			}
+		}
+		if !found {
+			t.Errorf("%s at %v vanished entirely on re-entry", e.Kind, e.Pos)
+		}
+	}
+}
+
+// TestInteriorsAreDeterministic is the assumption persistence rests on: the
+// same location must regenerate identically, or saved positions would point at
+// the wrong things.
+func TestInteriorsAreDeterministic(t *testing.T) {
+	m := world.Generate(2026, stubNamer{})
+	for _, p := range m.POIs[:core.Min(12, len(m.POIs))] {
+		a := world.BuildLocal(p, stubNamer{})
+		b := world.BuildLocal(p, stubNamer{})
+		if a.W != b.W || a.H != b.H || a.Entry != b.Entry {
+			t.Errorf("%s (%s) regenerated at a different size or entry", p.Name, p.Kind)
+			continue
+		}
+		if len(a.Entities) != len(b.Entities) {
+			t.Errorf("%s regenerated with %d entities then %d", p.Name, len(a.Entities), len(b.Entities))
+			continue
+		}
+		for i := range a.Entities {
+			if a.Entities[i].Kind != b.Entities[i].Kind || a.Entities[i].Pos != b.Entities[i].Pos {
+				t.Errorf("%s entity %d moved between generations", p.Name, i)
+				break
+			}
+		}
+		for i := range a.Tiles {
+			if a.Tiles[i] != b.Tiles[i] {
+				t.Errorf("%s tiles differ between generations", p.Name)
+				break
+			}
+		}
+	}
+}

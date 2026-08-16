@@ -88,7 +88,7 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 	if s.under != nil {
 		s.under.Draw(g, dst)
 	}
-	render.Rect(dst, 0, 0, render.ScreenW, render.ScreenH, color.RGBA{0x0A, 0x08, 0x10, 0xEE})
+	render.Rect(dst, 0, 0, render.ScreenW, render.ScreenH, color.RGBA{0x0A, 0x08, 0x10, 0xFF})
 
 	p := g.Player
 	ui.TitledPanel(dst, "the person in question", 10, 16, 250, 200)

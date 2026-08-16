@@ -186,14 +186,22 @@ func (l *LocalMap) rect(x, y, w, h int, t LocalTile) {
 // RNG fork means it costs nothing to store.
 func BuildLocal(poi *POI, w Namer) *LocalMap {
 	g := core.NewRNG(poi.Seed)
+	var l *LocalMap
 	switch poi.Kind {
 	case KindCapital, KindTown, KindVillage, KindCastle:
-		return buildSettlement(g, poi, w)
+		l = buildSettlement(g, poi, w)
 	case KindDungeon, KindCave:
-		return buildDungeon(g, poi, w)
+		l = buildDungeon(g, poi, w)
 	default:
-		return buildSite(g, poi, w)
+		l = buildSite(g, poi, w)
 	}
+	// Replay what the player has already dealt with here.
+	for _, e := range l.Entities {
+		if poi.IsUsed(string(e.Kind), e.Pos) {
+			e.Used = true
+		}
+	}
+	return l
 }
 
 func newLocal(poi *POI, w, h int, base LocalTile) *LocalMap {

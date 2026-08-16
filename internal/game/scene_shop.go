@@ -192,7 +192,7 @@ func (s *shopScene) Draw(g *Game, dst *ebiten.Image) {
 	if s.under != nil {
 		s.under.Draw(g, dst)
 	}
-	render.Rect(dst, 0, 0, render.ScreenW, render.ScreenH, color.RGBA{0x0A, 0x08, 0x10, 0xEE})
+	render.Rect(dst, 0, 0, render.ScreenW, render.ScreenH, color.RGBA{0x0A, 0x08, 0x10, 0xFF})
 
 	title := s.e.Name
 	ui.TitledPanel(dst, title, 20, 18, render.ScreenW-40, 196)

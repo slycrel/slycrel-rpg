@@ -1,6 +1,9 @@
 package game
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/world"
@@ -13,6 +16,11 @@ import (
 //
 // It deliberately manipulates scenes directly rather than simulating key
 // presses, so a captured frame is never at the mercy of input timing.
+
+// log reports a demo-script problem without aborting the tour.
+func logf(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, "demo: "+format+"\n", args...)
+}
 
 // demoStep is one scripted beat.
 type demoStep struct {
@@ -41,7 +49,7 @@ func buildDemoSteps() []demoStep {
 
 		{at: 20, do: func(g *Game) {
 			g.startRun("Bosk", "the Regrettable", model.ClassFighter)
-			g.dropOverlays() // startRun opens a "welcome" box; not wanted in the shot
+			g.dropOverlays() // startRun opens a welcome box; not wanted in the shot
 		}},
 		{at: 50, shot: "02-overworld"},
 
@@ -74,16 +82,43 @@ func buildDemoSteps() []demoStep {
 		{at: 240, shot: "08-battle"},
 		{at: 245, do: func(g *Game) { g.demoBattleAdvance() }},
 		{at: 300, shot: "09-battle-resolving"},
-		{at: 305, do: func(g *Game) { g.dropOverlays() }},
 
-		// A dungeon interior.
+		// A level-1 fighter against three of anything is a staged fight, not a
+		// fair one, and it usually ends badly. This is a tour rather than a
+		// playthrough, so patch the hero up and carry on.
+		{at: 305, do: func(g *Game) {
+			g.dropOverlays()
+			if g.Player.HP <= 0 {
+				g.Player.HP = g.Player.MaxHP
+			}
+		}},
+
+		// A dungeon, and actually loot it, so the fixture this leaves behind
+		// has spent interactables in it rather than being a fresh run.
 		{at: 315, do: func(g *Game) {
 			g.dropToOverworld()
-			g.demoEnter(func(p *world.POI) bool { return p.Kind == world.KindDungeon || p.Kind == world.KindCave })
+			g.demoEnter(func(p *world.POI) bool {
+				return p.Kind == world.KindDungeon || p.Kind == world.KindCave
+			})
 		}},
-		{at: 350, shot: "10-dungeon"},
+		{at: 345, shot: "10-dungeon"},
+		{at: 350, do: func(g *Game) { g.demoLoot() }},
+		{at: 360, do: func(g *Game) { g.dropOverlays() }},
 
-		{at: 360, do: func(g *Game) { g.Quit() }},
+		{at: 366, do: func(g *Game) { g.Push(newPauseScene(g)) }},
+		{at: 378, shot: "11-pause"},
+		{at: 383, do: func(g *Game) { g.Push(newSlotScene(g, slotSave)) }},
+		{at: 395, shot: "12-save"},
+		{at: 401, do: func(g *Game) { g.dropOverlays() }},
+
+		// Leave the fixture behind.
+		{at: 405, do: func(g *Game) {
+			if err := g.SaveTo("demo"); err != nil {
+				logf("could not write the demo save: %v", err)
+			}
+		}},
+
+		{at: 415, do: func(g *Game) { g.Quit() }},
 	}
 }
 
@@ -177,6 +212,21 @@ func (g *Game) demoOpenShop() {
 		if e.Kind == world.EShop {
 			g.Push(newShopScene(g, e))
 			return
+		}
+	}
+}
+
+// demoLoot opens every chest in the current interior, so the saved fixture
+// carries spent interactables and the loot that came out of them.
+func (g *Game) demoLoot() {
+	if g.Local == nil {
+		return
+	}
+	for _, e := range g.Local.Entities {
+		if e.Kind == world.EChest && !e.Used {
+			g.spend(e)
+			g.openChest(e)
+			g.dropOverlays() // openChest pushes a message box
 		}
 	}
 }

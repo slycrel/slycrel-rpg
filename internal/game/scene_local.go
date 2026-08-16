@@ -36,6 +36,10 @@ func (s *localScene) Update(g *Game) error {
 	g.LocalWalk.Advance()
 	s.cam.Update()
 
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+		g.Push(newPauseScene(g))
+		return nil
+	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) || inpututil.IsKeyJustPressed(ebiten.KeyI) {
 		g.Push(newStatusScene(g))
 		return nil
@@ -141,7 +145,7 @@ func (g *Game) interact(e *world.Entity) {
 			})
 
 	case world.EChest:
-		e.Used = true
+		g.spend(e)
 		g.openChest(e)
 
 	case world.EShop:
@@ -165,7 +169,7 @@ func (g *Game) interact(e *world.Entity) {
 			})
 
 	case world.EFoe, world.EBoss:
-		e.Used = true
+		g.spend(e)
 		count := 1 + g.RNG.Intn(2)
 		level := g.Local.POI.Level
 		if e.Kind == world.EBoss {
@@ -186,6 +190,15 @@ func (g *Game) interact(e *world.Entity) {
 			g.Local.POI.Cleared = true
 		}
 		g.Push(newBattleScene(g, mons, g.Local.POI.Name))
+	}
+}
+
+// spend marks an interactable used, both on the live map and on the location
+// itself, so it stays used after the interior is regenerated on a later visit.
+func (g *Game) spend(e *world.Entity) {
+	e.Used = true
+	if g.Local != nil {
+		g.Local.POI.MarkUsed(string(e.Kind), e.Pos)
 	}
 }
 

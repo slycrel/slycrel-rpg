@@ -41,6 +41,10 @@ func (s *overworldScene) Update(g *Game) error {
 		g.Push(newMapScene(g))
 		return nil
 	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+		g.Push(newPauseScene(g))
+		return nil
+	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) || inpututil.IsKeyJustPressed(ebiten.KeyI) {
 		g.Push(newStatusScene(g))
 		return nil

@@ -9,6 +9,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
+	"github.com/slycrel/slycrel-rpg/internal/save"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
@@ -27,9 +28,14 @@ type star struct {
 
 func newTitleScene(g *Game) *titleScene {
 	t := &titleScene{}
+	saves := save.List(g.Root)
+	cont := ui.MenuItem{Label: "Continue", Detail: "no saves", Disabled: true}
+	if len(saves) > 0 {
+		cont = ui.MenuItem{Label: "Continue", Detail: humanAge(saves[0].Saved)}
+	}
 	t.menu.SetItems([]ui.MenuItem{
 		{Label: "Begin", Detail: "a new mistake"},
-		{Label: "Continue", Detail: "not yet", Disabled: true},
+		cont,
 		{Label: "Quit", Detail: "coward"},
 	})
 	sg := core.NewRNG(g.Seed).Fork("title", 1)
@@ -62,6 +68,8 @@ func (t *titleScene) Update(g *Game) error {
 		switch t.menu.Index {
 		case 0:
 			g.Replace(newCreateScene(g))
+		case 1:
+			g.Push(newSlotScene(g, slotLoad))
 		case 2:
 			g.Quit()
 		}
