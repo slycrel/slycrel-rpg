@@ -214,17 +214,21 @@ than by tests, became something a test can reach.
    section that runs the same simulation over each, plus a WHY table underneath
    it. What it says:
 
-   - Attrition wins the stretch fights at levels 1 and 3; balanced wins 5
-     through 13; duelist never wins but is never more than 5 points behind.
-     So the shapes exist, and balanced is the safe default from level 5 on.
-   - The one real hole has since been fixed. Attrition dropped 13.5 points at
-     level 9 because the weapon band steps ran +2, +5, +5, +4: at tier 3 it was
-     buying a +1 shield step with a -5 weapon step. The tops are now 5, 9, 13,
-     17, 21 — even +4 throughout, same endpoints — and the worst gap at any
-     level fell from 13.5 to 7.9, which flipped the verdict to "no build is
-     ever far behind and each wins somewhere". `TestWeaponBandsStepEvenly`
-     holds it. Armour is still uneven (+3, +4, +6, +4) and deliberately left
-     alone: nothing in the report blames it for anything yet.
+   - **All three builds are live.** Balanced wins the stretch fights at 3
+     levels, attrition at 2, duelist at 2, and the widest gap at any level is
+     6.6 points. Attrition owns the early game, balanced the top end.
+   - Getting there took three fixes, each found by the report and each
+     measured on its own. The weapon band steps ran +2, +5, +5, +4, so at
+     tier 3 attrition was buying a +1 shield step with a -5 weapon step; the
+     tops are now 5, 9, 13, 17, 21, even throughout and with the same
+     endpoints, held by `TestWeaponBandsStepEvenly`. Four levels had no
+     monster in the biome they are sent to. And the stretch probe was rolling
+     the local region, which mostly could not supply the fight it asked for.
+     Worst gap went 13.5 → 7.9 → 6.6 across the three.
+   - Armour steps are still uneven (+3, +4, +6, +4) and deliberately left
+     alone: nothing in the report blames them for anything yet, and pinning a
+     rule that has not earned itself is how a table ends up shaped by its
+     tests rather than by play.
    - A sidearm band is worth about a quarter of a main-gear band, which caps
      how different two builds can be. That is authored, not accidental:
      `TestShieldsStaySecondaryToArmour` holds a shield under half the body
@@ -245,15 +249,26 @@ than by tests, became something a test can reach.
    Still open, and the expensive half: making the content actively support the
    arcs. The report now says what would have to move, which is what it was for.
 
-   **Found on the way, and still open: four holes where the player is sent to a
-   biome that has nothing to fight at their level.** `biomeForLevel` puts levels
-   7-8 in the swamp and the swamp has no level 7 or 8 monsters, so
-   `PickMonsters` falls back within three levels and the band is spent beating
-   up juniors. Same at hills level 6 and mountain level 12. It shows up in the
-   report only as a level that looks suspiciously comfortable — level 7 fighters
-   managing ten fights on one rest — which is how it was found. The report now
-   lists these under "holes where the player is actually sent"; filling them is
-   authoring four or five monsters.
+   **Found on the way, and fixed: the report had been understating danger since
+   it was written.** Two separate causes, both invisible except as a level that
+   looked suspiciously comfortable.
+
+   Four levels were sent to a biome with nothing to fight at their level —
+   `biomeForLevel` puts 7-8 in the swamp and the swamp had no level 7 or 8
+   monsters, so `PickMonsters` fell back and the band was spent beating up
+   juniors. Four monsters filled them, and level 7 fighter endurance came back
+   from ten fights per rest to nine.
+
+   Worse, the "three levels over" column — the report's only measure of what
+   wandering costs — rolled the *local* biome at level+3, which eight of
+   fourteen levels cannot supply. It now rolls the region three levels further
+   out, which is what straying means in a world where danger radiates outward.
+   The column fell by up to thirty points (level 2 fighter, 91.5% → 59.1%).
+   Nothing about the game changed; only what the arbiter was looking at.
+
+   The report now checks both conditions itself and prints where it is lying.
+   The only remaining short probes are levels 12-14, where mountain is already
+   the outermost region and there is nowhere further to stray.
 
 5. **Day/night and weather.** The tileset collection includes a weather-effects
    pack. Changes encounter tables and which NPCs are out.
