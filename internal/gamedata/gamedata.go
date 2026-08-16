@@ -510,16 +510,71 @@ func (t *Tables) PickMonsters(g *core.RNG, biome string, level, count int) []*mo
 		return nil
 	}
 
+	// Nothing more than a band above what was asked for.
+	//
+	// model.Spawn scales a creature up to the encounter level but never down,
+	// so a definition picked from above it arrives at its own full strength and
+	// the encounter is harder than its level says. That was happening a lot:
+	// between a fifth and a half of all rolls came out over-level, by as much
+	// as five at the worst, which is a level-six creature meeting a level-one
+	// character with all of its own numbers intact. A death there is not a
+	// consequence of anything the player chose — they were where they were
+	// supposed to be — and an encounter level that does not predict the fight
+	// makes every other difficulty guarantee in the game unfalsifiable.
+	//
+	// Capping the pick rather than scaling the creature down keeps a monster
+	// being itself: you meet the dragon when you are in dragon country, not as
+	// a diminished dragon in the meadows. One band of overshoot is left in on
+	// purpose, because a fight slightly above expectation is a good surprise.
+	const overshoot = 1
+	capped := pool[:0:0]
+	for _, d := range pool {
+		if d.Level <= level+overshoot {
+			capped = append(capped, d)
+		}
+	}
+	if len(capped) > 0 {
+		pool = capped
+	} else {
+		// Asking below the bottom of a roster — a dungeon has nothing under
+		// level three, and something has to be sent. The floor of the biome is
+		// the least wrong answer; falling back to the whole roster would let a
+		// request for level one draw the deepest thing in the place.
+		floor := pool[0].Level
+		for _, d := range pool {
+			if d.Level < floor {
+				floor = d.Level
+			}
+		}
+		lowest := pool[:0:0]
+		for _, d := range pool {
+			if d.Level == floor {
+				lowest = append(lowest, d)
+			}
+		}
+		pool = lowest
+	}
+
 	// Weight by closeness to the target level: a level-1 rat should stop
 	// showing up once you are level 9, without ever being formally retired.
+	//
+	// The first three bands keep their original 10 : 7 : 4 ratio, scaled up so
+	// the tail has room underneath. Past that the weight decays instead of
+	// clamping to a floor, which is the whole point of this shape: a flat floor
+	// stops ranking, and once the target is more than three levels above the
+	// entire roster *everything* sits on the floor and the pick goes uniform.
+	// That is exactly the case at the top of the game — an encounter five
+	// levels over a level-13 hero was picking a level-5 wolf as often as a
+	// level-14 dragon, then scaling the wolf up thirteen levels into a creature
+	// with a dragon's hit points and a wolf's everything else.
 	weights := make([]int, len(pool))
 	for i, d := range pool {
 		diff := core.Abs(d.Level - level)
-		w := 10 - diff*3
-		if w < 1 {
-			w = 1
+		w := (10 - diff*3) * 1000
+		if w < 1000 {
+			w = 4000 / (1 + (diff-2)*(diff-2))
 		}
-		weights[i] = w
+		weights[i] = core.Max(1, w)
 	}
 
 	out := make([]*model.Monster, 0, count)

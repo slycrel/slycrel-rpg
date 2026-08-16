@@ -994,3 +994,80 @@ func TestWeaponBandsStepEvenly(t *testing.T) {
 		t.Errorf("weapon band steps are %v; a band that buys nothing is not a band", steps)
 	}
 }
+
+// An encounter's level is a promise about the fight, and model.Spawn scales a
+// creature up to that level but never down — so a definition picked from above
+// it arrives at its own full strength and the promise is broken. A death there
+// is not the consequence of anything the player chose.
+//
+// One band of overshoot is deliberate; more than that was happening between a
+// fifth and a half of the time, by as much as five levels.
+func TestEncountersDoNotArriveAboveTheLevelTheyPromise(t *testing.T) {
+	tables := load(t)
+	g := core.NewRNG(21)
+	for _, biome := range []string{"plains", "forest", "hills", "swamp", "dungeon", "mountain"} {
+		// The one legitimate exception: asking below the bottom of a roster.
+		// A dungeon has nothing under level three and something has to be
+		// sent, so the floor of the biome is allowed however far over it is.
+		floor := 1 << 30
+		for _, d := range tables.Monsters[biome] {
+			if d.Level < floor {
+				floor = d.Level
+			}
+		}
+		for level := 1; level <= 18; level++ {
+			for i := 0; i < 300; i++ {
+				ms := tables.PickMonsters(g, biome, level, 1)
+				if len(ms) == 0 {
+					continue
+				}
+				got := ms[0].Def.Level
+				if got <= level+1 || (level < floor && got == floor) {
+					continue
+				}
+				t.Fatalf("%s at level %d rolled %s, which is level %d (%+d); "+
+					"the biome floor is %d",
+					biome, level, ms[0].Def.Name, got, got-level, floor)
+			}
+		}
+	}
+}
+
+// Weighting by closeness has to keep ranking all the way out, not clamp to a
+// floor. Once every creature in a roster sits on the floor the pick goes
+// uniform, which is precisely the case at the top of the game: an encounter
+// five levels over a level-13 hero was drawing a level-5 wolf as often as a
+// level-14 dragon, then scaling the wolf up thirteen levels.
+func TestTheNearestMonsterStaysLikeliestEvenFarOutOfRange(t *testing.T) {
+	tables := load(t)
+	g := core.NewRNG(22)
+
+	// A target well above everything mountain contains.
+	const level = 18
+	counts := map[int]int{}
+	for i := 0; i < 4000; i++ {
+		ms := tables.PickMonsters(g, "mountain", level, 1)
+		if len(ms) == 0 {
+			continue
+		}
+		counts[ms[0].Def.Level]++
+	}
+
+	var lowest, highest int
+	for lv := range counts {
+		if lowest == 0 || lv < lowest {
+			lowest = lv
+		}
+		if lv > highest {
+			highest = lv
+		}
+	}
+	if highest == lowest {
+		t.Skip("the roster has only one level in it; nothing to rank")
+	}
+	if counts[highest] <= counts[lowest] {
+		t.Errorf("asking for level %d drew the level-%d creature %d times and the "+
+			"level-%d one %d times; closeness has stopped ranking",
+			level, highest, counts[highest], lowest, counts[lowest])
+	}
+}

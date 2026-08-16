@@ -51,6 +51,7 @@ func main() {
 	// would otherwise shift every number after it and cost the cheapest check
 	// there is, which is diffing the report against the last one.
 	reportArcs(out, core.NewRNG(*seed^0x5ACB), t, *fights/2)
+	reportDanger(out, core.NewRNG(*seed^0xD1E), t, *fights/3)
 	reportEndurance(out, g, t, *fights/4)
 	reportProgression(out, g, t)
 	reportEconomy(out, t)
@@ -129,6 +130,129 @@ func reportCombat(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 			fmt.Fprintf(out, "%-5d %-9s %-10s %7.1f%% %7.1f%% %7.1f%% %7.1f %7d%%\n",
 				level, class, biome, under, on, over, rounds, hp)
 		}
+	}
+	fmt.Fprintln(out)
+}
+
+// dangerTargets is the design brief for how lethal each band should be, as a
+// death rate, and it is a brief rather than a measurement: these are the
+// numbers the game is supposed to hit, written down so the report can disagree
+// with them out loud.
+//
+//	"challenging but rewarding, deaths relatively rare... at or above level
+//	very rare, and under-levelled increasing in complexity (+5 levels is
+//	likely going to kill you, and ideally that's because you made poor
+//	choices to get into that situation, not an un-fun surprise)"
+//
+// The last clause is the one that constrains the shape rather than the values.
+// A death at +5 has to be the end of a visible slide, so the curve wants to
+// climb steeply and continuously through the middle bands: if +1 and +3 are
+// both comfortable and +5 is fatal, the player gets no warning and the death
+// reads as the game cheating. A band that is safer than its neighbour below it
+// is the same failure wearing a nicer number.
+var dangerTargets = []struct {
+	delta    int     // encounter level relative to the player
+	maxDeath float64 // upper bound on the death rate, as a percentage
+	minDeath float64 // lower bound, because a band that cannot hurt you is not a band
+	label    string
+}{
+	{-2, 1, 0, "over-levelled, should be a formality"},
+	{0, 5, 0, "on-level, very rare deaths"},
+	{2, 20, 2, "starting to cost something"},
+	{3, 35, 5, "challenging, and the last comfortable warning"},
+	{5, 100, 55, "likely to kill you, and visibly so on the way in"},
+}
+
+// reportDanger measures the death curve against the brief above.
+//
+// Win rate is what the rest of the report shows; this shows the complement,
+// because "deaths relatively rare" is a statement about losing and a 92% win
+// rate reads as fine right up until you notice it means one run in twelve ends.
+func reportDanger(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+	fmt.Fprintf(out, "DANGER — death rate by how far over your head you are\n")
+	fmt.Fprintf(out, "on-curve gear, fought in the region that far out, one row per class because\n")
+	fmt.Fprintf(out, "an average across three classes hides a class that never dies\n\n")
+	fmt.Fprintf(out, "%-6s %-9s %-8s", "level", "class", "region")
+	for _, d := range dangerTargets {
+		fmt.Fprintf(out, "%9s", fmt.Sprintf("%+d", d.delta))
+	}
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, strings.Repeat("-", 60))
+
+	// worst[i] is the highest death rate seen in band i, and best the lowest.
+	worst := make([]float64, len(dangerTargets))
+	best := make([]float64, len(dangerTargets))
+	for i := range best {
+		best[i] = 100
+	}
+	monotonic := true
+
+	for level := 1; level <= maxLevel; level += 2 {
+		for _, class := range model.AllClasses {
+			fmt.Fprintf(out, "%-6d %-9s %-8s", level, class, biomeForLevel(level))
+			prev := -1.0
+			for i, d := range dangerTargets {
+				enc := core.Max(1, level+d.delta)
+				biome := biomeForLevel(enc)
+				var deaths, n int
+				for k := 0; k < fights; k++ {
+					c := rules.BuildCharacter(g, class, level)
+					equip(t, c)
+					mons := t.PickMonsters(g, biome, enc, 1)
+					if len(mons) == 0 {
+						continue
+					}
+					fresh := *c
+					r := rules.SimulateFight(g, &fresh, []*model.MonsterDef{mons[0].Def},
+						enc, 60, t.SpellsFor(c))
+					if !r.Won {
+						deaths++
+					}
+					n++
+				}
+				rate := 0.0
+				if n > 0 {
+					rate = float64(deaths) * 100 / float64(n)
+				}
+				if rate > worst[i] {
+					worst[i] = rate
+				}
+				if rate < best[i] {
+					best[i] = rate
+				}
+				// A band easier than the one below it is the shape failure:
+				// the slide toward a death at +5 has to be visible all the way.
+				if prev >= 0 && rate+2 < prev {
+					monotonic = false
+				}
+				prev = rate
+				fmt.Fprintf(out, "%8.1f%%", rate)
+			}
+			fmt.Fprintln(out)
+		}
+	}
+
+	fmt.Fprintf(out, "\nagainst the brief\n")
+	ok := true
+	for i, d := range dangerTargets {
+		status := "ok"
+		if worst[i] > d.maxDeath {
+			status = fmt.Sprintf("OVER by %.1f", worst[i]-d.maxDeath)
+			ok = false
+		} else if best[i] < d.minDeath {
+			status = fmt.Sprintf("UNDER by %.1f", d.minDeath-best[i])
+			ok = false
+		}
+		fmt.Fprintf(out, "  %+d  %-42s %4.0f-%-4.0f%%  %s\n",
+			d.delta, d.label, best[i], worst[i], status)
+	}
+	if !monotonic {
+		fmt.Fprintf(out, "\n  SHAPE: some band is easier than the one below it. A death at +5 is\n"+
+			"  only fair if the danger climbed visibly on the way there.\n")
+		ok = false
+	}
+	if ok {
+		fmt.Fprintf(out, "\n  the curve matches the brief.\n")
 	}
 	fmt.Fprintln(out)
 }
