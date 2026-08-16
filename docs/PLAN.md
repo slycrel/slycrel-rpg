@@ -206,17 +206,65 @@ than by tests, became something a test can reach.
 
    The mechanism is the same shape as what exists: `Equip` becomes several named
    archetypes, and the report grows a column per archetype instead of one set of
-   numbers. That is the cheap part and worth doing on its own, because it turns
-   "is this balanced" into "is each of these playable", which is the actual
-   question. The expensive part is making the content support all three — the
-   charm and affix tables would need enough spread that a glass cannon has
-   something to buy — and that is where the rabbit hole is. Do the report first
-   and let it say whether the content already supports more than one arc.
+   numbers.
+
+   **The report half is built, and it has answered.** `gamedata.Archetypes` holds
+   three builds — balanced (the original assumption, unchanged, and still what
+   `Equip` means), attrition, and duelist — and `cmd/balance` gained an ARCS
+   section that runs the same simulation over each, plus a WHY table underneath
+   it. What it says:
+
+   - Attrition wins the stretch fights at levels 1 and 3; balanced wins 5
+     through 13; duelist never wins but is never more than 5 points behind.
+     So the shapes exist, and balanced is the safe default from level 5 on.
+   - One real hole: attrition drops 13.5 points at level 9. The weapon band
+     step is uneven — +2 into tier 2, then +5, +5, +4 — so at tier 3 attrition
+     is buying a +1 shield step with a -5 weapon step. Evening out the weapon
+     table would do more for arc viability than any new content.
+   - A sidearm band is worth about a quarter of a main-gear band, which caps
+     how different two builds can be. That is authored, not accidental:
+     `TestShieldsStaySecondaryToArmour` holds a shield under half the body
+     armour of its own band on purpose. Widening the arcs means revisiting
+     that rule deliberately, not inflating the shield table until it goes red.
+   - A glass cannon cannot be built at all. Nothing outside the weapon slot
+     adds strike, so the most offensive build the tables allow is "best weapon
+     available", which every build already has. If the offensive arc matters,
+     that gap is the thing to fill.
+
+   Two lessons from doing it, both of which cost a wrong answer first. An
+   archetype that underspends measures the spec rather than the content — the
+   first draft of the duelist gave up an armour band *and* the shield to buy one
+   charm band and lost by 22 points, which said nothing about anything. And the
+   on-level column cannot discriminate: every build wins 96-100% of on-level
+   fights by design, so the comparison has to be made on the stretch fights.
+
+   Still open, and the expensive half: making the content actively support the
+   arcs. The report now says what would have to move, which is what it was for.
 
 5. **Day/night and weather.** The tileset collection includes a weather-effects
    pack. Changes encounter tables and which NPCs are out.
 6. **Faction and reputation.** `Fame`, `Honor`, `Faith` and `Shame` exist on
-   the character and currently do almost nothing. Gate content on them.
+   the character and currently do almost nothing — and backstory endings now
+   hand out Fame and Shame, so they are easier to earn than ever and still
+   inert.
+
+   *Jeremy's design, from the original game:* the payoff is NPC reaction.
+   Grovelling for the celebrated, disdain for the hated, and pros and cons
+   either way rather than a single "good" axis — a hated reputation should open
+   doors a beloved one does not.
+
+   The one that never made it in and is worth building this time: **fame and
+   notoriety are two different numbers.** A Robin Hood is famous and personally
+   anonymous — deeds known, face not, so the reactions attach to the story
+   rather than to the man in the room. The opposite is famous and public with
+   nothing behind it: recognised everywhere, and the moment anyone checks the
+   deeds there is nothing there. Those are two axes, not one bar, and the
+   interesting states are the corners.
+
+   That suggests the shape: keep `Fame` as what the deeds are worth, add
+   something like `Renown` for how well the face is known, and let an NPC's
+   reaction read both. Being known without being placed is its own playstyle,
+   and it gives the Shame from a backstory ending somewhere to land.
 7. **A reason to be here.** A generated main thread that strings together
    five or six POIs into something with an ending.
 

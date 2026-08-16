@@ -304,40 +304,155 @@ func (t *Tables) PickAffix(g *core.RNG, tier int) (model.Affix, bool) {
 // against, and what a hireling turns up already wearing.
 func GearTierFor(level int) int { return core.Clamp(1+(level-1)/3, 1, 5) }
 
+// Slot is how one equipment slot is filled relative to the character's expected
+// gear tier.
+//
+// Back is how many bands behind that tier the slot buys, which is the only
+// currency an archetype has: everything is paid for out of the same purse, so
+// a slot bought at full tier is a slot elsewhere bought a band down. A slot
+// whose effective tier falls below one is left empty, which is what keeps a
+// level-one character from turning up with a barrel lid they could not afford.
+type Slot struct {
+	Back int
+	Skip bool // this build does not use the slot at all
+}
+
+func (s Slot) tierAt(base int) int {
+	if s.Skip {
+		return 0
+	}
+	return base - s.Back
+}
+
+// Archetype is one way of being correctly levelled.
+//
+// There used to be exactly one, written into Equip, and that made "on curve"
+// and "the way we expect you to play" the same sentence. These are the same
+// assumption made three times, so the balance report can ask whether each is
+// playable rather than only whether the one is balanced.
+//
+// They are deliberately not costed against each other beyond the band offsets.
+// A real accounting would need shop prices per slot per tier and a model of
+// what a player has saved by level N, and the point of this pass is to find out
+// whether the content supports more than one shape at all before any of that is
+// worth building.
+type Archetype struct {
+	Name string
+	Note string
+
+	Weapon, Armor, Shield, Charm Slot
+}
+
+// Archetypes are the builds the balance report measures.
+//
+// Balanced is the original assumption, unchanged and first on purpose: every
+// other number in the report is still measured against it, and a hireling is
+// still dressed by it. Nothing here is a claim that the other two are viable —
+// that is the question the report exists to answer.
+var Archetypes = []Archetype{
+	{
+		Name: "balanced",
+		Note: "best weapon and armour of your tier, sidearms a band behind",
+		// Best-in-tier across all four slots is not a character anybody can
+		// afford: the shield and the charm are what you buy with whatever the
+		// sword and the coat left over, and a report assuming otherwise would
+		// be measuring a richer player than exists and calling the game easier
+		// than it is.
+		Shield: Slot{Back: 1},
+		Charm:  Slot{Back: 1},
+	},
+	{
+		Name: "attrition",
+		Note: "armour and shield of your tier, weapon a band behind",
+		// The wall. Fights take longer and are meant to; what this build buys
+		// is the ability to still be standing at the end of one.
+		Weapon: Slot{Back: 1},
+		Charm:  Slot{Back: 1},
+	},
+	{
+		Name: "duelist",
+		Note: "nothing on the off arm, everything else best in tier",
+		// Not a glass cannon, though that is what it was drafted as. A glass
+		// cannon trades defence for damage, and there is nothing in the game to
+		// trade *for*: no item outside the weapon slot adds strike, so the most
+		// offensive build the tables permit is "best weapon available", which
+		// every build already has. That absence is itself a finding and it is
+		// why this is named for what it does rather than what it was meant to.
+		//
+		// The first draft of this gave up an armour band *and* the shield to
+		// buy one charm band, which is not a trade, and it lost by twenty-two
+		// points because it was a worse character rather than a different one.
+		// See the cost column: an archetype that underspends is measuring the
+		// spec, not the content.
+		Shield: Slot{Skip: true},
+	},
+}
+
+// ArchetypeNamed finds a build by name.
+func ArchetypeNamed(name string) (Archetype, bool) {
+	for _, a := range Archetypes {
+		if a.Name == name {
+			return a, true
+		}
+	}
+	return Archetype{}, false
+}
+
 // Equip fits a character with the best gear of their expected tier. Anyone
 // arriving mid-game — a companion for hire, a simulated subject — is dressed
 // through here, so there is one definition of what "level N and properly
 // equipped" means rather than one per caller.
-func (t *Tables) Equip(c *model.Character) {
-	tier := GearTierFor(c.Level)
-	ws, as := t.StockFor(tier)
-	if len(ws) > 0 {
-		c.Weapon = ws[len(ws)-1]
+//
+// It is the balanced archetype and always will be. Everything in the game that
+// dresses somebody goes through this, and the moment it started meaning
+// something else the balance report and the hiring board would be describing
+// different games.
+func (t *Tables) Equip(c *model.Character) { t.EquipAs(c, Archetypes[0]) }
+
+// EquipAs fits a character out according to a named build.
+//
+// The two main slots floor at tier one and the two sidearms do not, which is
+// the difference between owning no shield and owning no sword. A build that
+// buys a band behind is buying a worse weapon, never no weapon — without the
+// floor, attrition walked into levels one to three bare-handed and the report
+// dutifully measured it losing, which reads as a finding about the build rather
+// than the arithmetic error it was.
+func (t *Tables) EquipAs(c *model.Character, a Archetype) {
+	base := GearTierFor(c.Level)
+
+	if tier := core.Max(1, a.Weapon.tierAt(base)); tier >= 1 {
+		if ws, _ := t.StockFor(tier); len(ws) > 0 {
+			c.Weapon = ws[len(ws)-1]
+		}
 	}
-	if len(as) > 0 {
-		c.Armor = as[len(as)-1]
+	if tier := core.Max(1, a.Armor.tierAt(base)); tier >= 1 {
+		if _, as := t.StockFor(tier); len(as) > 0 {
+			c.Armor = as[len(as)-1]
+		}
 	}
-	// The sidearms come in a tier behind the weapon and the armour.
-	//
-	// Best-in-tier across all four slots is not a character anybody can afford:
-	// the shield and the charm are what you buy with whatever the sword and the
-	// coat left over, and a report that assumed otherwise would be measuring a
-	// richer player than exists and calling the game easier than it is.
-	//
-	// Nothing at all in the first band. A new character has twenty coins, a
-	// table leg and a decision to make about potions; a barrel lid is not what
-	// they spend it on, and assuming otherwise made levels one and two a
-	// walkover in the report.
-	if tier < 2 {
-		return
+	if tier := a.Shield.tierAt(base); tier >= 1 {
+		if ss, _ := t.SidearmsFor(tier); len(ss) > 0 {
+			c.Shield = ss[len(ss)-1]
+		}
 	}
-	ss, cs := t.SidearmsFor(tier - 1)
-	if len(ss) > 0 {
-		c.Shield = ss[len(ss)-1]
+	if tier := a.Charm.tierAt(base); tier >= 1 {
+		if _, cs := t.SidearmsFor(tier); len(cs) > 0 {
+			c.Charm = cs[len(cs)-1]
+		}
 	}
-	if len(cs) > 0 {
-		c.Charm = cs[len(cs)-1]
+}
+
+// GearCost totals what a character is wearing, which is what makes an archetype
+// a trade rather than a preference.
+func GearCost(c *model.Character) int {
+	n := c.Weapon.Cost + c.Armor.Cost
+	if c.Shield.Worn() {
+		n += c.Shield.Cost
 	}
+	if c.Charm.Worn() {
+		n += c.Charm.Cost
+	}
+	return n
 }
 
 // BiomeDrops lists the distinct items monsters of a biome can drop, which is

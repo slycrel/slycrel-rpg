@@ -49,7 +49,15 @@ numbers mean anything. Two rules follow:
 - **`gamedata.Equip` is the "on curve" assumption**, and it is load-bearing. The
   equipment pass moved the entire report without changing a single stat, purely
   by making that assumption richer. If the report shifts, suspect the assumption
-  before the content.
+  before the content. `Equip` is `Archetypes[0]`, the balanced build, and must
+  stay that way — it dresses hirelings and fixtures as well as the simulator,
+  and `TestEquipIsStillTheBalancedArchetype` is what says so.
+- **An archetype that underspends measures the spec, not the content.** The ARCS
+  section compares builds by trading gear bands between slots, so a build that
+  simply buys less loses for uninteresting reasons. Read the cost column before
+  believing a gap. The same goes for the on-level column: every build wins
+  96-100% of on-level fights by design, so comparisons are made on the stretch
+  fights three levels over.
 
 The shape of the curve is pinned by tests — `TestDamageHasNoCliff`,
 `TestOnLevelFightsAreWinnable`, `TestDangerRadiatesOutward`,

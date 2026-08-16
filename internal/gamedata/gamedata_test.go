@@ -872,3 +872,77 @@ func TestShieldsStaySecondaryToArmour(t *testing.T) {
 		}
 	}
 }
+
+// --- archetypes -----------------------------------------------------------
+
+// Equip is what dresses a hireling, a save fixture and every simulated subject
+// in the balance report, and it has to keep meaning exactly what it meant
+// before archetypes existed. If it ever drifts to some other build, the report
+// and the hiring board start describing different games and nothing says so.
+func TestEquipIsStillTheBalancedArchetype(t *testing.T) {
+	tables := load(t)
+
+	if got := gamedata.Archetypes[0].Name; got != "balanced" {
+		t.Fatalf("the first archetype is %q; Equip delegates to index 0 and expects balanced", got)
+	}
+
+	for level := 1; level <= 14; level++ {
+		viaEquip := &model.Character{Level: level}
+		tables.Equip(viaEquip)
+
+		viaArchetype := &model.Character{Level: level}
+		tables.EquipAs(viaArchetype, gamedata.Archetypes[0])
+
+		// Slot by slot rather than whole-struct: a Character carries a bag, and
+		// a slice makes the struct incomparable.
+		if viaEquip.Weapon.Titled() != viaArchetype.Weapon.Titled() ||
+			viaEquip.Armor.Titled() != viaArchetype.Armor.Titled() ||
+			viaEquip.Shield.Titled() != viaArchetype.Shield.Titled() ||
+			viaEquip.Charm.Titled() != viaArchetype.Charm.Titled() {
+			t.Errorf("level %d: Equip and EquipAs(balanced) dressed two different characters:\n"+
+				"  Equip:   %s / %s / %s / %s\n  EquipAs: %s / %s / %s / %s", level,
+				viaEquip.Weapon.Titled(), viaEquip.Armor.Titled(),
+				viaEquip.Shield.Titled(), viaEquip.Charm.Titled(),
+				viaArchetype.Weapon.Titled(), viaArchetype.Armor.Titled(),
+				viaArchetype.Shield.Titled(), viaArchetype.Charm.Titled())
+		}
+
+		// And the assumption itself: main gear at tier, sidearms a band behind,
+		// nothing on the sidearms in the first band.
+		tier := gamedata.GearTierFor(level)
+		if viaEquip.Weapon.Tier > tier || viaEquip.Armor.Tier > tier {
+			t.Errorf("level %d: balanced bought above its tier %d", level, tier)
+		}
+		if tier < 2 && (viaEquip.Shield.Worn() || viaEquip.Charm.Worn()) {
+			t.Errorf("level %d: a first-band character turned up with sidearms they could not afford", level)
+		}
+		if viaEquip.Shield.Worn() && viaEquip.Shield.Tier >= tier {
+			t.Errorf("level %d: the shield is tier %d, not a band behind %d",
+				level, viaEquip.Shield.Tier, tier)
+		}
+	}
+}
+
+// Whatever else an archetype trades away, it is still a person going into a
+// fight. A build with an empty weapon or armour slot is a spec error, and it
+// would show up in the report as a mysteriously terrible playstyle rather than
+// as the mistake it is — which is exactly how the first draft of the duelist
+// lost by twenty-two points.
+func TestEveryArchetypeArrivesDressed(t *testing.T) {
+	tables := load(t)
+	for _, a := range gamedata.Archetypes {
+		for level := 1; level <= 14; level++ {
+			c := &model.Character{Level: level}
+			tables.EquipAs(c, a)
+			if c.Weapon.Name == "" {
+				t.Errorf("%s at level %d has nothing to swing", a.Name, level)
+			}
+			if c.Armor.Name == "" {
+				t.Errorf("%s at level %d has nothing on", a.Name, level)
+			}
+			if a.Shield.Skip && c.Shield.Worn() {
+				t.Errorf("%s at level %d is carrying a shield it does not use", a.Name, level)
+			}
+		}
+	}
+}
