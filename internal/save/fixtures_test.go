@@ -198,7 +198,15 @@ func TestFixturesCoverTheStatesWorthCovering(t *testing.T) {
 	all := fixtures(t)
 
 	var haveOld, haveFull, haveFallen, haveInside, haveSolo, haveLineage bool
+	var haveAffix, haveSidearms bool
 	for _, f := range all {
+		// An affix hangs off a pointer, and a pointer is what comes back nil.
+		if f.Player.Weapon.Affix != nil || f.Player.Armor.Affix != nil {
+			haveAffix = true
+		}
+		if f.Player.Shield.Worn() && f.Player.Charm.Worn() {
+			haveSidearms = true
+		}
 		if f.Version < save.Version {
 			haveOld = true
 		}
@@ -231,6 +239,8 @@ func TestFixturesCoverTheStatesWorthCovering(t *testing.T) {
 		{haveFallen, "a companion on the floor"},
 		{haveLineage, "a part-monster hireling"},
 		{haveInside, "a party standing inside a location"},
+		{haveSidearms, "a character with a shield and a charm"},
+		{haveAffix, "a piece of gear carrying an affix"},
 	} {
 		if !c.got {
 			t.Errorf("no fixture covers %s", c.want)

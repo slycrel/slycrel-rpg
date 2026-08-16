@@ -23,14 +23,22 @@
     "shame": 0,
     "coins": 250,
     "weapon": {
-      "name": "Runed Maul of the Last Word",
-      "strike": 17,
+      "name": "Flamberge 'The Apology'",
+      "strike": 14,
       "range": 0,
-      "cost": 520,
-      "quality": 92,
-      "verb": "conclude",
+      "cost": 340,
+      "quality": 90,
+      "verb": "unmake",
       "tier": 4,
-      "icon": "icon/ab/4_weapon_hammer"
+      "icon": "icon/ab/4_weapon_sword",
+      "affix": {
+        "suffix": "of the Last Word",
+        "bonus": {
+          "strength": 3,
+          "speed": -2
+        },
+        "tier": 4
+      }
     },
     "armor": {
       "name": "Full Plate 'Do Not Perceive Me'",
@@ -40,6 +48,28 @@
       "verb": "denies",
       "tier": 4,
       "icon": "icon/loot/turtle_shell"
+    },
+    "shield": {
+      "name": "Kite Shield of Modest Convictions",
+      "defense": 3,
+      "cost": 110,
+      "tier": 3,
+      "verb": "catches",
+      "icon": "icon/loot/monster_scales",
+      "extra": {
+        "speed": -1
+      }
+    },
+    "charm": {
+      "name": "The Quiet Stone",
+      "bonus": {
+        "strength": -1,
+        "psyche": 4
+      },
+      "cost": 120,
+      "tier": 3,
+      "desc": "Holding it, you can hear yourself think. This is not always welcome.",
+      "icon": "icon/loot/moon_stone"
     },
     "bag": [
       {
@@ -103,6 +133,28 @@
         "tier": 4,
         "icon": "icon/loot/turtle_shell"
       },
+      "shield": {
+        "name": "Kite Shield of Modest Convictions",
+        "defense": 3,
+        "cost": 110,
+        "tier": 3,
+        "verb": "catches",
+        "icon": "icon/loot/monster_scales",
+        "extra": {
+          "speed": -1
+        }
+      },
+      "charm": {
+        "name": "The Quiet Stone",
+        "bonus": {
+          "strength": -1,
+          "psyche": 4
+        },
+        "cost": 120,
+        "tier": 3,
+        "desc": "Holding it, you can hear yourself think. This is not always welcome.",
+        "icon": "icon/loot/moon_stone"
+      },
       "bag": null,
       "ally": true,
       "cut": 9,
@@ -147,6 +199,28 @@
         "verb": "denies",
         "tier": 4,
         "icon": "icon/loot/turtle_shell"
+      },
+      "shield": {
+        "name": "Kite Shield of Modest Convictions",
+        "defense": 3,
+        "cost": 110,
+        "tier": 3,
+        "verb": "catches",
+        "icon": "icon/loot/monster_scales",
+        "extra": {
+          "speed": -1
+        }
+      },
+      "charm": {
+        "name": "The Quiet Stone",
+        "bonus": {
+          "strength": -1,
+          "psyche": 4
+        },
+        "cost": 120,
+        "tier": 3,
+        "desc": "Holding it, you can hear yourself think. This is not always welcome.",
+        "icon": "icon/loot/moon_stone"
       },
       "bag": null,
       "ally": true,

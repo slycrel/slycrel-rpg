@@ -681,7 +681,7 @@ func (b *battleScene) runRound(g *Game, playerAction func(*Game)) {
 			}
 			act(g)
 		}
-		if rules.Initiative(g.RNG, member.Speed, fastest) {
+		if rules.Initiative(g.RNG, member.Spd(), fastest) {
 			before = append(before, queued)
 		} else {
 			after = append(after, queued)
@@ -1006,10 +1006,10 @@ func (b *battleScene) attemptFlee(g *Game) {
 	// A company runs at the pace of whoever is slowest. Rolling on the hero's
 	// speed would mean a fast thief could outrun a wolf while dragging two
 	// people who plainly cannot.
-	slowest := g.Player.Speed
+	slowest := g.Player.Spd()
 	for _, c := range b.livingParty() {
-		if c.Speed < slowest {
-			slowest = c.Speed
+		if c.Spd() < slowest {
+			slowest = c.Spd()
 		}
 	}
 	if g.RNG.Chance(rules.FleeChance(slowest, fastest)) {

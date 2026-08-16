@@ -54,6 +54,17 @@ func main() {
 
 	write(root, "full-company", build(tables, 20260816, 11, 2, model.KindDemon, func(f *save.File) {
 		f.Summary = "a level 11 hero at the party cap, one of them part demon"
+		// Affixed gear, so that a save carrying one is exercised: the suffix
+		// hangs off a pointer, and a pointer is what silently comes back nil.
+		for _, w := range tables.Weapons {
+			if w.Tier == 4 && model.Affixable(w.Name) {
+				f.Player.Weapon = w
+				break
+			}
+		}
+		if a, ok := tables.PickAffix(core.NewRNG(4), 4); ok {
+			f.Player.Weapon.Affix = &a
+		}
 	}))
 
 	write(root, "battered", build(tables, 1994, 8, 2, model.KindOoze, func(f *save.File) {

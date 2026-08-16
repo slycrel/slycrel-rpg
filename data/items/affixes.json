@@ -1,0 +1,12 @@
+[
+  { "suffix": "of the Damp",             "tier": 1, "bonus": { "defense": 2, "strength": -1 } },
+  { "suffix": "of Poor Decisions",       "tier": 1, "bonus": { "strike": 3, "dexterity": -2 } },
+  { "suffix": "of Mild Regret",          "tier": 1, "bonus": { "dexterity": 2, "strike": -1 } },
+  { "suffix": "of the Long Walk",        "tier": 2, "bonus": { "speed": 2, "defense": -1 } },
+  { "suffix": "of Unearned Confidence",  "tier": 2, "bonus": { "strength": 2, "defense": -2 } },
+  { "suffix": "of the Quiet Room",       "tier": 3, "bonus": { "psyche": 3, "strength": -1 } },
+  { "suffix": "of Escalation",           "tier": 3, "bonus": { "strike": 4, "defense": -2 } },
+  { "suffix": "of the Last Word",        "tier": 4, "bonus": { "strength": 3, "speed": -2 } },
+  { "suffix": "of Diminishing Returns",  "tier": 4, "bonus": { "defense": 4, "dexterity": -2 } },
+  { "suffix": "of Consequences",         "tier": 5, "bonus": { "strike": 5, "strength": 2, "speed": -3 } }
+]

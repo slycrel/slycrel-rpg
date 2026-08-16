@@ -193,33 +193,38 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 	// Ancestry gets its own line rather than being appended to the trade: the
 	// column beside the portrait is 166 pixels, and "Mage, level 1, part demon"
 	// came out as "Mage, level 1, part de.".
+	// The header's fourth line carries the purse for a hero and the ancestry for
+	// a hireling — they are never both — which buys back a row further down for
+	// the two new equipment slots.
 	y := 92.0
 	if l, ok := model.LineageOf(p.Blood); ok {
 		render.Text(dst, l.Tag, 82, 26+3*render.LineH, render.ColGold)
-		// The note runs the full width of the panel, under the portrait, where
-		// there is room for it. The numbers the lineage moved are already
-		// folded invisibly into the stats, so this line is what says why.
 		render.Text(dst, render.Trunc(l.Note, 230), 20, 80, render.ColInkFaint)
 		y = 96
+	} else if !p.Ally {
+		render.Text(dst, fmt.Sprintf("%d coins", p.Coins), 82, 26+3*render.LineH, render.ColGold)
 	}
 	next := rules.XPForLevel(p.Level + 1)
+	// The three stats share a row so that four equipment slots fit underneath.
+	// The numbers shown are the effective ones — what the dice actually use —
+	// because a charm that raises strength and a sheet that reports the base
+	// would disagree in front of the player.
 	rows := [][2]string{
 		{"Hit points", fmt.Sprintf("%d / %d", p.HP, p.MaxHP)},
-		{"Psyche", fmt.Sprintf("%d / %d", p.Psyche, p.MaxPsyche)},
-		{"Strength", fmt.Sprint(p.Strength)},
-		{"Dexterity", fmt.Sprint(p.Dexterity)},
-		{"Speed", fmt.Sprint(p.Speed)},
-		{"Experience", fmt.Sprintf("%d / %d", p.TotalXP, next)},
+		{"Psyche", fmt.Sprintf("%d / %d", p.Psyche, p.MaxPsy())},
+		{"Str / Dex / Spd", fmt.Sprintf("%d / %d / %d", p.Str(), p.Dex(), p.Spd())},
+		// Strike and guard are totals across all four slots, which is the only
+		// place an affix's contribution can actually be read.
+		{"Strike / Guard", fmt.Sprintf("%d / %d", p.Strike(), p.Defense())},
 	}
 	// A companion has no purse of their own — what they have instead is a
 	// standing claim on yours. Their standing in the world is nobody's concern
-	// including theirs, so Fame and Faith are the hero's row alone; dropping it
-	// is also what buys back the line the lineage note needs.
+	// including theirs, so Fame and Faith are the hero's row alone.
 	if p.Ally {
 		rows = append(rows, [2]string{"Their cut", fmt.Sprintf("%d%%", p.Cut)})
 	} else {
 		rows = append(rows,
-			[2]string{"Coins", fmt.Sprint(p.Coins)},
+			[2]string{"Experience", fmt.Sprintf("%d / %d", p.TotalXP, next)},
 			[2]string{"Fame / Faith", fmt.Sprintf("%d / %d", p.Fame, p.Faith)})
 	}
 	for _, r := range rows {
@@ -238,8 +243,23 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 		render.TextRight(dst, render.Trunc(value, avail), 250, y, render.ColGold)
 		y += render.LineH
 	}
-	gearRow("Wielding", fmt.Sprintf("%s (+%d)", p.Weapon.Name, p.Weapon.Strike))
-	gearRow("Wearing", fmt.Sprintf("%s (+%d)", p.Armor.Name, p.Armor.Defense))
+	// Names only. The ratings they add up to are the Strike / Guard row above,
+	// so repeating them here only cost the width that made "Mace of Modest
+	// Ambition (+5)" truncate to "Mace of Modest Ambition .".
+	gearRow("Weapon", fitGear(p.Weapon.Name, p.Weapon.Affix, gearWidth("Weapon")))
+	gearRow("Armour", fitGear(p.Armor.Name, p.Armor.Affix, gearWidth("Armour")))
+	// The two new slots always show, empty or not. A slot the player does not
+	// know exists is a slot they never go shopping for.
+	if p.Shield.Worn() {
+		gearRow("Shield", fitGear(p.Shield.Name, p.Shield.Affix, gearWidth("Shield")))
+	} else {
+		gearRow("Shield", "nothing on that arm")
+	}
+	if p.Charm.Worn() {
+		gearRow("Charm", fitGear(p.Charm.Name, p.Charm.Affix, gearWidth("Charm")))
+	} else {
+		gearRow("Charm", "nothing worn")
+	}
 
 	// Pack.
 	ui.TitledPanel(dst, "pack", 268, 16, 202, 200)
@@ -267,4 +287,29 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 		}
 	}
 	render.TextCenter(dst, hint, render.ScreenW/2, 232, render.ColInkFaint)
+}
+
+// gearWidth is the room a gear row leaves for its value after the label.
+func gearWidth(label string) float64 { return 250 - (20 + render.TextW(label) + 8) }
+
+// fitGear renders a piece of equipment into the width available, cutting the
+// base name rather than the suffix.
+//
+// "Flamberge 'The Apology' of the Last Word" is wider than the panel however it
+// is laid out, so something has to go — and the suffix is the half that says
+// what the thing does. Truncating normally would leave "Flamberge 'The Apo.",
+// which is the half the player already knew.
+func fitGear(base string, a *model.Affix, width float64) string {
+	if a == nil || a.Suffix == "" {
+		return render.Trunc(base, width)
+	}
+	suffix := " " + a.Suffix
+	if render.TextW(base+suffix) <= width {
+		return base + suffix
+	}
+	room := width - render.TextW(suffix)
+	if room < render.TextW("Mmm.") {
+		return render.Trunc(base+suffix, width) // nothing fits; cut it anywhere
+	}
+	return render.Trunc(base, room) + suffix
 }

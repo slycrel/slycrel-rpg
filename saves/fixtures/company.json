@@ -41,6 +41,25 @@
       "tier": 2,
       "icon": "icon/loot/blackbear_pelt"
     },
+    "shield": {
+      "name": "Pot Lid, Dented Twice",
+      "defense": 1,
+      "cost": 22,
+      "tier": 1,
+      "verb": "clangs against",
+      "icon": "icon/loot/crab_claw"
+    },
+    "charm": {
+      "name": "Heavy Knucklebone",
+      "bonus": {
+        "strength": 1,
+        "dexterity": -1
+      },
+      "cost": 18,
+      "tier": 1,
+      "desc": "Held in the fist. Adds nothing but weight, and weight is enough.",
+      "icon": "icon/loot/monster_bone"
+    },
     "bag": [
       {
         "name": "Small Beer",
@@ -102,6 +121,25 @@
         "verb": "catches",
         "tier": 2,
         "icon": "icon/loot/blackbear_pelt"
+      },
+      "shield": {
+        "name": "Pot Lid, Dented Twice",
+        "defense": 1,
+        "cost": 22,
+        "tier": 1,
+        "verb": "clangs against",
+        "icon": "icon/loot/crab_claw"
+      },
+      "charm": {
+        "name": "Heavy Knucklebone",
+        "bonus": {
+          "strength": 1,
+          "dexterity": -1
+        },
+        "cost": 18,
+        "tier": 1,
+        "desc": "Held in the fist. Adds nothing but weight, and weight is enough.",
+        "icon": "icon/loot/monster_bone"
       },
       "bag": null,
       "ally": true,

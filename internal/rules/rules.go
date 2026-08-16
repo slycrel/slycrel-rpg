@@ -143,8 +143,8 @@ func damageBlend(level int) float64 {
 // rolling each and averaging: averaging two rolls would quietly halve the
 // spread mid-band and make those levels feel oddly consistent.
 func PlayerDamage(g *core.RNG, c *model.Character, m *model.Monster) int {
-	str := float64(c.Strength)
-	strike := float64(c.Weapon.Strike)
+	str := float64(c.Str())
+	strike := float64(c.Strike())
 
 	// Early: swingy and driven by raw strength.
 	//
@@ -197,12 +197,12 @@ type Swing struct {
 func PlayerAttack(g *core.RNG, c *model.Character, m *model.Monster, buffStr, buffDex int) Swing {
 	// Miss chance from the speed/dexterity gap, floored and capped so neither
 	// side ever becomes untouchable.
-	miss := core.ClampF(0.06+float64(m.Speed-c.Dexterity-buffDex)*0.012, 0.03, 0.32)
+	miss := core.ClampF(0.06+float64(m.Speed-c.Dex()-buffDex)*0.012, 0.03, 0.32)
 	if g.Chance(miss) {
 		return Swing{Miss: true}
 	}
 
-	sw := Swing{Crit: g.Chance(0.07 + float64(c.Dexterity)/400)}
+	sw := Swing{Crit: g.Chance(0.07 + float64(c.Dex())/400)}
 	sw.Damage = PlayerDamage(g, c, m) + buffStr
 	if sw.Crit {
 		sw.Damage = sw.Damage*3/2 + 2
@@ -215,13 +215,13 @@ func PlayerAttack(g *core.RNG, c *model.Character, m *model.Monster, buffStr, bu
 func MonsterDamage(g *core.RNG, c *model.Character, m *model.Monster) int {
 	lo := int(float64(m.Offense) * 0.35)
 	hi := int(float64(m.Offense) * 1.35)
-	return core.Max(0, g.Between(lo, hi)-c.Armor.Defense)
+	return core.Max(0, g.Between(lo, hi)-c.Defense())
 }
 
 // SpellDamage rolls a spell's magnitude, scaled by the caster's psyche pool so
 // mages keep pace without needing a separate spellpower stat.
 func SpellDamage(g *core.RNG, c *model.Character, s model.Spell) int {
-	base := float64(s.Power) + float64(c.MaxPsyche)*0.6 + float64(c.Level)*0.8
+	base := float64(s.Power) + float64(c.MaxPsy())*0.6 + float64(c.Level)*0.8
 	lo := int(base * 0.8)
 	hi := int(base * 1.3)
 	return core.Max(1, g.Between(lo, hi))
@@ -399,7 +399,7 @@ func blessTarget(caster *model.Character, s model.Spell, party []*model.Characte
 	}
 	best := caster
 	for _, c := range party {
-		if c.Alive() && c.Strength > best.Strength {
+		if c.Alive() && c.Str() > best.Str() {
 			best = c
 		}
 	}
@@ -640,7 +640,7 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 				fastest = m.Speed
 			}
 		}
-		playerFirst := Initiative(g, sim.Speed, fastest)
+		playerFirst := Initiative(g, sim.Spd(), fastest)
 
 		hurt := func(target *model.Monster, dmg int) {
 			target.HP = core.Max(0, target.HP-dmg)
@@ -775,8 +775,8 @@ func bestAttack(c *model.Character, spells []model.Spell) (model.Spell, bool) {
 	if !found {
 		return model.Spell{}, false
 	}
-	weapon := float64(c.Strength)/2 + float64(c.Weapon.Strike)
-	spell := float64(attack.Power) + float64(c.MaxPsyche)*0.6 + float64(c.Level)*0.8
+	weapon := float64(c.Str())/2 + float64(c.Strike())
+	spell := float64(attack.Power) + float64(c.MaxPsy())*0.6 + float64(c.Level)*0.8
 	if spell <= weapon {
 		return model.Spell{}, false
 	}

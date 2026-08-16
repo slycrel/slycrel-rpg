@@ -734,3 +734,141 @@ func TestConditionsHaveACounter(t *testing.T) {
 		t.Error("nothing in the game clears a condition")
 	}
 }
+
+// Affixes follow the same rule as lineages: every one gives with one hand and
+// takes with the other. A table of pure upgrades would make "is it affixed" the
+// only question worth asking about a piece of gear, and a find in a chest would
+// never be a decision.
+func TestEveryAffixGivesAndTakes(t *testing.T) {
+	tables := load(t)
+	if len(tables.Affixes) == 0 {
+		t.Fatal("no affixes at all")
+	}
+	seen := map[string]bool{}
+	for _, a := range tables.Affixes {
+		if a.Suffix == "" {
+			t.Errorf("an affix has no suffix: %+v", a)
+			continue
+		}
+		if seen[a.Suffix] {
+			t.Errorf("%q appears twice", a.Suffix)
+		}
+		seen[a.Suffix] = true
+		if !strings.HasPrefix(a.Suffix, "of ") {
+			t.Errorf("%q does not read as a suffix", a.Suffix)
+		}
+		if a.Tier < 1 || a.Tier > 5 {
+			t.Errorf("%q is tier %d, outside the gear bands", a.Suffix, a.Tier)
+		}
+
+		var gives, takes bool
+		for _, n := range []int{a.Bonus.Strike, a.Bonus.Defense, a.Bonus.Strength,
+			a.Bonus.Dexterity, a.Bonus.Speed, a.Bonus.Psyche} {
+			if n > 0 {
+				gives = true
+			}
+			if n < 0 {
+				takes = true
+			}
+		}
+		if !gives {
+			t.Errorf("%q gives nothing", a.Suffix)
+		}
+		if !takes {
+			t.Errorf("%q takes nothing, so it is a straight upgrade", a.Suffix)
+		}
+	}
+	// The first gear band needs something, or a low chest can never produce a
+	// find at all.
+	if _, ok := tables.PickAffix(core.NewRNG(1), 1); !ok {
+		t.Error("no affix is available in the lowest gear band")
+	}
+}
+
+// A suffix must never turn up on gear too cheap to deserve it.
+func TestPickAffixRespectsTheBand(t *testing.T) {
+	tables := load(t)
+	g := core.NewRNG(7)
+	for tier := 1; tier <= 5; tier++ {
+		for i := 0; i < 300; i++ {
+			a, ok := tables.PickAffix(g, tier)
+			if !ok {
+				t.Fatalf("tier %d produced no affix", tier)
+			}
+			if a.Tier > tier {
+				t.Fatalf("tier %d produced %q, which is tier %d", tier, a.Suffix, a.Tier)
+			}
+		}
+	}
+}
+
+// Shields and charms have to be worth their price and readable in a shop list.
+func TestSidearmsAreSaneAndAffordableInOrder(t *testing.T) {
+	tables := load(t)
+	if len(tables.Shields) == 0 || len(tables.Charms) == 0 {
+		t.Fatal("the new slots have nothing to put in them")
+	}
+	keys := manifestKeys(t)
+
+	for _, s := range tables.Shields {
+		if s.Name == "" || s.Verb == "" {
+			t.Errorf("a shield is missing a name or a verb: %+v", s)
+		}
+		if s.Defense < 1 {
+			t.Errorf("%q blocks %d", s.Name, s.Defense)
+		}
+		if s.Tier < 1 || s.Tier > 5 || s.Cost < 1 {
+			t.Errorf("%q is tier %d at %d coins", s.Name, s.Tier, s.Cost)
+		}
+		if !keys[s.Icon] {
+			t.Errorf("%q wants icon %q, which the manifest does not provide", s.Name, s.Icon)
+		}
+	}
+
+	for _, c := range tables.Charms {
+		if c.Name == "" || c.Desc == "" {
+			t.Errorf("a charm is missing a name or a description: %+v", c)
+		}
+		if c.Bonus.Empty() {
+			t.Errorf("%q does nothing", c.Name)
+		}
+		if c.Tier < 1 || c.Tier > 5 || c.Cost < 1 {
+			t.Errorf("%q is tier %d at %d coins", c.Name, c.Tier, c.Cost)
+		}
+		if !keys[c.Icon] {
+			t.Errorf("%q wants icon %q, which the manifest does not provide", c.Name, c.Icon)
+		}
+		// A charm is a trade, like an affix and like a lineage.
+		var gives, takes bool
+		for _, n := range []int{c.Bonus.Strike, c.Bonus.Defense, c.Bonus.Strength,
+			c.Bonus.Dexterity, c.Bonus.Speed, c.Bonus.Psyche} {
+			if n > 0 {
+				gives = true
+			}
+			if n < 0 {
+				takes = true
+			}
+		}
+		if !gives || !takes {
+			t.Errorf("%q gives=%v takes=%v; a charm should be a trade", c.Name, gives, takes)
+		}
+	}
+}
+
+// A shield must never be worth more than the body armour of its own band, or
+// the slot stops being a sidearm and starts being the point.
+func TestShieldsStaySecondaryToArmour(t *testing.T) {
+	tables := load(t)
+	bestArmour := map[int]int{}
+	for _, a := range tables.Armors {
+		if a.Defense > bestArmour[a.Tier] {
+			bestArmour[a.Tier] = a.Defense
+		}
+	}
+	for _, s := range tables.Shields {
+		if best := bestArmour[s.Tier]; best > 0 && s.Defense*2 > best {
+			t.Errorf("%q blocks %d against the %d of tier %d body armour, which is not secondary",
+				s.Name, s.Defense, best, s.Tier)
+		}
+	}
+}

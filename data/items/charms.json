@@ -1,0 +1,103 @@
+[
+  {
+    "name": "Lucky Tooth",
+    "cost": 15,
+    "tier": 1,
+    "icon": "icon/loot/canine_tooth",
+    "desc": "Somebody's. It has been lucky for exactly one of you so far.",
+    "bonus": {
+      "dexterity": 1,
+      "strength": -1
+    }
+  },
+  {
+    "name": "Heavy Knucklebone",
+    "cost": 18,
+    "tier": 1,
+    "icon": "icon/loot/monster_bone",
+    "desc": "Held in the fist. Adds nothing but weight, and weight is enough.",
+    "bonus": {
+      "dexterity": -1,
+      "strength": 1
+    }
+  },
+  {
+    "name": "Cracked Spectacles",
+    "cost": 40,
+    "tier": 2,
+    "icon": "icon/loot/smoky_quartz",
+    "desc": "You see the gap in their guard, and also two of it.",
+    "bonus": {
+      "dexterity": 2,
+      "speed": -1
+    }
+  },
+  {
+    "name": "Courier's Anklet",
+    "cost": 46,
+    "tier": 2,
+    "icon": "icon/loot/bird_feather",
+    "desc": "Worn by people who are paid to already be elsewhere.",
+    "bonus": {
+      "speed": 2,
+      "strength": -1
+    }
+  },
+  {
+    "name": "Forged Guild Licence",
+    "cost": 95,
+    "tier": 3,
+    "icon": "icon/loot/fortune_cookie",
+    "desc": "Not a real guild. Not a real licence. Genuinely intimidating.",
+    "bonus": {
+      "dexterity": -1,
+      "strength": 2
+    }
+  },
+  {
+    "name": "The Quiet Stone",
+    "cost": 120,
+    "tier": 3,
+    "icon": "icon/loot/moon_stone",
+    "desc": "Holding it, you can hear yourself think. This is not always welcome.",
+    "bonus": {
+      "psyche": 4,
+      "strength": -1
+    }
+  },
+  {
+    "name": "Ring of the Overcommitted",
+    "cost": 280,
+    "tier": 4,
+    "icon": "icon/loot/thunder_topaz",
+    "desc": "Makes every swing count for more, including the ones that miss.",
+    "bonus": {
+      "defense": -2,
+      "strike": 2
+    }
+  },
+  {
+    "name": "Somebody Else's Medal",
+    "cost": 340,
+    "tier": 4,
+    "icon": "icon/loot/fools_gold",
+    "desc": "Awarded for valour. Not to you. It does not seem to mind.",
+    "bonus": {
+      "defense": 1,
+      "speed": -2,
+      "strength": 2
+    }
+  },
+  {
+    "name": "Pendant of Deferred Consequence",
+    "cost": 700,
+    "tier": 5,
+    "icon": "icon/loot/ruby",
+    "desc": "Whatever was going to happen is still going to happen. Later.",
+    "bonus": {
+      "defense": 3,
+      "psyche": 3,
+      "speed": -2
+    }
+  }
+]

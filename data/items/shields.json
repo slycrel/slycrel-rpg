@@ -1,0 +1,11 @@
+[
+  { "name": "Barrel Lid",                        "defense": 1, "cost": 8,   "tier": 1, "verb": "takes",           "icon": "icon/loot/turtle_shell" },
+  { "name": "Pot Lid, Dented Twice",             "defense": 1, "cost": 22,  "tier": 1, "verb": "clangs against",  "icon": "icon/loot/crab_claw" },
+  { "name": "Buckler, Previously Owned",         "defense": 2, "cost": 48,  "tier": 2, "verb": "turns",           "icon": "icon/loot/monster_scale" },
+  { "name": "Kite Shield of Modest Convictions", "defense": 3, "cost": 110, "tier": 3, "verb": "catches",         "icon": "icon/loot/monster_scales",
+    "extra": { "speed": -1 } },
+  { "name": "Tower Shield 'Absolutely Not'",     "defense": 5, "cost": 260, "tier": 4, "verb": "refuses",         "icon": "icon/ab/3_weapon_hammer",
+    "extra": { "speed": -2 } },
+  { "name": "Aegis, Allegedly",                  "defense": 6, "cost": 620, "tier": 5, "verb": "declines",        "icon": "icon/loot/dragon_scale",
+    "extra": { "speed": -2, "dexterity": 1 } }
+]

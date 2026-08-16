@@ -3,11 +3,14 @@ package game
 import (
 	"fmt"
 	"image/color"
+	"slices"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/slycrel/slycrel-rpg/internal/assetsys"
 	"github.com/slycrel/slycrel-rpg/internal/core"
+	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
@@ -252,7 +255,130 @@ func (g *Game) openChest(e *world.Entity) {
 			body += "\n" + it.Name + "."
 		}
 	}
+	if find, ok := g.rollAffixedGear(); ok {
+		g.SayThen(e.Name, e.Line+"\n\n"+body, func(g *Game) { g.offerFind(find) })
+		return
+	}
 	g.Say(e.Name, e.Line+"\n\n"+body)
+}
+
+// find is a named piece of equipment turned up in a chest. Exactly one of the
+// two is set.
+type find struct {
+	weapon *model.Weapon
+	armor  *model.Armor
+}
+
+// rollAffixedGear is a chest's chance of holding a named piece of equipment.
+//
+// Affixed gear is deliberately not sold: a shop is where you buy the tier you
+// can afford, and a chest is where you find the thing with a name. That is the
+// whole reason to open one rather than count the coins and move on. Whether it
+// is an upgrade is genuinely a question, because every affix takes as well as
+// gives.
+func (g *Game) rollAffixedGear() (find, bool) {
+	if g.Local == nil || !g.RNG.Chance(0.28) {
+		return find{}, false
+	}
+	tier := core.Clamp(1+g.Local.POI.Level/3, 1, 5)
+	affix, ok := g.Data.PickAffix(g.RNG, tier)
+	if !ok {
+		return find{}, false
+	}
+
+	// Only gear whose name is free of a flourish can take one.
+	weapons, armors := g.Data.StockFor(tier)
+	weapons = slices.DeleteFunc(weapons, func(w model.Weapon) bool { return !model.Affixable(w.Name) })
+	armors = slices.DeleteFunc(armors, func(a model.Armor) bool { return !model.Affixable(a.Name) })
+
+	if g.RNG.Chance(0.5) && len(weapons) > 0 {
+		w := core.Pick(g.RNG, weapons)
+		w.Affix = &affix
+		return find{weapon: &w}, true
+	}
+	if len(armors) == 0 {
+		return find{}, false
+	}
+	a := core.Pick(g.RNG, armors)
+	a.Affix = &affix
+	return find{armor: &a}, true
+}
+
+// offerFind asks whether to swap for what was in the chest.
+//
+// It is a question rather than a pickup because an affix takes as well as
+// gives, so a find is not reliably an upgrade — and because the alternative,
+// equipping it automatically, would let a tier-two sword out of a low chest
+// replace the tier-four one you paid for.
+func (g *Game) offerFind(f find) {
+	p := g.Player
+	var name, keeping, gains string
+	switch {
+	case f.weapon != nil:
+		name, keeping = f.weapon.Titled(), p.Weapon.Titled()
+		gains = fmt.Sprintf("strike %d against your %d", f.weapon.Strike, p.Weapon.Strike)
+	case f.armor != nil:
+		name, keeping = f.armor.Titled(), p.Armor.Titled()
+		gains = fmt.Sprintf("defence %d against your %d", f.armor.Defense, p.Armor.Defense)
+	default:
+		return
+	}
+
+	body := fmt.Sprintf("Under everything else: a %s.\n\n%s. %s",
+		name, upper(gains), affixReads(f))
+	g.Ask("", body, []string{"Take it", "Leave it"}, func(g *Game, choice int) {
+		if choice != 0 {
+			g.Log.AddColor(render.ColInkDim, "You leave the %s where it is.", name)
+			return
+		}
+		switch {
+		case f.weapon != nil:
+			p.Weapon = *f.weapon
+		case f.armor != nil:
+			p.Armor = *f.armor
+		}
+		g.Sound.Play("world/equip")
+		g.Log.AddColor(render.ColGold, "You take up the %s. The %s is left behind.", name, keeping)
+	})
+}
+
+// affixReads spells out what the suffix does, since the name alone does not say
+// and the whole decision turns on it.
+func affixReads(f find) string {
+	var a *model.Affix
+	switch {
+	case f.weapon != nil:
+		a = f.weapon.Affix
+	case f.armor != nil:
+		a = f.armor.Affix
+	}
+	if a == nil {
+		return ""
+	}
+	parts := []string{}
+	for _, p := range []struct {
+		n int
+		s string
+	}{
+		{a.Bonus.Strike, "strike"}, {a.Bonus.Defense, "defence"},
+		{a.Bonus.Strength, "strength"}, {a.Bonus.Dexterity, "dexterity"},
+		{a.Bonus.Speed, "speed"}, {a.Bonus.Psyche, "psyche"},
+	} {
+		if p.n != 0 {
+			parts = append(parts, fmt.Sprintf("%+d %s", p.n, p.s))
+		}
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return "Being " + a.Suffix + " is worth " + strings.Join(parts, ", ") + "."
+}
+
+func upper(s string) string {
+	if s == "" {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
 }
 
 func (s *localScene) Draw(g *Game, dst *ebiten.Image) {

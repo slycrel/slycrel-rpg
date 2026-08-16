@@ -59,6 +59,8 @@ type Character struct {
 
 	Weapon Weapon `json:"weapon"`
 	Armor  Armor  `json:"armor"`
+	Shield Shield `json:"shield,omitempty"`
+	Charm  Charm  `json:"charm,omitempty"`
 	Bag    []Item `json:"bag"`
 
 	// Ally marks a hired companion rather than the player's own hero.
@@ -159,6 +161,7 @@ type Weapon struct {
 	Verb    string `json:"verb"` // "slash", "bash", "thwack"
 	Tier    int    `json:"tier"` // shop stocking band
 	Icon    string `json:"icon"`
+	Affix   *Affix `json:"affix,omitempty"`
 }
 
 // Armor is worn protection.
@@ -170,6 +173,7 @@ type Armor struct {
 	Verb    string `json:"verb"` // "absorbs", "deflects"
 	Tier    int    `json:"tier"`
 	Icon    string `json:"icon"`
+	Affix   *Affix `json:"affix,omitempty"`
 }
 
 // ItemKind sorts consumables from junk from quest goods.

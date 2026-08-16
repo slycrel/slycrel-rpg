@@ -57,7 +57,9 @@ func (s *shopScene) tier(g *Game) int {
 func (s *shopScene) refresh(g *Game) {
 	var items []ui.MenuItem
 	if s.tab == tabBuy {
-		weapons, armors := g.Data.StockFor(s.tier(g))
+		tier := s.tier(g)
+		weapons, armors := g.Data.StockFor(tier)
+		shields, charms := g.Data.SidearmsFor(tier)
 		switch s.e.Shop {
 		case world.ShopSmith:
 			for _, w := range weapons {
@@ -69,6 +71,15 @@ func (s *shopScene) refresh(g *Game) {
 					Disabled: int64(w.Cost) > g.Player.Coins, Data: w,
 				})
 			}
+			// The smith beats metal. Shields are beaten metal, and putting them
+			// here is what stops the armourer's list running twice as long as
+			// anybody else's.
+			for _, sh := range shields {
+				items = append(items, ui.MenuItem{
+					Label: sh.Name, Detail: fmt.Sprintf("%d", sh.Cost), Icon: sh.Icon,
+					Disabled: int64(sh.Cost) > g.Player.Coins, Data: sh,
+				})
+			}
 		case world.ShopArmorer:
 			for _, a := range armors {
 				if a.Cost == 0 {
@@ -77,6 +88,13 @@ func (s *shopScene) refresh(g *Game) {
 				items = append(items, ui.MenuItem{
 					Label: a.Name, Detail: fmt.Sprintf("%d", a.Cost), Icon: a.Icon,
 					Disabled: int64(a.Cost) > g.Player.Coins, Data: a,
+				})
+			}
+			// Charms are worn, and the armourer is the one who fits worn things.
+			for _, ch := range charms {
+				items = append(items, ui.MenuItem{
+					Label: ch.Name, Detail: fmt.Sprintf("%d", ch.Cost), Icon: ch.Icon,
+					Disabled: int64(ch.Cost) > g.Player.Coins, Data: ch,
 				})
 			}
 		default: // apothecary
@@ -166,13 +184,33 @@ func (s *shopScene) buy(g *Game, it ui.MenuItem) {
 		p.Coins -= int64(v.Cost)
 		old := p.Weapon
 		p.Weapon = v
-		s.note = fmt.Sprintf("You take the %s. The %s goes in the bin.", v.Name, old.Name)
+		s.note = fmt.Sprintf("You take the %s. The %s goes in the bin.", v.Titled(), old.Titled())
 		g.Sound.Play("world/equip")
 	case model.Armor:
 		p.Coins -= int64(v.Cost)
 		old := p.Armor
 		p.Armor = v
-		s.note = fmt.Sprintf("You put on the %s. The %s is not missed.", v.Name, old.Name)
+		s.note = fmt.Sprintf("You put on the %s. The %s is not missed.", v.Titled(), old.Titled())
+		g.Sound.Play("world/equip")
+	case model.Shield:
+		p.Coins -= int64(v.Cost)
+		old := p.Shield
+		p.Shield = v
+		if old.Worn() {
+			s.note = fmt.Sprintf("You take the %s. The %s is left on the counter.", v.Titled(), old.Titled())
+		} else {
+			s.note = fmt.Sprintf("You take the %s and put it on the other arm.", v.Titled())
+		}
+		g.Sound.Play("world/equip")
+	case model.Charm:
+		p.Coins -= int64(v.Cost)
+		old := p.Charm
+		p.Charm = v
+		if old.Worn() {
+			s.note = fmt.Sprintf("You put on the %s. The %s goes in a pocket, then the bin.", v.Titled(), old.Titled())
+		} else {
+			s.note = fmt.Sprintf("You put on the %s. %s", v.Titled(), v.Desc)
+		}
 		g.Sound.Play("world/equip")
 	case model.Item:
 		v.Count = 1

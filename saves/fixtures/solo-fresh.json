@@ -41,6 +41,22 @@
       "tier": 1,
       "icon": "icon/loot/bear_pelt"
     },
+    "shield": {
+      "name": "",
+      "defense": 0,
+      "cost": 0,
+      "tier": 0,
+      "verb": "",
+      "icon": ""
+    },
+    "charm": {
+      "name": "",
+      "bonus": {},
+      "cost": 0,
+      "tier": 0,
+      "desc": "",
+      "icon": ""
+    },
     "bag": [
       {
         "name": "Small Beer",

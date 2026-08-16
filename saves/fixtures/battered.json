@@ -41,6 +41,25 @@
       "tier": 3,
       "icon": "icon/loot/monster_scale"
     },
+    "shield": {
+      "name": "Buckler, Previously Owned",
+      "defense": 2,
+      "cost": 48,
+      "tier": 2,
+      "verb": "turns",
+      "icon": "icon/loot/monster_scale"
+    },
+    "charm": {
+      "name": "Courier's Anklet",
+      "bonus": {
+        "strength": -1,
+        "speed": 2
+      },
+      "cost": 46,
+      "tier": 2,
+      "desc": "Worn by people who are paid to already be elsewhere.",
+      "icon": "icon/loot/bird_feather"
+    },
     "bag": [
       {
         "name": "Small Beer",
@@ -103,6 +122,25 @@
         "tier": 3,
         "icon": "icon/loot/monster_scale"
       },
+      "shield": {
+        "name": "Buckler, Previously Owned",
+        "defense": 2,
+        "cost": 48,
+        "tier": 2,
+        "verb": "turns",
+        "icon": "icon/loot/monster_scale"
+      },
+      "charm": {
+        "name": "Courier's Anklet",
+        "bonus": {
+          "strength": -1,
+          "speed": 2
+        },
+        "cost": 46,
+        "tier": 2,
+        "desc": "Worn by people who are paid to already be elsewhere.",
+        "icon": "icon/loot/bird_feather"
+      },
       "bag": null,
       "ally": true,
       "cut": 17,
@@ -147,6 +185,25 @@
         "verb": "scatters",
         "tier": 3,
         "icon": "icon/loot/monster_scale"
+      },
+      "shield": {
+        "name": "Buckler, Previously Owned",
+        "defense": 2,
+        "cost": 48,
+        "tier": 2,
+        "verb": "turns",
+        "icon": "icon/loot/monster_scale"
+      },
+      "charm": {
+        "name": "Courier's Anklet",
+        "bonus": {
+          "strength": -1,
+          "speed": 2
+        },
+        "cost": 46,
+        "tier": 2,
+        "desc": "Worn by people who are paid to already be elsewhere.",
+        "icon": "icon/loot/bird_feather"
       },
       "bag": null,
       "ally": true,

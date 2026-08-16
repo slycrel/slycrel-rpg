@@ -30,6 +30,20 @@ func (g *Game) Say(speaker, body string) {
 	})
 }
 
+// SayThen pushes a plain message box and runs then once it is dismissed.
+//
+// It exists so that one event can produce two boxes in the order they happened:
+// a chest reports what was in it, and only then asks about the thing with a
+// name on it. Pushing both at once would show them back to front.
+func (g *Game) SayThen(speaker, body string, then func(*Game)) {
+	g.Push(&messageScene{
+		under:    g.Top(),
+		speaker:  speaker,
+		body:     render.Wrap(body, render.ScreenW-56),
+		onChoose: func(g *Game, _ int) { then(g) },
+	})
+}
+
 // Ask pushes a message box with choices. onChoose fires after the box closes.
 func (g *Game) Ask(speaker, body string, choices []string, onChoose func(*Game, int)) {
 	m := &messageScene{

@@ -25,8 +25,12 @@ type Tables struct {
 
 	Weapons []model.Weapon
 	Armors  []model.Armor
+	Shields []model.Shield
+	Charms  []model.Charm
 	Items   map[string]model.Item
 	Spells  []model.Spell
+	// Affixes are the suffixes a piece of gear can carry, and what they do.
+	Affixes []model.Affix
 
 	Text Text
 }
@@ -167,6 +171,15 @@ func Load(root string) (*Tables, error) {
 	for _, it := range items {
 		t.Items[it.Name] = it
 	}
+	if err := readJSON(filepath.Join(dd, "items", "shields.json"), &t.Shields); err != nil {
+		return nil, err
+	}
+	if err := readJSON(filepath.Join(dd, "items", "charms.json"), &t.Charms); err != nil {
+		return nil, err
+	}
+	if err := readJSON(filepath.Join(dd, "items", "affixes.json"), &t.Affixes); err != nil {
+		return nil, err
+	}
 	if err := readJSON(filepath.Join(dd, "items", "spells.json"), &t.Spells); err != nil {
 		return nil, err
 	}
@@ -176,6 +189,8 @@ func Load(root string) (*Tables, error) {
 
 	sort.Slice(t.Weapons, func(i, j int) bool { return t.Weapons[i].Cost < t.Weapons[j].Cost })
 	sort.Slice(t.Armors, func(i, j int) bool { return t.Armors[i].Cost < t.Armors[j].Cost })
+	sort.Slice(t.Shields, func(i, j int) bool { return t.Shields[i].Cost < t.Shields[j].Cost })
+	sort.Slice(t.Charms, func(i, j int) bool { return t.Charms[i].Cost < t.Charms[j].Cost })
 	return t, nil
 }
 
@@ -242,6 +257,39 @@ func (t *Tables) StockFor(tier int) ([]model.Weapon, []model.Armor) {
 	return ws, as
 }
 
+// SidearmsFor returns the shields and charms a shop of the given tier carries.
+func (t *Tables) SidearmsFor(tier int) ([]model.Shield, []model.Charm) {
+	var ss []model.Shield
+	for _, s := range t.Shields {
+		if s.Tier <= tier {
+			ss = append(ss, s)
+		}
+	}
+	var cs []model.Charm
+	for _, c := range t.Charms {
+		if c.Tier <= tier {
+			cs = append(cs, c)
+		}
+	}
+	return ss, cs
+}
+
+// PickAffix chooses a suffix appropriate to a gear band, or reports false when
+// the band has none. Affixes are authored with their own tier so that a level
+// two hand-axe cannot turn up "of Consequences".
+func (t *Tables) PickAffix(g *core.RNG, tier int) (model.Affix, bool) {
+	var pool []model.Affix
+	for _, a := range t.Affixes {
+		if a.Tier <= tier {
+			pool = append(pool, a)
+		}
+	}
+	if len(pool) == 0 {
+		return model.Affix{}, false
+	}
+	return core.Pick(g, pool), true
+}
+
 // GearTierFor is the gear band a character is expected to be carrying at a
 // level. The shops stock by tier and tiers span roughly three levels each, so
 // this is the "on curve" assumption: it is what the balance report measures
@@ -253,12 +301,34 @@ func GearTierFor(level int) int { return core.Clamp(1+(level-1)/3, 1, 5) }
 // through here, so there is one definition of what "level N and properly
 // equipped" means rather than one per caller.
 func (t *Tables) Equip(c *model.Character) {
-	ws, as := t.StockFor(GearTierFor(c.Level))
+	tier := GearTierFor(c.Level)
+	ws, as := t.StockFor(tier)
 	if len(ws) > 0 {
 		c.Weapon = ws[len(ws)-1]
 	}
 	if len(as) > 0 {
 		c.Armor = as[len(as)-1]
+	}
+	// The sidearms come in a tier behind the weapon and the armour.
+	//
+	// Best-in-tier across all four slots is not a character anybody can afford:
+	// the shield and the charm are what you buy with whatever the sword and the
+	// coat left over, and a report that assumed otherwise would be measuring a
+	// richer player than exists and calling the game easier than it is.
+	//
+	// Nothing at all in the first band. A new character has twenty coins, a
+	// table leg and a decision to make about potions; a barrel lid is not what
+	// they spend it on, and assuming otherwise made levels one and two a
+	// walkover in the report.
+	if tier < 2 {
+		return
+	}
+	ss, cs := t.SidearmsFor(tier - 1)
+	if len(ss) > 0 {
+		c.Shield = ss[len(ss)-1]
+	}
+	if len(cs) > 0 {
+		c.Charm = cs[len(cs)-1]
 	}
 }
 
