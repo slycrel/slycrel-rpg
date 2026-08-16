@@ -131,6 +131,28 @@ the bundle is absent; only the look changes, not the behaviour.
 file to prove the cues will actually play rather than just that the JSON
 parsed.
 
+## Shipping a build
+
+```bash
+./scripts/dist.sh                 # host platform
+./scripts/dist.sh windows amd64   # cross-compiles from macOS or Linux, no cgo
+./scripts/licenses.sh             # refresh licenses/ after a dependency change
+```
+
+Produces `dist/slycrel-<os>-<arch>/` and a zip beside it: the binary, `data/`,
+and only the ~92 MB of art and audio the manifests actually reference — not the
+16.7 GB bundle. An 81 MB zip that runs standalone.
+
+Ebitengine reaches DirectX and Win32 through purego, so **Windows
+cross-compiles cleanly with nothing but Go**. macOS and Linux need cgo and must
+be built on the platform they target.
+
+The binary finds `data/` next to itself as well as via the working directory, so
+a double-clicked build works even though its working directory is `/`.
+
+Builds contain third-party art and audio. Shipping that inside a game is
+licensed; publishing the folder as an asset pack is not. `dist/` is gitignored.
+
 ## Testing
 
 ```bash
@@ -189,6 +211,7 @@ placeholder.
 | [LICENSE](LICENSE) | MIT, covering this repository |
 | [NOTICE](NOTICE) | what is and is not covered, and why |
 | [CREDITS.md](CREDITS.md) | the creators |
+| [licenses/](licenses/THIRD-PARTY.md) | vendored licences for every linked Go module |
 | [docs/ASSET-LICENSING.md](docs/ASSET-LICENSING.md) | what the asset licences permit and forbid |
 | [docs/ASSET-INVENTORY.md](docs/ASSET-INVENTORY.md) | what is in the bundle |
 

@@ -357,8 +357,18 @@ the build is never broken, plus `assetpipe` for contributors who own the bundle.
    three packs currently in the manifest. This is the only unverified licence
    affecting the build as it stands.
 3. **Resolve The Sound Guild terms** before any audio is wired in.
-4. **Add `docs/CREDITS.md`** and surface it in-game. Tier A makes this a term of
-   the licence, not a nicety.
+4. **Surface `CREDITS.md` in-game.** The file now exists and ships in every
+   build, but a credits screen would be better. Attribution for roughly nine
+   packs is still incomplete — they shipped with no creator information, and the
+   names need recovering from the GameDev Market listings before any release
+   that uses them.
+5. **Consider opaque asset paths in `dist/`.** Builds currently reproduce the
+   `assets-raw/<packname>/...` tree verbatim, which is a browsable directory of
+   original pack names — precisely what the "don't facilitate extraction" note
+   above advises against. It is a nudge rather than a breach, and the fix is to
+   have `scripts/dist.sh` copy to flattened names and rewrite the manifest it
+   emits. Deliberately not done yet: it trades a verified-working build for
+   marginal hygiene.
 5. **Keep `assetpipe`'s original pack folder names.** They are the provenance
    trail that made this audit possible; a flattened or renamed asset tree would
    destroy the link between a file and its licence.

@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
-# Build a shareable Slycrel folder: binary, content tables, and only the art the
-# manifest actually references (~52 MB of the bundle's 16.7 GB).
+# Build a shareable Slycrel folder: binary, content tables, and only the art and
+# audio the manifests actually reference (~92 MB of the bundle's 16.7 GB).
 #
-#   ./scripts/dist.sh          -> dist/slycrel-<os>-<arch>/ and a .zip beside it
+#   ./scripts/dist.sh                 host platform
+#   ./scripts/dist.sh windows amd64   cross-compile (no cgo needed)
+#   ./scripts/dist.sh darwin arm64
+#
+# Ebitengine builds for Windows without cgo — it reaches DirectX and the Win32
+# API through purego — so a Windows build cross-compiles cleanly from macOS or
+# Linux with no toolchain beyond Go itself. macOS and Linux targets DO need cgo
+# and therefore must be built on the platform they target.
 #
 # The art in the output is third-party and separately licensed. Shipping it
 # inside a game build is permitted; publishing the folder as an asset pack, or
@@ -11,14 +18,33 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-NAME="slycrel-$(go env GOOS)-$(go env GOARCH)"
+GOOS_T="${1:-$(go env GOOS)}"
+GOARCH_T="${2:-$(go env GOARCH)}"
+
+NAME="slycrel-$GOOS_T-$GOARCH_T"
 OUT="dist/$NAME"
+
+BIN="slycrel"
+LDFLAGS="-s -w"
+CGO=1
+if [ "$GOOS_T" = "windows" ]; then
+  BIN="slycrel.exe"
+  # -H=windowsgui marks it a GUI-subsystem binary so double-clicking does not
+  # also open a console window behind the game.
+  LDFLAGS="$LDFLAGS -H=windowsgui"
+  CGO=0
+elif [ "$GOOS_T" != "$(go env GOOS)" ]; then
+  echo "error: $GOOS_T needs cgo and cannot be cross-compiled from $(go env GOOS)." >&2
+  echo "       Build it on a $GOOS_T machine. Only windows cross-compiles." >&2
+  exit 1
+fi
 
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
-echo "building..."
-go build -trimpath -ldflags "-s -w" -o "$OUT/slycrel" ./cmd/slycrel
+echo "building $GOOS_T/$GOARCH_T..."
+GOOS="$GOOS_T" GOARCH="$GOARCH_T" CGO_ENABLED="$CGO" \
+  go build -trimpath -ldflags "$LDFLAGS" -o "$OUT/$BIN" ./cmd/slycrel
 
 echo "copying content tables..."
 cp -R data "$OUT/"
@@ -54,27 +80,69 @@ for p in sorted(seen):
 print(f"  {n} files, {bytes_/1024/1024:.1f} MB")
 PY
 
-cp README.md LICENSE NOTICE CREDITS.md "$OUT/" 2>/dev/null || true
+echo "copying licences..."
+[ -d licenses ] || ./scripts/licenses.sh >/dev/null
+cp -R licenses "$OUT/"
+cp LICENSE NOTICE CREDITS.md "$OUT/"
 
+if [ "$GOOS_T" = "windows" ]; then
 cat > "$OUT/RUN-ME.txt" <<'EOF'
 Slycrel
 =======
 
-macOS:   open Terminal, drag this folder in, then run:  ./slycrel
-Linux:   ./slycrel
-Windows: slycrel.exe
+Double-click slycrel.exe.
+
+Windows SmartScreen will probably say "Windows protected your PC", because the
+binary is not code-signed (a certificate costs a few hundred a year, and this is
+a weekend project). Click "More info", then "Run anyway". If you would rather
+not, that is an entirely reasonable call.
+
+Keep slycrel.exe in this folder -- it loads data/ and assets/ from beside it.
+
+Controls
+  arrows / WASD    walk
+  Z / Enter        confirm, talk, enter a place
+  X / Esc          back out
+  M                the map of everywhere you have been
+  C or I           character sheet and pack
+  Esc              pause: sound, save, load, abandon the run
+  \                screenshot, into shots/
+
+Saves land in saves/. It is 18+ and means it.
+
+The art and audio belong to their creators and are licensed separately from the
+game's own MIT-licensed code. See CREDITS.md and NOTICE.
+EOF
+else
+cat > "$OUT/RUN-ME.txt" <<'EOF'
+Slycrel
+=======
 
 macOS will refuse to run an unsigned binary downloaded from the internet.
-Clear the quarantine flag once:
+Open Terminal, drag this folder onto the window to cd into it, then:
 
     xattr -dr com.apple.quarantine .
+    ./slycrel
 
-Controls: arrows/WASD to walk, Z to confirm, X to back out, M for the map,
-C for the character sheet, Esc to pause and save.
+Linux: just ./slycrel
 
-The art and audio belong to their creators and are licensed separately from
-the game's own MIT-licensed code. See CREDITS.md and NOTICE.
+Keep the binary in this folder -- it loads data/ and assets/ from beside it.
+
+Controls
+  arrows / WASD    walk
+  Z / Enter        confirm, talk, enter a place
+  X / Esc          back out
+  M                the map of everywhere you have been
+  C or I           character sheet and pack
+  Esc              pause: sound, save, load, abandon the run
+  \                screenshot, into shots/
+
+Saves land in saves/. It is 18+ and means it.
+
+The art and audio belong to their creators and are licensed separately from the
+game's own MIT-licensed code. See CREDITS.md and NOTICE.
 EOF
+fi
 
 echo "zipping..."
 ( cd dist && zip -qr "$NAME.zip" "$NAME" )
