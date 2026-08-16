@@ -2889,6 +2889,18 @@
       "file": "assets-raw/characteravataricons_windows/characteravataricons/male/m_43.PNG"
     },
     {
+      "key": "prop/cave16",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/19.10a - Muddy Cave/packaged/muddy cave sheets/muddy cave 16x16 v1.png",
+      "frameW": 16,
+      "frameH": 16
+    },
+    {
+      "key": "prop/cozy16",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/19.04b - Cozy Furnishings/packaged/cozy furnishings 16x16.png",
+      "frameW": 16,
+      "frameH": 16
+    },
+    {
       "key": "prop/desert16",
       "file": "assets-raw/manaseedpixelarttilesetcollection/23.03a - Desert Sands/packaged/desert sheets/desert 16x16.png",
       "frameW": 16,

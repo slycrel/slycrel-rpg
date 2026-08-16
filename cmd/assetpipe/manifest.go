@@ -167,6 +167,12 @@ func buildManifest() error {
 	add("prop/desert16", filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
 		"23.03a - Desert Sands", "packaged", "desert sheets", "desert 16x16.png"), 16, 16)
 
+	// Interior clutter.
+	add("prop/cozy16", filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
+		"19.04b - Cozy Furnishings", "packaged", "cozy furnishings 16x16.png"), 16, 16)
+	add("prop/cave16", filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
+		"19.10a - Muddy Cave", "packaged", "muddy cave sheets", "muddy cave 16x16 v1.png"), 16, 16)
+
 	// Icons. Two pixel-art sets at 32px — loot and runes — which is exactly UI
 	// scale, plus the painted ability set for weapons, where 128px divides
 	// cleanly by four. Loot filenames carry the thing they depict

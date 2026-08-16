@@ -271,6 +271,9 @@ func (s *localScene) Draw(g *Game, dst *ebiten.Image) {
 		}
 	}
 
+	// Clutter sits between the floor and anything standing on it.
+	g.drawLocalDecor(dst, s.cam, x0, y0, x1, y1)
+
 	// Entities, then the player, so the player draws over doorways.
 	for _, e := range l.Entities {
 		if e.Used && e.Kind != world.EExit {

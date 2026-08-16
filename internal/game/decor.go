@@ -147,3 +147,106 @@ func (g *Game) drawDecor(dst *ebiten.Image, cam render.Camera, x0, y0, x1, y1 in
 		}
 	}
 }
+
+// --- interiors -----------------------------------------------------------
+
+// Interior scatter. The same idea as the overworld, with two differences: the
+// sets are chosen by tile and by what kind of place this is, since a stone
+// floor means "cottage" in a village and "cave" under a mountain; and anything
+// standing on a cell is skipped, so clutter never hides a chest or a merchant.
+var (
+	// Household clutter: pots, sacks, bread, books, bottles. Row 0 of the
+	// cozy furnishings sheet, skipping the blank first cell.
+	houseProps = decorSet{
+		Sheet:  "prop/cozy16",
+		Frames: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
+		Chance: 0.30,
+	}
+	// Cave floors: moss, loose rock, stalagmites.
+	caveProps = decorSet{
+		Sheet:  "prop/cave16",
+		Frames: []int{0, 1, 2, 3, 4},
+		Chance: 0.14,
+	}
+	// Whatever grows in a town's open ground.
+	yardProps = decorSet{
+		Sheet:  "prop/summer16",
+		Frames: []int{4, 6, 7, 8, 24, 25},
+		Chance: 0.07,
+	}
+	// A swept street stays mostly swept.
+	streetProps = decorSet{
+		Sheet:  "prop/summer16",
+		Frames: []int{18, 19},
+		Chance: 0.02,
+	}
+)
+
+// localDecorFor returns the scatter rules for an interior cell.
+func localDecorFor(t world.LocalTile, settlement bool) []decorSet {
+	switch t {
+	case world.LFloor:
+		// The same tile is a cottage floor in a village and a cave floor under
+		// a mountain; only the location knows which.
+		if settlement {
+			return []decorSet{houseProps}
+		}
+		return []decorSet{caveProps}
+	case world.LGrass:
+		return []decorSet{yardProps}
+	case world.LCobble:
+		return []decorSet{streetProps}
+	}
+	return nil
+}
+
+// drawLocalDecor scatters clutter through the current interior.
+func (g *Game) drawLocalDecor(dst *ebiten.Image, cam render.Camera, x0, y0, x1, y1 int) {
+	if g.Local == nil {
+		return
+	}
+	l := g.Local
+	settlement := l.POI.Kind.Settlement()
+	ox, oy := cam.Offset()
+	const ts = assetsys.TileSize
+
+	// An interior's seed keeps its clutter stable across visits, and distinct
+	// from every other building generated from the same tile layout.
+	seed := l.POI.Seed
+
+	for ty := y0; ty <= y1+2; ty++ {
+		for tx := x0 - 1; tx <= x1+1; tx++ {
+			sets := localDecorFor(l.At(tx, ty), settlement)
+			if len(sets) == 0 {
+				continue
+			}
+			// Never clutter a cell something stands on, or the way in.
+			if l.EntityAt(tx, ty) != nil || (tx == l.Entry.X && ty == l.Entry.Y) {
+				continue
+			}
+			for i, ds := range sets {
+				salt := uint32(i)*0x9e37 + 0x2f1d
+				if unitHash(tx, ty, seed, salt) >= ds.Chance {
+					continue
+				}
+				sp := g.Assets.Get(ds.Sheet)
+				if sp.Count() == 0 {
+					continue
+				}
+				pick := ds.Frames[int(decorHash(tx, ty, seed, salt+1))%len(ds.Frames)]
+				img := sp.Frame(pick)
+				if img == nil {
+					continue
+				}
+				jx := unitHash(tx, ty, seed, salt+2)*4 - 2
+				w, h := float64(sp.W), float64(sp.H)
+				op := &ebiten.DrawImageOptions{}
+				op.GeoM.Translate(
+					float64(tx*ts)+ts/2-w/2+jx+ox,
+					float64(ty*ts)+ts-h+oy,
+				)
+				dst.DrawImage(img, op)
+			}
+		}
+	}
+}

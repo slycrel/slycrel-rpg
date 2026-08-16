@@ -75,7 +75,8 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
   the bag, the shop and the battle menu. Reduced to 16px in the pipeline rather
   than scaled at draw time, because the engine samples nearest-neighbour and a
   128px painted icon squeezed into a 16px box keeps every eighth pixel.
-- **Scenery** — trees, boulders, ferns, reeds and cacti scattered over the
+- **Scenery** — trees, boulders, ferns, reeds and cacti outdoors; pots, sacks
+  and books in houses; moss and stalagmites underground. All scattered over the
   terrain that suits them, placed from a hash of position and world seed so a
   wood looks the same every time you walk back into it without a byte of it
   being stored.

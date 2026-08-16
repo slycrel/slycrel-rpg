@@ -61,7 +61,7 @@ Built and running:
 - Asset pipeline: inventory, selective extraction, manifest generation, and an
   audit that reports which art keys still fall back to placeholders
 
-Deliberately not built yet: curated interior art, and decor inside locations.
+Deliberately not built yet: quests, and a balance pass over the invented numbers.
 
 ## Architecture, and why
 
@@ -88,9 +88,9 @@ testable and a simulation harness is cheap to add later.
 
 ### Phase 1 — make it feel like a game *(save/load and audio done)*
 
-1. **Decor inside locations.** Interiors autotile but are still bare: no
-   furniture in a house, no rubble in a dungeon. The interior packs are
-   extracted and unused.
+1. **Balance.** The formulas are ported from the original, but every monster
+   stat, weapon strike and price was invented and never checked against the
+   others. Simulate fights against the pure rules package and fix the gaps.
 
 ### Phase 2 — depth
 
