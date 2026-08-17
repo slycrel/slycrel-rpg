@@ -411,6 +411,7 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 	// something else rather than from the bottom of the panel.
 	ui.TitledPanel(dst, title, 10, 16, 250, 220)
 
+	ui.Slot(dst, 17, 23, 58, 58, nil)
 	render.ScreenFit(dst, g.Assets.Get(portraitOf(p)), 0, 18, 24, 56, 56, nil)
 	render.Text(dst, p.Name, 82, 26, render.ColGold)
 	subtitle := p.Epithet

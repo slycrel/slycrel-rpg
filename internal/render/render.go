@@ -313,6 +313,23 @@ func Multiply(dst *ebiten.Image, c color.Color) {
 	dst.DrawImage(tintPixel, op)
 }
 
+// VFade fills a rectangle with a vertical alpha ramp, from top to bottom.
+//
+// Drawn a row at a time. Stepping it in bands instead — which is the obvious
+// cheap version — produces visible horizontal seams wherever the alpha changes,
+// and at this resolution a seam reads as a rendering bug rather than as a
+// gradient. A hundred one-pixel rects is nothing.
+func VFade(dst *ebiten.Image, x, y, w, h float64, c color.RGBA, from, to uint8) {
+	if h <= 0 {
+		return
+	}
+	for i := 0.0; i < h; i++ {
+		f := i / h
+		a := float64(from)*(1-f) + float64(to)*f
+		Rect(dst, x, y+i, w, 1, color.RGBA{c.R, c.G, c.B, uint8(a)})
+	}
+}
+
 // Rect fills an axis-aligned screen rectangle.
 func Rect(dst *ebiten.Image, x, y, w, h float64, c color.Color) {
 	vector.DrawFilledRect(dst, float32(x), float32(y), float32(w), float32(h), c, false)

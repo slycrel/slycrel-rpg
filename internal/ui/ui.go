@@ -1,7 +1,17 @@
-// Package ui draws the interface chrome: panels, meters, menus, and the
-// scrolling message log. The panels are drawn procedurally rather than
-// nine-sliced from art, which keeps them resolution-exact and means the game
-// looks finished before any of the bundle's 4,488 GUI PNGs are wired in.
+// Package ui draws the interface chrome: panels, slots, meters, menus, and the
+// scrolling message log.
+//
+// All of it is drawn procedurally rather than nine-sliced from art, and after
+// an audit of the bundle's 4,488 GUI PNGs that is now a decision rather than a
+// placeholder. The kits in there are painted mobile and MMO interfaces at two
+// to four times this game's scale: three-pixel outlines and soft drop shadows
+// against a seven-by-thirteen bitmap font and a sixteen-pixel tile. The closest
+// thing to a match in the whole bundle — GUI Pro's ItemFrame_01 — is a thin
+// gold border with clipped corners, which is a description of Panel below.
+//
+// So the art pass went the other way: rather than importing chrome that would
+// have to be scaled down into mush, the vocabulary already here was extended to
+// the places that had none. See Slot and Cursor.
 package ui
 
 import (
@@ -35,6 +45,54 @@ func TitledPanel(dst *ebiten.Image, title string, x, y, w, h float64) {
 	tw := render.TextW(title)
 	render.Rect(dst, x+6, y, tw+8, 1, render.ColPanel)
 	render.Text(dst, title, x+10, y-4, render.ColGold)
+}
+
+// slotEdge is the resting border of a Slot. Dimmer than a Panel's edge, since
+// a slot sits inside a panel and a frame as bright as its container reads as
+// two boxes rather than a thing in a box.
+var slotEdge = color.RGBA{0x6A, 0x52, 0x38, 0xFF}
+
+// Slot draws a frame around a picture, in the same vocabulary as Panel: a
+// border with the corners knocked out, so it reads as cut rather than as a
+// rectangle somebody stroked. No inner bevel — Panel has one because it is big
+// enough to carry it, and at portrait size a second line is just a thicker
+// border.
+//
+// It exists because the battle screen had three monster portraits floating on a
+// black field with nothing to say where one ended and the next began, and the
+// character sheet had a face with no edge to it. A frame is the one piece of
+// interface art that survives being drawn at this size, because it is a line
+// rather than an illustration — which is exactly why the borrowed kits could
+// not help here and eleven lines of drawing code could.
+//
+// border of nil takes the resting colour, so the common case is one argument
+// shorter and a caller only names a colour when it means something.
+func Slot(dst *ebiten.Image, x, y, w, h float64, border color.Color) {
+	if border == nil {
+		border = slotEdge
+	}
+	render.Rect(dst, x, y, w, h, color.RGBA{0x14, 0x0E, 0x14, 0xC0})
+	render.Frame(dst, x, y, w, h, border)
+	for _, p := range [][2]float64{{x, y}, {x + w - 1, y}, {x, y + h - 1}, {x + w - 1, y + h - 1}} {
+		render.Rect(dst, p[0], p[1], 1, 1, color.RGBA{0, 0, 0, 0xC0})
+	}
+}
+
+// Cursor draws the selection pointer: a small solid triangle, centred on a row
+// of text.
+//
+// It replaces a ">" set in the body font, which is the one piece of chrome in
+// the game that was still a character pretending to be a shape. A glyph carries
+// the font's own weight and spacing and its drop shadow, so it read as the
+// first letter of the label rather than as a pointer at it — and it could not
+// be coloured or moved independently of the text it was standing in for.
+func Cursor(dst *ebiten.Image, x, y float64, c color.Color) {
+	// Five rows, tapering, drawn from the vertical centre of the ink. Odd so
+	// there is a single-pixel tip rather than a blunt two-pixel one.
+	cy := y + render.TextInkTop + float64(render.TextInkH)/2
+	for i := 0.0; i < 3; i++ {
+		render.Rect(dst, x+i, cy-2+i, 1, 5-i*2, c)
+	}
 }
 
 // Bar draws a labelled meter. frac is clamped to [0,1].
@@ -245,11 +303,10 @@ func (m *Menu) Draw(dst *ebiten.Image, x, y, w float64) {
 				barY, barH = ly-1, h
 			}
 			render.Rect(dst, x-2, barY, w, barH, render.ColSelect)
-			// Two pixels further out than looks necessary: Text draws a drop
-			// shadow one pixel right of the glyph, so a cursor at x-8 put its
-			// shadow against the first letter of the label and the two read as
-			// one smudged character.
-			render.Text(dst, ">", x-10, ly+m.textOffset(), render.ColGold)
+			// Clear of the label rather than tight against it. When this was a
+			// ">" glyph it also had to clear its own drop shadow, which is one
+			// of the reasons it is not a glyph any more.
+			Cursor(dst, x-9, ly+m.textOffset(), render.ColGold)
 		}
 		// Icon first; the label indents past it so rows line up whether or not
 		// a given entry has art.

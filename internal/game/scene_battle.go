@@ -1558,6 +1558,20 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		case b.hurt[i] > 0 && (b.hurt[i]/3)%2 == 0:
 			tint = color.RGBA{0xFF, 0x90, 0x90, 0xFF}
 		}
+		// The frame goes down first and carries the state, so a dead thing is
+		// a dim picture in a dim frame rather than a dim picture on the same
+		// bright field as its living neighbours. Three portraits on a black
+		// screen with nothing between them was the one place the interface
+		// stopped saying where anything ended.
+		var edge color.Color
+		switch {
+		case m.Dead:
+			edge = render.ColInkFaint
+		case b.hurt[i] > 0:
+			edge = render.ColBlood
+		}
+		ui.Slot(dst, cx-boxW/2-2, top-2, boxW+4, 86, edge)
+
 		sprite := g.Assets.Get(m.Def.Sprite)
 		render.ScreenFit(dst, sprite, 0, cx-boxW/2, top, boxW, 82, tint)
 
@@ -1567,6 +1581,8 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 			nameCol = render.ColInkFaint
 		}
 		if b.mode == modeTarget && b.target == i && !m.Dead {
+			// Redrawn in gold over the resting frame rather than instead of
+			// it, so the slot never changes size when it is picked.
 			render.Frame(dst, cx-boxW/2-2, top-2, boxW+4, 86, render.ColGold)
 			if (g.Tick()/12)%2 == 0 {
 				render.TextCenter(dst, "v", cx, top-13, render.ColGold)

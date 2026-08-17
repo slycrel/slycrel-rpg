@@ -139,7 +139,7 @@ Built and running:
 - Asset pipeline: inventory, selective extraction, manifest generation, and an
   audit that reports which art keys still fall back to placeholders
 
-Deliberately not built yet: a main thread, and the curated UI art pass.
+Deliberately not built yet: a main thread.
 
 Played twice end to end. The second pass is what turned up the home region, the
 starting kit, equipment as inventory, and four separate cases of the game
@@ -663,7 +663,46 @@ than a system.
    Add to this as things turn up; do not fix them in ones. What is left is the
    art pass below, which is a different kind of job.
 
-10. Curated UI art from the 4,488-file GUI Pro kit, replacing the procedural panels.
+10. ~~**Curated UI art from the 4,488-file GUI Pro kit, replacing the procedural
+    panels.**~~ *(Done, and it went the other way.)*
+
+    The survey came back negative, which is a result rather than a failure. All
+    four GUI kits in the bundle — GUI Pro FantasyRPG, RPG & MMO UI 4, Fantasy
+    Nordic, Dialogue Boxes — are painted mobile and MMO interfaces at two to
+    four times this game's scale, with three-pixel outlines and soft drop
+    shadows that turn to mush against a 7x13 bitmap font and a 16-pixel tile.
+    Two of them shipped only 4K preview banners and PSDs. The nearest thing to
+    a match in 4,488 files is GUI Pro's `ItemFrame_01`: a thin gold border with
+    clipped corners — which is a description of `ui.Panel`, written before any
+    of it was opened.
+
+    So nothing was imported, and the pass became: take the vocabulary that is
+    already here and apply it to the screens that had none.
+
+    - **`ui.Slot`** — a frame around a picture, in Panel's language. The battle
+      screen had three monster portraits floating on a black field with nothing
+      to say where one ended and the next began; they are framed now, and the
+      frame carries state, so a dead thing is a dim picture in a dim frame
+      rather than a dim picture on the same bright field as its neighbours. The
+      character sheet's portrait, the creation screen's, and its filmstrip all
+      use the same call.
+    - **`ui.Cursor`** — the selection pointer was a `">"` set in the body font,
+      the last piece of chrome that was a character pretending to be a shape.
+      It carried the font's spacing and its drop shadow, so it read as the
+      first letter of the label. It is a drawn triangle now.
+    - **The title screen shows the continent you are about to play.** It was the
+      one screen in the game with no art on it at all — a star field and a
+      horizon line — and what this game has more of than anything else is
+      terrain. It costs one world generation, and it makes the seed at the
+      bottom of the screen legible as a promise rather than a number. Dimmed
+      with a multiply and vignetted top and bottom, because the thing in front
+      of it is three words somebody has to read.
+
+    `render.VFade` came out of that last one. The first vignette was eight
+    banded rectangles and the seams between them read as a rendering bug; it is
+    a per-row ramp now.
+
+    The lesson worth keeping is in CLAUDE.md so nobody runs the survey twice.
 11. Title screen art, transitions, particles from the 115-file VFX pack.
 12. Balance simulation: run 10,000 headless fights per level band against the
    pure `rules` package and tune the curve.

@@ -145,6 +145,15 @@ which event fires which trigger, and where it is safe to put a box on screen.
   background behind text has to use them or it clips the letters.
 - **The UI font is Latin-1 only.** `internal/render` folds typography to ASCII
   before drawing; do not bypass it, or an em-dash renders as `@`.
+- **The bundle has no UI art that suits this game, and that has been checked.**
+  All 4,488 GUI PNGs are painted mobile and MMO interfaces at two to four times
+  a 480x270 framebuffer's scale: three-pixel outlines and soft drop shadows
+  against a 7x13 bitmap font. The closest match in the whole bundle is GUI Pro's
+  `ItemFrame_01` — a thin gold border with clipped corners, which is a
+  description of `ui.Panel`. So `internal/ui` being procedural is a decision,
+  not a placeholder, and the art pass went the other way: extend the vocabulary
+  already there (`ui.Slot`, `ui.Cursor`) to the screens that had none. Do not
+  re-run this survey; the packs have not changed.
 - **Screen capture is blocked on this machine.** Use `-demo`, or `\` in game to
   dump the framebuffer. `sips` crops a shot for a closer look.
 - **The display session drops occasionally.** See the project memory; it is

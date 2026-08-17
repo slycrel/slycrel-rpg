@@ -5,6 +5,7 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/slycrel/slycrel-rpg/internal/assetsys"
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
@@ -19,13 +20,10 @@ import (
 // titleScene is the front door: a name, a subtitle, and three ways in.
 type titleScene struct {
 	menu ui.Menu
-	// stars is a slow parallax field so the screen is not dead still.
-	stars []star
-}
-
-type star struct {
-	x, y, speed float64
-	c           color.RGBA
+	// cam pans slowly across the continent behind everything else.
+	cam render.Camera
+	// drift is where the pan has got to, in pixels along the coast.
+	drift float64
 }
 
 func newTitleScene(g *Game) *titleScene {
@@ -40,25 +38,35 @@ func newTitleScene(g *Game) *titleScene {
 		cont,
 		{Label: "Quit", Detail: "coward"},
 	})
-	sg := core.NewRNG(g.Seed).Fork("title", 1)
-	for i := 0; i < 70; i++ {
-		t.stars = append(t.stars, star{
-			x: sg.Float() * render.ScreenW, y: sg.Float() * render.ScreenH,
-			speed: 0.05 + sg.Float()*0.35,
-			c:     color.RGBA{uint8(140 + sg.Intn(110)), uint8(120 + sg.Intn(90)), uint8(160 + sg.Intn(90)), 0xFF},
-		})
+	// The world behind the menu is this seed's actual continent.
+	//
+	// The art pass that was meant to land here went looking through 4,488
+	// bundled GUI PNGs for something to dress this screen with, and the honest
+	// answer was that none of it fits: painted mobile interfaces at two to four
+	// times this game's scale, against a seven-by-thirteen font. What the game
+	// does have, and what it has more of than anything else, is terrain — and
+	// the one screen with no art on it at all was the first one anybody sees.
+	//
+	// So the title shows the place you are about to play. It costs one world
+	// generation, which the tour already does several times a second, and it
+	// means "seed 1041359034192" at the bottom of the screen is legible as a
+	// promise rather than a number.
+	if g.World == nil && g.Write != nil {
+		g.World = world.Generate(g.Seed, g.Write)
 	}
+	if g.World != nil {
+		t.cam.CenterOn(float64(g.World.Start.X*assetsys.TileSize),
+			float64(g.World.Start.Y*assetsys.TileSize))
+	}
+
 	return t
 }
 
 func (t *titleScene) Update(g *Game) error {
 	g.Sound.Ambience("")
-	for i := range t.stars {
-		t.stars[i].x -= t.stars[i].speed
-		if t.stars[i].x < 0 {
-			t.stars[i].x += render.ScreenW
-		}
-	}
+	// A slow drift east, so the screen is never still and never arrives
+	// anywhere.
+	t.drift += 0.25
 	g.MenuNav(&t.menu)
 	if g.Accept() {
 		switch t.menu.Index {
@@ -75,12 +83,7 @@ func (t *titleScene) Update(g *Game) error {
 
 func (t *titleScene) Draw(g *Game, dst *ebiten.Image) {
 	dst.Fill(color.RGBA{0x14, 0x10, 0x1C, 0xFF})
-	for _, s := range t.stars {
-		render.Rect(dst, s.x, s.y, 1, 1, s.c)
-	}
-	// A horizon band, so the stars read as sky rather than static.
-	render.Rect(dst, 0, 186, render.ScreenW, render.ScreenH-186, color.RGBA{0x1A, 0x16, 0x14, 0xFF})
-	render.Rect(dst, 0, 186, render.ScreenW, 1, color.RGBA{0x4A, 0x3A, 0x2A, 0xFF})
+	t.drawWorld(g, dst)
 
 	render.TextCenter(dst, "S L Y C R E L", render.ScreenW/2, 54, render.ColGold)
 	render.TextCenter(dst, "an open world of poor decisions", render.ScreenW/2, 72, render.ColInkDim)
@@ -94,6 +97,52 @@ func (t *titleScene) Draw(g *Game, dst *ebiten.Image) {
 		render.ScreenW/2, 232, render.ColInkFaint)
 	render.TextCenter(dst, fmt.Sprintf("seed %d", g.Seed), render.ScreenW/2, 248, render.ColInkFaint)
 	render.TextCenter(dst, BuildStamp, render.ScreenW/2, 258, render.ColInkFaint)
+}
+
+// drawWorld paints the continent behind the menu, well under.
+//
+// Pushed most of the way to black on purpose. This is a backdrop and the thing
+// in front of it is a list of three words a player has to read — terrain at
+// full strength would be a screenshot with a menu lost in it.
+func (t *titleScene) drawWorld(g *Game, dst *ebiten.Image) {
+	if g.World == nil {
+		return
+	}
+	const ts = assetsys.TileSize
+	t.cam.CenterOn(
+		float64(g.World.Start.X*ts)+t.drift,
+		float64(g.World.Start.Y*ts))
+
+	x0 := int(t.cam.X)/ts - 1
+	y0 := int(t.cam.Y)/ts - 1
+	x1 := x0 + render.ScreenW/ts + 3
+	y1 := y0 + render.ScreenH/ts + 3
+
+	ground := g.ground()
+	ox, oy := t.cam.Offset()
+	for ty := y0; ty <= y1; ty++ {
+		for tx := x0; tx <= x1; tx++ {
+			ground.Draw(dst, float64(tx*ts)+ox, float64(ty*ts)+oy, tx, ty, g.materialAt)
+		}
+	}
+	g.drawDecor(dst, t.cam, x0, y0, x1, y1)
+
+	// And then most of the way out again. A multiply rather than a black wash,
+	// for the same reason the night tint is one: a wash lifts the darks and the
+	// terrain turns to grey fog, where multiplying leaves it legible as terrain
+	// and simply far away.
+	render.Multiply(dst, color.RGBA{0x74, 0x66, 0x88, 0xFF})
+
+	// Then a vignette top and bottom, because the words go there.
+	//
+	// The first pass dimmed the whole frame evenly and the footer — three lines
+	// of faint grey about seeds and build stamps — came out illegible against
+	// grass. Darkening only where the text is keeps the middle of the screen as
+	// scenery and the edges as paper, which is what the layout was already
+	// doing with a horizon line before there was anything behind it.
+	const ink = 0x0C
+	render.VFade(dst, 0, 0, render.ScreenW, 108, color.RGBA{ink, 0x08, 0x14, 0}, 0xE8, 0x30)
+	render.VFade(dst, 0, render.ScreenH-84, render.ScreenW, 84, color.RGBA{ink, 0x08, 0x14, 0}, 0x30, 0xE8)
 }
 
 // createScene builds a character in two passes: who they are, then what they
@@ -350,6 +399,7 @@ func (c *createScene) drawWho(g *Game, dst *ebiten.Image) {
 	// but a counter to say where you are is the kind of control that gets used
 	// twice and then pressed until it stops.
 	ui.TitledPanel(dst, "face", 12, 42, 136, 160)
+	ui.Slot(dst, 27, 51, 106, 106, nil)
 	if sp := g.Assets.Get(c.face()); sp != nil {
 		render.ScreenFit(dst, sp, 0, 28, 52, 104, 104, nil)
 	}
@@ -361,9 +411,11 @@ func (c *createScene) drawWho(g *Game, dst *ebiten.Image) {
 	for i := -2; i <= 2; i++ {
 		key := c.faces[cycle(c.faceIdx, len(c.faces), i)]
 		x := stripX + float64(i+2)*(thumb+gap)
+		edge := color.Color(nil)
 		if i == 0 {
-			render.Frame(dst, x-2, 164, thumb+4, thumb+4, render.ColGold)
+			edge = render.ColGold
 		}
+		ui.Slot(dst, x-2, 164, thumb+4, thumb+4, edge)
 		if sp := g.Assets.Get(key); sp != nil {
 			render.ScreenFit(dst, sp, 0, x, 166, thumb, thumb, nil)
 		}
@@ -394,6 +446,7 @@ func (c *createScene) drawWhat(g *Game, dst *ebiten.Image) {
 
 	// The person from the last screen stays on this one, small, so the choice
 	// being made is visibly being made about somebody.
+	ui.Slot(dst, 11, 19, 30, 30, nil)
 	if sp := g.Assets.Get(c.face()); sp != nil {
 		render.ScreenFit(dst, sp, 0, 12, 20, 28, 28, nil)
 	}
