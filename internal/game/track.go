@@ -246,7 +246,11 @@ func (g *Game) destinationOf(data any) (int, string, bool) {
 			return idx, d.PlaceName(), true
 		}
 	case *quest.Quest:
-		if d.TargetPOI > 0 || d.TargetName != "" {
+		// Keyed on the name rather than on the index being above zero. The
+		// generator sets both together or neither, and location zero is a real
+		// location — usually the capital — so testing the index would have
+		// quietly refused to point at the one place every run starts from.
+		if d.TargetName != "" {
 			return d.TargetPOI, d.TargetName, true
 		}
 		// A fetch or a cull has nowhere of its own to point at, so the answer

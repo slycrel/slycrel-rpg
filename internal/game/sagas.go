@@ -33,14 +33,19 @@ const arcCap = 2
 // it is issued.
 const arcChance = 6
 
-// beginSaga casts the main spine and delivers its opening.
+// ensureSaga casts the main spine and delivers its opening, if this run has
+// never had one.
 //
-// Called once, from startRun, so the reason to be here is there before the
-// player has done anything. A spine offered later would have to interrupt
-// something, and a spine offered on a condition would be a spine most runs
-// never see.
-func (g *Game) beginSaga() {
-	if g.World == nil || g.Data == nil {
+// Called from startRun, so the reason to be here is there before the player has
+// done anything — and from Restore, for the same reason ensureThreads is: a
+// save written before sagas existed would otherwise carry no story at all, for
+// the rest of the run, with nothing to say why. A spine offered on a condition
+// would be a spine most runs never see.
+//
+// The guard is "has never had one" rather than "has none running", so finishing
+// a story does not hand out the other one on the next load.
+func (g *Game) ensureSaga() {
+	if g.World == nil || g.Data == nil || len(g.Sagas.Sagas) > 0 {
 		return
 	}
 	spines := g.Data.Sagas.Spines()
@@ -225,8 +230,15 @@ func (g *Game) offerSagaEnding(s *saga.Saga, setup string) bool {
 	setup += fmt.Sprintf("\n\nYou have %d coins.", g.Player.Coins)
 
 	g.AskMenu("", setup, rows, func(g *Game, choice int) {
+		// "Not yet", or backed out. Nothing is set here on purpose.
+		//
+		// The first version armed remindEndings, reasoning that the player
+		// should be asked again — and remindEndings is consumed by
+		// serviceThreads on the *very next tick*, so the box came straight back
+		// and there was no way out of it at all. The reminder is armed on
+		// walking into a settlement and nowhere else, which is the whole of the
+		// cadence: asked again in the next town, and only in the next town.
 		if choice < 0 || choice >= len(opts) {
-			g.remindEndings = true // ask again in the next town
 			return
 		}
 		g.resolveSaga(s, opts[choice])

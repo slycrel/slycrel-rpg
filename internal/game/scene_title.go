@@ -540,7 +540,7 @@ func (g *Game) startRun(p *model.Character, name, epithet string) {
 	// The reason to be here, before anything else has had a chance to happen.
 	// Pushed under the welcome box rather than over it, so the player reads the
 	// controls first and the story second.
-	g.beginSaga()
+	g.ensureSaga()
 	if poi := g.World.POIAt(g.World.Start.X, g.World.Start.Y); poi != nil {
 		g.Say(poi.Name, poi.Tag+"\n\nPress Z on a location to go inside. M opens the map.")
 	}

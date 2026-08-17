@@ -44,7 +44,7 @@ func (s *slotScene) refresh(g *Game) {
 		existing[sl.Name] = sl
 	}
 
-	items := make([]ui.MenuItem, 0, len(slotNames))
+	items := make([]ui.MenuItem, 0, len(slotNames)+1)
 	// The cursor opens on the most recently written slot, which is the one the
 	// player means in both directions: loading, it is the run they were in;
 	// saving, it is the slot they have been using. Landing on slot one every
@@ -68,8 +68,34 @@ func (s *slotScene) refresh(g *Game) {
 			Data:     name,
 		})
 	}
+	// The autosave, on the load side only.
+	//
+	// It is written before every fight and, until now, the death prompt was the
+	// only way back to it — so a player who dismissed that prompt had lost the
+	// one save the game makes on their behalf. It is a real save in a real file
+	// and there was never a reason it could not be offered; it simply was not
+	// in the list.
+	//
+	// Load only, deliberately. Letting it be picked as a save destination would
+	// let a player overwrite the safety net by hand, and the whole value of an
+	// automatic save is that it is not something you have to remember to keep.
+	if s.mode == slotLoad {
+		if sl, ok := existing[AutosaveSlot]; ok {
+			items = append(items, ui.MenuItem{
+				Label:  render.Trunc("Before your last fight - "+sl.Summary, 300),
+				Detail: humanAge(sl.Saved),
+				Data:   AutosaveSlot,
+			})
+		}
+	}
+
 	s.menu.Visible = 0
 	s.menu.SetItems(items)
+	// The newest *chosen* slot, not counting the autosave — which is almost
+	// always the newest file on disk, since it is written before every fight.
+	// Defaulting to it would mean a player who opened this menu on purpose,
+	// meaning to go back to a save they made deliberately, had the cursor
+	// parked somewhere else entirely.
 	if newest >= 0 {
 		s.menu.Index = newest
 	}

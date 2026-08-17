@@ -170,6 +170,37 @@ func TestFixturesOnlyNameContentThatExists(t *testing.T) {
 					name, th.Title, th.Owner)
 			}
 		}
+		for _, sg := range f.Sagas.Sagas {
+			if sg == nil {
+				t.Errorf("%s: a nil saga survived the round trip", name)
+				continue
+			}
+			sk, ok := tables.Sagas.Get(sg.Skeleton)
+			if !ok {
+				t.Errorf("%s: a saga was cast from skeleton %q, which no longer exists",
+					name, sg.Skeleton)
+				continue
+			}
+			if sg.MonsterID != "" {
+				if _, ok := tables.ByID[sg.MonsterID]; !ok {
+					t.Errorf("%s: a saga names monster %q, which no longer exists",
+						name, sg.MonsterID)
+				}
+			}
+			// One place per leg, or a leg points at nothing and the story stops
+			// where it stands.
+			if len(sg.Places) != len(sk.Legs) || len(sg.PlaceNames) != len(sk.Legs) {
+				t.Errorf("%s: %q has %d legs but %d places and %d names",
+					name, sg.Title, len(sk.Legs), len(sg.Places), len(sg.PlaceNames))
+			}
+			// A leg counter past the end is the saga equivalent of a thread
+			// whose owner has left: nothing can ever advance it, and it sits at
+			// the top of the journal for the rest of the run.
+			if sg.At < 0 || (sg.State == "open" && sg.At >= len(sk.Legs)) {
+				t.Errorf("%s: %q is open at leg %d of %d",
+					name, sg.Title, sg.At, len(sk.Legs))
+			}
+		}
 	}
 }
 
@@ -229,8 +260,30 @@ func TestFixturesCoverTheStatesWorthCovering(t *testing.T) {
 
 	var haveOld, haveFull, haveFallen, haveInside, haveSolo, haveLineage bool
 	var haveAffix, haveSidearms, haveThreadUnderway, haveCompanyNoThreads bool
-	var haveCarried bool
+	var haveCarried, haveClock, haveSagaUnderway, haveTrack, haveLastSpell bool
 	for _, f := range all {
+		// The four fields the format grew after the backstories. None of them
+		// was covered by any fixture until somebody went looking, which is the
+		// shape of hole this test exists to refuse: the net was complete for
+		// every field that existed when it was written, and silent about every
+		// field added since.
+		if f.Clock.Step > 0 {
+			haveClock = true
+		}
+		if f.Track.On {
+			haveTrack = true
+		}
+		if f.LastSpell != "" {
+			haveLastSpell = true
+		}
+		for _, sg := range f.Sagas.Sagas {
+			// Partway through, for the same reason a thread has to be:
+			// everything interesting about a long story is in the middle of it,
+			// and a freshly cast one exercises almost none of the fields.
+			if sg != nil && sg.At > 0 {
+				haveSagaUnderway = true
+			}
+		}
 		// Equipment in the pack rather than on the body is newer than most of
 		// the format, and it is the half a round trip can silently drop.
 		if len(f.Player.Carried) > 0 {
@@ -292,6 +345,10 @@ func TestFixturesCoverTheStatesWorthCovering(t *testing.T) {
 		{haveThreadUnderway, "a companion partway through their backstory"},
 		{haveCompanyNoThreads, "a company saved before backstories existed"},
 		{haveCarried, "equipment carried rather than worn"},
+		{haveClock, "a run saved at a time of day other than the first dawn"},
+		{haveSagaUnderway, "a long story partway through"},
+		{haveTrack, "a followed destination"},
+		{haveLastSpell, "a remembered technique"},
 	} {
 		if !c.got {
 			t.Errorf("no fixture covers %s", c.want)

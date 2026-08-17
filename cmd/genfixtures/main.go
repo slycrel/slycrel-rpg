@@ -27,7 +27,9 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
+	"github.com/slycrel/slycrel-rpg/internal/saga"
 	"github.com/slycrel/slycrel-rpg/internal/save"
+	"github.com/slycrel/slycrel-rpg/internal/sky"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
@@ -160,6 +162,34 @@ func build(t *gamedata.Tables, seed int64, level, allies int, blood model.Monste
 	if q, ok := quest.Generate(g, m, t, writerFor(t), 0, "Person"); ok {
 		f.Quests = append(f.Quests, q)
 	}
+
+	// The four fields the save format grew after the backstories, none of which
+	// any fixture carried until now — which meant the regression net had a hole
+	// in it exactly where the format had last changed.
+	//
+	// Every one of them is a state a round trip can silently drop: the clock is
+	// a struct, the sagas are pointers, and the other two are the sort of small
+	// convenience field that gets forgotten in Snapshot and never missed.
+	f.Clock = sky.Clock{Step: sky.DayLength*2 + 388} // mid-evening, off any boundary
+	f.Track = save.TrackState{On: true, POI: settlement(t, seed), Label: "Somewhere"}
+	if sp := t.SpellsFor(hero); len(sp) > 0 {
+		f.LastSpell = sp[0].ID
+	}
+	// A spine, and advanced past its first leg, because everything interesting
+	// about a long story is in the middle of one.
+	for _, sk := range t.Sagas.Spines() {
+		sg, ok := saga.Cast(g, &t.Sagas, m, t, sk, m.Start, level, nil)
+		if !ok {
+			continue
+		}
+		var log saga.Log
+		log.Add(sg)
+		log.Advance(&t.Sagas, saga.Event{Kind: sk.Legs[0].Trigger,
+			POI: sg.Place(), Monster: sg.MonsterID, N: 9})
+		f.Sagas = log
+		break
+	}
+
 	tweak(f)
 	return f
 }

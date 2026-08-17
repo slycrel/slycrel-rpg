@@ -95,6 +95,13 @@ func buildDemoSteps() []demoStep {
 		{at: 100, shot: "04-map"},
 		{at: 105, do: func(g *Game) { g.Pop() }},
 
+		// The help screen, which the tour had never captured — and which is the
+		// one screen whose whole job is to be read, so a line that wraps off
+		// the bottom of its panel is a line nobody ever sees.
+		{at: 106, do: func(g *Game) { g.Push(newHelpScene(g)) }},
+		{at: 110, shot: "04b-help"},
+		{at: 113, do: func(g *Game) { g.dropOverlays() }},
+
 		{at: 115, do: func(g *Game) { g.Push(newStatusScene(g)) }},
 		{at: 130, shot: "05-character"},
 		{at: 135, do: func(g *Game) { g.Pop() }},

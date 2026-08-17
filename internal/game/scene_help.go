@@ -40,21 +40,30 @@ var helpKeys = []helpRow{
 	{"Z", "talk, enter, confirm"},
 	{"X", "back out"},
 	{"", ""},
-	{"C", "character sheet and pack"},
-	{"J", "quest log"},
+	{"C or I", "character sheet, pack, techniques"},
+	{"J", "journal: errands, stories, who to see"},
 	{"M", "map"},
 	{"Esc", "pause: save, load, sound"},
+	{"\\", "save a screenshot"},
 }
 
-// helpNotes are the things a keyboard layout cannot tell you, taken straight
-// from what the first playthrough had to guess at.
+// helpNotes are the things a keyboard layout cannot tell you.
+//
+// Kept to what a player cannot work out by pressing things, and kept to one
+// line each: the panel holds five, and a note that wraps costs another note its
+// place. Every one was either something a playthrough had to guess at or
+// something added since that has no other way of announcing itself.
+//
+// One line means 59 characters, not 69. The font is basicfont.Face7x13 — a
+// *seven pixel* fixed advance — so the 416-pixel wrap is 59 columns. Estimating
+// it instead of dividing put every note below on two lines and the last one at
+// y=274 on a 270-pixel screen, which is to say off it.
 var helpNotes = []string{
-	"Hand a quest in by going back to whoever asked. The log (J) names them " +
-		"and where they are.",
-	"Heal out of the pack with C, not just by sleeping. Potions and drink " +
-		"work walking around, not only in a fight.",
-	"Dying offers you the moment before the fight. Taking it is not cheating; " +
-		"it is the only thing an encounter roll cannot take from you.",
+	"Hand an errand back to whoever asked. J says who.",
+	"Z in the journal aims the arrow in the corner.",
+	"C heals: potions and techniques, one list.",
+	"After dark things hit harder. An inn buys the morning.",
+	"Dying offers the moment before the fight. Take it.",
 }
 
 func (s *helpScene) Draw(g *Game, dst *ebiten.Image) {
@@ -63,7 +72,7 @@ func (s *helpScene) Draw(g *Game, dst *ebiten.Image) {
 	}
 	render.Rect(dst, 0, 0, render.ScreenW, render.ScreenH, color.RGBA{0x0A, 0x08, 0x10, 0xF0})
 
-	ui.TitledPanel(dst, "how this works", 14, 14, render.ScreenW-28, 108)
+	ui.TitledPanel(dst, "how this works", 14, 14, render.ScreenW-28, 118)
 	y := 26.0
 	for _, r := range helpKeys {
 		if r.key == "" {
@@ -75,8 +84,8 @@ func (s *helpScene) Draw(g *Game, dst *ebiten.Image) {
 		y += render.LineH
 	}
 
-	ui.TitledPanel(dst, "things nobody tells you", 14, 128, render.ScreenW-28, 106)
-	y = 140
+	ui.TitledPanel(dst, "things nobody tells you", 14, 138, render.ScreenW-28, 100)
+	y = 150
 	for _, n := range helpNotes {
 		for _, ln := range render.Wrap(n, render.ScreenW-64) {
 			render.Text(dst, ln, 26, y, render.ColInkDim)

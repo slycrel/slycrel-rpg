@@ -154,6 +154,10 @@ func (g *Game) Restore(f *save.File) error {
 
 	g.Log.Clear()
 	g.Log.Add("Loaded: %s", f.Summary)
+	// And a save from before there were long stories gets one, for exactly the
+	// reason its companions get backstories a line earlier. After the log is
+	// cleared, or the line it writes about where to go would be wiped by it.
+	g.ensureSaga()
 	return nil
 }
 
