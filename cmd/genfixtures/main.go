@@ -137,6 +137,15 @@ func build(t *gamedata.Tables, seed int64, level, allies int, blood model.Monste
 		c.Sprite, c.Portrait = "hero/druid", "portrait/female/f_08"
 		f.Allies = append(f.Allies, c)
 	}
+	// Something in the pack that is not a consumable, so the save format's
+	// carried-equipment list is exercised by the fixture net rather than only
+	// by whatever a playtest happens to pick up.
+	if ws, as := t.StockFor(gamedata.GearTierFor(level)); len(ws) > 0 && len(as) > 0 {
+		w, a := ws[0], as[0]
+		hero.Carry(model.Carried{Weapon: &w})
+		hero.Carry(model.Carried{Armor: &a})
+	}
+
 	// A backstory apiece. The game would cast these on load anyway, but a
 	// fixture that carries them is a fixture that can be halfway through one,
 	// which is the state worth having a starting point for.

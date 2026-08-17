@@ -11,7 +11,7 @@
     "totalXP": 0,
     "spendXP": 0,
     "hp": 3,
-    "maxHP": 75,
+    "maxHP": 85,
     "psyche": 0,
     "maxPsyche": 7,
     "strength": 19,
@@ -24,7 +24,7 @@
     "coins": 250,
     "weapon": {
       "name": "Glaive, Overcompensating",
-      "strike": 12,
+      "strike": 13,
       "range": 1,
       "cost": 240,
       "quality": 82,
@@ -80,6 +80,31 @@
         "icon": "icon/loot/antidote"
       }
     ],
+    "carried": [
+      {
+        "weapon": {
+          "name": "Bare Hands",
+          "strike": 1,
+          "range": 0,
+          "cost": 0,
+          "quality": 0,
+          "verb": "slap",
+          "tier": 0,
+          "icon": "icon/ab/1_weapon_sword"
+        }
+      },
+      {
+        "armor": {
+          "name": "Regrettable Rags",
+          "defense": 0,
+          "cost": 0,
+          "quality": 0,
+          "verb": "flaps",
+          "tier": 0,
+          "icon": "icon/loot/fur_tuft"
+        }
+      }
+    ],
     "sprite": "",
     "portrait": ""
   },
@@ -92,7 +117,7 @@
       "totalXP": 0,
       "spendXP": 0,
       "hp": 0,
-      "maxHP": 84,
+      "maxHP": 96,
       "psyche": 9,
       "maxPsyche": 9,
       "strength": 22,
@@ -105,7 +130,7 @@
       "coins": 0,
       "weapon": {
         "name": "Glaive, Overcompensating",
-        "strike": 12,
+        "strike": 13,
         "range": 1,
         "cost": 240,
         "quality": 82,
@@ -156,7 +181,7 @@
       "totalXP": 0,
       "spendXP": 0,
       "hp": 4,
-      "maxHP": 47,
+      "maxHP": 57,
       "psyche": 6,
       "maxPsyche": 6,
       "strength": 21,
@@ -169,7 +194,7 @@
       "coins": 0,
       "weapon": {
         "name": "Glaive, Overcompensating",
-        "strike": 12,
+        "strike": 13,
         "range": 1,
         "cost": 240,
         "quality": 82,

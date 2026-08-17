@@ -10,8 +10,8 @@
     "level": 6,
     "totalXP": 0,
     "spendXP": 0,
-    "hp": 53,
-    "maxHP": 53,
+    "hp": 63,
+    "maxHP": 63,
     "psyche": 6,
     "maxPsyche": 6,
     "strength": 15,
@@ -24,9 +24,9 @@
     "coins": 250,
     "weapon": {
       "name": "Spear, Regrettably Long",
-      "strike": 7,
+      "strike": 9,
       "range": 3,
-      "cost": 82,
+      "cost": 96,
       "quality": 68,
       "verb": "skewer",
       "tier": 2,
@@ -80,6 +80,31 @@
         "icon": "icon/loot/antidote"
       }
     ],
+    "carried": [
+      {
+        "weapon": {
+          "name": "Bare Hands",
+          "strike": 1,
+          "range": 0,
+          "cost": 0,
+          "quality": 0,
+          "verb": "slap",
+          "tier": 0,
+          "icon": "icon/ab/1_weapon_sword"
+        }
+      },
+      {
+        "armor": {
+          "name": "Regrettable Rags",
+          "defense": 0,
+          "cost": 0,
+          "quality": 0,
+          "verb": "flaps",
+          "tier": 0,
+          "icon": "icon/loot/fur_tuft"
+        }
+      }
+    ],
     "sprite": "",
     "portrait": ""
   },
@@ -91,8 +116,8 @@
       "level": 6,
       "totalXP": 0,
       "spendXP": 0,
-      "hp": 46,
-      "maxHP": 46,
+      "hp": 56,
+      "maxHP": 56,
       "psyche": 4,
       "maxPsyche": 4,
       "strength": 18,
@@ -105,9 +130,9 @@
       "coins": 0,
       "weapon": {
         "name": "Spear, Regrettably Long",
-        "strike": 7,
+        "strike": 9,
         "range": 3,
-        "cost": 82,
+        "cost": 96,
         "quality": 68,
         "verb": "skewer",
         "tier": 2,

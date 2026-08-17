@@ -142,3 +142,76 @@ func TestAffixableRejectsNamesThatAlreadyHaveAFlourish(t *testing.T) {
 		t.Error(`a name containing "of" as part of a word was rejected`)
 	}
 }
+
+// Equipping swaps rather than replaces. The old piece goes back in the pack,
+// because nothing should be destroyed by changing your mind — which is the
+// whole reason equipment is carried instead of being a yes/no question asked
+// once at the moment it is found.
+func TestEquippingPutsTheOldPieceBackInThePack(t *testing.T) {
+	c := base()
+	old := c.Weapon
+
+	found := model.Weapon{Name: "Actual Sword", Strike: 9}
+	c.Carry(model.Carried{Weapon: &found})
+	if len(c.Carried) != 1 {
+		t.Fatalf("carrying one sword left %d things in the pack", len(c.Carried))
+	}
+
+	if !c.Equip(0) {
+		t.Fatal("equipping the sword failed")
+	}
+	if c.Weapon.Name != "Actual Sword" {
+		t.Errorf("after equipping, the weapon is %q", c.Weapon.Name)
+	}
+	if len(c.Carried) != 1 || c.Carried[0].Weapon == nil ||
+		c.Carried[0].Weapon.Name != old.Name {
+		t.Errorf("the old %q did not come back to the pack; it holds %+v", old.Name, c.Carried)
+	}
+
+	// And swapping back is symmetrical, so a mistake costs one keypress.
+	if !c.Equip(0) {
+		t.Fatal("equipping the old weapon back failed")
+	}
+	if c.Weapon.Name != old.Name {
+		t.Errorf("swapping back gave %q, want %q", c.Weapon.Name, old.Name)
+	}
+}
+
+// An empty slot has nothing to put back, so equipping into one must not leave
+// a nameless ghost in the pack.
+func TestEquippingIntoAnEmptySlotLeavesNothingBehind(t *testing.T) {
+	c := base()
+	c.Shield = model.Shield{}
+
+	sh := model.Shield{Name: "Barrel Lid", Defense: 1}
+	c.Carry(model.Carried{Shield: &sh})
+	if !c.Equip(0) {
+		t.Fatal("equipping the shield failed")
+	}
+	if !c.Shield.Worn() {
+		t.Error("the shield did not go on")
+	}
+	if len(c.Carried) != 0 {
+		t.Errorf("an empty slot put %+v back in the pack", c.Carried)
+	}
+}
+
+// Selling takes a piece out without wearing it.
+func TestDroppingCarriedGearRemovesIt(t *testing.T) {
+	c := base()
+	a := model.Armor{Name: "Boiled Leather", Defense: 3}
+	b := model.Armor{Name: "Studded Leather", Defense: 4}
+	c.Carry(model.Carried{Armor: &a})
+	c.Carry(model.Carried{Armor: &b})
+
+	got, ok := c.DropCarried(0)
+	if !ok || got.Titled() != "Boiled Leather" {
+		t.Fatalf("dropping the first piece gave %q, %v", got.Titled(), ok)
+	}
+	if len(c.Carried) != 1 || c.Carried[0].Titled() != "Studded Leather" {
+		t.Errorf("the pack now holds %+v", c.Carried)
+	}
+	if _, ok := c.DropCarried(5); ok {
+		t.Error("dropping past the end of the pack succeeded")
+	}
+}

@@ -125,13 +125,19 @@ func (s *shopScene) refresh(g *Game) {
 		}
 	} else {
 		for i, it := range g.Player.Bag {
-			price := int(float64(it.Value) * sellRate)
-			if price < 1 {
-				price = 1
-			}
 			items = append(items, ui.MenuItem{
 				Label:  fmt.Sprintf("%s x%d", it.Name, it.Count),
-				Detail: fmt.Sprintf("%d", price), Icon: it.Icon, Data: i,
+				Detail: fmt.Sprintf("%d", sellPrice(it.Value)), Icon: it.Icon,
+				Data: sellRow{idx: i},
+			})
+		}
+		// Equipment you are not wearing is worth money like anything else. It
+		// had nowhere to be sold from because it had nowhere to be.
+		for i, gear := range g.Player.Carried {
+			items = append(items, ui.MenuItem{
+				Label:  gear.Titled(),
+				Detail: fmt.Sprintf("%d", sellPrice(gear.Cost())), Icon: gear.Icon(),
+				Data: sellRow{idx: i, gear: true},
 			})
 		}
 	}
@@ -206,39 +212,31 @@ func (s *shopScene) buy(g *Game, it ui.MenuItem) {
 	// The coin is the hero's; the gear goes on whoever is at the counter.
 	p := s.buyer(g)
 	pay := func(n int) { g.Player.Coins -= int64(n) }
+	// Bought gear goes in the pack, not straight onto the body.
+	//
+	// It used to be worn on the spot and whatever came off was described as
+	// going "in the bin" — which is exactly what happened to it. Buying a
+	// 240-coin glaive silently destroyed the 96-coin spear you were holding.
+	// Equipment is a thing you own now, so buying it is buying it and wearing
+	// it is a separate decision made on the character sheet, the same as every
+	// other thing you can carry.
+	carry := func(gear model.Carried, cost int) {
+		pay(cost)
+		p.Carry(gear)
+		s.note = fmt.Sprintf("%s, into the pack. Put it on from the character sheet.",
+			upper(gear.Titled()))
+		g.Sound.Play("world/equip")
+	}
+
 	switch v := it.Data.(type) {
 	case model.Weapon:
-		pay(v.Cost)
-		old := p.Weapon
-		p.Weapon = v
-		s.note = fmt.Sprintf("You take the %s. The %s goes in the bin.", v.Titled(), old.Titled())
-		g.Sound.Play("world/equip")
+		carry(model.Carried{Weapon: &v}, v.Cost)
 	case model.Armor:
-		pay(v.Cost)
-		old := p.Armor
-		p.Armor = v
-		s.note = fmt.Sprintf("You put on the %s. The %s is not missed.", v.Titled(), old.Titled())
-		g.Sound.Play("world/equip")
+		carry(model.Carried{Armor: &v}, v.Cost)
 	case model.Shield:
-		pay(v.Cost)
-		old := p.Shield
-		p.Shield = v
-		if old.Worn() {
-			s.note = fmt.Sprintf("You take the %s. The %s is left on the counter.", v.Titled(), old.Titled())
-		} else {
-			s.note = fmt.Sprintf("You take the %s and put it on the other arm.", v.Titled())
-		}
-		g.Sound.Play("world/equip")
+		carry(model.Carried{Shield: &v}, v.Cost)
 	case model.Charm:
-		pay(v.Cost)
-		old := p.Charm
-		p.Charm = v
-		if old.Worn() {
-			s.note = fmt.Sprintf("You put on the %s. The %s goes in a pocket, then the bin.", v.Titled(), old.Titled())
-		} else {
-			s.note = fmt.Sprintf("You put on the %s. %s", v.Titled(), v.Desc)
-		}
-		g.Sound.Play("world/equip")
+		carry(model.Carried{Charm: &v}, v.Cost)
 	case model.Item:
 		v.Count = 1
 		pay(v.Value * 2)
@@ -254,22 +252,60 @@ func (s *shopScene) buy(g *Game, it ui.MenuItem) {
 	}
 }
 
+// sellRow identifies what a row of the sell list refers to: an index into the
+// bag, or into the equipment being carried.
+type sellRow struct {
+	idx  int
+	gear bool
+}
+
+// sellPrice is what a merchant will hand over for something worth n new.
+func sellPrice(n int) int {
+	if p := int(float64(n) * sellRate); p > 1 {
+		return p
+	}
+	return 1
+}
+
 func (s *shopScene) sell(g *Game, mi ui.MenuItem) {
-	idx, ok := mi.Data.(int)
+	row, ok := mi.Data.(sellRow)
 	if !ok {
 		return
 	}
-	it, taken := g.Player.TakeItem(idx)
-	if !taken {
-		return
-	}
-	price := int(float64(it.Value) * sellRate)
-	if price < 1 {
-		price = 1
+	var name string
+	var price int
+	if row.gear {
+		gear, taken := g.Player.DropCarried(row.idx)
+		if !taken {
+			return
+		}
+		name, price = gear.Titled(), sellPrice(gear.Cost())
+	} else {
+		it, taken := g.Player.TakeItem(row.idx)
+		if !taken {
+			return
+		}
+		name, price = it.Name, sellPrice(it.Value)
 	}
 	g.Player.Coins += int64(price)
 	g.Sound.Play("world/coins")
-	s.note = fmt.Sprintf("%s, for %d. The shopkeeper does not meet your eye.", it.Name, price)
+	s.note = fmt.Sprintf("%s, for %d. The shopkeeper does not meet your eye.", name, price)
+}
+
+// carriedDescribe says what a carried piece of equipment is worth wearing for,
+// reusing the shop's wording so the same sword reads the same on both screens.
+func carriedDescribe(c model.Carried) string {
+	switch {
+	case c.Weapon != nil:
+		return shopDescribe(*c.Weapon)
+	case c.Armor != nil:
+		return shopDescribe(*c.Armor)
+	case c.Shield != nil:
+		return shopDescribe(*c.Shield)
+	case c.Charm != nil:
+		return shopDescribe(*c.Charm)
+	}
+	return ""
 }
 
 // shopDescribe renders one line of what a piece of stock is for.

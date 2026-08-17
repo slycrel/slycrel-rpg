@@ -229,7 +229,13 @@ func TestFixturesCoverTheStatesWorthCovering(t *testing.T) {
 
 	var haveOld, haveFull, haveFallen, haveInside, haveSolo, haveLineage bool
 	var haveAffix, haveSidearms, haveThreadUnderway, haveCompanyNoThreads bool
+	var haveCarried bool
 	for _, f := range all {
+		// Equipment in the pack rather than on the body is newer than most of
+		// the format, and it is the half a round trip can silently drop.
+		if len(f.Player.Carried) > 0 {
+			haveCarried = true
+		}
 		// A company from before backstories existed, which is what makes the
 		// loader cast them on the way in rather than only at the hiring.
 		if len(f.Allies) > 0 && len(f.Threads) == 0 {
@@ -285,6 +291,7 @@ func TestFixturesCoverTheStatesWorthCovering(t *testing.T) {
 		{haveAffix, "a piece of gear carrying an affix"},
 		{haveThreadUnderway, "a companion partway through their backstory"},
 		{haveCompanyNoThreads, "a company saved before backstories existed"},
+		{haveCarried, "equipment carried rather than worn"},
 	} {
 		if !c.got {
 			t.Errorf("no fixture covers %s", c.want)

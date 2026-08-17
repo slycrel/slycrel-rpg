@@ -62,6 +62,9 @@ type Character struct {
 	Shield Shield `json:"shield,omitempty"`
 	Charm  Charm  `json:"charm,omitempty"`
 	Bag    []Item `json:"bag"`
+	// Carried is equipment in the pack rather than on the body: bought, found,
+	// or taken off. See Carried in gear.go for why it exists.
+	Carried []Carried `json:"carried,omitempty"`
 
 	// Ally marks a hired companion rather than the player's own hero.
 	//

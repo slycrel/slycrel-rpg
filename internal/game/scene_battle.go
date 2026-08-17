@@ -1383,7 +1383,8 @@ func (b *battleScene) onPopped(g *Game) {
 	case 1:
 		if f := g.pendingFind; f != nil {
 			g.pendingFind = nil
-			g.offerFind(*f)
+			// A creature was carrying it, so it was not under anything.
+			g.takeFind(*f, "It was carrying")
 		}
 	case 2:
 		g.offerRewind()

@@ -49,12 +49,40 @@ func (s *statusScene) refresh(g *Game) {
 	// manages. What a companion is carrying shows as a line on their own sheet:
 	// two item lists on one screen would mean every key needing to say which
 	// one it meant.
-	items := make([]ui.MenuItem, 0, len(g.Player.Bag))
+	items := make([]ui.MenuItem, 0, len(g.Player.Bag)+len(g.Player.Carried))
 	for i, it := range g.Player.Bag {
 		items = append(items, ui.MenuItem{
-			Label: it.Name, Detail: fmt.Sprintf("x%d", it.Count), Icon: it.Icon, Data: i,
+			Label: it.Name, Detail: fmt.Sprintf("x%d", it.Count), Icon: it.Icon,
+			Data: packRow{idx: i},
 		})
 	}
+	// Equipment being carried rather than worn, in the same list. This is where
+	// gear gets put on: it is a thing you own, so the sheet is where you decide
+	// what to do with it, and Z means "use this" for a potion and a sword alike.
+	for i, gear := range g.Player.Carried {
+		items = append(items, ui.MenuItem{
+			Label: gear.Titled(), Detail: gear.Slot(), Icon: gear.Icon(),
+			Data: packRow{idx: i, gear: true},
+		})
+	}
+	// Techniques that do something with nobody swinging at you. There was no
+	// way to reach these outside a fight at all, which meant the only way to
+	// heal between one and the next was to pay an innkeeper — and the innkeeper
+	// is expensive at exactly the level where the healing is most needed.
+	//
+	// Same list and same key: Z means "use this" for a bottle, a sword and a
+	// prayer alike.
+	for _, sp := range g.Data.SpellsFor(s.subject(g)) {
+		if !castableOutOfCombat(sp.Kind) {
+			continue
+		}
+		items = append(items, ui.MenuItem{
+			Label: sp.Name, Detail: fmt.Sprintf("%d SP", sp.Cost), Icon: sp.Icon,
+			Disabled: sp.Cost > s.subject(g).Psyche,
+			Data:     packRow{idx: 0, spell: &sp},
+		})
+	}
+
 	if len(items) == 0 {
 		items = append(items, ui.MenuItem{Label: "(nothing but lint)", Disabled: true})
 	}
@@ -65,6 +93,14 @@ func (s *statusScene) refresh(g *Game) {
 
 func (s *statusScene) Update(g *Game) error {
 	if g.Back() {
+		g.Pop()
+		return nil
+	}
+	// The key that opened this closes it. C and I both open the sheet — I is
+	// the habit half the world has for an inventory — so both have to shut it,
+	// or one of them is a door that only goes one way.
+	if inpututil.IsKeyJustPressed(ebiten.KeyC) || inpututil.IsKeyJustPressed(ebiten.KeyI) {
+		g.Sound.Play("ui/cancel")
 		g.Pop()
 		return nil
 	}
@@ -113,10 +149,124 @@ func (s *statusScene) Update(g *Game) error {
 		if !ok || it.Disabled {
 			return nil
 		}
-		idx := it.Data.(int)
-		s.useOutOfCombat(g, idx)
+		row, ok := it.Data.(packRow)
+		if !ok {
+			return nil
+		}
+		switch {
+		case row.spell != nil:
+			s.castOutOfCombat(g, *row.spell)
+		case row.gear:
+			s.equipCarried(g, row.idx)
+		default:
+			s.useOutOfCombat(g, row.idx)
+		}
 	}
 	return nil
+}
+
+// packRow says which list a row of the pack panel came from.
+type packRow struct {
+	idx   int
+	gear  bool
+	spell *model.Spell
+}
+
+// castableOutOfCombat reports whether a technique does anything with nobody
+// trying to hit you. Attacks and conditions need a target that is not there;
+// blessings are timed and would expire on the walk to the next fight.
+func castableOutOfCombat(k model.SpellKind) bool {
+	return k == model.SpellHeal || k == model.SpellRevive
+}
+
+// castOutOfCombat spends psyche to patch the party up between fights.
+//
+// The caster is whoever the sheet is showing; the target is whoever needs it
+// most, because that is what a party actually does when the fighting stops and
+// making the player page to the patient first would be bookkeeping rather than
+// a decision.
+func (s *statusScene) castOutOfCombat(g *Game, sp model.Spell) {
+	caster := s.subject(g)
+	if sp.Cost > caster.Psyche {
+		g.Sound.Play("ui/deny")
+		return
+	}
+
+	switch sp.Kind {
+	case model.SpellRevive:
+		var down *model.Character
+		for _, c := range g.Party() {
+			if !c.Alive() {
+				down = c
+				break
+			}
+		}
+		if down == nil {
+			g.Sound.Play("ui/deny")
+			g.Log.AddColor(render.ColInkDim, "Everybody is already upright.")
+			return
+		}
+		caster.Psyche -= sp.Cost
+		down.HP = rules.ReviveAmount(down, sp.Power)
+		g.Sound.Play("fight/heal")
+		g.Log.AddColor(render.ColHeal, "%s", g.Write.Revived(g.RNG, down.Name))
+
+	default: // heal
+		// Whoever is furthest from full, so the technique is never wasted on
+		// somebody who did not need it.
+		target := caster
+		worst := caster.HPFrac()
+		for _, c := range g.Party() {
+			if c.Alive() && c.HPFrac() < worst {
+				target, worst = c, c.HPFrac()
+			}
+		}
+		if target.HP >= target.MaxHP {
+			g.Sound.Play("ui/deny")
+			g.Log.AddColor(render.ColInkDim, "Nobody is hurt enough to be worth the psyche.")
+			return
+		}
+		caster.Psyche -= sp.Cost
+		healed := target.Heal(rules.SpellDamage(g.RNG, caster, sp))
+		g.Sound.Play("fight/heal")
+		g.Log.AddColor(render.ColHeal, "%s casts %s. %s recovers %d.",
+			caster.Name, sp.Name, target.Name, healed)
+	}
+	s.refresh(g)
+}
+
+// equipCarried puts a carried piece of equipment on, and whatever comes off
+// goes back in the pack rather than anywhere else. Nothing is destroyed by
+// changing your mind, which is the entire reason equipment is carried at all.
+func (s *statusScene) equipCarried(g *Game, i int) {
+	c := s.subject(g)
+	if i < 0 || i >= len(g.Player.Carried) {
+		return
+	}
+	gear := g.Player.Carried[i]
+
+	// The hero's pack is the shared one, so equipping onto a companion moves
+	// the item out of it and whatever they were wearing back into it.
+	if c != g.Player {
+		if _, ok := g.Player.DropCarried(i); !ok {
+			return
+		}
+		c.Carry(gear)
+		if !c.Equip(len(c.Carried) - 1) {
+			return
+		}
+		// Anything that came off them belongs in the pack the player manages.
+		for len(c.Carried) > 0 {
+			off, _ := c.DropCarried(0)
+			g.Player.Carry(off)
+		}
+	} else if !g.Player.Equip(i) {
+		return
+	}
+
+	g.Sound.Play("world/equip")
+	g.Log.AddColor(render.ColGold, "%s puts on %s.", c.Name, gear.Titled())
+	s.refresh(g)
 }
 
 // releaseSubject lets the shown companion go, with a confirmation, because
@@ -152,10 +302,17 @@ func (s *statusScene) give(g *Game) {
 	if !ok || it.Disabled {
 		return
 	}
-	idx, ok := it.Data.(int)
+	row, ok := it.Data.(packRow)
 	if !ok {
 		return
 	}
+	if row.gear {
+		// Equipment is handed over by putting it on them, which is the same
+		// key on the same row and does the same thing.
+		g.Log.AddColor(render.ColInkDim, "Equipment is given by wearing it: Z puts it on whoever is shown.")
+		return
+	}
+	idx := row.idx
 	if g.Player.Bag[idx].Kind == model.ItemTrinket {
 		g.Sound.Play("ui/deny")
 		g.Log.AddColor(render.ColInkDim, "%s has no use for a %s and says so.",
@@ -339,12 +496,19 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 	s.bag.Draw(dst, 282, 26, 184)
 
 	if it, ok := s.bag.Selected(); ok && !it.Disabled {
-		if idx, ok := it.Data.(int); ok && idx < len(p.Bag) {
+		if row, ok := it.Data.(packRow); ok {
 			// Purpose first, then the joke. The description is flavour and the
 			// pack is where somebody goes to find out what a thing is for.
-			text := p.Bag[idx].Desc
-			if what := itemPurpose(p.Bag[idx]); what != "" {
-				text = upper(what) + ". " + text
+			var text string
+			switch {
+			case row.gear && row.idx < len(g.Player.Carried):
+				gear := g.Player.Carried[row.idx]
+				text = "Z to put it on. " + carriedDescribe(gear)
+			case !row.gear && row.idx < len(p.Bag):
+				text = p.Bag[row.idx].Desc
+				if what := itemPurpose(p.Bag[row.idx]); what != "" {
+					text = upper(what) + ". " + text
+				}
 			}
 			lines := render.Wrap(text, 178)
 			ty := 26 + s.bag.Height() + 10
@@ -358,9 +522,9 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 		}
 	}
 
-	hint := "Z to use - X to close"
+	hint := "Z use or put on - C or X to close"
 	if len(party) > 1 {
-		hint = "Left / Right for the company - Z to use - X to close"
+		hint = "Left / Right for the company - Z use or put on - C to close"
 		if p.Ally {
 			hint = "Left / Right - G give - T take back - R let go - X close"
 		}

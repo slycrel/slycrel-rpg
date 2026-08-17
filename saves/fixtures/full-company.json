@@ -10,8 +10,8 @@
     "level": 11,
     "totalXP": 0,
     "spendXP": 0,
-    "hp": 84,
-    "maxHP": 84,
+    "hp": 94,
+    "maxHP": 94,
     "psyche": 5,
     "maxPsyche": 5,
     "strength": 28,
@@ -24,7 +24,7 @@
     "coins": 250,
     "weapon": {
       "name": "Flamberge 'The Apology'",
-      "strike": 14,
+      "strike": 15,
       "range": 0,
       "cost": 340,
       "quality": 90,
@@ -91,6 +91,31 @@
         "icon": "icon/loot/antidote"
       }
     ],
+    "carried": [
+      {
+        "weapon": {
+          "name": "Bare Hands",
+          "strike": 1,
+          "range": 0,
+          "cost": 0,
+          "quality": 0,
+          "verb": "slap",
+          "tier": 0,
+          "icon": "icon/ab/1_weapon_sword"
+        }
+      },
+      {
+        "armor": {
+          "name": "Regrettable Rags",
+          "defense": 0,
+          "cost": 0,
+          "quality": 0,
+          "verb": "flaps",
+          "tier": 0,
+          "icon": "icon/loot/fur_tuft"
+        }
+      }
+    ],
     "sprite": "",
     "portrait": ""
   },
@@ -102,8 +127,8 @@
       "level": 11,
       "totalXP": 0,
       "spendXP": 0,
-      "hp": 90,
-      "maxHP": 90,
+      "hp": 100,
+      "maxHP": 100,
       "psyche": 7,
       "maxPsyche": 7,
       "strength": 29,
@@ -169,8 +194,8 @@
       "level": 11,
       "totalXP": 0,
       "spendXP": 0,
-      "hp": 88,
-      "maxHP": 88,
+      "hp": 98,
+      "maxHP": 98,
       "psyche": 13,
       "maxPsyche": 13,
       "strength": 19,

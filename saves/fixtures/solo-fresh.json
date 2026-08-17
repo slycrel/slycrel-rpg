@@ -10,8 +10,8 @@
     "level": 1,
     "totalXP": 0,
     "spendXP": 0,
-    "hp": 24,
-    "maxHP": 24,
+    "hp": 34,
+    "maxHP": 34,
     "psyche": 4,
     "maxPsyche": 4,
     "strength": 9,
@@ -75,6 +75,31 @@
         "count": 1,
         "desc": "Brings a person round by making unconsciousness the worse option.",
         "icon": "icon/loot/antidote"
+      }
+    ],
+    "carried": [
+      {
+        "weapon": {
+          "name": "Bare Hands",
+          "strike": 1,
+          "range": 0,
+          "cost": 0,
+          "quality": 0,
+          "verb": "slap",
+          "tier": 0,
+          "icon": "icon/ab/1_weapon_sword"
+        }
+      },
+      {
+        "armor": {
+          "name": "Regrettable Rags",
+          "defense": 0,
+          "cost": 0,
+          "quality": 0,
+          "verb": "flaps",
+          "tier": 0,
+          "icon": "icon/loot/fur_tuft"
+        }
       }
     ],
     "sprite": "",

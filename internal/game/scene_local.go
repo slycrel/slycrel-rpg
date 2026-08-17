@@ -266,7 +266,9 @@ func (g *Game) openChest(e *world.Entity) {
 		}
 	}
 	if find, ok := g.rollAffixedGear(); ok {
-		g.SayThen(e.Name, e.Line+"\n\n"+body, func(g *Game) { g.offerFind(find) })
+		g.SayThen(e.Name, e.Line+"\n\n"+body, func(g *Game) {
+			g.takeFind(find, "Under everything else:")
+		})
 		return
 	}
 	g.Say(e.Name, e.Line+"\n\n"+body)
@@ -359,74 +361,45 @@ func (g *Game) rollAffixedGearOfTier(tier int) (find, bool) {
 	return find{armor: &a}, true
 }
 
-// offerFind asks whether to swap for what was in the chest.
+// takeFind puts a piece of found equipment in the pack.
 //
-// It is a question rather than a pickup because an affix takes as well as
-// gives, so a find is not reliably an upgrade — and because the alternative,
-// equipping it automatically, would let a tier-two sword out of a low chest
-// replace the tier-four one you paid for.
-func (g *Game) offerFind(f find) {
-	p := g.Player
-	var name, keeping, gains string
+// It used to be a question — "Take it / Leave it" — with the numbers against
+// what you were already wearing, because there was nowhere for a sword to go
+// except onto the body, so accepting one meant discarding the old one and
+// declining meant leaving it on the floor. A find below your current gear was
+// therefore a prompt offering you a downgrade and nothing else.
+//
+// Equipment is carried now, so there is nothing to decide here. You pick it up.
+// Whether to wear it is a question for the character sheet, and whether to sell
+// it is a question for the next shop.
+func (g *Game) takeFind(f find, where string) {
+	var gear model.Carried
 	switch {
 	case f.weapon != nil:
-		name, keeping = f.weapon.Titled(), p.Weapon.Titled()
-		gains = fmt.Sprintf("strike %d against your %d", f.weapon.Strike, p.Weapon.Strike)
+		gear = model.Carried{Weapon: f.weapon}
 	case f.armor != nil:
-		name, keeping = f.armor.Titled(), p.Armor.Titled()
-		gains = fmt.Sprintf("defence %d against your %d", f.armor.Defense, p.Armor.Defense)
+		gear = model.Carried{Armor: f.armor}
 	default:
 		return
 	}
-
-	body := fmt.Sprintf("Under everything else: a %s.\n\n%s. %s",
-		name, upper(gains), affixReads(f))
-	g.Ask("", body, []string{"Take it", "Leave it"}, func(g *Game, choice int) {
-		if choice != 0 {
-			g.Log.AddColor(render.ColInkDim, "You leave the %s where it is.", name)
-			return
-		}
-		switch {
-		case f.weapon != nil:
-			p.Weapon = *f.weapon
-		case f.armor != nil:
-			p.Armor = *f.armor
-		}
-		g.Sound.Play("world/equip")
-		g.Log.AddColor(render.ColGold, "You take up the %s. The %s is left behind.", name, keeping)
-	})
+	g.Player.Carry(gear)
+	g.Sound.Play("world/loot")
+	g.Say("", fmt.Sprintf("%s %s.\n\n%s It goes in your pack.",
+		where, article(gear.Titled()), carriedDescribe(gear)))
 }
 
-// affixReads spells out what the suffix does, since the name alone does not say
-// and the whole decision turns on it.
-func affixReads(f find) string {
-	var a *model.Affix
-	switch {
-	case f.weapon != nil:
-		a = f.weapon.Affix
-	case f.armor != nil:
-		a = f.armor.Affix
+// article puts the right indefinite article on a name. Gear names are generated
+// — "Actual Sword of Mild Regret" — so "a %s" produced "a Actual Sword" often
+// enough to be the first thing anybody noticed about a find.
+func article(name string) string {
+	if name == "" {
+		return name
 	}
-	if a == nil {
-		return ""
+	switch name[0] {
+	case 'A', 'E', 'I', 'O', 'U', 'a', 'e', 'i', 'o', 'u':
+		return "an " + name
 	}
-	parts := []string{}
-	for _, p := range []struct {
-		n int
-		s string
-	}{
-		{a.Bonus.Strike, "strike"}, {a.Bonus.Defense, "defence"},
-		{a.Bonus.Strength, "strength"}, {a.Bonus.Dexterity, "dexterity"},
-		{a.Bonus.Speed, "speed"}, {a.Bonus.Psyche, "psyche"},
-	} {
-		if p.n != 0 {
-			parts = append(parts, fmt.Sprintf("%+d %s", p.n, p.s))
-		}
-	}
-	if len(parts) == 0 {
-		return ""
-	}
-	return "Being " + a.Suffix + " is worth " + strings.Join(parts, ", ") + "."
+	return "a " + name
 }
 
 func upper(s string) string {

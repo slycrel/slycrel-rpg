@@ -192,3 +192,145 @@ func max0(n int) int {
 	}
 	return n
 }
+
+// Carried is a piece of equipment in the pack rather than on the body.
+// Exactly one field is set.
+//
+// Gear used to have nowhere to be except worn. Buying a sword put the old one
+// "in the bin" — a 96-coin spear evaporating to make room for a 240-coin glaive
+// — and a sword found in a chest was a yes/no question answered on the spot,
+// with no way to carry it to a shop and no way to change your mind. That is how
+// the 1994 original did it because a BBS door had eight equipment slots and no
+// inventory to speak of; there is no reason to inherit the limitation along
+// with the maths.
+type Carried struct {
+	Weapon *Weapon `json:"weapon,omitempty"`
+	Armor  *Armor  `json:"armor,omitempty"`
+	Shield *Shield `json:"shield,omitempty"`
+	Charm  *Charm  `json:"charm,omitempty"`
+}
+
+// Empty reports a slot holding nothing, which should not occur but is cheaper
+// to check than to prove impossible.
+func (c Carried) Empty() bool {
+	return c.Weapon == nil && c.Armor == nil && c.Shield == nil && c.Charm == nil
+}
+
+// Titled is the full name of whatever is in here, affix included.
+func (c Carried) Titled() string {
+	switch {
+	case c.Weapon != nil:
+		return c.Weapon.Titled()
+	case c.Armor != nil:
+		return c.Armor.Titled()
+	case c.Shield != nil:
+		return c.Shield.Titled()
+	case c.Charm != nil:
+		return c.Charm.Titled()
+	}
+	return ""
+}
+
+// Slot names which part of a character this would go on.
+func (c Carried) Slot() string {
+	switch {
+	case c.Weapon != nil:
+		return "weapon"
+	case c.Armor != nil:
+		return "armour"
+	case c.Shield != nil:
+		return "shield"
+	case c.Charm != nil:
+		return "charm"
+	}
+	return ""
+}
+
+// Cost is what it was worth new, which is what a sale is reckoned from.
+func (c Carried) Cost() int {
+	switch {
+	case c.Weapon != nil:
+		return c.Weapon.Cost
+	case c.Armor != nil:
+		return c.Armor.Cost
+	case c.Shield != nil:
+		return c.Shield.Cost
+	case c.Charm != nil:
+		return c.Charm.Cost
+	}
+	return 0
+}
+
+// Icon is the manifest key for the thing, for the lists it appears in.
+func (c Carried) Icon() string {
+	switch {
+	case c.Weapon != nil:
+		return c.Weapon.Icon
+	case c.Armor != nil:
+		return c.Armor.Icon
+	case c.Shield != nil:
+		return c.Shield.Icon
+	case c.Charm != nil:
+		return c.Charm.Icon
+	}
+	return ""
+}
+
+// Carry puts a piece of equipment in the pack.
+func (c *Character) Carry(g Carried) {
+	if g.Empty() {
+		return
+	}
+	c.Carried = append(c.Carried, g)
+}
+
+// Equip puts the carried item at i on the body and returns whatever came off,
+// which goes back in the pack. Swapping rather than replacing is the whole
+// point: nothing is destroyed by changing your mind.
+func (c *Character) Equip(i int) bool {
+	if i < 0 || i >= len(c.Carried) {
+		return false
+	}
+	g := c.Carried[i]
+	c.Carried = append(c.Carried[:i], c.Carried[i+1:]...)
+
+	switch {
+	case g.Weapon != nil:
+		old := c.Weapon
+		c.Weapon = *g.Weapon
+		if old.Name != "" {
+			c.Carry(Carried{Weapon: &old})
+		}
+	case g.Armor != nil:
+		old := c.Armor
+		c.Armor = *g.Armor
+		if old.Name != "" {
+			c.Carry(Carried{Armor: &old})
+		}
+	case g.Shield != nil:
+		old := c.Shield
+		c.Shield = *g.Shield
+		if old.Worn() {
+			c.Carry(Carried{Shield: &old})
+		}
+	case g.Charm != nil:
+		old := c.Charm
+		c.Charm = *g.Charm
+		if old.Worn() {
+			c.Carry(Carried{Charm: &old})
+		}
+	default:
+		return false
+	}
+	return true
+}
+
+// DropCarried removes the item at i without equipping it, for a sale.
+func (c *Character) DropCarried(i int) (Carried, bool) {
+	if i < 0 || i >= len(c.Carried) {
+		return Carried{}, false
+	}
+	g := c.Carried[i]
+	c.Carried = append(c.Carried[:i], c.Carried[i+1:]...)
+	return g, true
+}
