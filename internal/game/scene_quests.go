@@ -33,6 +33,30 @@ func newQuestScene(g *Game) *questScene {
 
 func (s *questScene) refresh(g *Game) {
 	var items []ui.MenuItem
+
+	// The long story goes on top, because it is the reason to be here and
+	// everything under it is something that came up on the way.
+	if running := g.Sagas.Running(); len(running) > 0 {
+		items = append(items, ui.MenuItem{Label: "the long way round", Header: true})
+		for _, sg := range running {
+			// Where you are being sent, or how far through the leg you are when
+			// the leg has a count. Which one matters depends on the leg, and
+			// there is only one column.
+			detail := sg.Progress(&g.Data.Sagas)
+			if detail == "" {
+				detail = sg.PlaceName()
+			}
+			items = append(items, ui.MenuItem{
+				Label: sg.Fill(sg.Title), Detail: detail, Data: sg,
+			})
+		}
+		// The errands need a heading of their own now that something sits above
+		// them. Without it the first errand reads as part of the long story —
+		// which is exactly how it looked on the frame this was checked against.
+		items = append(items, ui.MenuItem{Label: "errands", Header: true})
+	}
+
+	first := len(items)
 	for _, q := range g.Quests.Active() {
 		detail := q.Progress()
 		if q.Complete() {
@@ -40,27 +64,10 @@ func (s *questScene) refresh(g *Game) {
 		}
 		items = append(items, ui.MenuItem{Label: q.Title, Detail: detail, Data: q})
 	}
-	if len(items) == 0 {
+	if len(items) == first {
 		items = append(items, ui.MenuItem{
 			Label: "(nobody has asked you for anything)", Disabled: true,
 		})
-	}
-
-	// The long story goes on top, above the errands, because it is the reason
-	// to be here and everything else is something that came up.
-	if running := g.Sagas.Running(); len(running) > 0 {
-		var head []ui.MenuItem
-		for _, sg := range running {
-			detail := sg.Progress(&g.Data.Sagas)
-			if detail == "" {
-				detail = sg.PlaceName()
-			}
-			head = append(head, ui.MenuItem{
-				Label: sg.Fill(sg.Title), Detail: detail, Data: sg,
-			})
-		}
-		items = append(append([]ui.MenuItem{
-			{Label: "the long way round", Header: true}}, head...), items...)
 	}
 
 	// Backstories go underneath, behind headings, so one never looks like
