@@ -89,6 +89,14 @@ which event fires which trigger, and where it is safe to put a box on screen.
   places and items it has checked for; a test asserts the same of save fixtures.
 - **Gear whose name already ends in a flourish never gets an affix**, or you get
   "Runed Maul of the Last Word of the Last Word".
+- **Never write `a %s` around a generated name.** Monsters, gear and places are
+  all generated, so "a Actual Sword of Mild Regret" and "a Owl That Knows" are
+  the default outcome, not the unlucky one. Use `article()` in `internal/game`,
+  and do not pluralise one either — the tests in `internal/thread` assert both
+  for the backstory writing.
+- **Equipment is carried, not just worn.** `model.Carried` is the pack version;
+  buying, finding and taking something off all go there, and `Character.Equip`
+  swaps rather than replaces. Nothing should ever destroy a piece of gear.
 - **A companion backstory is authored writing over generated staging.** The
   skeletons in `data/text/threads.json` may only name `{N}`, `{P}`, `{X}` and
   `{I}`; `internal/thread` reads which of those a skeleton needs out of its own

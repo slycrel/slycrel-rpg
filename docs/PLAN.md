@@ -100,16 +100,38 @@ Built and running:
   setting, and an audit pass that decodes every file
 - Save and load: three slots, a pause menu, and `-load` to boot straight into a
   save. A save is the seed plus what the player changed, so it is ~6 KB of
-  mostly readable JSON and doubles as a test fixture
-- 62 monsters across nine biomes, 14 weapons, 10 armours, 6 shields, 9 charms,
+  mostly readable JSON and doubles as a test fixture. An autosave is written
+  before every encounter and offered back to a hero who dies, because the fight
+  that killed you was rolled at you rather than chosen
+- The matchup axis: monsters have a ward as well as armour, and some attack
+  with magic. Constructs and armoured humanoids stop steel and nothing else,
+  demons and fey are the reverse, beasts sit in the middle. The player's answer
+  is a charm slot they are free to skip — magical attackers do not appear below
+  level 10, which is where the counter starts being sold
+- The false retreat: a thief's alternative to swinging when both sides are
+  nearly finished. Sold less often than a real escape and punished when it is
+  not bought, so it is a gamble rather than a better attack
+- Equipment is carried, not just worn. Bought, found or taken off, it sits in
+  the pack; the character sheet puts it on and swaps whatever comes off back
+  into the pack; shops buy it back. Techniques that work outside a fight are in
+  the same list
+- A home region: within fourteen tiles of the start, an encounter cannot exceed
+  the player's own level. The cap lifts as they level, so it retires itself
+- 66 monsters across nine biomes, 14 weapons, 10 armours, 6 shields, 12 charms,
   10 affixes, 42 items, 27 techniques
   (eleven of them party-facing, lingering, or gated on a hireling's ancestry),
   9 companion backstories
 - Asset pipeline: inventory, selective extraction, manifest generation, and an
   audit that reports which art keys still fall back to placeholders
 
-Deliberately not built yet: backstories for the townspeople, alternative
-progression arcs, day/night and weather, anything that reads Fame or Shame.
+Deliberately not built yet: backstories for the townspeople, day/night and
+weather, anything that reads Fame or Shame, and the thief's discount on healing
+items.
+
+Played twice end to end. The second pass is what turned up the home region, the
+starting kit, equipment as inventory, and four separate cases of the game
+knowing something and not saying it — what a shop item does, what a chest just
+gave you, which keys exist, and which build is running.
 
 ## Architecture, and why
 
@@ -146,6 +168,20 @@ the party rules, which had already produced two bugs found by reading rather
 than by tests, became something a test can reach.
 
 ## Roadmap
+
+### Phase 0 — what playing it keeps finding
+
+Both playthroughs found the same *kind* of thing: not missing features, but
+features the game had and would not talk about. The pause menu had Save behind
+a switch that dispatched on row number while the rows had moved; the quest log
+had a key nobody advertised; a chest listed names with no idea what they were
+for; the shop was two columns of prices. None of it needed building. All of it
+needed saying.
+
+The lesson is cheap to state and easy to forget: **when something is reported
+missing, check first whether it is merely unreachable.** Four of the six items
+from the second session were that, and the fix each time was a sentence rather
+than a system.
 
 ### Phase 1 — make it feel like a game *(done: save/load, audio, quests, party)*
 
