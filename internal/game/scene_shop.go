@@ -61,6 +61,22 @@ func (s *shopScene) tier(g *Game) int {
 	}
 }
 
+// gearRow builds one row on a gear counter: name, price, and what it is worth
+// against the one already being worn.
+func (s *shopScene) gearRow(g *Game, name, icon string, cost int, data any) ui.MenuItem {
+	price := g.askingPrice(cost)
+	detail := fmt.Sprintf("%d", price)
+	var tint color.Color
+	if verdict, c := shelfVerdict(s.buyer(g), data); verdict != "" {
+		detail = fmt.Sprintf("%s  %s", detail, verdict)
+		tint = c
+	}
+	return ui.MenuItem{
+		Label: name, Detail: detail, DetailTint: tint, Icon: icon,
+		Disabled: int64(price) > g.Player.Coins, Data: data,
+	}
+}
+
 func (s *shopScene) refresh(g *Game) {
 	var items []ui.MenuItem
 	if s.tab == tabBuy {
@@ -73,36 +89,24 @@ func (s *shopScene) refresh(g *Game) {
 				if w.Cost == 0 {
 					continue
 				}
-				items = append(items, ui.MenuItem{
-					Label: w.Name, Detail: fmt.Sprintf("%d", g.askingPrice(w.Cost)), Icon: w.Icon,
-					Disabled: int64(g.askingPrice(w.Cost)) > g.Player.Coins, Data: w,
-				})
+				items = append(items, s.gearRow(g, w.Name, w.Icon, w.Cost, w))
 			}
 			// The smith beats metal. Shields are beaten metal, and putting them
 			// here is what stops the armourer's list running twice as long as
 			// anybody else's.
 			for _, sh := range shields {
-				items = append(items, ui.MenuItem{
-					Label: sh.Name, Detail: fmt.Sprintf("%d", g.askingPrice(sh.Cost)), Icon: sh.Icon,
-					Disabled: int64(g.askingPrice(sh.Cost)) > g.Player.Coins, Data: sh,
-				})
+				items = append(items, s.gearRow(g, sh.Name, sh.Icon, sh.Cost, sh))
 			}
 		case world.ShopArmorer:
 			for _, a := range armors {
 				if a.Cost == 0 {
 					continue
 				}
-				items = append(items, ui.MenuItem{
-					Label: a.Name, Detail: fmt.Sprintf("%d", g.askingPrice(a.Cost)), Icon: a.Icon,
-					Disabled: int64(g.askingPrice(a.Cost)) > g.Player.Coins, Data: a,
-				})
+				items = append(items, s.gearRow(g, a.Name, a.Icon, a.Cost, a))
 			}
 			// Charms are worn, and the armourer is the one who fits worn things.
 			for _, ch := range charms {
-				items = append(items, ui.MenuItem{
-					Label: ch.Name, Detail: fmt.Sprintf("%d", g.askingPrice(ch.Cost)), Icon: ch.Icon,
-					Disabled: int64(g.askingPrice(ch.Cost)) > g.Player.Coins, Data: ch,
-				})
+				items = append(items, s.gearRow(g, ch.Name, ch.Icon, ch.Cost, ch))
 			}
 		default: // apothecary
 			// The revive stock is the town's answer to somebody going down, and

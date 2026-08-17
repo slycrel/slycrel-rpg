@@ -841,6 +841,36 @@ rather than `POI == -1`, which is the resident-thread lesson applied before it
 could bite: a zero value that means something real turns every old save into a
 silent claim about location zero.
 
+**Four small things off one round of play.** *(Jeremy's, in a batch.)*
+
+- **Save and Load ahead of Sound** in the pause menu, because that is the order
+  they are wanted in: a player opens that menu to put the run down, and sets the
+  volume once. Safe to reorder now only because dispatch is on the label rather
+  than the row number, which is a bug this menu has already had.
+- **The slot list opens on the most recently written save**, in both directions.
+  Loading, it is the run you were in; saving, it is the slot you have been
+  using. Landing on slot one every time makes overwriting the wrong save the
+  default action.
+- **A roll at character creation is coloured against the band its own class
+  rolls it in.** Eight Strength is a poor Fighter and a good Mage, and a player
+  choosing between the three cannot be expected to know either band. This is
+  why `rules` grew a `startingBands` table: the numbers were in a switch inside
+  `NewCharacter`, and colouring a roll means knowing what the roll could have
+  been. One copy, two readers, and a test that rolls four thousand characters
+  per class to check the table still describes the roller — including that the
+  band is not *wider* than the roll, since slack at the top would make a perfect
+  roll one that can never come out green.
+- **Gear on a shop counter shows what it is worth against what is worn**, affix
+  included, with an empty shield arm reading as nothing so the first shield is
+  the upgrade it is. Charms are exempt and that is the interesting part: every
+  charm in the table gives with one hand and takes with the other, so there is
+  no better one, and a green charm would be the interface contradicting the
+  content. `TestTheShelfNeverGradesACharm` holds the line.
+
+The colours live on the detail column rather than the label, because that is
+the one part of a menu row whose colour survives the cursor landing on it — a
+label goes dark on the selection bar, and green on gold is unreadable.
+
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on

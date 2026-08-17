@@ -150,7 +150,15 @@ type MenuItem struct {
 	// option, because a heading dressed as an unavailable choice is a heading
 	// the player spends a moment trying to select.
 	Header bool
-	Data   any // caller payload, e.g. the item or spell being chosen
+	// DetailTint colours the right-hand column. Nil takes the ordinary dim ink.
+	//
+	// The detail column is the right place for a graded number, because it is
+	// the one part of a row whose colour does not survive nothing: a label goes
+	// dark when the cursor lands on it, and a green label on a gold selection
+	// bar is unreadable. Price and verdict sit together on the right and stay
+	// legible whether or not the row is the one being looked at.
+	DetailTint color.Color
+	Data       any // caller payload, e.g. the item or spell being chosen
 }
 
 // IconSource resolves an icon key to a drawable image, or nil when the key has
@@ -333,9 +341,12 @@ func (m *Menu) Draw(dst *ebiten.Image, x, y, w float64) {
 		if it.Detail != "" {
 			avail := detailRight - (lx + render.TextW(it.Label)) - 10
 			if avail >= 20 {
-				d := render.ColInkDim
-				if it.Disabled {
+				var d color.Color = render.ColInkDim
+				switch {
+				case it.Disabled:
 					d = render.ColInkFaint
+				case it.DetailTint != nil:
+					d = it.DetailTint
 				}
 				drawRight(dst, render.Trunc(it.Detail, avail), detailRight, ly+m.textOffset(), d)
 			}

@@ -37,6 +37,63 @@ func XPForLevel(level int) int64 {
 }
 
 // NewCharacter rolls a starting adventurer of the given class.
+// Band is the inclusive range a stat is rolled in at level one.
+type Band struct{ Lo, Hi int }
+
+// Frac is where a value sits in its band, from 0 at the floor to 1 at the top.
+// A band with no spread in it reads as the middle, since there was nothing to
+// be lucky about.
+func (b Band) Frac(v int) float64 {
+	if b.Hi <= b.Lo {
+		return 0.5
+	}
+	return core.ClampF(float64(v-b.Lo)/float64(b.Hi-b.Lo), 0, 1)
+}
+
+// StatBands is one class's five rolls.
+type StatBands struct{ HP, Str, Dex, Spd, Psy Band }
+
+// startingBands is what each class rolls at level one, and it is the only copy.
+//
+// NewCharacter reads it and so does the creation screen, which is the whole
+// reason it is a table rather than a switch: colouring a roll good or bad means
+// knowing what the roll could have been, and a second copy of these numbers
+// would be a second copy that drifts. A Mage with eight Strength is a *good*
+// Mage roll, and nothing outside this table knows that.
+var startingBands = map[model.Class]StatBands{
+	model.ClassFighter: {
+		HP: Band{18, 24}, Str: Band{9, 13}, Dex: Band{5, 9}, Spd: Band{6, 9}, Psy: Band{2, 4},
+	},
+	model.ClassThief: {
+		HP: Band{14, 19}, Str: Band{6, 10}, Dex: Band{9, 13}, Spd: Band{9, 13}, Psy: Band{3, 6},
+	},
+	model.ClassMage: {
+		HP: Band{11, 16}, Str: Band{4, 8}, Dex: Band{6, 10}, Spd: Band{6, 10}, Psy: Band{8, 12},
+	},
+}
+
+// startingCushion is what everybody gets on top of the rolled hit points.
+//
+// Level one is where the hit point pool is smallest and the tools to protect it
+// are fewest, so the same unlucky opening exchange that costs a level-five
+// character a quarter of their health ends the run at level one. The flat ten is
+// deliberately not a percentage: it is worth a great deal at the start and
+// rounds to nothing by the time it stops being needed.
+const startingCushion = 10
+
+// StartingCoins is the band a new character's purse is rolled in.
+var StartingCoins = Band{45, 95}
+
+// StartingBands reports what a class rolls, as the numbers a player is shown —
+// so the hit point band already has the cushion folded into it and a caller
+// never has to know the cushion exists.
+func StartingBands(class model.Class) StatBands {
+	b := startingBands[class]
+	b.HP.Lo += startingCushion
+	b.HP.Hi += startingCushion
+	return b
+}
+
 func NewCharacter(g *core.RNG, name string, class model.Class) *model.Character {
 	c := &model.Character{
 		Name:  name,
@@ -51,35 +108,12 @@ func NewCharacter(g *core.RNG, name string, class model.Class) *model.Character 
 		// intended shape; being unable to do anything about it is not.
 		Coins: int64(g.Between(45, 95)),
 	}
-	// Everybody starts ten hit points better off than the class rolls suggest.
-	//
-	// Level one is where the hit point pool is smallest and the tools to
-	// protect it are fewest, so the same unlucky opening exchange that costs a
-	// level-five character a quarter of their health ends the run at level one.
-	// The flat ten is deliberately not a percentage: it is worth a great deal
-	// at the start and rounds to nothing by the time it stops being needed.
-	const startingCushion = 10
-
-	switch class {
-	case model.ClassFighter:
-		c.MaxHP = g.Between(18, 24)
-		c.Strength = g.Between(9, 13)
-		c.Dexterity = g.Between(5, 9)
-		c.Speed = g.Between(6, 9)
-		c.MaxPsyche = g.Between(2, 4)
-	case model.ClassThief:
-		c.MaxHP = g.Between(14, 19)
-		c.Strength = g.Between(6, 10)
-		c.Dexterity = g.Between(9, 13)
-		c.Speed = g.Between(9, 13)
-		c.MaxPsyche = g.Between(3, 6)
-	case model.ClassMage:
-		c.MaxHP = g.Between(11, 16)
-		c.Strength = g.Between(4, 8)
-		c.Dexterity = g.Between(6, 10)
-		c.Speed = g.Between(6, 10)
-		c.MaxPsyche = g.Between(8, 12)
-	}
+	b := startingBands[class]
+	c.MaxHP = g.Between(b.HP.Lo, b.HP.Hi)
+	c.Strength = g.Between(b.Str.Lo, b.Str.Hi)
+	c.Dexterity = g.Between(b.Dex.Lo, b.Dex.Hi)
+	c.Speed = g.Between(b.Spd.Lo, b.Spd.Hi)
+	c.MaxPsyche = g.Between(b.Psy.Lo, b.Psy.Hi)
 	c.MaxHP += startingCushion
 	c.HP = c.MaxHP
 	c.Psyche = c.MaxPsyche

@@ -472,16 +472,28 @@ func (c *createScene) drawWhat(g *Game, dst *ebiten.Image) {
 			y += render.LineH
 		}
 		y += 4
-		for _, row := range [][2]string{
-			{"Hit points", fmt.Sprint(p.MaxHP)},
-			{"Psyche", fmt.Sprint(p.MaxPsyche)},
-			{"Strength", fmt.Sprint(p.Strength)},
-			{"Dexterity", fmt.Sprint(p.Dexterity)},
-			{"Speed", fmt.Sprint(p.Speed)},
-			{"Purse", fmt.Sprintf("%d coins", p.Coins)},
+		// Every number is coloured against the band its own class rolls it in,
+		// which is the only comparison that means anything: eight Strength is a
+		// poor Fighter and a good Mage, and a player deciding between the three
+		// cannot be expected to know either band. Green is a lucky roll for
+		// this class, red an unlucky one, and most rolls are neither.
+		b := rules.StartingBands(cl)
+		for _, row := range []struct {
+			label string
+			value string
+			frac  float64
+		}{
+			{"Hit points", fmt.Sprint(p.MaxHP), b.HP.Frac(p.MaxHP)},
+			{"Psyche", fmt.Sprint(p.MaxPsyche), b.Psy.Frac(p.MaxPsyche)},
+			{"Strength", fmt.Sprint(p.Strength), b.Str.Frac(p.Strength)},
+			{"Dexterity", fmt.Sprint(p.Dexterity), b.Dex.Frac(p.Dexterity)},
+			{"Speed", fmt.Sprint(p.Speed), b.Spd.Frac(p.Speed)},
+			// The purse is rolled the same for everybody, so it grades against
+			// its own band rather than the class's.
+			{"Purse", fmt.Sprintf("%d coins", p.Coins), rules.StartingCoins.Frac(int(p.Coins))},
 		} {
-			render.Text(dst, row[0], float64(x), y, render.ColInkDim)
-			render.TextRight(dst, row[1], 458, y, render.ColInk)
+			render.Text(dst, row.label, float64(x), y, render.ColInkDim)
+			render.TextRight(dst, row.value, 458, y, gradeFrac(row.frac))
 			y += render.LineH
 		}
 	}

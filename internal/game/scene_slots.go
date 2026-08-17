@@ -45,13 +45,21 @@ func (s *slotScene) refresh(g *Game) {
 	}
 
 	items := make([]ui.MenuItem, 0, len(slotNames))
-	for _, name := range slotNames {
+	// The cursor opens on the most recently written slot, which is the one the
+	// player means in both directions: loading, it is the run they were in;
+	// saving, it is the slot they have been using. Landing on slot one every
+	// time makes overwriting the wrong save the default action.
+	newest, newestAt := -1, time.Time{}
+	for i, name := range slotNames {
 		sl, ok := existing[name]
 		label := "Slot " + name
 		detail := "empty"
 		if ok {
 			label = sl.Summary
 			detail = humanAge(sl.Saved)
+			if newest < 0 || sl.Saved.After(newestAt) {
+				newest, newestAt = i, sl.Saved
+			}
 		}
 		items = append(items, ui.MenuItem{
 			Label:    render.Trunc(label, 300),
@@ -62,6 +70,9 @@ func (s *slotScene) refresh(g *Game) {
 	}
 	s.menu.Visible = 0
 	s.menu.SetItems(items)
+	if newest >= 0 {
+		s.menu.Index = newest
+	}
 }
 
 // humanAge renders a save's age the way a player thinks about it.
@@ -156,11 +167,15 @@ func newPauseScene(g *Game) *pauseScene {
 // refresh rebuilds the rows so the sound line reflects the current setting.
 func (p *pauseScene) refresh(g *Game) {
 	idx := p.menu.Index
+	// Save and Load ahead of Sound, because that is the order they are wanted
+	// in: a player opens this menu to put the run down, and sets the volume
+	// once. Dispatch is on the label, so this list can be reordered freely —
+	// which was not true the last time it changed.
 	p.menu.SetItems([]ui.MenuItem{
 		{Label: "Resume"},
-		{Label: "Sound", Detail: soundLabel(g)},
 		{Label: "Save"},
 		{Label: "Load"},
+		{Label: "Sound", Detail: soundLabel(g)},
 		{Label: "Abandon run", Detail: "to the title"},
 	})
 	p.menu.Index = idx

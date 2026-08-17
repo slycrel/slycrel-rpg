@@ -135,9 +135,10 @@ which event fires which trigger, and where it is safe to put a box on screen.
 - **`saves/` is gitignored except `saves/fixtures/`**, which is committed: it is
   both the regression net and the set of playtest starting points.
 - **The `autosave` slot is written before every fight** and offered back if the
-  hero dies. It is an ordinary save in an ordinary slot, so it turns up in the
-  load menu and can be loaded on purpose; `-demo` is excluded, or the tour would
-  scribble over a real run.
+  hero dies. It is an ordinary save file, but it is *not* in the load menu:
+  `slotNames` is `1`, `2`, `3` and nothing else, so the death prompt is the only
+  way back to it. (This entry used to claim otherwise. Checked.) `-demo` is
+  excluded from writing it, or the tour would scribble over a real run.
 - **`v1-solo.json` and `v2-company.json` must never be regenerated.** Their job
   is to be old saves — v1 predates the party, v2 predates the backstories — and
   rewriting either at the current version deletes the only evidence that the

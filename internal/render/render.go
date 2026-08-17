@@ -55,8 +55,14 @@ var (
 	ColBlood     = color.RGBA{0xB0, 0x30, 0x38, 0xFF}
 	ColHeal      = color.RGBA{0x58, 0xB0, 0x58, 0xFF}
 	ColMagic     = color.RGBA{0x60, 0x88, 0xD0, 0xFF}
-	ColShadow    = color.RGBA{0x00, 0x00, 0x00, 0xB0}
-	ColSelect    = color.RGBA{0xE0, 0xB0, 0x4C, 0x40}
+	// ColBetter and ColWorse grade a number against what it could have been:
+	// a lucky roll, an upgrade at a counter. Lighter than ColHeal and ColBlood,
+	// which are combat colours and read as damage — these sit in body text next
+	// to ordinary figures and have to be legible as ink first and green second.
+	ColBetter = color.RGBA{0x7C, 0xC8, 0x70, 0xFF}
+	ColWorse  = color.RGBA{0xD0, 0x60, 0x60, 0xFF}
+	ColShadow = color.RGBA{0x00, 0x00, 0x00, 0xB0}
+	ColSelect = color.RGBA{0xE0, 0xB0, 0x4C, 0x40}
 	// ColSelectInk is the label colour on a highlighted row. Gold-on-gold was
 	// technically legible and practically not.
 	ColSelectInk = color.RGBA{0x2A, 0x1C, 0x10, 0xFF}

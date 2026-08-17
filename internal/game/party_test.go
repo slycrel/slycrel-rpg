@@ -758,3 +758,66 @@ func TestEveryCompassGlyphIsTheSameSize(t *testing.T) {
 		}
 	}
 }
+
+// TestTheShelfNeverGradesACharm.
+//
+// Every charm in the table gives with one hand and takes with the other, which
+// is a deliberate design rule with a test of its own. Marking one green would
+// be the interface contradicting the content: there is no better charm, only a
+// different one, and a colour that says otherwise turns "which trade do I want"
+// back into "which is the good one".
+func TestTheShelfNeverGradesACharm(t *testing.T) {
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Skipf("no data directory: %v", err)
+	}
+	tables, err := gamedata.Load(root)
+	if err != nil {
+		t.Fatalf("loading content: %v", err)
+	}
+	buyer := &model.Character{Name: "Bosk"}
+	for _, ch := range tables.Charms {
+		if verdict, _ := shelfVerdict(buyer, ch); verdict != "" {
+			t.Errorf("the counter grades %q as %q", ch.Name, verdict)
+		}
+	}
+}
+
+// TestTheShelfComparesAgainstWhatIsWorn, affix and empty slot included.
+func TestTheShelfComparesAgainstWhatIsWorn(t *testing.T) {
+	buyer := &model.Character{
+		Weapon: model.Weapon{Name: "Old", Strike: 5,
+			Affix: &model.Affix{Bonus: model.Bonus{Strike: 2}}},
+		Armor: model.Armor{Name: "Coat", Defense: 3},
+	}
+
+	// Seven effective strike, so a bare 8 is one better and a bare 7 is level.
+	for _, c := range []struct {
+		strike int
+		want   string
+	}{{9, "+2"}, {8, "+1"}, {7, "="}, {4, "-3"}} {
+		got, _ := shelfVerdict(buyer, model.Weapon{Strike: c.strike})
+		if got != c.want {
+			t.Errorf("a strike-%d weapon against seven reads %q, want %q", c.strike, got, c.want)
+		}
+	}
+	if got, _ := shelfVerdict(buyer, model.Armor{Defense: 3}); got != "=" {
+		t.Errorf("the same coat reads %q, want =", got)
+	}
+
+	// An empty arm is nothing, so the first shield is the upgrade it is rather
+	// than no change at all.
+	if got, _ := shelfVerdict(buyer, model.Shield{Defense: 4}); got != "+4" {
+		t.Errorf("the first shield onto an empty arm reads %q, want +4", got)
+	}
+	buyer.Shield = model.Shield{Name: "Board", Defense: 4}
+	if got, _ := shelfVerdict(buyer, model.Shield{Defense: 4}); got != "=" {
+		t.Errorf("the same shield reads %q, want =", got)
+	}
+
+	// And nothing at all for a buyer who is not there, since the shop builds
+	// its rows before it has necessarily decided who is at the counter.
+	if got, _ := shelfVerdict(nil, model.Weapon{Strike: 9}); got != "" {
+		t.Errorf("a nil buyer got the verdict %q", got)
+	}
+}

@@ -438,3 +438,91 @@ func TestBeingUnplaceableIsWorthSomethingAtTheCounter(t *testing.T) {
 		t.Error("there is no hazard pay for following a villain")
 	}
 }
+
+// TestStartingBandsMatchWhatIsActuallyRolled.
+//
+// The bands were hoisted out of a switch so the creation screen could colour a
+// roll against what it could have been, and the moment there are two readers of
+// one table the question becomes whether the table still describes the roller.
+// It does not describe it by construction — StartingBands folds in the hit
+// point cushion, which NewCharacter adds separately — so this is the seam.
+func TestStartingBandsMatchWhatIsActuallyRolled(t *testing.T) {
+	g := core.NewRNG(1994)
+	for _, class := range model.AllClasses {
+		b := rules.StartingBands(class)
+		lo := map[string]int{}
+		hi := map[string]int{}
+		for i := 0; i < 4000; i++ {
+			c := rules.NewCharacter(g, "Subject", class)
+			for _, s := range []struct {
+				name string
+				got  int
+				band rules.Band
+			}{
+				{"hit points", c.MaxHP, b.HP},
+				{"strength", c.Strength, b.Str},
+				{"dexterity", c.Dexterity, b.Dex},
+				{"speed", c.Speed, b.Spd},
+				{"psyche", c.MaxPsyche, b.Psy},
+			} {
+				if s.got < s.band.Lo || s.got > s.band.Hi {
+					t.Fatalf("%s rolled %s %d, outside the declared band %d-%d",
+						class, s.name, s.got, s.band.Lo, s.band.Hi)
+				}
+				if n, ok := lo[s.name]; !ok || s.got < n {
+					lo[s.name] = s.got
+				}
+				if n, ok := hi[s.name]; !ok || s.got > n {
+					hi[s.name] = s.got
+				}
+			}
+			if c.Coins < int64(rules.StartingCoins.Lo) || c.Coins > int64(rules.StartingCoins.Hi) {
+				t.Fatalf("%s rolled %d coins, outside %d-%d",
+					class, c.Coins, rules.StartingCoins.Lo, rules.StartingCoins.Hi)
+			}
+		}
+		// And the band is not wider than the roll. A band with slack in it
+		// would mean the top of it is unreachable, so a perfect roll could
+		// never come out green — which is the failure nobody would notice,
+		// because the colour would simply be rarer than intended.
+		for _, s := range []struct {
+			name string
+			band rules.Band
+		}{
+			{"hit points", b.HP}, {"strength", b.Str}, {"dexterity", b.Dex},
+			{"speed", b.Spd}, {"psyche", b.Psy},
+		} {
+			if lo[s.name] != s.band.Lo || hi[s.name] != s.band.Hi {
+				t.Errorf("%s %s ranges %d-%d over 4000 rolls, band claims %d-%d",
+					class, s.name, lo[s.name], hi[s.name], s.band.Lo, s.band.Hi)
+			}
+		}
+	}
+}
+
+// TestBandFracSpansItsRange, including the degenerate case. A band with no
+// spread has nothing to be lucky about and has to read as middling, or a stat
+// that cannot vary would be permanently coloured.
+func TestBandFracSpansItsRange(t *testing.T) {
+	b := rules.Band{Lo: 4, Hi: 8}
+	if got := b.Frac(4); got != 0 {
+		t.Errorf("the floor of a band is %v, want 0", got)
+	}
+	if got := b.Frac(8); got != 1 {
+		t.Errorf("the top of a band is %v, want 1", got)
+	}
+	if got := b.Frac(6); got != 0.5 {
+		t.Errorf("the middle of a band is %v, want 0.5", got)
+	}
+	// Out of range clamps rather than running past the ends, since a lineage
+	// or a charm can push a stat outside what was rolled.
+	if got := b.Frac(99); got != 1 {
+		t.Errorf("above the band reads %v, want 1", got)
+	}
+	if got := b.Frac(-99); got != 0 {
+		t.Errorf("below the band reads %v, want 0", got)
+	}
+	if got := (rules.Band{Lo: 3, Hi: 3}).Frac(3); got != 0.5 {
+		t.Errorf("a band with no spread reads %v, want the middle", got)
+	}
+}
