@@ -8,6 +8,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/gamedata"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
+	"github.com/slycrel/slycrel-rpg/internal/save"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
@@ -192,5 +193,70 @@ func TestDismissingReturnsTheirSupplies(t *testing.T) {
 	}
 	if len(hero.Bag) != 2 {
 		t.Errorf("reclaiming created a duplicate stack: %d kinds", len(hero.Bag))
+	}
+}
+
+// The run has to be recoverable from the moment before a fight, because that
+// is the only thing standing between a bad encounter roll and an hour gone.
+// Encounters are rolled at the player rather than chosen, so the step that
+// killed them was not a decision they had a chance to evaluate.
+func TestAutosaveCapturesTheRunAsItStoodBeforeTheFight(t *testing.T) {
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Skipf("no data directory to load: %v", err)
+	}
+	tables, err := gamedata.Load(root)
+	if err != nil {
+		t.Fatalf("loading content: %v", err)
+	}
+
+	const seed = 1994
+	write := content.New(&tables.Text)
+	// A temporary root, so the suite never writes into the repository's own
+	// saves directory.
+	tmp := t.TempDir()
+	g := &Game{
+		Root: tmp, Data: tables, Write: write,
+		RNG: core.NewRNG(seed), Seed: seed, Log: ui.NewLog(20),
+		World: world.Generate(seed, write),
+	}
+	g.Player = rules.NewCharacter(g.RNG, "Bosk", model.ClassFighter)
+	g.Player.HP = g.Player.MaxHP
+	g.Walk.Place(g.World.Start)
+	g.reformLines()
+
+	g.autosave()
+
+	f, err := save.Load(tmp, AutosaveSlot)
+	if err != nil {
+		t.Fatalf("nothing was written to the autosave slot: %v", err)
+	}
+	if f.Player == nil || f.Player.HP != g.Player.HP {
+		t.Errorf("the autosave holds %v, the run held %d hit points", f.Player, g.Player.HP)
+	}
+	if f.At != g.Walk.Tile {
+		t.Errorf("the autosave puts the player at %v, they were at %v", f.At, g.Walk.Tile)
+	}
+
+	// And it has to be a save like any other, so that loading it needs no
+	// special path and cannot rot separately from the rest of the format.
+	if err := g.Restore(f); err != nil {
+		t.Errorf("the autosave would not load back: %v", err)
+	}
+}
+
+// The tour writes no files. It runs on a machine that is only taking pictures,
+// and an autosave firing during it would scribble over a real run.
+func TestTheDemoDoesNotAutosave(t *testing.T) {
+	tmp := t.TempDir()
+	var tables gamedata.Tables
+	g := &Game{Root: tmp, Log: ui.NewLog(20)}
+	g.StartDemo()
+	g.Player = &model.Character{Name: "Bosk", Level: 1, HP: 1, MaxHP: 1}
+	g.World = world.Generate(1, content.New(&tables.Text))
+
+	g.autosave()
+	if _, err := save.Load(tmp, AutosaveSlot); err == nil {
+		t.Error("the tour wrote an autosave")
 	}
 }

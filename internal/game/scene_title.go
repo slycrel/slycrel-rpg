@@ -5,6 +5,7 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
@@ -103,6 +104,10 @@ type createScene struct {
 	epithet   string
 	nameRNG   *core.RNG
 	confirmed bool
+	// shown is the class the preview panel is describing. It sticks when the
+	// cursor moves onto a row that is not a class, so that stepping down to
+	// reroll the name does not blank out half the screen.
+	shown model.Class
 }
 
 func newCreateScene(g *Game) *createScene {
@@ -126,6 +131,7 @@ func newCreateScene(g *Game) *createScene {
 		ui.MenuItem{Label: "Back"},
 	)
 	c.menu.SetItems(items)
+	c.shown = model.AllClasses[0]
 	return c
 }
 
@@ -138,6 +144,12 @@ func (c *createScene) Update(g *Game) error {
 	g.MenuNav(&c.menu)
 	if g.Back() {
 		g.Replace(newTitleScene(g))
+		return nil
+	}
+	// R rerolls from anywhere in the list, so the name can be changed without
+	// leaving the class you are looking at.
+	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
+		c.reroll(g)
 		return nil
 	}
 	if !g.Accept() {
@@ -159,19 +171,28 @@ func (c *createScene) Update(g *Game) error {
 
 func (c *createScene) Draw(g *Game, dst *ebiten.Image) {
 	dst.Fill(color.RGBA{0x14, 0x10, 0x1C, 0xFF})
-	render.TextCenter(dst, "WHO ARE YOU, THEN", render.ScreenW/2, 16, render.ColGold)
+	render.TextCenter(dst, "WHO ARE YOU, THEN", render.ScreenW/2, 12, render.ColGold)
+
+	// The name goes above both panels and is always on screen.
+	//
+	// It used to live inside the stat preview, which only draws when the cursor
+	// is over a class — so moving down to "Reroll name" made the name itself
+	// disappear, and the player was rerolling something they could not see.
+	render.TextCenter(dst, c.name+" "+c.epithet, render.ScreenW/2, 28, render.ColInk)
 
 	ui.TitledPanel(dst, "class", 12, 44, 236, 134)
 	c.menu.Draw(dst, 24, 54, 216)
 
-	// Stat preview for whichever class the cursor is on.
-	it, _ := c.menu.Selected()
-	if cl, ok := it.Data.(model.Class); ok {
-		p := c.preview[cl]
+	// Stat preview for whichever class the cursor was last on.
+	if it, _ := c.menu.Selected(); it.Data != nil {
+		if cl, ok := it.Data.(model.Class); ok {
+			c.shown = cl
+		}
+	}
+	if p := c.preview[c.shown]; p != nil {
+		cl := c.shown
 		ui.TitledPanel(dst, "prospects", 258, 44, 210, 134)
 		x, y := 268, 54.0
-		render.Text(dst, render.Trunc(c.name+" "+c.epithet, 190), float64(x), y, render.ColInk)
-		y += render.LineH + 2
 		for _, ln := range render.Wrap(cl.Blurb(), 186) {
 			render.Text(dst, ln, float64(x), y, render.ColInkDim)
 			y += render.LineH
@@ -191,7 +212,8 @@ func (c *createScene) Draw(g *Game, dst *ebiten.Image) {
 		}
 	}
 
-	render.TextCenter(dst, "Z to accept  -  X to go back", render.ScreenW/2, 246, render.ColInkFaint)
+	render.TextCenter(dst, "Z to accept  -  R for another name  -  X to go back",
+		render.ScreenW/2, 246, render.ColInkFaint)
 }
 
 // startRun generates the continent and drops the player into it.

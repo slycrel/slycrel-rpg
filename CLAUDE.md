@@ -109,6 +109,10 @@ which event fires which trigger, and where it is safe to put a box on screen.
   deliberately — they assert structural properties, not identity.)
 - **`saves/` is gitignored except `saves/fixtures/`**, which is committed: it is
   both the regression net and the set of playtest starting points.
+- **The `autosave` slot is written before every fight** and offered back if the
+  hero dies. It is an ordinary save in an ordinary slot, so it turns up in the
+  load menu and can be loaded on purpose; `-demo` is excluded, or the tour would
+  scribble over a real run.
 - **`v1-solo.json` and `v2-company.json` must never be regenerated.** Their job
   is to be old saves — v1 predates the party, v2 predates the backstories — and
   rewriting either at the current version deletes the only evidence that the

@@ -149,6 +149,30 @@ func (g *Game) Restore(f *save.File) error {
 	return nil
 }
 
+// AutosaveSlot is where the game puts the run just before a fight starts.
+//
+// Dying is the one thing in the game that cannot be undone by playing on, and
+// an encounter is rolled at you rather than chosen — so the run ending on a
+// walk you did not know was dangerous is a bad way to lose an hour. This is the
+// out: on death the player is offered the state from immediately before the
+// fight, which is the same run minus one encounter that had not happened yet.
+//
+// It is deliberately a normal save in a normal slot. It shows up in the load
+// menu like any other, it can be loaded on purpose, and there is no separate
+// format to keep working.
+const AutosaveSlot = "autosave"
+
+// autosave records the run as it stands, for the death prompt to offer back.
+//
+// Failures are swallowed on purpose. A full disk should not stop a fight from
+// starting; it should cost the safety net and nothing else.
+func (g *Game) autosave() {
+	if g.InDemo() || g.Player == nil || g.World == nil {
+		return
+	}
+	_ = g.SaveTo(AutosaveSlot)
+}
+
 // SaveTo writes the current run to a named slot.
 func (g *Game) SaveTo(slot string) error {
 	if g.Player == nil || g.World == nil {

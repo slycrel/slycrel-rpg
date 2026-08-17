@@ -126,6 +126,7 @@ func (s *localScene) tryStep(g *Game, d core.Dir) {
 		g.sinceFight = 0
 		mons := g.Data.PickMonsters(g.RNG, g.Local.Biome, g.Local.POI.Level, g.encounterSize(1+g.RNG.Intn(2)))
 		if len(mons) > 0 {
+			g.autosave()
 			g.Push(newBattleScene(g, mons, "dark"))
 		}
 	}
@@ -221,6 +222,7 @@ func (g *Game) interact(e *world.Entity) {
 				g.noteQuestProgress(g.Quests.OnPOICleared(idx))
 			}
 		}
+		g.autosave()
 		g.Push(newBattleScene(g, mons, g.Local.POI.Name))
 	}
 }

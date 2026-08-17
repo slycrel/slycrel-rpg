@@ -10,6 +10,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
+	"github.com/slycrel/slycrel-rpg/internal/save"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 )
@@ -1357,14 +1358,47 @@ func (b *battleScene) reviveFallen(g *Game) {
 func (b *battleScene) onPopped(g *Game) {
 	switch b.result {
 	case 2:
+		g.offerRewind()
+	case 4:
+		g.rescueToTown()
+	}
+}
+
+// offerRewind puts the run back to just before the fight, if the player wants
+// it and there is anything to put it back to.
+//
+// The encounter that killed you was rolled at you rather than chosen, so this
+// is not softening a decision the player made — it is declining to end a run on
+// a step they had no way to evaluate. Taking it is a choice: the alternative is
+// on the same box, and the run ends there the way it always did.
+func (g *Game) offerRewind() {
+	toTitle := func(g *Game) {
 		for len(g.stack) > 0 {
 			g.Pop()
 		}
 		g.quit = false
 		g.Push(newTitleScene(g))
-	case 4:
-		g.rescueToTown()
 	}
+	if _, err := save.Load(g.Root, AutosaveSlot); err != nil {
+		toTitle(g)
+		return
+	}
+	g.Ask("", "You are dead.\n\nThere is a version of this where you had not "+
+		"walked that way. Nobody would know.",
+		[]string{"Take it back", "Let it stand"},
+		func(g *Game, choice int) {
+			if choice != 0 {
+				toTitle(g)
+				return
+			}
+			if err := g.LoadFrom(AutosaveSlot); err != nil {
+				g.Log.AddColor(render.ColBlood, "The moment would not come back: %v", err)
+				toTitle(g)
+				return
+			}
+			g.Sound.Play("world/enter")
+			g.Log.AddColor(render.ColGold, "You decide against it, retroactively.")
+		})
 }
 
 // --- layout helpers -------------------------------------------------------
