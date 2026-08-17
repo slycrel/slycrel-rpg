@@ -40,6 +40,15 @@ import (
 // way in, so an old save is not stuck without them either.
 const Version = 3
 
+// TrackState is the followed destination, mirrored here rather than imported
+// from internal/game — that package pulls in Ebitengine, and a save file that
+// could not be read without a window server would be a poor save file.
+type TrackState struct {
+	On    bool   `json:"on"`
+	POI   int    `json:"poi"`
+	Label string `json:"label"`
+}
+
 // minVersion is the oldest layout this build can still read correctly.
 const minVersion = 1
 
@@ -83,6 +92,10 @@ type File struct {
 	// a save written before there were any, which reads back as a run with no
 	// story in it — the honest answer, since it did not have one.
 	Sagas saga.Log `json:"sagas,omitempty"`
+
+	// Track is what the player asked to be pointed at. Off in a save written
+	// before there was a compass, which is the honest answer.
+	Track TrackState `json:"track,omitempty"`
 
 	// Clock is the time of day, in steps taken. Absent in a save written before
 	// there was a sky, which reads back as the first dawn of the run — a fair

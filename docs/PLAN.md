@@ -140,7 +140,8 @@ Built and running:
   audit that reports which art keys still fall back to placeholders
 
 Everything on the roadmap is built. What is left is playing it and
-finding out what it needs.
+finding out what it needs — the compass below is the first thing that came
+back that way.
 
 Played twice end to end. The second pass is what turned up the home region, the
 starting kit, equipment as inventory, and four separate cases of the game
@@ -799,6 +800,46 @@ than a system.
     the audit's total, and never once reaching the screen. It caught five.
 12. Balance simulation: run 10,000 headless fights per level band against the
    pure `rules` package and tune the curve.
+
+## Since the roadmap
+
+**A followed destination, and a compass.** *(Jeremy's, on seeing the saga
+journal: "Do we need an active quest in the journal, with a compass (or maybe
+hint is easier) that points towards its goal?")*
+
+Yes, and it was a real gap that the saga work made obvious rather than created.
+A destination was *named* in the journal and *pinned* on the map, and between
+those two facts was the actual business of getting there: open the map, find
+the pin, remember roughly where it was, close the map, walk, repeat. Worst
+exactly where the long stories send you, because a spine's legs are
+deliberately further out each time.
+
+Two halves, and **the tracking is the more important one**. "Where is it" is
+the second question a journal with six entries raises; the first is "which of
+these am I doing", and a compass with nothing selected has nothing to point at.
+Z on any journal row follows it — sagas, errands and backstories alike, through
+one `destinationOf` because a player selecting a row does not care which system
+it came out of. A fetch quest with nowhere of its own points at whoever asked
+for it, once the counter is full.
+
+The status bar carries it in the corner that used to say "M map - H help"
+forever, which stops being news after five minutes and is what the help screen
+is for. Name, distance in tiles, and a seven-pixel arrowhead.
+
+It also follows things on its own, so the feature works for a player who never
+finds it: a saga leg coming due sets the next destination, and so does taking
+an errand — but only when nothing is already being followed, so an explicit
+choice is never overridden by one.
+
+Three details worth keeping. The arrowheads are hand-set rather than
+rasterised, because a filled triangle at seven pixels comes out as a smear that
+reads differently in each direction. A bearing counts as diagonal only when
+neither axis dominates by more than about two to one — equal wedges would make
+almost everything diagonal on a 160x120 map, and an arrow that is diagonal nine
+times in ten has stopped saying anything. And `Track.On` is an explicit flag
+rather than `POI == -1`, which is the resident-thread lesson applied before it
+could bite: a zero value that means something real turns every old save into a
+silent claim about location zero.
 
 ## Open questions
 

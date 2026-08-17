@@ -117,6 +117,24 @@ func (s *questScene) Update(g *Game) error {
 		return nil
 	}
 	g.MenuNav(&s.menu)
+	// Z follows whatever is selected. The journal is the only screen that knows
+	// about all three kinds of outstanding thing at once, which makes it the
+	// only place the choice can be offered without asking the player to hold
+	// three lists in their head.
+	if g.Accept() {
+		it, ok := s.menu.Selected()
+		if !ok || it.Disabled {
+			return nil
+		}
+		idx, label, ok := g.destinationOf(it.Data)
+		if !ok {
+			g.Sound.Play("ui/deny")
+			return nil
+		}
+		g.trackPOI(idx, label)
+		g.Sound.Play("ui/page")
+		g.Pop()
+	}
 	return nil
 }
 
@@ -141,7 +159,16 @@ func (s *questScene) Draw(g *Game, dst *ebiten.Image) {
 		}
 	}
 
-	render.TextCenter(dst, "X to close", render.ScreenW/2, 250, render.ColInkFaint)
+	// Say that Z does something here. A key that follows the selected thing and
+	// is not mentioned anywhere is a key nobody presses, and this screen is the
+	// only place the choice can be made.
+	hint := "X to close"
+	if it, ok := s.menu.Selected(); ok && !it.Disabled {
+		if _, _, has := g.destinationOf(it.Data); has {
+			hint = "Z to follow it  -  X to close"
+		}
+	}
+	render.TextCenter(dst, hint, render.ScreenW/2, 250, render.ColInkFaint)
 }
 
 // drawSaga fills the detail panel for a long story. Same shape as the other

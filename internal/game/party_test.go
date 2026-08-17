@@ -696,3 +696,65 @@ func TestEveryCombatEffectIsPlayedBySomething(t *testing.T) {
 		}
 	}
 }
+
+// TestTheCompassPointsTheRightWay.
+//
+// The classic failure here is the Y axis. Screen and map coordinates both grow
+// *downward*, so a destination with a larger Y is to the south — get that
+// backwards and the arrow is a perfect mirror of the truth, which is worse than
+// no arrow at all because the player will trust it.
+func TestTheCompassPointsTheRightWay(t *testing.T) {
+	for _, c := range []struct {
+		dx, dy int
+		want   int
+		name   string
+	}{
+		{0, -10, dirN, "straight up the map"},
+		{0, 10, dirS, "straight down the map"},
+		{10, 0, dirE, "right"},
+		{-10, 0, dirW, "left"},
+		{10, -10, dirNE, "up and right"},
+		{10, 10, dirSE, "down and right"},
+		{-10, 10, dirSW, "down and left"},
+		{-10, -10, dirNW, "up and left"},
+		// Barely off-axis stays on-axis. An arrow that goes diagonal the moment
+		// a destination is one tile off true north has stopped saying anything.
+		{1, -20, dirN, "a shade east of north"},
+		{-2, 20, dirS, "a shade west of south"},
+		{30, 3, dirE, "a shade north of east"},
+	} {
+		if got := bearing(c.dx, c.dy); got != c.want {
+			t.Errorf("%s (%d,%d) points %d, want %d", c.name, c.dx, c.dy, got, c.want)
+		}
+	}
+}
+
+// Every compass glyph has to be the same size, or an arrow drawn in one
+// direction sits a pixel off from the same arrow in another and the whole
+// corner of the status bar jitters as the player walks around a destination.
+func TestEveryCompassGlyphIsTheSameSize(t *testing.T) {
+	for dir, glyph := range compassGlyphs {
+		if len(glyph) != 7 {
+			t.Errorf("direction %d is %d rows tall, want 7", dir, len(glyph))
+			continue
+		}
+		ink := 0
+		for row, line := range glyph {
+			if len(line) != 7 {
+				t.Errorf("direction %d row %d is %d wide, want 7", dir, row, len(line))
+			}
+			for _, ch := range line {
+				switch ch {
+				case '#':
+					ink++
+				case '.':
+				default:
+					t.Errorf("direction %d row %d has a %q in it", dir, row, ch)
+				}
+			}
+		}
+		if ink < 8 {
+			t.Errorf("direction %d is %d pixels of ink; that is not an arrow", dir, ink)
+		}
+	}
+}

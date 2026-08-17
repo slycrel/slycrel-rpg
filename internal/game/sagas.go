@@ -133,6 +133,10 @@ func (g *Game) showSagaDestination(s *saga.Saga) {
 		return
 	}
 	p := g.World.POIs[idx]
+	// Followed whether or not the map already knew about it. Revealing is a
+	// one-time thing and following is not: a leg pointing at somewhere the
+	// player has already walked past still needs a direction on it.
+	g.trackIfIdle(idx, p.Name)
 	if p.Discovered {
 		return
 	}

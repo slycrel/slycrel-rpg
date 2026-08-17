@@ -96,6 +96,12 @@ func (g *Game) offerQuest(e *world.Entity, q *quest.Quest) {
 		g.Quests.SyncFetch(g.Player.Bag)
 		g.Sound.Play("ui/page")
 		g.Log.AddColor(render.ColGold, "Took on: %s", q.Title)
+		// Point at it, if it points anywhere and nothing else is being
+		// followed. An errand that names a ruin is an errand about walking to
+		// a ruin, and the player has just agreed to do that.
+		if idx, label, ok := g.destinationOf(q); ok {
+			g.trackIfIdle(idx, label)
+		}
 	})
 }
 

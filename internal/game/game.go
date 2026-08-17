@@ -102,6 +102,9 @@ type Game struct {
 	Sagas       saga.Log
 	pendingLegs []saga.Fired
 
+	// Track is the destination the player has asked to be pointed at.
+	Track Track
+
 	// Clock is the time of day, in steps. Weather is not stored beside it —
 	// sky.At derives that from the seed, the clock and the biome, the same way
 	// scenery is derived from position.
@@ -284,14 +287,25 @@ func (g *Game) drawStatusBar(dst *ebiten.Image, place, hint string) {
 	render.Text(dst, fmt.Sprintf("%d SP", p.Psyche), 212, y+17, render.ColInkDim)
 	coins := fmt.Sprintf("%d coins", p.Coins)
 	render.Text(dst, coins, 262, y+17, render.ColGold)
-	render.TextRight(dst, hint, render.ScreenW-8, y+17, render.ColInkFaint)
+	// What you are following, where the tutorial hint used to be. That line
+	// said "M map - H help" forever, which stops being news after five minutes
+	// and is what the help screen is for; this is the same corner earning its
+	// keep for the rest of the run.
+	hintCol := render.ColInkFaint
+	if line, ok := g.trackLine(); ok {
+		hint, hintCol = line, render.ColGold
+		if dir, ok := g.trackBearing(); ok {
+			drawCompass(dst, dir, render.ScreenW-8-render.TextW(hint)-11, y+16, render.ColGold)
+		}
+	}
+	render.TextRight(dst, hint, render.ScreenW-8, y+17, hintCol)
 
 	// The company's health, as bare meters after the purse. No names: at this
 	// size they would not fit, and what you need off the walking-around screen
 	// is whether anyone is about to fall over, not which of them it is.
 	ax := 262 + render.TextW(coins) + 10
 	for _, a := range g.Allies {
-		if ax+24 > render.ScreenW-8-render.TextW(hint)-8 {
+		if ax+24 > render.ScreenW-8-render.TextW(hint)-20 {
 			break
 		}
 		ui.Bar(dst, ax, y+18, 24, 6, a.HPFrac(), render.ColBlood)

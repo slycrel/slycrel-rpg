@@ -19,6 +19,7 @@ func (g *Game) Snapshot() *save.File {
 		Player:     g.Player,
 		Clock:      g.Clock,
 		Sagas:      g.Sagas,
+		Track:      save.TrackState(g.Track),
 		Allies:     g.Allies,
 		At:         g.Walk.Tile,
 		Facing:     int(g.Walk.Dir()),
@@ -94,6 +95,7 @@ func (g *Game) Restore(f *save.File) error {
 	g.sinceFight = f.SinceFight
 	g.Clock = f.Clock
 	g.Sagas, g.pendingLegs = f.Sagas, nil
+	g.Track = Track(f.Track)
 	g.Quests = quest.Log{Quests: f.Quests}
 	g.Threads = thread.Log{Threads: f.Threads}
 	g.pendingBeats, g.remindEndings = nil, false
