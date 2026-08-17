@@ -889,6 +889,27 @@ technique list, and `SetItems` preserves the index — so opening Techniques fro
 row one landed on the *second* technique, and Item from row two on the second
 item, for no reason anybody chose. Both start at the top now.
 
+**Shipping it.** `make-dist.command` builds a zip per platform into `dist/`:
+a macOS universal binary (arm64 and Intel joined with `lipo`, so a friend does
+not have to know which machine they have), a Windows exe cross-compiled from
+the Mac, and beside each the 721 asset files the two manifests actually name —
+96 MB out of a 16.7 GB bundle, at the paths the manifests already record, so
+nothing has to be rewritten. `FindRoot` already walks up from the executable,
+so the dist needed no code change at all.
+
+Two things that had to be got right and one that did not matter:
+`-H=windowsgui` on the Windows build, or double-clicking opens a terminal
+window behind the game and leaves it there. A READ ME FIRST that explains
+Gatekeeper and SmartScreen, because neither build is code-signed and without
+that paragraph a friend simply cannot start it. And `du` reported the zips 16 MB
+heavier than they are, because it counts blocks allocated rather than bytes —
+cosmetic, but a script that misreports its own output is a script nobody
+trusts the rest of.
+
+Shipping with the art baked in is the licensed use case rather than an edge
+around it; `docs/ASSET-LICENSING.md` says so at length, and says equally
+clearly why none of it may be committed to a public repo.
+
 Still open, and Jeremy's: **a hotkey for the autosave slot.** It is written
 before every fight and the death prompt is currently the only way back to it.
 
