@@ -97,6 +97,18 @@ func (w *Writer) Epithet(g *core.RNG) string {
 // NPCLine returns something for a townsperson to say.
 func (w *Writer) NPCLine(g *core.RNG) string { return core.Pick(g, w.t.NpcLine) }
 
+// StandingLine returns what somebody opens with for a player of this standing,
+// or empty when the standing has nothing written for it.
+//
+// "Nobody" deliberately has no lines: having no reputation is not a reaction,
+// and a townsperson remarking on your lack of one would be a reaction.
+func (w *Writer) StandingLine(g *core.RNG, standing string) string {
+	if lines := w.t.StandingLine[standing]; len(lines) > 0 {
+		return core.Pick(g, lines)
+	}
+	return ""
+}
+
 // SignText returns signage, chest engravings, and altar inscriptions.
 func (w *Writer) SignText(g *core.RNG) string { return core.Pick(g, w.t.SignText) }
 

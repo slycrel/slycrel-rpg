@@ -81,6 +81,11 @@ type Text struct {
 	// model.EffectKind string.
 	Afflicted map[string][]string `json:"afflicted"`
 
+	// StandingLine is what a townsperson opens with, keyed by how they read
+	// you — see rules.Standing. Absent for "nobody", who gets the ordinary
+	// NpcLine, because having no reputation is not a reaction.
+	StandingLine map[string][]string `json:"standingLine"`
+
 	// Quest lines, keyed by quest kind then by part (ask / nag / thank).
 	Quest map[string]map[string][]string `json:"quest"`
 }

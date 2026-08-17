@@ -50,10 +50,14 @@ type Character struct {
 	Dexterity int `json:"dexterity"`
 	Speed     int `json:"speed"`
 
-	Fame  int `json:"fame"`
-	Honor int `json:"honor"`
-	Faith int `json:"faith"`
-	Shame int `json:"shame"` // new: accrued from the dumb choices, gates some content
+	// Fame is what the deeds are worth; Renown is how well the face is known.
+	// Two numbers rather than one because they come apart, and the corners
+	// where they disagree are the interesting ones — see rules.Read.
+	Fame   int `json:"fame"`
+	Renown int `json:"renown"`
+	Honor  int `json:"honor"`
+	Faith  int `json:"faith"`
+	Shame  int `json:"shame"` // the other end of Fame: deeds that travelled badly
 
 	Coins int64 `json:"coins"`
 

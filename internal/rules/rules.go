@@ -640,11 +640,14 @@ func affordable(c *model.Character, spells []model.Spell, kind model.SpellKind) 
 // who is visibly part troll. That discount is the reward for the trade-offs in
 // the lineage table, and it is why the cheap hireling on the corner is the one
 // with the interesting abilities.
-func HireCost(level int, blood model.MonsterKind) int64 {
+func HireCost(level int, blood model.MonsterKind, s Standing) int64 {
 	base := int64(60 + level*level*6)
 	if l, ok := model.LineageOf(blood); ok {
 		base -= base * int64(l.Discount) / 100
 	}
+	// What somebody asks to follow you depends on who they think you are, and
+	// it is not the same question a shopkeeper is asking.
+	base = int64(float64(base) * s.HireMultiplier())
 	return core.Max64(1, base)
 }
 

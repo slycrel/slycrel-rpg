@@ -1128,3 +1128,28 @@ func TestSpawnScalesWard(t *testing.T) {
 			far.Ward, near.Ward)
 	}
 }
+
+// Every standing a town can read has something to say about it, except the one
+// that should not: "nobody" gets no lines on purpose, because having no
+// reputation is not a reaction and a townsperson remarking on your lack of one
+// would be one.
+func TestEveryStandingHasSomethingSaidAboutIt(t *testing.T) {
+	tables := load(t)
+	for _, s := range []rules.Standing{
+		rules.Rumoured, rules.Celebrated, rules.Recognised, rules.Notorious,
+	} {
+		lines := tables.Text.StandingLine[s.Key()]
+		if len(lines) < 2 {
+			t.Errorf("%q has %d things said about it; one line becomes a catchphrase",
+				s.Name(), len(lines))
+		}
+		for _, ln := range lines {
+			if ln == "" {
+				t.Errorf("%q has an empty line", s.Name())
+			}
+		}
+	}
+	if got := tables.Text.StandingLine[rules.Unknown.Key()]; len(got) > 0 {
+		t.Errorf("being a nobody has %d lines written for it; it should have none", len(got))
+	}
+}

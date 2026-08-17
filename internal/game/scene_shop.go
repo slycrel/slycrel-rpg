@@ -10,6 +10,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/render"
+	"github.com/slycrel/slycrel-rpg/internal/rules"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
@@ -73,8 +74,8 @@ func (s *shopScene) refresh(g *Game) {
 					continue
 				}
 				items = append(items, ui.MenuItem{
-					Label: w.Name, Detail: fmt.Sprintf("%d", w.Cost), Icon: w.Icon,
-					Disabled: int64(w.Cost) > g.Player.Coins, Data: w,
+					Label: w.Name, Detail: fmt.Sprintf("%d", g.askingPrice(w.Cost)), Icon: w.Icon,
+					Disabled: int64(g.askingPrice(w.Cost)) > g.Player.Coins, Data: w,
 				})
 			}
 			// The smith beats metal. Shields are beaten metal, and putting them
@@ -82,8 +83,8 @@ func (s *shopScene) refresh(g *Game) {
 			// anybody else's.
 			for _, sh := range shields {
 				items = append(items, ui.MenuItem{
-					Label: sh.Name, Detail: fmt.Sprintf("%d", sh.Cost), Icon: sh.Icon,
-					Disabled: int64(sh.Cost) > g.Player.Coins, Data: sh,
+					Label: sh.Name, Detail: fmt.Sprintf("%d", g.askingPrice(sh.Cost)), Icon: sh.Icon,
+					Disabled: int64(g.askingPrice(sh.Cost)) > g.Player.Coins, Data: sh,
 				})
 			}
 		case world.ShopArmorer:
@@ -92,15 +93,15 @@ func (s *shopScene) refresh(g *Game) {
 					continue
 				}
 				items = append(items, ui.MenuItem{
-					Label: a.Name, Detail: fmt.Sprintf("%d", a.Cost), Icon: a.Icon,
-					Disabled: int64(a.Cost) > g.Player.Coins, Data: a,
+					Label: a.Name, Detail: fmt.Sprintf("%d", g.askingPrice(a.Cost)), Icon: a.Icon,
+					Disabled: int64(g.askingPrice(a.Cost)) > g.Player.Coins, Data: a,
 				})
 			}
 			// Charms are worn, and the armourer is the one who fits worn things.
 			for _, ch := range charms {
 				items = append(items, ui.MenuItem{
-					Label: ch.Name, Detail: fmt.Sprintf("%d", ch.Cost), Icon: ch.Icon,
-					Disabled: int64(ch.Cost) > g.Player.Coins, Data: ch,
+					Label: ch.Name, Detail: fmt.Sprintf("%d", g.askingPrice(ch.Cost)), Icon: ch.Icon,
+					Disabled: int64(g.askingPrice(ch.Cost)) > g.Player.Coins, Data: ch,
 				})
 			}
 		default: // apothecary
@@ -116,7 +117,7 @@ func (s *shopScene) refresh(g *Game) {
 				if !ok {
 					continue
 				}
-				price := it.Value * 2
+				price := g.askingPrice(it.Value * 2)
 				items = append(items, ui.MenuItem{
 					Label: it.Name, Detail: fmt.Sprintf("%d", price), Icon: it.Icon,
 					Disabled: int64(price) > g.Player.Coins, Data: it,
@@ -211,7 +212,7 @@ func (s *shopScene) Update(g *Game) error {
 func (s *shopScene) buy(g *Game, it ui.MenuItem) {
 	// The coin is the hero's; the gear goes on whoever is at the counter.
 	p := s.buyer(g)
-	pay := func(n int) { g.Player.Coins -= int64(n) }
+	pay := func(n int) { g.Player.Coins -= int64(g.askingPrice(n)) }
 	// Bought gear goes in the pack, not straight onto the body.
 	//
 	// It used to be worn on the spot and whatever came off was described as
@@ -250,6 +251,22 @@ func (s *shopScene) buy(g *Game, it ui.MenuItem) {
 		}
 		g.Sound.Play("world/buy")
 	}
+}
+
+// askingPrice is what this particular customer is charged for something worth
+// n on the shelf.
+//
+// It reads how well the face is known rather than what the deeds are worth,
+// which is the whole reason those are two numbers. A counter marks up the
+// person it recognises, and recognising somebody is not the same as thinking
+// well of them — so the legend nobody has placed pays the sticker price and
+// the celebrity pays for the privilege of being one.
+func (g *Game) askingPrice(n int) int {
+	p := int(float64(n) * rules.Read(g.Player).PriceMultiplier())
+	if p < 1 {
+		p = 1
+	}
+	return p
 }
 
 // sellRow identifies what a row of the sell list refers to: an index into the

@@ -117,6 +117,13 @@ func (s *overworldScene) tryStep(g *Game, d core.Dir) {
 
 	if poi := g.World.POIAt(next.X, next.Y); poi != nil && !poi.Visited {
 		poi.Visited = true
+		// Renown is earned by being seen, not by doing anything. Walking into
+		// a town for the first time is the cheapest way there is to be seen,
+		// and a player who stays out of them stays unplaceable — which is the
+		// corner the whole two-axis idea exists to make reachable.
+		if poi.Kind.Settlement() {
+			g.Player.Renown++
+		}
 		g.Log.AddColor(render.ColGold, "%s - %s", poi.Name, poi.Tag)
 	}
 

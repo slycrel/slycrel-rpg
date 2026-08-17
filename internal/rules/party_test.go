@@ -137,7 +137,7 @@ func TestCompanionHealsItselfWhenBadlyHurt(t *testing.T) {
 func TestHireCostRisesWithLevel(t *testing.T) {
 	prev := int64(-1)
 	for level := 1; level <= 20; level++ {
-		got := rules.HireCost(level, "")
+		got := rules.HireCost(level, "", rules.Unknown)
 		if got <= prev {
 			t.Fatalf("a level %d hireling costs %d, which is not more than level %d's %d",
 				level, got, level-1, prev)
@@ -145,9 +145,19 @@ func TestHireCostRisesWithLevel(t *testing.T) {
 		prev = got
 	}
 	// A first hire has to be reachable but not immediate: a new character
-	// starts with 15-40 coins, so this is several fights away, not free.
-	if c := rules.HireCost(1, ""); c < 50 || c > 120 {
+	// starts with 45-95 coins, so this is a fight or two away, not free.
+	if c := rules.HireCost(1, "", rules.Unknown); c < 50 || c > 120 {
 		t.Errorf("the cheapest hireling costs %d, which is outside the intended first-hire band", c)
+	}
+
+	// And who they think you are moves the price in both directions, because a
+	// mercenary is asking a different question from a shopkeeper.
+	base := rules.HireCost(8, "", rules.Unknown)
+	if rules.HireCost(8, "", rules.Celebrated) >= base {
+		t.Error("a name to follow costs no less than an unknown one")
+	}
+	if rules.HireCost(8, "", rules.Notorious) <= base {
+		t.Error("following somebody notorious costs no more than following a stranger")
 	}
 }
 
@@ -328,8 +338,8 @@ func TestRecruitingWithLineageStaysPlayable(t *testing.T) {
 // Ancestry is why the cheap hireling on the corner is worth a look.
 func TestLineageMakesAHirelingCheaper(t *testing.T) {
 	for _, l := range model.Lineages {
-		plain := rules.HireCost(8, "")
-		mixed := rules.HireCost(8, l.Kind)
+		plain := rules.HireCost(8, "", rules.Unknown)
+		mixed := rules.HireCost(8, l.Kind, rules.Unknown)
 		if mixed >= plain {
 			t.Errorf("a part-%s hireling costs %d against an ordinary %d", l.Kind, mixed, plain)
 		}

@@ -298,7 +298,7 @@ func (g *Game) demoHire() {
 	level := core.Max(1, g.Player.Level)
 	for _, e := range g.Local.Entities {
 		if e.Kind == world.ERecruit && !e.Used {
-			g.Player.Coins += rules.HireCost(level, model.MonsterKind(e.Blood))
+			g.Player.Coins += rules.HireCost(level, model.MonsterKind(e.Blood), rules.Read(g.Player))
 			g.offerRecruit(e)
 			return
 		}
@@ -308,7 +308,7 @@ func (g *Game) demoHire() {
 		Line:  "\"I fight for money. I've tried the other reasons.\"",
 		Class: string(model.ClassMage), Blood: string(model.KindFey), Look: "hero/druid",
 	}
-	g.Player.Coins += rules.HireCost(level, model.MonsterKind(conjured.Blood))
+	g.Player.Coins += rules.HireCost(level, model.MonsterKind(conjured.Blood), rules.Read(g.Player))
 	g.offerRecruit(conjured)
 }
 

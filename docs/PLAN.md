@@ -117,6 +117,11 @@ Built and running:
   the same list
 - A home region: within fourteen tiles of the start, an encounter cannot exceed
   the player's own level. The cap lifts as they level, so it retires itself
+- Reputation on two axes: Fame is what the deeds are worth, Renown is how well
+  the face is known, and they are earned by different things so they come
+  apart. Shop prices read the face, hiring fees read the deeds, and
+  townspeople open with a line about you rather than their own. The corner
+  worth having is high fame and low renown — the stories travel and you do not
 - 66 monsters across nine biomes, 14 weapons, 10 armours, 6 shields, 12 charms,
   10 affixes, 42 items, 27 techniques
   (eleven of them party-facing, lingering, or gated on a hireling's ancestry),
@@ -125,8 +130,8 @@ Built and running:
   audit that reports which art keys still fall back to placeholders
 
 Deliberately not built yet: backstories for the townspeople, day/night and
-weather, anything that reads Fame or Shame, and the thief's discount on healing
-items.
+weather, anything that reads Honor or Faith, and the thief's discount on
+healing items.
 
 Played twice end to end. The second pass is what turned up the home region, the
 starting kit, equipment as inventory, and four separate cases of the game
@@ -355,28 +360,33 @@ than a system.
 
 6. **Day/night and weather.** The tileset collection includes a weather-effects
    pack. Changes encounter tables and which NPCs are out.
-7. **Faction and reputation.** `Fame`, `Honor`, `Faith` and `Shame` exist on
-   the character and currently do almost nothing — and backstory endings now
-   hand out Fame and Shame, so they are easier to earn than ever and still
-   inert.
+7. ~~**Faction and reputation.**~~ *(built.)* Reputation is two numbers now,
+   which was Jeremy's design and is the whole of why it works: `Fame` is what
+   the deeds are worth and `Renown` is how well the face is known. They are
+   earned by different things — deeds by errands, levels and backstory endings;
+   renown by being *seen*, which means walking into a town for the first time,
+   hiring somebody outside an inn, or being carried home through the gate — so
+   they come apart, and the corners where they disagree are the point.
 
-   *Jeremy's design, from the original game:* the payoff is NPC reaction.
-   Grovelling for the celebrated, disdain for the hated, and pros and cons
-   either way rather than a single "good" axis — a hated reputation should open
-   doors a beloved one does not.
+   `rules.Read` turns the pair into a standing, and three things read it. A
+   shopkeeper marks up the face they recognise, which is not the same as
+   thinking well of it, so the legend nobody has placed pays the sticker price
+   and the celebrity pays for the privilege — that is the Robin Hood corner
+   paying out. A mercenary asks the opposite question, so being a name is a
+   discount at the inn and a markup at the counter, and being notorious is
+   hazard pay one way and a surcharge the other. And townspeople open with a
+   line about you rather than their own, some of the time — some, because a
+   town where everybody comments on you has stopped being a place and started
+   being a mirror.
 
-   The one that never made it in and is worth building this time: **fame and
-   notoriety are two different numbers.** A Robin Hood is famous and personally
-   anonymous — deeds known, face not, so the reactions attach to the story
-   rather than to the man in the room. The opposite is famous and public with
-   nothing behind it: recognised everywhere, and the moment anyone checks the
-   deeds there is nothing there. Those are two axes, not one bar, and the
-   interesting states are the corners.
+   The character sheet says both numbers and the word for the corner: "Fame /
+   Renown 11 / 2, they call you a rumour. The stories travel. You do not."
 
-   That suggests the shape: keep `Fame` as what the deeds are worth, add
-   something like `Renown` for how well the face is known, and let an NPC's
-   reaction read both. Being known without being placed is its own playstyle,
-   and it gives the Shame from a backstory ending somewhere to land.
+   Still open, and the reason this was worth building rather than gating on:
+   `Honor` and `Faith` are still inert. Faith at least has a source — the
+   shrine — so it is the next one with anywhere to go.
+
+
 8. **A reason to be here.** A generated main thread that strings together
    five or six POIs into something with an ending.
 

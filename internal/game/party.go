@@ -65,7 +65,7 @@ func (g *Game) restParty() { party.Rest(g.Party()) }
 func (g *Game) offerRecruit(e *world.Entity) {
 	level := core.Max(1, g.Player.Level)
 	blood := model.MonsterKind(e.Blood)
-	cost := rules.HireCost(level, blood)
+	cost := rules.HireCost(level, blood, rules.Read(g.Player))
 
 	trade := strings.ToLower(e.Class)
 	if l, ok := model.LineageOf(blood); ok {
@@ -121,6 +121,9 @@ func (g *Game) hire(e *world.Entity, level int) {
 	g.Data.Equip(c)
 	c.Sprite = e.Look
 	c.Portrait = allyPortrait(g.RNG)
+
+	// Hiring happens outside an inn in front of whoever is passing.
+	g.Player.Renown++
 
 	g.Allies = append(g.Allies, c)
 	g.reformLines()
@@ -228,6 +231,9 @@ func (g *Game) rescueToTown() {
 	fee := rules.RescueFee(g.Player.Coins)
 	g.Player.Coins -= fee
 	g.Player.Shame++
+	// Being carried through the gate is the most public thing that can happen
+	// to anybody, and it is not the deeds half that it adds to.
+	g.Player.Renown++
 	g.restParty()
 	g.sinceFight = 0
 

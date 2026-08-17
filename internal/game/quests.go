@@ -49,7 +49,24 @@ func (g *Game) talkTo(e *world.Entity) {
 			return
 		}
 	}
-	g.Say(e.Name, e.Line)
+	g.Say(e.Name, g.townLine(e))
+}
+
+// townLine is what a person in a settlement opens with.
+//
+// Some of the time it is a reaction to who you are rather than their own line,
+// which is the payoff for reputation being two numbers: a stranger telling you
+// your own legend without placing you reads completely differently from one
+// asking whether you have actually done anything. Not every time — a town where
+// every single person comments on you is a town that has stopped being a place
+// and started being a mirror.
+func (g *Game) townLine(e *world.Entity) string {
+	if g.RNG.Chance(0.45) {
+		if s := g.Write.StandingLine(g.RNG, rules.Read(g.Player).Key()); s != "" {
+			return s
+		}
+	}
+	return e.Line
 }
 
 // wantsToAsk decides, stably, whether this particular person has an errand.

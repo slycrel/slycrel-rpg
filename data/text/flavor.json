@@ -428,5 +428,31 @@
       "{N} stops receiving new information.",
       "{N} is briefly elsewhere."
     ]
+  },
+  "standingLine": {
+    "rumoured": [
+      "\"They say there's someone out there doing all this. Sounds made up to me.\"",
+      "\"Heard a story about a stranger and a very bad afternoon. Wasn't you, was it. No. Course not.\"",
+      "\"Something's been happening out east. Nobody knows who. I like that about it.\"",
+      "\"There's a name going round with no face on it. Best kind of name.\""
+    ],
+    "celebrated": [
+      "\"It IS you. My sister's going to be sick. Can I touch the sword?\"",
+      "\"We heard. We all heard. Somebody's written a song and it does not scan.\"",
+      "\"Whatever you're buying, mention my name. It won't help, but mention it.\"",
+      "\"Stand there. Just stand there a moment. Right. That's done, thank you.\""
+    ],
+    "recognised": [
+      "\"I know your face. I don't know why I know your face.\"",
+      "\"You're that one. From the thing. That everyone's -- no? Nothing? Right.\"",
+      "\"Saw you in the market. Saw you in the market again. You're around a lot.\"",
+      "\"You've got the look of somebody important. Have you done anything?\""
+    ],
+    "notorious": [
+      "\"I'd rather you didn't stand so close to the window.\"",
+      "\"We've heard. We've all heard. Buy something or move along.\"",
+      "\"My cousin says you're not welcome here. My cousin says a lot of things.\"",
+      "\"Not looking for trouble. Just noting where the door is.\""
+    ]
   }
 }

@@ -434,6 +434,11 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 		y = 96
 	} else if !p.Ally {
 		render.Text(dst, fmt.Sprintf("%d coins", p.Coins), 82, 26+3*render.LineH, render.ColGold)
+		// The line a lineage note would occupy on a companion's sheet. A hero
+		// has no ancestry to describe, and what a standing means is worth more
+		// than the two numbers that produce it.
+		render.Text(dst, render.Trunc(rules.Read(p).Note(), 230), 20, 80, render.ColInkFaint)
+		y = 96
 	}
 	next := rules.XPForLevel(p.Level + 1)
 	// The three stats share a row so that four equipment slots fit underneath.
@@ -464,9 +469,14 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 			rows = append(rows, [2]string{"Story", t.Title})
 		}
 	} else {
+		// Two numbers and the word for the corner they put you in. The numbers
+		// alone do not say what they mean together, and what they mean together
+		// is the whole point of there being two of them.
+		st := rules.Read(p)
 		rows = append(rows,
 			[2]string{"Experience", fmt.Sprintf("%d / %d", p.TotalXP, next)},
-			[2]string{"Fame / Faith", fmt.Sprintf("%d / %d", p.Fame, p.Faith)})
+			[2]string{"Fame / Renown", fmt.Sprintf("%d / %d", p.Fame, p.Renown)},
+			[2]string{"They call you", st.Name()})
 	}
 	for _, r := range rows {
 		render.Text(dst, r[0], 20, y, render.ColInkDim)

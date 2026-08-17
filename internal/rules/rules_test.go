@@ -350,3 +350,58 @@ func TestAFeintIsOnlyWorthItAgainstSomethingActuallyReachable(t *testing.T) {
 		t.Error("a corpse is worth feinting at")
 	}
 }
+
+// Reputation is two numbers because the corners where they disagree are the
+// point. One bar can only say "more" or "less", and a world reacting to a
+// single number reacts the same way to a hero and to a loudmouth.
+func TestTheTwoAxesComeApart(t *testing.T) {
+	for _, c := range []struct {
+		name         string
+		fame, renown int
+		shame        int
+		want         rules.Standing
+	}{
+		{"a nobody", 0, 0, 0, rules.Unknown},
+		{"deeds travel, face does not", 9, 0, 0, rules.Rumoured},
+		{"face travels, deeds do not", 0, 9, 0, rules.Recognised},
+		{"both", 9, 9, 0, rules.Celebrated},
+		{"the wrong half travels", 2, 9, 6, rules.Notorious},
+		// Shame is weighed against the deeds, not against a fixed number: a
+		// scoundrel with a long record of finished errands is a complicated
+		// person rather than simply a villain.
+		{"more good than bad", 12, 9, 4, rules.Celebrated},
+	} {
+		ch := &model.Character{Fame: c.fame, Renown: c.renown, Shame: c.shame}
+		if got := rules.Read(ch); got != c.want {
+			t.Errorf("%s (fame %d, renown %d, shame %d) reads as %q, want %q",
+				c.name, c.fame, c.renown, c.shame, got.Name(), c.want.Name())
+		}
+	}
+	if got := rules.Read(nil); got != rules.Unknown {
+		t.Errorf("a nil character reads as %q", got.Name())
+	}
+}
+
+// The shopkeeper marks up the person they recognise, and recognising somebody
+// is not thinking well of them. So the legend nobody has placed pays the
+// sticker price, which is the whole benefit of that corner.
+func TestBeingUnplaceableIsWorthSomethingAtTheCounter(t *testing.T) {
+	if p := rules.Rumoured.PriceMultiplier(); p != 1 {
+		t.Errorf("an unplaced legend is charged %.2f of the sticker", p)
+	}
+	if rules.Recognised.PriceMultiplier() <= 1 {
+		t.Error("a well-known face is not charged more than a stranger")
+	}
+	if rules.Notorious.PriceMultiplier() <= rules.Celebrated.PriceMultiplier() {
+		t.Error("being disliked costs no more at the counter than being liked")
+	}
+
+	// And the mercenary asks the opposite question, so a standing that costs
+	// at one counter can pay at the other.
+	if rules.Celebrated.HireMultiplier() >= 1 {
+		t.Error("nobody will take a cut to have been there")
+	}
+	if rules.Notorious.HireMultiplier() <= 1 {
+		t.Error("there is no hazard pay for following a villain")
+	}
+}
