@@ -45,13 +45,35 @@ func (s *questScene) refresh(g *Game) {
 		})
 	}
 
-	// The company's own business goes underneath, behind a heading, so that a
-	// backstory never looks like something a stranger in a town asked for.
-	if running := g.Threads.Running(); len(running) > 0 {
+	// Backstories go underneath, behind headings, so one never looks like
+	// something a stranger in a town asked for — and under two headings rather
+	// than one, because the two kinds are found in different ways. A companion's
+	// is with you; a resident's is at an address, and an address is the only
+	// useful thing the journal can tell you about it.
+	var company, residents []*thread.Thread
+	for _, t := range g.Threads.Running() {
+		if t.IsResident(&g.Data.Threads) {
+			residents = append(residents, t)
+		} else {
+			company = append(company, t)
+		}
+	}
+	if len(company) > 0 {
 		items = append(items, ui.MenuItem{Label: "the company", Header: true})
-		for _, t := range running {
+		for _, t := range company {
 			items = append(items, ui.MenuItem{
 				Label: t.Title, Detail: t.Progress(&g.Data.Threads), Data: t,
+			})
+		}
+	}
+	if len(residents) > 0 {
+		items = append(items, ui.MenuItem{Label: "people you have met", Header: true})
+		for _, t := range residents {
+			// Where they are, rather than how far through they are. A resident
+			// only ever tells you the next piece when you are standing in front
+			// of them, so the useful thing to know is which town that is.
+			items = append(items, ui.MenuItem{
+				Label: t.Fill(t.Title), Detail: g.residentJournalLine(t), Data: t,
 			})
 		}
 	}

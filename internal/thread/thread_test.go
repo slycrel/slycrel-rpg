@@ -52,56 +52,84 @@ func TestCastThreadsNameOnlyRealThings(t *testing.T) {
 		w := world.Generate(seed, stubNamer{})
 		g := core.NewRNG(seed)
 
+		// Both entry points, because they draw from different halves of the
+		// book: Cast skips the residents' stories and CastResident is the only
+		// thing that reaches them. Checking one would leave the other's writing
+		// entirely unexercised, which is exactly the state four new skeletons
+		// arrived in.
+		var cast []*thread.Thread
+		owners := map[*thread.Thread]string{}
 		for _, l := range append([]model.Lineage{{}}, model.Lineages...) {
 			for try := 0; try < 8; try++ {
 				c := hireling("Bosk", l.Kind, 4)
-				th, ok := thread.Cast(g, &tb.Threads, w, tb, c, w.Start, nil)
-				if !ok {
+				if th, ok := thread.Cast(g, &tb.Threads, w, tb, c, w.Start, nil); ok {
+					cast = append(cast, th)
+					owners[th] = c.Name
+				}
+			}
+		}
+		for home := range w.POIs {
+			for try := 0; try < 4; try++ {
+				const who = "Marta"
+				if th, ok := thread.CastResident(g, &tb.Threads, w, tb, who, home, 4, w.Start, nil); ok {
+					cast = append(cast, th)
+					owners[th] = who
+					if th.HomePOI != home {
+						t.Errorf("%s: cast for location %d, lives at %d", th.Skeleton, home, th.HomePOI)
+					}
+					// The meeting is the first beat and it fires on casting, so
+					// a resident always walks out of Cast already holding
+					// something to say. Without it the opening conversation is
+					// a journal note from somebody who has not said hello.
+					if th.Owed == "" {
+						t.Errorf("%s: a freshly cast resident has nothing to open with", th.Skeleton)
+					}
+				}
+			}
+		}
+
+		for _, th := range cast {
+			seen[th.Skeleton]++
+
+			if th.Owner != owners[th] {
+				t.Errorf("%s: thread belongs to %q, was cast for %q", th.Skeleton, th.Owner, owners[th])
+			}
+			if th.State != thread.Open {
+				t.Errorf("%s: a freshly cast thread is already %q", th.Skeleton, th.State)
+			}
+			if th.PlacePOI >= 0 {
+				if th.PlacePOI >= len(w.POIs) {
+					t.Errorf("%s: points at location %d of %d", th.Skeleton, th.PlacePOI, len(w.POIs))
 					continue
 				}
-				seen[th.Skeleton]++
+				if got := w.POIs[th.PlacePOI].Name; got != th.Roles["{P}"] {
+					t.Errorf("%s: names the place %q, location %d is %q",
+						th.Skeleton, th.Roles["{P}"], th.PlacePOI, got)
+				}
+			}
+			if th.MonsterID != "" {
+				def, ok := tb.ByID[th.MonsterID]
+				if !ok {
+					t.Errorf("%s: names monster %q, which does not exist", th.Skeleton, th.MonsterID)
+				} else if def.Name != th.Roles["{X}"] {
+					t.Errorf("%s: calls the monster %q, it is called %q",
+						th.Skeleton, th.Roles["{X}"], def.Name)
+				}
+			}
+			if item := th.Roles["{I}"]; item != "" {
+				if _, ok := tb.Item(item); !ok {
+					t.Errorf("%s: wants %q, which is not an item", th.Skeleton, item)
+				}
+			}
 
-				if th.Owner != c.Name {
-					t.Errorf("%s: thread belongs to %q, was cast for %q", th.Skeleton, th.Owner, c.Name)
-				}
-				if th.State != thread.Open {
-					t.Errorf("%s: a freshly cast thread is already %q", th.Skeleton, th.State)
-				}
-
-				if th.PlacePOI >= 0 {
-					if th.PlacePOI >= len(w.POIs) {
-						t.Errorf("%s: points at location %d of %d", th.Skeleton, th.PlacePOI, len(w.POIs))
-						continue
-					}
-					if got := w.POIs[th.PlacePOI].Name; got != th.Roles["{P}"] {
-						t.Errorf("%s: names the place %q, location %d is %q",
-							th.Skeleton, th.Roles["{P}"], th.PlacePOI, got)
-					}
-				}
-				if th.MonsterID != "" {
-					def, ok := tb.ByID[th.MonsterID]
-					if !ok {
-						t.Errorf("%s: names monster %q, which does not exist", th.Skeleton, th.MonsterID)
-					} else if def.Name != th.Roles["{X}"] {
-						t.Errorf("%s: calls the monster %q, it is called %q",
-							th.Skeleton, th.Roles["{X}"], def.Name)
-					}
-				}
-				if item := th.Roles["{I}"]; item != "" {
-					if _, ok := tb.Item(item); !ok {
-						t.Errorf("%s: wants %q, which is not an item", th.Skeleton, item)
-					}
-				}
-
-				// And every line the player can be shown must come out filled.
-				// Any brace at all is the failure: casting reads its
-				// requirements out of the writing, so a placeholder nothing
-				// filled is one the author invented and nothing implements,
-				// and it reaches the player as literal braces mid-sentence.
-				for _, line := range allText(&tb.Threads, th) {
-					if i := strings.IndexByte(line, '{'); i >= 0 {
-						t.Errorf("%s: an unfilled placeholder survived into %q", th.Skeleton, line[i:])
-					}
+			// And every line the player can be shown must come out filled.
+			// Any brace at all is the failure: casting reads its
+			// requirements out of the writing, so a placeholder nothing
+			// filled is one the author invented and nothing implements,
+			// and it reaches the player as literal braces mid-sentence.
+			for _, line := range allText(&tb.Threads, th) {
+				if i := strings.IndexByte(line, '{'); i >= 0 {
+					t.Errorf("%s: an unfilled placeholder survived into %q", th.Skeleton, line[i:])
 				}
 			}
 		}
@@ -497,11 +525,11 @@ func TestDismissingSomebodyTakesTheirThread(t *testing.T) {
 	l.Add(running("Bosk"))
 	l.Add(running("Ilsabet"))
 
-	l.Drop("Bosk")
-	if l.For("Bosk") != nil {
+	l.Drop(book(), "Bosk")
+	if l.For(book(), "Bosk") != nil {
 		t.Error("a dismissed companion's thread is still in the log")
 	}
-	if l.For("Ilsabet") == nil {
+	if l.For(book(), "Ilsabet") == nil {
 		t.Error("dismissing one companion dropped another's thread")
 	}
 	if got := len(l.Running()); got != 1 {
@@ -546,5 +574,132 @@ func TestAThreadWithNoSkeletonLeftIsHarmless(t *testing.T) {
 	}
 	if th.Note(b) != "" || th.Progress(b) != "" || th.Options(b) != nil {
 		t.Error("an orphaned thread still has something to say for itself")
+	}
+}
+
+// --- residents ------------------------------------------------------------
+
+// TestResidentEndingsNeverAdjustACut. Cut is a companion's standing claim on
+// the purse, and a resident does not have one — resolveThread is handed a nil
+// owner for theirs and has nothing to apply it to. An authored cut on one of
+// these would be a trade-off the player is promised and never paid.
+func TestResidentEndingsNeverAdjustACut(t *testing.T) {
+	for _, s := range tables(t).Threads.Threads {
+		if !s.Resident {
+			continue
+		}
+		for _, e := range s.Endings {
+			if e.Cut != 0 {
+				t.Errorf("%q: ending %q moves a cut by %d, and nobody is taking one",
+					s.ID, e.Label, e.Cut)
+			}
+		}
+	}
+}
+
+// TestResidentsWaitRatherThanWalk. A person who stays put cannot be counting
+// the steps you took without them, and Town — which fires on walking into *any*
+// settlement — would come due in a town they are not standing in. Return is
+// theirs: it is Town narrowed to the one place they actually are.
+func TestResidentsWaitRatherThanWalk(t *testing.T) {
+	for _, s := range tables(t).Threads.Threads {
+		if !s.Resident {
+			continue
+		}
+		if len(s.Beats) < 2 {
+			t.Errorf("%q: %d beat(s). The first is the meeting, so one beat is a story "+
+				"that is over before the player can go anywhere", s.ID, len(s.Beats))
+		}
+		for i, b := range s.Beats {
+			switch b.Trigger {
+			case thread.Travel, thread.Town:
+				t.Errorf("%q beat %d waits on %q, which is a companion's trigger: "+
+					"they were not walking with you", s.ID, i, b.Trigger)
+			}
+		}
+	}
+	// And the mirror: nobody else may use Return, which compares against a home
+	// that a companion's thread does not have.
+	for _, s := range tables(t).Threads.Threads {
+		if s.Resident {
+			continue
+		}
+		for i, b := range s.Beats {
+			if b.Trigger == thread.Return {
+				t.Errorf("%q beat %d waits on %q, and has no address to wait at", s.ID, i, b.Trigger)
+			}
+		}
+	}
+}
+
+// TestAResidentTellsOneThingPerVisit is the pacing, and it is the whole reason
+// a resident's beats park in Owed instead of firing where they happen.
+//
+// The player goes away, things happen, they come back. If beats kept advancing
+// while one was already owed, a long absence would empty the entire story into
+// a single conversation — which is the shape of a cutscene, not a serial.
+func TestAResidentTellsOneThingPerVisit(t *testing.T) {
+	b := &thread.Book{Threads: []thread.Skeleton{{
+		ID: "res", Resident: true, Title: "A Test",
+		Beats: []thread.Beat{
+			{Trigger: thread.Return, Text: "hello", Note: "come back"},
+			{Trigger: thread.Fights, Need: 1, Text: "second", Note: "go and fight"},
+			{Trigger: thread.Fights, Need: 1, Text: "third", Note: "go and fight again"},
+		},
+		Endings: []thread.Ending{{Label: "yes"}, {Label: "no", Shame: 1}},
+	}}}
+	th := &thread.Thread{
+		Skeleton: "res", Owner: "Marta", Title: "A Test", State: thread.Open,
+		HomePOI: 3, PlacePOI: -1, At: 1, Owed: "hello",
+	}
+	l := &thread.Log{}
+	l.Add(th)
+
+	// Nothing a resident does is ever returned for the caller to say out loud.
+	for i := 0; i < 5; i++ {
+		if got := l.Advance(b, thread.Event{Kind: thread.Fights, N: 1}); len(got) != 0 {
+			t.Fatalf("a resident's beat was fired at the player from %d towns away", len(got))
+		}
+	}
+	// And five fights while holding an installment advanced nothing.
+	if th.At != 1 || th.Owed != "hello" {
+		t.Errorf("after five fights the thread is at beat %d owing %q; want 1 and the opening line",
+			th.At, th.Owed)
+	}
+
+	// Collect what they were holding, and the next one can come due — but only
+	// one of it, however many events arrive.
+	if got := th.Say(); got != "hello" {
+		t.Fatalf("they said %q, want the opening line", got)
+	}
+	l.Advance(b, thread.Event{Kind: thread.Fights, N: 1})
+	l.Advance(b, thread.Event{Kind: thread.Fights, N: 1})
+	if th.Owed != "second" || th.At != 2 {
+		t.Errorf("two fights later they are holding %q at beat %d, want the second line at beat 2",
+			th.Owed, th.At)
+	}
+}
+
+// TestAResidentIsNotDroppedWithASharedName. Names are made unique inside a
+// company and not across a continent, so a hireling called Marta and a
+// shopkeeper called Marta are two people. Letting the hireling go must not take
+// the shopkeeper's story with them.
+func TestAResidentIsNotDroppedWithASharedName(t *testing.T) {
+	b := &thread.Book{Threads: []thread.Skeleton{
+		{ID: "test", Title: "A Companion Story", Beats: []thread.Beat{{Trigger: thread.Travel, Need: 1}},
+			Endings: []thread.Ending{{Label: "a"}, {Label: "b", Shame: 1}}},
+		{ID: "res", Resident: true, Title: "A Resident Story", Beats: []thread.Beat{{Trigger: thread.Return}},
+			Endings: []thread.Ending{{Label: "a"}, {Label: "b", Shame: 1}}},
+	}}
+	l := &thread.Log{}
+	l.Add(&thread.Thread{Skeleton: "test", Owner: "Marta", State: thread.Open, HomePOI: -1, PlacePOI: -1})
+	l.Add(&thread.Thread{Skeleton: "res", Owner: "Marta", State: thread.Open, HomePOI: 2, PlacePOI: -1})
+
+	l.Drop(b, "Marta")
+	if l.For(b, "Marta") != nil {
+		t.Error("the companion's thread survived being let go")
+	}
+	if l.ForResident(b, 2, "Marta") == nil {
+		t.Error("letting a hireling go took a shopkeeper's story with it")
 	}
 }

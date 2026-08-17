@@ -39,6 +39,13 @@ func (g *Game) talkTo(e *world.Entity) {
 		return
 	}
 
+	// Somebody in the middle of their own story, which takes precedence over
+	// being handed a new errand: a person who has started telling you something
+	// and then offers you a job instead has stopped being a person.
+	if g.talkToResident(e, poiIdx) {
+		return
+	}
+
 	// One errand per settlement at a time, so a town is a place rather than a
 	// queue, and only some people have anything to ask. Everybody else has
 	// their own line, which is the whole reason they have one.

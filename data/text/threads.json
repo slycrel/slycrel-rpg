@@ -366,6 +366,137 @@
           "honor": -1
         }
       ]
+    },
+    {
+      "id": "resident-cellar",
+      "resident": true,
+      "title": "What Is Under The Floor",
+      "beats": [
+        {
+          "trigger": "return",
+          "note": "come back when you have seen a few",
+          "text": "{N} does not introduce themselves. '{X},' they say. 'You have seen one. I can tell, you have the look.' They tap the floorboards twice with a heel. 'There is one under here. Has been for eleven years. It pays rent.'"
+        },
+        {
+          "trigger": "kills",
+          "need": 4,
+          "note": "put down four of {X}, then go back to {N}",
+          "text": "'Four,' says {N}, counting on fingers that have done this before. 'Four is enough to know. They do not scream, do they. They just stop.' A long pause. 'Mine screams. So either mine is different, or the rest of them are being polite.'"
+        }
+      ],
+      "endings": [
+        {
+          "label": "Go down and look",
+          "text": "The cellar is dry and cold and entirely empty except for a chair, which is warm. {N} takes this news standing up, then sits down on the floor of their own kitchen and stays there a while. 'Eleven years,' they say. 'I could have just gone down.'",
+          "xp": 26,
+          "honor": 1
+        },
+        {
+          "label": "Tell them it is nothing",
+          "text": "'Nothing,' repeats {N}, and you can watch them decide to believe it. They pay you for the trouble out of a tin kept for exactly this, which suggests you are not the first. The floorboards do not come up.",
+          "coins": 42,
+          "shame": 1,
+          "honor": -1
+        }
+      ]
+    },
+    {
+      "id": "resident-went-out",
+      "resident": true,
+      "title": "The One Who Went To {P}",
+      "place": "delve",
+      "beats": [
+        {
+          "trigger": "return",
+          "note": "go to {P}, then come back and tell {N}",
+          "text": "'You will be going out that way,' says {N}. It is not a question. 'My brother went to {P}. Eight months ago. He was not a brave man, which is why I have not gone to look — I am the one he got it from.'"
+        },
+        {
+          "trigger": "reach",
+          "note": "go to {P}, then come back and tell {N}",
+          "text": "There is a name scratched into the wall by the entrance, and under it, in the same hand and a great deal deeper, a second attempt at the same name. Nothing else in the place has been touched in years."
+        }
+      ],
+      "endings": [
+        {
+          "label": "Tell them exactly what you found",
+          "text": "{N} listens to all of it, including the part about the second scratch, and does not cry until you have finished, which you suspect was deliberate. Then they feed you, at length, and refuse every coin you offer, also at length.",
+          "xp": 24,
+          "fame": 1,
+          "honor": 1
+        },
+        {
+          "label": "Tell them he made it further than that",
+          "text": "It costs you nothing to say and {N} takes hold of it with both hands. They tell the neighbours. The neighbours tell people. Somewhere out there is a version of that brother who died gloriously, and it is doing very well for itself.",
+          "coins": 38,
+          "shame": 1,
+          "honor": -1
+        }
+      ]
+    },
+    {
+      "id": "resident-standing-order",
+      "resident": true,
+      "title": "The Standing Order",
+      "beats": [
+        {
+          "trigger": "return",
+          "note": "come back through here when you have been out a while",
+          "text": "'You are the fourth person through this month,' says {N}, 'so I will say it to you as well.' They put a wrapped parcel on the counter. 'Paid for in advance, eleven years ago, by somebody who said they would be back on the Thursday. Which Thursday was not specified.'"
+        },
+        {
+          "trigger": "fights",
+          "need": 6,
+          "note": "go and be somewhere else for a while, then come back",
+          "text": "The parcel is on the counter again, in exactly the same place, and {N} has clearly been putting it away and getting it out. '{I},' they say, before you ask. 'That is what is in it. I looked, in year six. I have felt terrible ever since and I would do it again.'"
+        }
+      ],
+      "endings": [
+        {
+          "label": "Buy it off them",
+          "text": "{N} takes the money like somebody being talked down off a ledge, and puts the parcel into your hands with both of theirs. 'If he comes back,' they say, 'I will send him to you.' The counter looks enormous now, and empty.",
+          "coins": -26,
+          "xp": 20,
+          "honor": 1
+        },
+        {
+          "label": "Tell them to keep waiting",
+          "text": "'Right,' says {N}. 'Right.' The parcel goes back under the counter. They are visibly relieved, which is the worst part of the whole exchange, and they insist on paying you for the conversation.",
+          "coins": 30,
+          "honor": -1
+        }
+      ]
+    },
+    {
+      "id": "resident-not-from-here",
+      "resident": true,
+      "title": "Not From Around Here",
+      "beats": [
+        {
+          "trigger": "return",
+          "note": "let them get another look at you",
+          "text": "{N} watches you the whole way across the room and carries on after you have stopped being interesting. 'You are not from here either,' they say eventually. 'Do not worry. Nobody has worked out that I am not, and I have had nineteen years to give myself away.'"
+        },
+        {
+          "trigger": "return",
+          "note": "come back through this town again",
+          "text": "'Nineteen years,' says {N}, picking it up as though no time has passed, which for them it has not. 'I have a whole family here. They think I am from the coast. I am not from the coast. I have never seen the coast.' They look at you levelly. 'You have been out. Is it there?'"
+        }
+      ],
+      "endings": [
+        {
+          "label": "Tell them what is out there",
+          "text": "You describe it. {N} takes it in the way somebody takes a diagnosis — carefully, and without interrupting once. At the end they say 'good' twice, meaning it differently each time, and go back to work with the look of a person who has stopped waiting for something.",
+          "xp": 22,
+          "honor": 1
+        },
+        {
+          "label": "Ask what they are hiding from",
+          "text": "{N} tells you. It takes a while, none of it is your business, and by the end you are holding a good deal more of it than you meant to. There is money involved, historically, and some of it is still in a box under a floor in this town.",
+          "coins": 34,
+          "shame": 1
+        }
+      ]
     }
   ]
 }

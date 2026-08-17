@@ -465,7 +465,7 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 		// And what they are dealing with, on the screen that is meant to answer
 		// "who is this person". The journal knows, but the journal is the list
 		// of things outstanding, which is a different question.
-		if t := g.Threads.For(p.Name); t != nil {
+		if t := g.Threads.For(&g.Data.Threads, p.Name); t != nil {
 			rows = append(rows, [2]string{"Story", t.Title})
 		}
 	} else {

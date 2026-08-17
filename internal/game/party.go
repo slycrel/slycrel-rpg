@@ -192,13 +192,13 @@ func (g *Game) dismiss(c *model.Character) {
 		// go of somebody who has nothing outstanding is free, because it is not
 		// the leaving that is the problem.
 		unfinished := false
-		if t := g.Threads.For(c.Name); t != nil && t.State != thread.Closed {
+		if t := g.Threads.For(&g.Data.Threads, c.Name); t != nil && t.State != thread.Closed {
 			unfinished = true
 			g.Player.Honor--
 		}
 		g.Allies = append(g.Allies[:i], g.Allies[i+1:]...)
 		g.reformLines()
-		g.Threads.Drop(c.Name)
+		g.Threads.Drop(&g.Data.Threads, c.Name)
 		g.Log.AddColor(render.ColInkDim, "%s", g.Write.RecruitLeave(g.RNG, c.Name))
 		if unfinished {
 			g.Log.AddColor(render.ColInkDim, "They were in the middle of something. Somebody will hear about it.")

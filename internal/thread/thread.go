@@ -50,6 +50,11 @@ const (
 	Reach Trigger = "reach"
 	// Town fires on walking into any settlement.
 	Town Trigger = "town"
+	// Return fires on walking back into the teller's own settlement, which is
+	// the only thing somebody who stays put can wait for. It is Town narrowed
+	// to one place, and it is the trigger that makes a resident's thread a
+	// different rhythm rather than a companion's told in a doorway.
+	Return Trigger = "return"
 )
 
 // Shown reports whether a trigger's counter is worth putting in the journal.
@@ -124,6 +129,12 @@ func (e Ending) Costs() int64 {
 // antagonist. See castRoles.
 type Skeleton struct {
 	ID string `json:"id"`
+	// Resident marks a story belonging to somebody who stays where they are,
+	// rather than to a hireling walking beside you. The two are cast from
+	// different pools and never mix: a companion's thread is told *while it
+	// happens*, and a resident's is told in installments on your return,
+	// because they were not there for any of it.
+	Resident bool `json:"resident,omitempty"`
 	// Blood restricts the skeleton to one ancestry, as a model.MonsterKind
 	// string. Empty means anybody, which is what the ordinary hirelings draw
 	// from.
@@ -155,8 +166,10 @@ func (b *Book) Get(id string) (*Skeleton, bool) {
 	return nil, false
 }
 
-// For lists the skeletons somebody of this ancestry could be cast in: the ones
-// written for their lineage, plus the ones written for anybody.
+// For lists the skeletons a companion of this ancestry could be cast in: the
+// ones written for their lineage, plus the ones written for anybody. Residents'
+// stories are excluded — they are written for somebody standing behind a
+// counter and would read as nonsense out of a hireling's mouth.
 func (b *Book) For(blood model.MonsterKind) []*Skeleton {
 	if b == nil {
 		return nil
@@ -164,8 +177,25 @@ func (b *Book) For(blood model.MonsterKind) []*Skeleton {
 	var out []*Skeleton
 	for i := range b.Threads {
 		s := &b.Threads[i]
+		if s.Resident {
+			continue
+		}
 		if s.Blood == "" || s.Blood == string(blood) {
 			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// Residents lists the skeletons written for somebody who stays put.
+func (b *Book) Residents() []*Skeleton {
+	if b == nil {
+		return nil
+	}
+	var out []*Skeleton
+	for i := range b.Threads {
+		if b.Threads[i].Resident {
+			out = append(out, &b.Threads[i])
 		}
 	}
 	return out
@@ -209,6 +239,17 @@ type Thread struct {
 	// the same three absent characters in a hand-edited save.
 	PlacePOI  int    `json:"placePOI"`
 	MonsterID string `json:"monsterID,omitempty"`
+
+	// HomePOI is the settlement the teller lives in, and -1 for a companion,
+	// who lives wherever you are standing. It is what makes Owner a usable key
+	// for somebody who stays put: two towns can each have a Marta, and they are
+	// not the same Marta.
+	HomePOI int `json:"homePOI"`
+	// Owed is the installment a resident has not had the chance to tell you
+	// yet. A companion says their beat where it happens; somebody behind a
+	// counter has to wait for you to come back, so the text is held here until
+	// you do. Empty for a companion, always.
+	Owed string `json:"owed,omitempty"`
 
 	At   int `json:"at"`   // the beat being waited on
 	Have int `json:"have"` // progress within it
@@ -259,7 +300,7 @@ func Cast(g *core.RNG, b *Book, w *world.Map, cat Catalog, owner *model.Characte
 		if busy[s.ID] || len(s.Beats) == 0 || len(s.Endings) == 0 {
 			continue
 		}
-		c, ok := castRoles(g, s, w, cat, owner, from)
+		c, ok := castRoles(g, s, w, cat, owner.Name, owner.Level, from)
 		if !ok {
 			continue
 		}
@@ -289,7 +330,94 @@ func Cast(g *core.RNG, b *Book, w *world.Map, cat Catalog, owner *model.Characte
 		Roles:     got.c.text,
 		PlacePOI:  got.c.placePOI,
 		MonsterID: got.c.monsterID,
+		HomePOI:   -1, // a companion's home is wherever you are standing
 	}, true
+}
+
+// CastResident fills a resident's skeleton for the person standing in front of
+// you, and reports false when this continent cannot stage any of them.
+//
+// It is deliberately a separate entry point rather than a flag on Cast. The two
+// take different inputs — a resident has a name and an address where a
+// companion has a character sheet and an ancestry — and the thing that makes
+// them worth having as separate features is precisely that they resolve
+// differently: this one has a home to come back to, and Return is a trigger
+// only it can use.
+//
+// level is the player's, since a resident has no level of their own and the
+// creature a story names should still be something worth the walk.
+func CastResident(g *core.RNG, b *Book, w *world.Map, cat Catalog, name string, home, level int, at core.Point, taken []string) (*Thread, bool) {
+	if g == nil || b == nil || w == nil || name == "" || home < 0 {
+		return nil, false
+	}
+	busy := map[string]bool{}
+	for _, id := range taken {
+		busy[id] = true
+	}
+
+	type candidate struct {
+		s *Skeleton
+		c cast
+	}
+	var usable []candidate
+	for _, s := range b.Residents() {
+		if busy[s.ID] || len(s.Beats) == 0 || len(s.Endings) == 0 {
+			continue
+		}
+		c, ok := castRoles(g, s, w, cat, name, level, at)
+		if !ok {
+			continue
+		}
+		usable = append(usable, candidate{s, c})
+	}
+	if len(usable) == 0 {
+		return nil, false
+	}
+
+	got := core.Pick(g, usable)
+	t := &Thread{
+		Skeleton:  got.s.ID,
+		Owner:     name,
+		Title:     got.s.Title,
+		State:     Open,
+		Roles:     got.c.text,
+		PlacePOI:  got.c.placePOI,
+		MonsterID: got.c.monsterID,
+		HomePOI:   home,
+	}
+
+	// The first beat is the meeting, and it fires here rather than waiting for
+	// a trigger.
+	//
+	// A resident is cast the first time you speak to them, so without this the
+	// opening conversation would be them reciting the journal note for a story
+	// they have not told you yet — "come back when you have killed four of
+	// those" from somebody who has not said hello. The hook belongs in the
+	// conversation that starts it. Every resident skeleton is written knowing
+	// this: its first beat is an introduction and its trigger is decoration.
+	t.Owed = t.Fill(got.s.Beats[0].Text)
+	t.At = 1
+	if t.At >= len(got.s.Beats) {
+		t.State = Ready
+	}
+	return t, true
+}
+
+// IsResident reports whether this thread belongs to somebody who stays put.
+//
+// Read off the skeleton rather than off HomePOI, which is the field that says
+// *where*. Deriving it from the address instead was the first version and it
+// had the classic zero-value hole in it: a Thread built without setting HomePOI
+// — a test fixture, or any save written before this existed, where the absent
+// field unmarshals to nothing — would have come back as a resident of whichever
+// location happens to be first on the map. The skeleton is the one place the
+// answer is authored, so it is the one place worth asking.
+func (t *Thread) IsResident(b *Book) bool {
+	if t == nil {
+		return false
+	}
+	s, ok := b.Get(t.Skeleton)
+	return ok && s.Resident
 }
 
 // cast is the filled roles, in both the readable and the comparable form.
@@ -304,8 +432,8 @@ type cast struct {
 // The requirements are read out of the writing rather than declared alongside
 // it. An author who adds "{X}" to a line has just said the thread needs an
 // antagonist, and there is no second list to forget to update.
-func castRoles(g *core.RNG, s *Skeleton, w *world.Map, cat Catalog, owner *model.Character, from core.Point) (cast, bool) {
-	c := cast{text: map[string]string{"{N}": owner.Name}, placePOI: -1}
+func castRoles(g *core.RNG, s *Skeleton, w *world.Map, cat Catalog, name string, level int, from core.Point) (cast, bool) {
+	c := cast{text: map[string]string{"{N}": name}, placePOI: -1}
 	body := skeletonText(s)
 
 	needPlace := strings.Contains(body, "{P}") || usesTrigger(s, Reach)
@@ -338,7 +466,7 @@ func castRoles(g *core.RNG, s *Skeleton, w *world.Map, cat Catalog, owner *model
 	}
 
 	if strings.Contains(body, "{X}") || usesTrigger(s, Kills) {
-		mons := cat.BiomeMonsters(biome, core.Max(1, owner.Level))
+		mons := cat.BiomeMonsters(biome, core.Max(1, level))
 		if len(mons) == 0 {
 			return cast{}, false
 		}
@@ -545,9 +673,15 @@ type Log struct {
 func (l *Log) Add(t *Thread) { l.Threads = append(l.Threads, t) }
 
 // For finds the thread belonging to a companion, if they have one.
-func (l *Log) For(owner string) *Thread {
+//
+// Residents are skipped rather than matched on name alone. A hireling and a
+// shopkeeper two towns over can be called the same thing — the name generator
+// has no idea either exists — and answering "does this companion have a story"
+// with somebody else's would put a stranger's title on their character sheet
+// and cost the player a point of honour for dismissing them.
+func (l *Log) For(b *Book, owner string) *Thread {
 	for _, t := range l.Threads {
-		if t.Owner == owner {
+		if t.Owner == owner && !t.IsResident(b) {
 			return t
 		}
 	}
@@ -557,10 +691,15 @@ func (l *Log) For(owner string) *Thread {
 // Drop forgets a departing companion's thread. Letting somebody go takes their
 // story with them: it was never the player's, and leaving it in the journal
 // would mean a beat that can never fire again sitting there forever.
-func (l *Log) Drop(owner string) {
+//
+// Residents are never dropped, whatever they are called. They did not leave —
+// they are exactly where they were — and a shopkeeper losing their story
+// because a hireling of the same name was let go two towns over would be a very
+// quiet bug to find.
+func (l *Log) Drop(b *Book, owner string) {
 	out := l.Threads[:0]
 	for _, t := range l.Threads {
-		if t.Owner != owner {
+		if t.Owner != owner || t.IsResident(b) {
 			out = append(out, t)
 		}
 	}
@@ -634,12 +773,25 @@ type Fired struct {
 // Only companions who are actually present should generate events, but that is
 // the caller's judgement: this package has no way of knowing who was in the
 // room, and guessing would be worse than asking.
+//
+// A resident's beat is not returned. It is parked in Owed instead, because the
+// person it belongs to was not there when it happened and cannot say it until
+// you walk back in. That is the whole structural difference between the two
+// kinds of thread, and putting it here rather than in the caller is what keeps
+// a resident from ever shouting a line across the continent.
 func (l *Log) Advance(b *Book, ev Event) []Fired {
 	var out []Fired
 	n := core.Max(1, ev.N)
 
 	for _, t := range l.Threads {
 		if t.State != Open {
+			continue
+		}
+		// One installment at a time. A resident holding something they have not
+		// had the chance to say does not start accumulating the next thing:
+		// that is the pacing, and without it a long absence would empty the
+		// whole story into one conversation.
+		if t.Owed != "" {
 			continue
 		}
 		s, ok := b.Get(t.Skeleton)
@@ -654,6 +806,11 @@ func (l *Log) Advance(b *Book, ev Event) []Fired {
 		switch ev.Kind {
 		case Reach:
 			if ev.POI != t.PlacePOI {
+				continue
+			}
+			t.Have = core.Max(1, bt.Need)
+		case Return:
+			if ev.POI != t.HomePOI {
 				continue
 			}
 			t.Have = core.Max(1, bt.Need)
@@ -679,7 +836,40 @@ func (l *Log) Advance(b *Book, ev Event) []Fired {
 			t.State = Ready
 			f.Last = true
 		}
+		if s.Resident {
+			t.Owed = f.Text
+			continue
+		}
 		out = append(out, f)
 	}
 	return out
+}
+
+// ForResident finds the thread belonging to somebody in a particular
+// settlement.
+//
+// Keyed on both, because a name alone is not an address: two towns can each
+// have a Marta, and the errand log learned the same lesson — it used to accept
+// a hand-in from any townsperson because it keyed on the settlement alone.
+func (l *Log) ForResident(b *Book, home int, name string) *Thread {
+	if l == nil || home < 0 {
+		return nil
+	}
+	for _, t := range l.Threads {
+		if t.HomePOI == home && t.Owner == name && t.IsResident(b) {
+			return t
+		}
+	}
+	return nil
+}
+
+// Say hands over the installment a resident has been holding and clears it, so
+// the thread starts accumulating again. Returns "" when they have nothing.
+func (t *Thread) Say() string {
+	if t == nil {
+		return ""
+	}
+	owed := t.Owed
+	t.Owed = ""
+	return owed
 }

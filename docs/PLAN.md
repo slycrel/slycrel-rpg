@@ -132,12 +132,11 @@ Built and running:
 - 66 monsters across nine biomes, 14 weapons, 10 armours, 6 shields, 12 charms,
   10 affixes, 42 items, 27 techniques
   (eleven of them party-facing, lingering, or gated on a hireling's ancestry),
-  9 companion backstories
+  9 companion backstories and 4 for the people who stay put
 - Asset pipeline: inventory, selective extraction, manifest generation, and an
   audit that reports which art keys still fall back to placeholders
 
-Deliberately not built yet: backstories for the townspeople, day/night and
-weather.
+Deliberately not built yet: day/night and weather, and a main thread.
 
 Played twice end to end. The second pass is what turned up the home region, the
 starting kit, equipment as inventory, and four separate cases of the game
@@ -226,13 +225,49 @@ than a system.
    drawn from the far end is one the player has no reason to be near, and the
    thread stalls on "put down three of them" for the rest of the run.
 
-3. **NPC backstories.** The same mechanism for the townspeople who currently
-   have one line each. `internal/thread` already has the casting, the beat
-   chain and the choice at the end; what it does not have is a way for a thread
-   to belong to somebody who stays put. A companion's thread is keyed to a name
-   in the party and advanced by things the party does — a townsperson's would
-   need to be keyed to a location and advanced by returning to it, which is
-   closer to how a quest already works than to how a thread does.
+3. ~~**NPC backstories.**~~ *(Built.)* The same mechanism for the townspeople
+   who used to have one line each. The prediction here was right about the
+   machinery — `internal/thread` already had the casting, the beat chain and
+   the choice at the end, and all that was missing was an address — and wrong
+   about the interesting part. It is not "closer to how a quest works". It is a
+   different *rhythm*, and that rhythm is the whole feature.
+
+   A companion's thread is told **while it happens**, because they are standing
+   next to you. A resident's is told **in installments on your return**, because
+   they were not there for any of it. So `Advance` parks a resident's beat in
+   `Owed` rather than firing it, one at a time — a resident holding something
+   they have not had the chance to say does not start accumulating the next
+   thing. Go away for a month and you get one conversation, not the whole story
+   at once. What somebody who cannot follow you has to offer is the shape of a
+   serial, and that turned out to be worth more than the location key.
+
+   `Return` is the trigger only they can use: `Town` narrowed to the one
+   settlement they are actually standing in. Four skeletons, marked `resident`
+   in the same `threads.json` and cast from a separate pool by `CastResident`,
+   because writing for somebody behind a counter reads as nonsense out of a
+   hireling's mouth.
+
+   The opening beat fires on casting rather than waiting for a trigger. A
+   resident is cast the first time you speak to them, so without that the first
+   conversation would be them reciting the journal note for a story they have
+   not told you yet — "come back when you have killed four of those", from
+   somebody who has not said hello.
+
+   Two zero-value traps, both found by tests rather than by play. Residency was
+   first derived from `HomePOI >= 0`, which made every thread in every save
+   written before this existed a resident of whichever location happens to be
+   first on the map; it reads off the skeleton now, which is the one place the
+   answer is authored. And `Log.Drop`, `Log.For` and `ForResident` all key on a
+   name — names are unique inside a company and not across a continent, so a
+   hireling and a shopkeeper can both be Marta, and letting the hireling go was
+   taking the shopkeeper's story with them.
+
+   Gated three ways: this person is the storyteller (a stable hash of where
+   they stand, like the errand giver's, on a different salt so the two are not
+   the same roll wearing different thresholds), one per settlement, two running
+   at once. Across four continents that puts somebody in 43 of 56 towns while
+   the player carries at most two — which is the balance worth having, since a
+   town nobody in it has anything going on is the state this was fixing.
 
 ### Phase 3 — the world reacting
 

@@ -24,7 +24,7 @@ func (g *Game) ensureThreads() {
 		return
 	}
 	for _, c := range g.Allies {
-		if g.Threads.For(c.Name) != nil {
+		if g.Threads.For(&g.Data.Threads, c.Name) != nil {
 			continue
 		}
 		// Forked so that casting a backstory cannot shift the encounter rolls
@@ -160,9 +160,16 @@ func (g *Game) serviceThreads() bool {
 // only irreversible thing a companion ever asks for, and a modal box that
 // cannot be escaped is a poor place to be asked.
 func (g *Game) offerThreadEnding(t *thread.Thread, setup string) bool {
+	// A resident has no character sheet, so there is nobody to find and the
+	// scaling comes off the player instead. Everything else about the box is
+	// the same, which is the point of them being one system.
 	owner := g.allyNamed(t.Owner)
-	if owner == nil {
+	if owner == nil && !t.IsResident(&g.Data.Threads) {
 		return false
+	}
+	level := core.Max(1, g.Player.Level)
+	if owner != nil {
+		level = core.Max(1, owner.Level)
 	}
 	opts := t.Options(&g.Data.Threads)
 	if len(opts) == 0 {
@@ -174,7 +181,7 @@ func (g *Game) offerThreadEnding(t *thread.Thread, setup string) bool {
 	rows := make([]ui.MenuItem, 0, len(opts)+1)
 	for _, e := range opts {
 		row := ui.MenuItem{Label: e.Label}
-		if cost := e.Costs() * int64(core.Max(1, owner.Level)); cost > 0 {
+		if cost := e.Costs() * int64(level); cost > 0 {
 			row.Detail = fmt.Sprintf("%d coins", cost)
 			row.Disabled = g.Player.Coins < cost
 		}
@@ -200,8 +207,14 @@ func (g *Game) offerThreadEnding(t *thread.Thread, setup string) bool {
 }
 
 // resolveThread applies an ending and closes the thread.
+//
+// owner is nil for a resident's, who has no sheet to adjust and no cut to take.
 func (g *Game) resolveThread(t *thread.Thread, e thread.Ending, owner *model.Character) {
-	level := int64(core.Max(1, owner.Level))
+	lv := core.Max(1, g.Player.Level)
+	if owner != nil {
+		lv = core.Max(1, owner.Level)
+	}
+	level := int64(lv)
 	coins := e.Coins * level
 	xp := e.XP * level
 
@@ -222,7 +235,7 @@ func (g *Game) resolveThread(t *thread.Thread, e thread.Ending, owner *model.Cha
 	g.Player.Fame += e.Fame
 	g.Player.Shame += e.Shame
 	g.Player.Honor += e.Honor
-	if e.Cut != 0 {
+	if e.Cut != 0 && owner != nil {
 		// Floored at nothing rather than at their starting share: a companion
 		// working for free is a thing a story can earn, and one charging the
 		// whole haul is not.
@@ -238,7 +251,7 @@ func (g *Game) resolveThread(t *thread.Thread, e thread.Ending, owner *model.Cha
 		case coins < 0:
 			g.Log.AddColor(render.ColInkDim, "It cost %d coins.", -coins)
 		}
-		if e.Cut != 0 {
+		if e.Cut != 0 && owner != nil {
 			g.Log.AddColor(render.ColInkDim, "%s now takes %d%%.", owner.Name, owner.Cut)
 		}
 		if xp > 0 {
@@ -261,7 +274,16 @@ func (g *Game) allyNamed(name string) *model.Character {
 // player walked away from. A town is where a companion has the nerve to bring
 // it up again.
 func (g *Game) threadsOnEnteringPOI(idx int) {
-	if idx < 0 || len(g.Allies) == 0 {
+	if idx < 0 {
+		return
+	}
+	// Return is the resident's trigger and fires whether or not anybody is
+	// walking behind you — that is rather the point of somebody who stays put.
+	// Everything else is a companion's and needs one.
+	if g.World.POIs[idx].Kind.Settlement() {
+		g.advanceThreads(thread.Event{Kind: thread.Return, POI: idx})
+	}
+	if len(g.Allies) == 0 {
 		return
 	}
 	g.advanceThreads(thread.Event{Kind: thread.Reach, POI: idx})

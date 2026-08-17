@@ -10,6 +10,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
 	"github.com/slycrel/slycrel-rpg/internal/save"
+	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
@@ -501,6 +502,136 @@ func TestEveryOfferedFaceIsRealArt(t *testing.T) {
 	for _, l := range heroLooks {
 		if !g.Assets.Has(l.Key + "/idle") {
 			t.Errorf("the creation screen offers the %s look, and %s/idle is missing", l.Name, l.Key)
+		}
+	}
+}
+
+// Somebody, somewhere, has to actually have a story.
+//
+// The gate on a resident's backstory is three conditions deep — this person is
+// the storyteller, there is room under the cap, and the continent can stage one
+// of the skeletons — and every one of them is a place the feature can silently
+// switch itself off. A threshold typed with one fewer zero, or a set of
+// skeletons that all need a ruin on a continent with none, and the writing is
+// simply never read by anybody. Nothing else in the suite would notice.
+func TestTownspeopleActuallyHaveStories(t *testing.T) {
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Skipf("no data directory: %v", err)
+	}
+	tables, err := gamedata.Load(root)
+	if err != nil {
+		t.Fatalf("loading content: %v", err)
+	}
+
+	var settlements, tellers, cast int
+	for _, seed := range []int64{1, 7, 1994, 20260816} {
+		write := content.New(&tables.Text)
+		g := &Game{
+			Root: t.TempDir(), Data: tables, Write: write,
+			RNG: core.NewRNG(seed), Seed: seed, Log: ui.NewLog(4),
+			World: world.Generate(seed, write),
+		}
+		g.Player = rules.NewCharacter(g.RNG, "Bosk", model.ClassFighter)
+		g.Player.Level = 4
+
+		for idx, p := range g.World.POIs {
+			if !p.Kind.Settlement() {
+				continue
+			}
+			settlements++
+			g.Local = world.BuildLocal(p, write)
+			g.Walk.Place(p.Pos)
+			for _, e := range g.Local.Entities {
+				if e.Kind != world.ENPC {
+					continue
+				}
+				if !g.hasStory(e) {
+					continue
+				}
+				tellers++
+				if g.residentThread(e, idx) != nil {
+					cast++
+				}
+			}
+			// Cleared between towns so the cap does not silently end the sweep
+			// after the first two. What is being measured here is how often a
+			// town *can* offer one, not how many the player may carry.
+			g.Threads = thread.Log{}
+		}
+	}
+
+	if settlements == 0 {
+		t.Fatal("four continents produced no settlements at all")
+	}
+	if tellers == 0 {
+		t.Fatalf("across %d settlements nobody was the sort of person with something going on", settlements)
+	}
+	if cast == 0 {
+		t.Fatalf("%d townspeople had something going on and not one of them could be cast in a story", tellers)
+	}
+	// A rough floor rather than a rate. The point is that walking into a town
+	// and finding somebody is an ordinary occurrence and not a lottery win.
+	if got := float64(cast) / float64(settlements); got < 0.25 {
+		t.Errorf("only %.0f%% of settlements have anybody with a story (%d of %d); "+
+			"at that rate a player finishes a run without meeting one",
+			got*100, cast, settlements)
+	}
+	t.Logf("%d settlements, %d storytellers, %d cast", settlements, tellers, cast)
+}
+
+// One story per town, and never more than the cap in total.
+//
+// A town is a place rather than a queue — the same rule the errand log follows
+// — and the path that breaks it is the ordinary one: a player walks in and
+// talks to everybody, which is exactly what the demo tour does.
+func TestATownOffersOneStoryAtATime(t *testing.T) {
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Skipf("no data directory: %v", err)
+	}
+	tables, err := gamedata.Load(root)
+	if err != nil {
+		t.Fatalf("loading content: %v", err)
+	}
+
+	for _, seed := range []int64{1, 7, 1994, 20260816} {
+		write := content.New(&tables.Text)
+		g := &Game{
+			Root: t.TempDir(), Data: tables, Write: write,
+			RNG: core.NewRNG(seed), Seed: seed, Log: ui.NewLog(4),
+			World: world.Generate(seed, write),
+		}
+		g.Player = rules.NewCharacter(g.RNG, "Bosk", model.ClassFighter)
+
+		// Walk into every settlement and talk to every single person in it,
+		// which is what a thorough player does and what the tour does literally.
+		for idx, p := range g.World.POIs {
+			if !p.Kind.Settlement() {
+				continue
+			}
+			g.Local = world.BuildLocal(p, write)
+			g.Walk.Place(p.Pos)
+			for _, e := range g.Local.Entities {
+				if e.Kind == world.ENPC {
+					g.residentThread(e, idx)
+				}
+			}
+
+			here := 0
+			for _, th := range g.Threads.Threads {
+				if th.HomePOI == idx && th.IsResident(&tables.Threads) {
+					here++
+				}
+			}
+			if here > 1 {
+				t.Errorf("seed %d: %s has %d people all midway through telling you something",
+					seed, p.Name, here)
+			}
+		}
+
+		if got := g.runningResidents(); got > residentCap {
+			t.Errorf("seed %d: %d resident stories running at once, cap is %d", seed, got, residentCap)
 		}
 	}
 }
