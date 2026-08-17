@@ -208,13 +208,24 @@ func reportOpening(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 				} else {
 					c.Weapon, c.Armor = t.StarterWeapon(), t.StarterArmor()
 				}
-				mons := t.PickMonsters(g, biomeForLevel(1), 1, 1)
+				// What the ground around the capital actually throws, rather
+				// than plains at exactly level one.
+				//
+				// This section used to assume both, and so reported the opening
+				// as a 0.2% chance of dying while a real first hour was nothing
+				// of the sort: the danger formula reads every location within
+				// eighteen tiles, and a level-four ruin sixteen tiles out was
+				// handing fresh characters level-three fights in hills and
+				// mountains. The home region caps that at the player's level
+				// now, so this samples the same spread the game does.
+				biome, enc := openingRoll(g)
+				mons := t.PickMonsters(g, biome, enc, 1)
 				if len(mons) == 0 {
 					continue
 				}
 				fresh := *c
 				r := rules.SimulateFight(g, &fresh, []*model.MonsterDef{mons[0].Def},
-					1, 60, t.SpellsFor(c))
+					enc, 60, t.SpellsFor(c))
 				if r.Won {
 					wins++
 				}
@@ -236,8 +247,35 @@ func reportOpening(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 
 	// What the gap costs in coins, since the answer to it might simply be
 	// "walk into the shop first" — in which case the game has to say so.
+	// What the purse can actually reach, rolled rather than quoted: the range
+	// lives in rules.NewCharacter and a number repeated here would drift.
+	lo, hi := 1<<30, 0
+	for i := 0; i < 500; i++ {
+		c := rules.NewCharacter(g, "Subject", model.ClassFighter)
+		if int(c.Coins) < lo {
+			lo = int(c.Coins)
+		}
+		if int(c.Coins) > hi {
+			hi = int(c.Coins)
+		}
+	}
 	fmt.Fprintf(out, "\n  the shop closes that gap for %d coins; a new character carries %d-%d\n\n",
-		onCurve.Weapon.Cost+onCurve.Armor.Cost, 15, 40)
+		onCurve.Weapon.Cost+onCurve.Armor.Cost, lo, hi)
+}
+
+// openingBiomes are what turned up within twelve tiles of the start across a
+// spread of seeds, in roughly the proportions they turned up in. The ground
+// around the capital is whatever the noise put there, and assuming plains was
+// the other half of why this section read the first hour as harmless.
+var openingBiomes = []string{"plains", "plains", "plains", "forest", "forest", "hills", "coast"}
+
+// openingRoll picks a fight of the sort a new character actually gets handed:
+// somewhere near home, at the level the home region allows.
+func openingRoll(g *core.RNG) (string, int) {
+	// The home cap holds this to the player's own level; the spread below it is
+	// the ordinary jitter.
+	enc := core.Max(1, 1+g.Between(-1, 0))
+	return core.Pick(g, openingBiomes), enc
 }
 
 // reportDanger measures the death curve against the brief above.

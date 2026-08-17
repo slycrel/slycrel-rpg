@@ -1234,6 +1234,29 @@ func (b *battleScene) awardSpoils(g *Game) {
 	xp := rules.XPAward(killed)
 	coins := rules.CoinAward(g.RNG, killed)
 
+	// Something occasionally has gear on it.
+	//
+	// Rarer than a chest by a wide margin — a chest is a thing you went and
+	// opened, and a fight is something that happened to you — but a fight was
+	// paying only in coin and experience, so the only route to a named piece of
+	// equipment was to go indoors and find furniture. It is held rather than
+	// offered here: an Ask over a battle screen fights the battle for input,
+	// and the spoils have not finished being read out.
+	if b.result == 1 && g.RNG.Chance(0.07) {
+		// Banded off what was actually fought, so the reward tracks the risk
+		// rather than where the fight happened to start.
+		lv := 1
+		for _, m := range killed {
+			if m.Def.Level > lv {
+				lv = m.Def.Level
+			}
+		}
+		tier := core.Clamp(1+lv/3, 1, 5)
+		if f, ok := g.rollAffixedGearOfTier(tier); ok {
+			g.pendingFind = &f
+		}
+	}
+
 	// Experience is not divided. Every member banks the full award and levels
 	// on their own curve, which is what keeps a hireling taken on at level 6
 	// still useful at level 12 without any catch-up machinery — and it leaves
@@ -1357,6 +1380,11 @@ func (b *battleScene) reviveFallen(g *Game) {
 // the run is over.
 func (b *battleScene) onPopped(g *Game) {
 	switch b.result {
+	case 1:
+		if f := g.pendingFind; f != nil {
+			g.pendingFind = nil
+			g.offerFind(*f)
+		}
 	case 2:
 		g.offerRewind()
 	case 4:

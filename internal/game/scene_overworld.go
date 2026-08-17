@@ -151,6 +151,23 @@ func ambienceFor(biome string) string {
 	return "amb/plains"
 }
 
+// homeRadius is how far the ground around the capital stays a place you can
+// learn the game in.
+//
+// The danger formula reads the level of every location within eighteen tiles,
+// and the capital does not get a clear eighteen tiles to itself — a level-four
+// ruin sixteen tiles out was enough to hand a level-one character encounters at
+// level three, in whatever biome the noise happened to put there. Measured
+// across eight seeds, a fresh character was meeting +2 fights in hills and
+// mountains, which the DANGER table rates at 14 to 36 per cent death with the
+// gear they can afford on the first morning.
+//
+// So there is a home region now. Inside it the roll cannot exceed the player's
+// own level, which does not make it safe — an on-level fight is still a fight,
+// and every other rule is unchanged — it makes it *predictable*, which is the
+// thing the opening was missing.
+const homeRadius = 14
+
 // encounterLevel blends the player's level with how far out they have wandered,
 // so walking somewhere you should not be is dangerous immediately rather than
 // only once the plot says so.
@@ -164,7 +181,15 @@ func (g *Game) encounterLevel(at core.Point) int {
 		}
 	}
 	lv := (g.Player.Level*2 + region) / 3
-	return core.Clamp(lv+g.RNG.Between(-1, 1), 1, 14)
+	lv = core.Clamp(lv+g.RNG.Between(-1, 1), 1, 14)
+
+	// Close to home, nothing is above your weight. The cap lifts as you level,
+	// so the home region stops being a special case on its own rather than
+	// needing a second rule to retire it.
+	if at.Manhattan(g.World.Start) <= homeRadius {
+		lv = core.Min(lv, g.Player.Level)
+	}
+	return lv
 }
 
 // enterPOI builds the interior and switches scenes.

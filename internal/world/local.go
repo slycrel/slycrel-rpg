@@ -355,7 +355,7 @@ func buildSettlement(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 	// big enough to have an inn get one, which gives a village a reason to be
 	// somewhere you pass through and a town a reason to be somewhere you stop.
 	if inn.X >= 0 {
-		if p, ok := openNear(g, l, inn, 4); ok {
+		if p, ok := openNear(g, l, inn, 2, 5); ok {
 			class := core.Pick(g, recruitClasses)
 			look := core.Pick(g, recruitLooks[class])
 			// Roughly one hireling in three is not entirely a person. They are
@@ -389,8 +389,16 @@ func buildSettlement(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 	}
 
 	// A sign by the gate, because someone always puts a sign by the gate.
+	// Nudged off anybody already standing there: it goes up last, so its fixed
+	// address was landing on whichever townsperson had wandered to the gate.
+	signAt := core.Point{X: gateX + 2, Y: l.H - 3}
+	if !elbowRoom(l, signAt) {
+		if p, ok := openNear(g, l, signAt, 1, 3); ok {
+			signAt = p
+		}
+	}
 	l.Entities = append(l.Entities, &Entity{
-		Kind: ESign, Pos: core.Point{X: gateX + 2, Y: l.H - 3},
+		Kind: ESign, Pos: signAt,
 		Name: "a weathered sign", Line: wr.SignText(g),
 	})
 	return l
@@ -601,11 +609,38 @@ func poiBiome(k POIKind) string {
 	}
 }
 
-// findOpen looks for a walkable, unoccupied cell.
+// elbowRoom reports that nothing else is standing on or beside a cell.
+//
+// Character art is four tiles tall on a one-tile grid, so two people on
+// neighbouring squares are drawn almost entirely on top of each other and read
+// as one shape somebody has got stuck inside. Placement only avoided the exact
+// same tile, and a sixth of everybody in a town came out touching somebody else.
+func elbowRoom(l *LocalMap, p core.Point) bool {
+	for dy := -1; dy <= 1; dy++ {
+		for dx := -1; dx <= 1; dx++ {
+			if l.EntityAt(p.X+dx, p.Y+dy) != nil {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// findOpen looks for a walkable cell with nobody on or next to it.
+//
+// Two passes: the first insists on the elbow room, the second takes any free
+// tile. A cramped interior with more people than corners still gets everybody
+// placed — it just stops being the first answer rather than the only one.
 func findOpen(g *core.RNG, l *LocalMap, tries int) (core.Point, bool) {
-	for i := 0; i < tries; i++ {
-		p := core.Point{X: g.Between(1, l.W-2), Y: g.Between(1, l.H-2)}
-		if l.At(p.X, p.Y).Info().Passable && l.EntityAt(p.X, p.Y) == nil {
+	for pass := 0; pass < 2; pass++ {
+		for i := 0; i < tries; i++ {
+			p := core.Point{X: g.Between(1, l.W-2), Y: g.Between(1, l.H-2)}
+			if !l.At(p.X, p.Y).Info().Passable || l.EntityAt(p.X, p.Y) != nil {
+				continue
+			}
+			if pass == 0 && !elbowRoom(l, p) {
+				continue
+			}
 			return p, true
 		}
 	}
@@ -615,9 +650,17 @@ func findOpen(g *core.RNG, l *LocalMap, tries int) (core.Point, bool) {
 // openNear finds a free walkable tile within radius of at, searching outward
 // so the result hugs the anchor. Used to stand someone beside a door rather
 // than at a random address in the same town.
-func openNear(g *core.RNG, l *LocalMap, at core.Point, radius int) (core.Point, bool) {
-	for r := 1; r <= radius; r++ {
+// The minimum is what keeps somebody standing *beside* the anchor rather than
+// inside them: at four tiles tall, a person one square from the innkeeper is
+// drawn almost entirely over the innkeeper, and the hireling loitering outside
+// the inn was doing exactly that in a third of all towns.
+func openNear(g *core.RNG, l *LocalMap, at core.Point, min, radius int) (core.Point, bool) {
+	if min < 1 {
+		min = 1
+	}
+	for r := min; r <= radius; r++ {
 		var ring []core.Point
+		var roomy []core.Point
 		for dy := -r; dy <= r; dy++ {
 			for dx := -r; dx <= r; dx++ {
 				if core.Abs(dx) != r && core.Abs(dy) != r {
@@ -629,8 +672,17 @@ func openNear(g *core.RNG, l *LocalMap, at core.Point, radius int) (core.Point, 
 				}
 				if l.At(p.X, p.Y).Info().Passable && l.EntityAt(p.X, p.Y) == nil {
 					ring = append(ring, p)
+					if elbowRoom(l, p) {
+						roomy = append(roomy, p)
+					}
 				}
 			}
+		}
+		// Prefer a spot nobody is already standing beside, but do not walk
+		// further from the anchor to get one: being beside the door is the
+		// point of this function.
+		if len(roomy) > 0 {
+			return core.Pick(g, roomy), true
 		}
 		if len(ring) > 0 {
 			return core.Pick(g, ring), true

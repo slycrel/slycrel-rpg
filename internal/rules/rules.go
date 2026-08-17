@@ -42,8 +42,24 @@ func NewCharacter(g *core.RNG, name string, class model.Class) *model.Character 
 		Name:  name,
 		Class: class,
 		Level: 1,
-		Coins: int64(g.Between(15, 40)),
+		// Enough to walk into the first shop and leave with something.
+		//
+		// It was 15 to 40, against 66 for the best weapon and coat of the first
+		// band — so a new character could not reach the loadout every section
+		// of the balance report calls "on curve", and mostly could not afford
+		// either half of it. Being under-equipped on the first morning is the
+		// intended shape; being unable to do anything about it is not.
+		Coins: int64(g.Between(45, 95)),
 	}
+	// Everybody starts ten hit points better off than the class rolls suggest.
+	//
+	// Level one is where the hit point pool is smallest and the tools to
+	// protect it are fewest, so the same unlucky opening exchange that costs a
+	// level-five character a quarter of their health ends the run at level one.
+	// The flat ten is deliberately not a percentage: it is worth a great deal
+	// at the start and rounds to nothing by the time it stops being needed.
+	const startingCushion = 10
+
 	switch class {
 	case model.ClassFighter:
 		c.MaxHP = g.Between(18, 24)
@@ -64,6 +80,7 @@ func NewCharacter(g *core.RNG, name string, class model.Class) *model.Character 
 		c.Speed = g.Between(6, 10)
 		c.MaxPsyche = g.Between(8, 12)
 	}
+	c.MaxHP += startingCushion
 	c.HP = c.MaxHP
 	c.Psyche = c.MaxPsyche
 	c.Honor = g.Between(0, 3)

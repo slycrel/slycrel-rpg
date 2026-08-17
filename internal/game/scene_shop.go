@@ -3,6 +3,7 @@ package game
 import (
 	"fmt"
 	"image/color"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -271,6 +272,61 @@ func (s *shopScene) sell(g *Game, mi ui.MenuItem) {
 	s.note = fmt.Sprintf("%s, for %d. The shopkeeper does not meet your eye.", it.Name, price)
 }
 
+// shopDescribe renders one line of what a piece of stock is for.
+//
+// Numbers first, then the flavour: "what does it do" is the question being
+// asked at a counter, and the joke in the name has already been read by the
+// time anybody looks down here.
+func shopDescribe(data any) string {
+	switch v := data.(type) {
+	case model.Weapon:
+		return fmt.Sprintf("Strike %d. %s", v.Strike, bonusWords(v.Affix))
+	case model.Armor:
+		return fmt.Sprintf("Guard %d. %s", v.Defense, bonusWords(v.Affix))
+	case model.Shield:
+		out := fmt.Sprintf("Guard %d on the off arm.", v.Defense)
+		if v.Extra != nil {
+			out += " " + statWords(*v.Extra)
+		}
+		return out
+	case model.Charm:
+		out := statWords(v.Bonus)
+		if v.Desc != "" {
+			out += "  " + v.Desc
+		}
+		return out
+	case model.Item:
+		return v.Desc
+	}
+	return ""
+}
+
+func bonusWords(a *model.Affix) string {
+	if a == nil {
+		return ""
+	}
+	return statWords(a.Bonus)
+}
+
+// statWords turns a bundle of modifiers into something readable, keeping the
+// signs so a trade reads as a trade.
+func statWords(b model.Bonus) string {
+	parts := make([]string, 0, 7)
+	for _, f := range []struct {
+		n string
+		v int
+	}{
+		{"strike", b.Strike}, {"guard", b.Defense}, {"str", b.Strength},
+		{"dex", b.Dexterity}, {"spd", b.Speed}, {"psyche", b.Psyche},
+		{"ward", b.Ward},
+	} {
+		if f.v != 0 {
+			parts = append(parts, fmt.Sprintf("%+d %s", f.v, f.n))
+		}
+	}
+	return strings.Join(parts, ", ")
+}
+
 func (s *shopScene) Draw(g *Game, dst *ebiten.Image) {
 	if s.under != nil {
 		s.under.Draw(g, dst)
@@ -298,6 +354,25 @@ func (s *shopScene) Draw(g *Game, dst *ebiten.Image) {
 	render.Rect(dst, 30, 44, render.ScreenW-60, 1, render.ColInkFaint)
 
 	s.menu.Draw(dst, 40, 52, render.ScreenW-80)
+
+	// What the highlighted thing actually is, live as the cursor moves.
+	//
+	// The list was a column of names and a column of prices, so the only way to
+	// find out what any of it did was to buy it and read the sheet afterwards.
+	// A shop that cannot answer "what is this" is a shop you buy the cheapest
+	// thing in.
+	if s.note == "" {
+		if it, ok := s.menu.Selected(); ok {
+			if d := shopDescribe(it.Data); d != "" {
+				for i, ln := range render.Wrap(d, render.ScreenW-80) {
+					if i > 1 {
+						break
+					}
+					render.Text(dst, ln, 34, 176+float64(i)*render.LineH, render.ColInk)
+				}
+			}
+		}
+	}
 
 	if s.note != "" {
 		for i, ln := range render.Wrap(s.note, render.ScreenW-80) {

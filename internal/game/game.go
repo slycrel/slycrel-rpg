@@ -80,6 +80,11 @@ type Game struct {
 	// deferred ending come up again there rather than on the road.
 	remindEndings bool
 
+	// pendingFind is equipment a defeated creature was carrying, held until the
+	// battle screen is gone. Offering it during the fight would put a prompt
+	// over a screen that is still reading out the spoils.
+	pendingFind *find
+
 	// Steps since the last encounter, so fights cannot chain immediately.
 	sinceFight int
 

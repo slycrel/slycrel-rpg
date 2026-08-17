@@ -188,3 +188,34 @@ func TestOneErrandPerSettlement(t *testing.T) {
 		t.Error("a closed errand is still counted as outstanding")
 	}
 }
+
+// An errand is a thing one particular person asked you for, and the person is
+// half of it. Looking up by settlement alone meant every townsperson recited
+// the nag line for a job they had not given you — so after taking one, the
+// whole town had nothing else to say — and every townsperson would accept the
+// hand-in, so it never sent you back to anybody.
+func TestAnErrandBelongsToWhoeverAskedForIt(t *testing.T) {
+	l := &quest.Log{}
+	mine := &quest.Quest{Kind: quest.Cull, State: quest.Active, GiverPOI: 3, Giver: "Ilsabet", Need: 2}
+	l.Add(mine)
+
+	if got := l.From(3, "Ilsabet"); got != mine {
+		t.Error("the person who asked cannot find their own errand")
+	}
+	if got := l.From(3, "Somebody Else"); got != nil {
+		t.Errorf("a bystander in the same town is holding %q", got.Title)
+	}
+	if got := l.From(4, "Ilsabet"); got != nil {
+		t.Error("the same name in a different town matched")
+	}
+
+	// The settlement-level question still has to work, because it is what caps
+	// a town at one errand.
+	if !l.HasFrom(3) {
+		t.Error("the town with an outstanding errand does not report one")
+	}
+	l.Close(mine)
+	if l.From(3, "Ilsabet") != nil || l.HasFrom(3) {
+		t.Error("a closed errand is still being offered")
+	}
+}

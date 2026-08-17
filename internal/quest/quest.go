@@ -315,6 +315,23 @@ func (l *Log) Active() []*Quest {
 // many an NPC will pile on.
 func (l *Log) CountActive() int { return len(l.Active()) }
 
+// From returns the errand this particular person at this particular place gave
+// you, if any.
+//
+// The person matters as much as the place. Looking up by settlement alone meant
+// every townsperson nagged you about an errand they had not given you, and
+// every townsperson would accept the hand-in for it — so the one thing a quest
+// asks of you socially, going back to the person who asked, was not being asked
+// at all.
+func (l *Log) From(poiIdx int, giver string) *Quest {
+	for _, q := range l.Active() {
+		if q.GiverPOI == poiIdx && q.Giver == giver {
+			return q
+		}
+	}
+	return nil
+}
+
 // HasFrom reports whether this location has already given out an errand still
 // in hand, so one town does not become a queue.
 func (l *Log) HasFrom(poiIdx int) bool {

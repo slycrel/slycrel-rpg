@@ -290,7 +290,12 @@ func (g *Game) rollAffixedGear() (find, bool) {
 	if g.Local == nil || !g.RNG.Chance(0.28) {
 		return find{}, false
 	}
-	tier := core.Clamp(1+g.Local.POI.Level/3, 1, 5)
+	return g.rollAffixedGearOfTier(core.Clamp(1+g.Local.POI.Level/3, 1, 5))
+}
+
+// rollAffixedGearOfTier is the same roll banded to an explicit tier, so a
+// creature can leave something behind as well as a chest.
+func (g *Game) rollAffixedGearOfTier(tier int) (find, bool) {
 	affix, ok := g.Data.PickAffix(g.RNG, tier)
 	if !ok {
 		return find{}, false

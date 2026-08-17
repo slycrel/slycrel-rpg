@@ -23,23 +23,27 @@ func (g *Game) talkTo(e *world.Entity) {
 	}
 	g.Quests.SyncFetch(g.Player.Bag)
 
-	if ready := g.Quests.ReadyAt(poiIdx); len(ready) > 0 {
-		g.offerTurnIn(e, ready[0])
+	// The person who asked is the person you report back to.
+	//
+	// This used to key off the settlement alone, which had two consequences and
+	// both were wrong. Any townsperson would accept the hand-in, so the errand
+	// never sent you back to anybody. And any townsperson would recite the nag
+	// line for an errand they had not given you, so after taking one job the
+	// whole town had nothing else to say.
+	if q := g.Quests.From(poiIdx, e.Name); q != nil {
+		if q.Complete() {
+			g.offerTurnIn(e, q)
+		} else {
+			g.Say(e.Name, q.Nag)
+		}
 		return
 	}
 
 	// One errand per settlement at a time, so a town is a place rather than a
-	// queue, and only some people have anything to ask.
-	if g.Quests.HasFrom(poiIdx) {
-		for _, q := range g.Quests.Active() {
-			if q.GiverPOI == poiIdx {
-				g.Say(e.Name, q.Nag)
-				return
-			}
-		}
-	}
-
-	if g.Quests.CountActive() < maxActiveQuests && g.wantsToAsk(e, poiIdx) {
+	// queue, and only some people have anything to ask. Everybody else has
+	// their own line, which is the whole reason they have one.
+	if !g.Quests.HasFrom(poiIdx) && g.Quests.CountActive() < maxActiveQuests &&
+		g.wantsToAsk(e, poiIdx) {
 		if q, ok := quest.Generate(g.RNG, g.World, g.Data, g.Write, poiIdx, e.Name); ok {
 			g.offerQuest(e, q)
 			return
