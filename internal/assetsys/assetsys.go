@@ -22,6 +22,7 @@ import (
 	_ "image/png"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -163,6 +164,23 @@ func (r *Registry) Has(key string) bool {
 	}
 	_, err := os.Stat(filepath.Join(root, e.File))
 	return err == nil
+}
+
+// Keys lists every key the manifest declares, sorted.
+//
+// For the audit and the tests that check coverage in the other direction: not
+// "is everything the game names present", which Has answers, but "is everything
+// present actually named by anything", which is how art gets extracted, counted
+// and never drawn.
+func (r *Registry) Keys() []string {
+	r.mu.RLock()
+	out := make([]string, 0, len(r.man))
+	for k := range r.man {
+		out = append(out, k)
+	}
+	r.mu.RUnlock()
+	sort.Strings(out)
+	return out
 }
 
 // Count returns how many keys the manifest declares.

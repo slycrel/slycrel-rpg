@@ -2925,6 +2925,108 @@
       "frameH": 32
     },
     {
+      "key": "vfx/bolt",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Electricity/ElectricLighting1.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "vfx/boom",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Explosion/Explosion_03.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "vfx/burn",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Fire/FireFlamme.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "vfx/cross",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Holy/HolyCross.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "vfx/drain",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Void/VoidBlackHole.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "vfx/fire",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Fire/FireExplosion1.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "vfx/holy",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Holy/HolyBlessing.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "vfx/ice",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Ice/IceSpike.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "vfx/poison",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Earth/EarthGrow.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "vfx/rock",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Earth/EarthRock.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "vfx/shock",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Electricity/ElectricExplosion.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "vfx/slash_a",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Attack Slash/Slash_attack_002.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "vfx/slash_b",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Attack Slash/Slash_attack_005.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "vfx/slash_c",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Attack Slash/Slash_attack_007.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "vfx/void",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Void/VoidExplosion1.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "vfx/wind",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Wind/WindGust.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "vfx/wings",
+      "file": "assets-raw/pixelartrpgvfx/Pixel Art RPG VFX - AfGameAssets - V3/Holy/HolyWings.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
       "key": "weather/rain_heavy",
       "file": "assets-raw/manaseedpixelarttilesetcollection/20.07b - Weather Effects/packaged/weather effects, rain heavy anim 32x128.png",
       "frameW": 32,

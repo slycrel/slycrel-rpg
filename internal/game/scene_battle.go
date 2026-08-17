@@ -87,6 +87,12 @@ type battleScene struct {
 	// answer land harder for the rest of the round. Cleared when the round is.
 	feintFailed bool
 
+	// bursts are the combat effects currently playing. Screen-positioned and
+	// self-retiring; nothing else in the scene reads them.
+	bursts []burst
+	// swings counts weapon blows, only so the slash art cycles.
+	swings int
+
 	// result is 0 running, 1 victory, 2 defeat, 3 fled, 4 the hero went down
 	// but the company did not.
 	result   int
@@ -313,6 +319,7 @@ func (b *battleScene) firstLiving() int {
 
 func (b *battleScene) Update(g *Game) error {
 	b.cam.Update()
+	b.retireBursts(g)
 	for i := range b.hurt {
 		if b.hurt[i] > 0 {
 			b.hurt[i]--
@@ -813,6 +820,10 @@ func (b *battleScene) playerAttack(g *Game, p *model.Character, idx int) {
 	dmg, crit := sw.Damage, sw.Crit
 
 	b.damageMonster(g, idx, dmg)
+	// The swing lands where it lands. Played here rather than inside
+	// damageMonster because that is also where a spell's damage goes, and a
+	// fireball should not come with a sword slash behind it.
+	b.playOnMonster(g, idx, b.nextSlash())
 	if crit {
 		g.Sound.Play("fight/crit")
 		b.cam.Shake(3)
@@ -883,6 +894,7 @@ func (b *battleScene) castOnParty(g *Game, c cast) {
 			continue
 		}
 		fx, fy := b.memberFloat(t)
+		b.playOnAlly(g, t, vfxForSpell(s))
 		switch s.Kind {
 		case model.SpellHeal:
 			if !t.Alive() {
@@ -937,6 +949,11 @@ func (b *battleScene) castOnFoes(g *Game, c cast) {
 
 	apply := func(i int) {
 		m := b.mons[i]
+		// One burst per target, before the arithmetic. A technique aimed at
+		// everything should look like it reached everything, which is the one
+		// thing the transcript is worst at saying — three lines of "takes 6"
+		// read as three separate events.
+		b.playOnMonster(g, i, vfxForSpell(s))
 		switch s.Kind {
 		case model.SpellDamage:
 			// Ward is what the target has instead of armour against this, and
@@ -1153,6 +1170,11 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 	}
 	tgt.HP = core.Max(0, tgt.HP-dmg)
 	g.Sound.Play("fight/hurt")
+	// A claw landing on your own row, small. The party panel is where a player
+	// watches their own health, so this is the half of the fight that most
+	// needed somewhere to point: the transcript names who was hit, and by the
+	// time it is read the number has already moved.
+	b.playOnAlly(g, tgt, b.nextSlash())
 	b.partyHurt[tgt] = 14
 	b.cam.Shake(float64(dmg) / 6)
 	fx, fy := b.memberFloat(tgt)
@@ -1597,6 +1619,9 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		render.TextCenter(dst, render.Trunc(m.Name, slotW-6), cx, top+94, nameCol)
 	}
 
+	// Effects over the portraits, under everything with a number on it.
+	b.drawBursts(g, dst, false)
+
 	// Transcript.
 	ui.TitledPanel(dst, "", 8, 136, render.ScreenW-16, 64)
 	b.log.Draw(dst, 16, 142, 4)
@@ -1606,6 +1631,10 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 	if b.mode == modeAllyPick {
 		b.drawAllyCursor(g, dst)
 	}
+
+	// The effects that land on the party panel, which has just been drawn over
+	// where they are.
+	b.drawBursts(g, dst, true)
 
 	// Command panel.
 	title := map[battleMode]string{

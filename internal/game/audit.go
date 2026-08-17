@@ -42,6 +42,11 @@ func (g *Game) Audit(w io.Writer) error {
 	for _, key := range g.heroFaces() {
 		check(key, "hero portrait")
 	}
+	// Combat effects, enumerated from the same tables the game plays them out
+	// of, so a key can never be in one and not the other.
+	for _, key := range vfxKeys(g.Data.Spells) {
+		check(key, "combat effect")
+	}
 	// Weather. Four sheets, and a missing one is a screen full of magenta
 	// rather than a quiet fallback, because they are drawn over everything.
 	for _, sheets := range fallSheets {

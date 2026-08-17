@@ -181,6 +181,34 @@ func buildManifest() error {
 		add(f.key, filepath.Join(weather, f.file), 32, 128)
 	}
 
+	// Combat effects. Every sheet in the pack is 64x384 — six 64x64 frames
+	// stacked vertically — which the loader slices row-major into exactly the
+	// animation order. Only the ones something actually plays are listed;
+	// naming all 115 would put a hundred keys in the audit that nothing reads.
+	vfx := filepath.Join(rawRoot, "pixelartrpgvfx",
+		"Pixel Art RPG VFX - AfGameAssets - V3")
+	for _, f := range []struct{ key, dir, file string }{
+		{"vfx/slash_a", "Attack Slash", "Slash_attack_002"},
+		{"vfx/slash_b", "Attack Slash", "Slash_attack_005"},
+		{"vfx/slash_c", "Attack Slash", "Slash_attack_007"},
+		{"vfx/fire", "Fire", "FireExplosion1"},
+		{"vfx/burn", "Fire", "FireFlamme"},
+		{"vfx/ice", "Ice", "IceSpike"},
+		{"vfx/shock", "Electricity", "ElectricExplosion"},
+		{"vfx/bolt", "Electricity", "ElectricLighting1"},
+		{"vfx/holy", "Holy", "HolyBlessing"},
+		{"vfx/wings", "Holy", "HolyWings"},
+		{"vfx/cross", "Holy", "HolyCross"},
+		{"vfx/void", "Void", "VoidExplosion1"},
+		{"vfx/drain", "Void", "VoidBlackHole"},
+		{"vfx/wind", "Wind", "WindGust"},
+		{"vfx/poison", "Earth", "EarthGrow"},
+		{"vfx/rock", "Earth", "EarthRock"},
+		{"vfx/boom", "Explosion", "Explosion_03"},
+	} {
+		add(f.key, filepath.Join(vfx, f.dir, f.file+".png"), 64, 64)
+	}
+
 	// Interior clutter.
 	add("prop/cozy16", filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
 		"19.04b - Cozy Furnishings", "packaged", "cozy furnishings 16x16.png"), 16, 16)

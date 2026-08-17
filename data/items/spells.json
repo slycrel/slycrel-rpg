@@ -9,7 +9,8 @@
     "kind": "damage",
     "target": "one",
     "cast": "{A} points, rudely. Something arcs.",
-    "icon": "icon/rune/3"
+    "icon": "icon/rune/3",
+    "vfx": "vfx/bolt"
   },
   {
     "id": "mend",
@@ -57,7 +58,8 @@
     "kind": "damage",
     "target": "all",
     "cast": "{A} sets a reasonable amount of the world on fire.",
-    "icon": "icon/rune/29"
+    "icon": "icon/rune/29",
+    "vfx": "vfx/fire"
   },
   {
     "id": "unmake",
@@ -69,7 +71,8 @@
     "kind": "damage",
     "target": "one",
     "cast": "{A} says a word that should not fit in a mouth.",
-    "icon": "icon/rune/36"
+    "icon": "icon/rune/36",
+    "vfx": "vfx/void"
   },
   {
     "id": "lunge",
@@ -129,7 +132,8 @@
     "kind": "damage",
     "target": "one",
     "cast": "{A} winds up. Everyone present understands what is about to happen.",
-    "icon": "icon/rune/62"
+    "icon": "icon/rune/62",
+    "vfx": "vfx/rock"
   },
   {
     "id": "backstab",
@@ -261,7 +265,8 @@
     "kind": "drain",
     "target": "one",
     "cast": "{A} takes some warmth back, having been owed it for years.",
-    "icon": "icon/rune/31"
+    "icon": "icon/rune/31",
+    "vfx": "vfx/ice"
   },
   {
     "id": "badbargain",

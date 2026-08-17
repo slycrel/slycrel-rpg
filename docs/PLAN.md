@@ -703,7 +703,51 @@ than a system.
     a per-row ramp now.
 
     The lesson worth keeping is in CLAUDE.md so nobody runs the survey twice.
-11. Title screen art, transitions, particles from the 115-file VFX pack.
+11. ~~**Title screen art, transitions, particles from the 115-file VFX pack.**~~
+    *(Effects built; the title landed with the art pass above.)*
+
+    Unlike the GUI kits, this pack is what it says: pixel art, at this game's
+    scale. Every sheet is 64x384 — six 64x64 frames stacked vertically — which
+    is exactly a portrait slot, and the loader already slices sheets row-major.
+    Seventeen of the 115 are extracted, being the ones something actually
+    plays; naming all of them would put a hundred keys in the audit that
+    nothing reads.
+
+    A burst plays where a blow lands. That is the whole feature and it is
+    deliberately not a mechanic — nothing in `rules` reads it, no number
+    changes, and deleting the file would not alter how the game plays. What it
+    adds is the one thing the transcript is worst at: **where**. With three
+    monsters on screen, "Bosk hits the Overfamiliar Spider" is a sentence you
+    have to read, and a burst on the middle portrait is not.
+
+    The effect comes off the technique's *kind* by default, with `Spell.VFX`
+    able to override it — the table carries the rule and the data carries the
+    exceptions, the same split the rest of the content follows. Five techniques
+    take an override because they have a character their kind cannot know
+    about: spark is lightning, scorch is fire, unmake is void, haymaker is a
+    rock, cold comfort is ice.
+
+    Three things worth keeping:
+
+    - **`SpellDamage` first mapped to the electric explosion, which is four
+      thin cyan strokes on a transparent field with two blank frames at the
+      front.** The commonest technique in the game played nothing anybody could
+      see. Caught off a captured frame, which is the only way to check art.
+    - **Party-side bursts were drawn and then painted over.** They land on the
+      party panel, so drawing them in the same pass as the monsters' put them
+      underneath the thing they were aimed at. There are two passes now, and
+      retirement moved out of `Draw` — a draw that rewrites the scene's state
+      is a draw nobody can call twice, and this one is called twice.
+    - **The slash art cycles on a counter, not a roll.** Drawing from the
+      shared generator to pick something purely cosmetic would move every
+      damage roll after it, so a build with effects and one without would play
+      the same seed differently — for a decision the player cannot see the
+      result of.
+
+    `TestEveryCombatEffectIsPlayedBySomething` checks coverage in both
+    directions. The audit already catches a key with no art; this catches art
+    with no key, which is the quieter failure — a file extracted, counted in
+    the audit's total, and never once reaching the screen. It caught five.
 12. Balance simulation: run 10,000 headless fights per level band against the
    pure `rules` package and tune the curve.
 

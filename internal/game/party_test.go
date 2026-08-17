@@ -1,6 +1,7 @@
 package game
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/slycrel/slycrel-rpg/internal/assetsys"
@@ -648,6 +649,50 @@ func TestATownOffersOneStoryAtATime(t *testing.T) {
 
 		if got := g.runningResidents(); got > residentCap {
 			t.Errorf("seed %d: %d resident stories running at once, cap is %d", seed, got, residentCap)
+		}
+	}
+}
+
+// Every combat effect extracted into the manifest has to be played by
+// something, and everything played has to be in the manifest.
+//
+// Both directions, because they fail differently and neither is visible in
+// play. Art nothing plays is a key in the audit's count, a file in the manifest
+// and a decision somebody made that never reached the screen — the same waste
+// as a thread skeleton that can never be cast. A key nothing extracted is a
+// magenta box in the middle of a fight.
+//
+// The audit catches the second on its own. This catches the first, and it
+// caught five: fire, ice, bolt, void and rock were extracted for their
+// distinctiveness and then not reached by the kind table, which had one
+// sensible default per kind and no way to say "this technique is different".
+func TestEveryCombatEffectIsPlayedBySomething(t *testing.T) {
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Skipf("no data directory: %v", err)
+	}
+	tables, err := gamedata.Load(root)
+	if err != nil {
+		t.Fatalf("loading content: %v", err)
+	}
+	reg := assetsys.New(root)
+
+	played := map[string]bool{}
+	for _, k := range vfxKeys(tables.Spells) {
+		played[k] = true
+		if !reg.Has(k) {
+			t.Errorf("something plays %q, which is not in the manifest", k)
+		}
+	}
+
+	// The manifest is the source of what was extracted, so the unused set is
+	// read off it rather than from a second list that could drift.
+	for _, k := range reg.Keys() {
+		if !strings.HasPrefix(k, "vfx/") {
+			continue
+		}
+		if !played[k] {
+			t.Errorf("%q was extracted and nothing ever plays it", k)
 		}
 	}
 }

@@ -63,7 +63,12 @@ type Spell struct {
 	// most of the reason to take a part-monster on in the first place.
 	Blood MonsterKind `json:"blood,omitempty"`
 	Icon  string      `json:"icon"`
-	Cast  string      `json:"cast"` // flavor line, "%s" takes the caster name
+	// VFX names the effect played where the technique lands, overriding the
+	// default for its kind. Optional, and left empty for most: the kind is
+	// right nearly always, and a per-spell key is one more art name to keep in
+	// step with a manifest.
+	VFX  string `json:"vfx,omitempty"`
+	Cast string `json:"cast"` // flavor line, "%s" takes the caster name
 }
 
 // Known reports whether c has access to this spell.
