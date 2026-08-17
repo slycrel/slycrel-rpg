@@ -57,7 +57,21 @@ func buildDemoSteps() []demoStep {
 	return []demoStep{
 		{at: 10, shot: "01-title"},
 
-		{at: 20, do: func(g *Game) {
+		// Both halves of character creation. It was never in the tour, which
+		// was defensible while it was one screen the player skims once; it is
+		// two now, and one of them is the only place in the game where art is
+		// chosen rather than issued.
+		{at: 13, do: func(g *Game) { g.Push(newCreateScene(g)) }},
+		{at: 16, shot: "01b-who"},
+		{at: 19, do: func(g *Game) {
+			if c, ok := g.Top().(*createScene); ok {
+				c.step = 1
+			}
+		}},
+		{at: 22, shot: "01c-what"},
+		{at: 25, do: func(g *Game) { g.dropOverlays() }},
+
+		{at: 28, do: func(g *Game) {
 			g.startRun(rules.NewCharacter(g.RNG, "Bosk", model.ClassFighter),
 				"Bosk", "the Regrettable")
 			g.dropOverlays() // startRun opens a welcome box; not wanted in the shot

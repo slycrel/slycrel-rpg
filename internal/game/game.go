@@ -98,6 +98,10 @@ type Game struct {
 	// Scripted capture mode; nil in normal play.
 	demo        *demoScript
 	pendingShot string
+
+	// faces caches the portrait roster the creation screen offers, which is
+	// probed against the registry rather than listed. See heroFaces.
+	faces []string
 }
 
 // New builds a game with content loaded but no character yet.

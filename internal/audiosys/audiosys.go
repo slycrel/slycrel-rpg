@@ -172,7 +172,15 @@ func (b *Bank) Verify() []error {
 func (b *Bank) Silence() { b.off = true; b.Ambience("") }
 
 // Enabled reports whether anything will actually be heard.
-func (b *Bank) Enabled() bool { return !b.off && !b.settings.Muted && b.settings.Volume > 0 }
+//
+// A nil bank is silent rather than fatal. Headless callers — the tests, and
+// anything driving the game without an audio device — build a Game without one,
+// and every cue in the program runs through here, so the alternative is either
+// a nil check at several hundred call sites or a panic the first time a scene
+// makes a noise.
+func (b *Bank) Enabled() bool {
+	return b != nil && !b.off && !b.settings.Muted && b.settings.Volume > 0
+}
 
 // Muted reports the user's mute preference.
 func (b *Bank) Muted() bool { return b.settings.Muted }

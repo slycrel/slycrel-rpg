@@ -28,12 +28,26 @@ func (g *Game) Audit(w io.Writer) error {
 			check(d.Sprite, biome+"/"+d.ID)
 		}
 	}
-	for _, class := range []string{"fighter", "thief", "mage"} {
+	// Every sheet the creation screen offers, not the three the classes used to
+	// be issued. A look the player can pick and the audit does not check is a
+	// look that gets shipped as a magenta box.
+	for _, l := range heroLooks {
 		for _, anim := range []string{"idle", "up", "down", "left", "right"} {
-			check("hero/"+class+"/"+anim, "player sprite")
+			check(l.Key+"/"+anim, "player sprite")
 		}
 	}
-	check("portrait/male/m_01", "battle portrait")
+	// The face roster is probed against the registry as it is built, so these
+	// cannot be missing by construction — checking them anyway is what makes
+	// the count in the summary honest about how much art the hero alone needs.
+	for _, key := range g.heroFaces() {
+		check(key, "hero portrait")
+	}
+	// Unconditionally, and not merely because the roster usually contains it.
+	// This is what portraitOf substitutes for anybody with no face of their own,
+	// so if the probe above ever stops finding it the roster silently shortens
+	// and the fallback silently breaks — which is the one combination that
+	// would put a magenta box on a screen with nothing to explain it.
+	check(defaultPortrait, "fallback portrait")
 
 	total := 0
 	for _, defs := range g.Data.Monsters {

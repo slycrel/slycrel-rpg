@@ -431,5 +431,5 @@ func portraitOf(c *model.Character) string {
 	if c.Portrait != "" {
 		return c.Portrait
 	}
-	return "portrait/male/m_01"
+	return defaultPortrait
 }

@@ -3,6 +3,7 @@ package game
 import (
 	"testing"
 
+	"github.com/slycrel/slycrel-rpg/internal/assetsys"
 	"github.com/slycrel/slycrel-rpg/internal/content"
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/gamedata"
@@ -413,6 +414,93 @@ func TestTheClassListIsOnlyClasses(t *testing.T) {
 		}
 		if _, ok := it.Data.(model.Class); !ok {
 			t.Errorf("row %d is %q, which is neither a class nor the way out", i, it.Label)
+		}
+	}
+}
+
+// The face and the walk sheet the player picked have to survive being handed
+// to the game.
+//
+// This is the only screen in Slycrel where art is chosen rather than issued,
+// and everything downstream of it defaults: heroSpriteKey falls back to a sheet
+// named after the class and portraitOf falls back to m_01, so a startRun that
+// blanked either field would produce a hero who looked exactly like the one the
+// player did not pick, with nothing on screen to say what happened.
+func TestTheChosenFaceAndLookSurviveStartingTheRun(t *testing.T) {
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Skipf("no data directory: %v", err)
+	}
+	tables, err := gamedata.Load(root)
+	if err != nil {
+		t.Fatalf("loading content: %v", err)
+	}
+	const seed = 4242
+	write := content.New(&tables.Text)
+	g := &Game{
+		Root: t.TempDir(), Data: tables, Write: write,
+		RNG: core.NewRNG(seed), Seed: seed, Log: ui.NewLog(20),
+	}
+
+	c := newCreateScene(g)
+	// Somewhere other than the first entry of either list, so a bug that reset
+	// to the default has something to be caught by.
+	c.lookIdx, c.faceIdx = len(heroLooks)-1, len(c.faces)-1
+	wantLook, wantFace := heroLooks[c.lookIdx].Key, c.face()
+
+	p := c.dress(c.rolled[model.ClassMage])
+	if p.Sprite != wantLook || p.Portrait != wantFace {
+		t.Fatalf("dressing gave sprite %q and portrait %q, want %q and %q",
+			p.Sprite, p.Portrait, wantLook, wantFace)
+	}
+
+	g.startRun(p, c.name, c.epithet)
+	if g.Player.Sprite != wantLook {
+		t.Errorf("the run began with sprite %q, want the chosen %q", g.Player.Sprite, wantLook)
+	}
+	if g.Player.Portrait != wantFace {
+		t.Errorf("the run began with portrait %q, want the chosen %q", g.Player.Portrait, wantFace)
+	}
+	// And the two lookups that would otherwise quietly substitute a default.
+	if got := heroSpriteKey(g.Player, core.DirDown, false); got != wantLook+"/idle" {
+		t.Errorf("the overworld draws %q, want %q", got, wantLook+"/idle")
+	}
+	if got := portraitOf(g.Player); got != wantFace {
+		t.Errorf("the battle screen draws %q, want %q", got, wantFace)
+	}
+}
+
+// Every face the creation screen offers has to be art that exists, because the
+// alternative is a player scrolling into a magenta box with their own name
+// under it. heroFaces probes the registry rather than listing keys for exactly
+// this reason; this is the assertion that the probe is doing anything.
+func TestEveryOfferedFaceIsRealArt(t *testing.T) {
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Skipf("no data directory: %v", err)
+	}
+	tables, err := gamedata.Load(root)
+	if err != nil {
+		t.Fatalf("loading content: %v", err)
+	}
+	g := &Game{
+		Root: root, Data: tables, Write: content.New(&tables.Text),
+		RNG: core.NewRNG(1), Seed: 1, Log: ui.NewLog(4),
+		Assets: assetsys.New(root),
+	}
+	faces := g.heroFaces()
+	if len(faces) < 20 {
+		t.Fatalf("the creation screen offers %d faces; the portrait packs hold far more than that", len(faces))
+	}
+	for _, key := range faces {
+		if !g.Assets.Has(key) {
+			t.Errorf("the creation screen offers %q, which is not in the manifest", key)
+		}
+	}
+	// And the walk sheets, which are listed rather than probed.
+	for _, l := range heroLooks {
+		if !g.Assets.Has(l.Key + "/idle") {
+			t.Errorf("the creation screen offers the %s look, and %s/idle is missing", l.Name, l.Key)
 		}
 	}
 }

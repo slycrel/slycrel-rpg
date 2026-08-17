@@ -26,7 +26,10 @@ the writing can be revised without touching Go.
 
 Built and running:
 
-- Title → character creation (three classes, rolled stat previews, name generator)
+- Title → character creation in two passes: who you are (name, one of ~68
+  portraits, one of four walk sheets) and then what you do (three classes,
+  rolled stat previews). The look is decoupled from the class, so a fighter can
+  walk around in robes
 - Overworld: 160×120 generated continent, fractal-noise elevation/moisture/
   temperature, island falloff, downhill rivers, ~40 points of interest placed on
   suitable terrain and spaced apart, roads connecting every settlement to the
@@ -134,7 +137,7 @@ Built and running:
   audit that reports which art keys still fall back to placeholders
 
 Deliberately not built yet: backstories for the townspeople, day/night and
-weather, and the thief's discount on healing items.
+weather.
 
 Played twice end to end. The second pass is what turned up the home region, the
 starting kit, equipment as inventory, and four separate cases of the game
@@ -353,13 +356,62 @@ than a system.
    deliberate exception: against something faster than you, `FleeChance` floors
    out and lying is the better bet. That niche is the point of the move.
 
-   **Still open, and Jeremy's:** the thief should get more out of buying
-   healing items — two for the price of one, because they steal one and pay for
-   the other. That is not a flourish, it is the right shape for the actual
-   constraint. The thief has *no* healing technique at all (the shared-looking
-   ones in `spells.json` are blood-gated hireling moves, not class-agnostic),
-   and its only sustain is two drains. Its recovery is therefore entirely
-   items, which makes a discount on them the class's real defensive stat.
+   *(Also built, and it took a second pass at what "fleeing pays nothing" meant.)*
+   The feint answered the thief's half. It did not answer the plainer version
+   of the same complaint, which came back from play as "monsters running away
+   is lame at levels 1-3" — and the lameness was never that they ran, it was
+   that a *routed monster paid nothing*. Something only bolts below fifteen
+   percent health, so by then the player has done nearly all of the work, and
+   at levels one to three an encounter is one or two creatures, so the whole
+   thing could evaporate on a coin flip the player had no part in.
+
+   A routed monster now pays: coins in full, because something running is not
+   stopping to pick anything up, and half the experience, because you did not
+   finish it. The drop table stays on kills — a runner is wearing what it was
+   wearing. And the last one standing bolts at a third of the usual rate, on
+   the grounds that it has nobody left to run behind. That last part is the
+   half the simulator can see, and it moved: win rates fall by up to two and a
+   half points at the top of the table, which is monsters that would have left
+   now staying and swinging.
+
+   `model.Monster.Dead` already meant "out of the fight" and was being read as
+   "killed", which is exactly why a runner was worth nothing. It has `Fled`
+   beside it now.
+
+   **Jeremy's two-for-one is built.** The thief pays for one restorative and
+   leaves with two — heal, revive and cure, not the whole shelf. That is not a
+   flourish, it is the right shape for the actual constraint: the thief has
+   *no* healing technique at all (the shared-looking ones in `spells.json` are
+   blood-gated hireling moves, not class-agnostic), its only sustain is two
+   drains, and its recovery is therefore entirely items. A discount on them is
+   the class's real defensive stat.
+
+   His framing beat the version this would otherwise have shipped as. A
+   percentage off the sticker is a number nobody notices; walking out with two
+   is a thing you watch happen. It is quoted in the shop row *before* the
+   purchase — "36 for two" where everybody else reads "36" — because a perk the
+   game will not talk about is a perk nobody knows they have.
+
+   The second half is the two features meeting: a thief also gets the drop
+   table off the creatures that *ran*, on the grounds that something turning to
+   run past you is least careful about what it is holding. What that does to
+   the game is better than the loot is — a fight that ends with the last thing
+   bolting is a disappointment to everybody else and a payday to the thief.
+   Compensating a class by changing how it reads an event beats adding a number
+   to it.
+
+   Neither perk is a new attack, which is Jeremy's framing and the right one:
+   the interesting thief is "the monster cannot hurt you if it is not there",
+   not "the thief also hits hard".
+
+   `cmd/balance` grew a SUPPLIES section, because this one lives entirely on
+   the buying side where the fight simulator cannot see it — ENDURANCE says "no
+   potions" in its own header, and teaching `SimulateFight` to drink would
+   re-tune every endurance number in the report to answer a question about
+   prices. So it is measured where it happens: cost per point of effect, with
+   and without the thief. The psyche and buff rows are identical in both
+   columns, which is the table saying out loud that the perk is sustain rather
+   than shopping.
 
 6. **Day/night and weather.** The tileset collection includes a weather-effects
    pack. Changes encounter tables and which NPCs are out.
@@ -469,6 +521,45 @@ than a system.
    - The selected row in every menu was losing the bottom two pixels of every
      letter off the bottom of the highlight bar. See the commit; I got that one
      wrong twice before measuring it.
+
+   **Second pass: character creation is two screens.** *(Jeremy's, and his own
+   structure: "maybe split that into 2 sections, name + portrait + avatar, then
+   stats?")* One screen used to carry all of it, and it was at its limit before
+   the portrait and the walk sheet were choices at all — up and down picked a
+   class, left rerolled the numbers, right rerolled a name, and each of those
+   needed a footer line that read like a keyboard shortcut list.
+
+   Now: *who you are* (name, one of ~68 portraits, one of four walk sheets),
+   then *what you do* (class and the throw behind it). Up and down pick a
+   field, left and right change the one you are on, and each row carries what
+   it is currently holding in its detail column — so which arrow does what is
+   answered by looking rather than by remembering. The face gets a filmstrip of
+   its five neighbours under it, because cycling one at a time through
+   sixty-eight faces with only a counter to say where you are is the kind of
+   control that gets used twice and then held down.
+
+   The look is decoupled from the class, which is the substantive half. Three
+   of the four walk sheets used to be unreachable to a player who wanted the
+   class the fourth one came with; a fighter can now walk around in robes.
+   `model.Sprite` and `model.Portrait` already existed as overrides — hirelings
+   have been setting them since the party landed — so the hero picking them
+   needed no new state, only a screen.
+
+   The face roster is *probed* against the asset registry rather than listed,
+   because a hard-coded roster of 68 art keys is 68 chances to name something
+   that is not there, and the manifest is generated from whatever happened to
+   be extracted. The audit checks all four sheets and every offered face now
+   (154 keys, up from 82), plus the fallback portrait unconditionally: a
+   fallback that is only checked because the roster usually contains it is a
+   fallback that can break silently.
+
+   `-demo` grew two frames for these, which is the tour doing its job rather
+   than drifting — creation was never captured, and one of the two screens is
+   the only place in the game where art is chosen rather than issued.
+
+   One thing fell out: `audiosys.Bank.Enabled` now tolerates a nil receiver, so
+   a headless Game can run `startRun` without a panic the first time something
+   makes a noise.
 
    Add to this as things turn up; do not fix them in ones. What is left is the
    art pass below, which is a different kind of job.
