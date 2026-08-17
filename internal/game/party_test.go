@@ -10,6 +10,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
 	"github.com/slycrel/slycrel-rpg/internal/save"
+	"github.com/slycrel/slycrel-rpg/internal/sky"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
@@ -75,6 +76,9 @@ func TestPartySurvivesASaveAndLoad(t *testing.T) {
 	}
 	g.Walk.Place(g.World.Start)
 	g.reformLines()
+	// Mid-evening, and deliberately not on a phase boundary: a clock that came
+	// back rounded to the nearest dawn would still pass a coarser check.
+	g.Clock.Step = sky.DayLength*3 + 391
 
 	loaded := &Game{
 		Root: root, Data: tables, Write: write,
@@ -82,6 +86,18 @@ func TestPartySurvivesASaveAndLoad(t *testing.T) {
 	}
 	if err := loaded.Restore(g.Snapshot()); err != nil {
 		t.Fatalf("restoring the run: %v", err)
+	}
+
+	// The sky is not stored, only the clock it is derived from — so this one
+	// field is the whole of whether a save comes back to the same evening. An
+	// absent clock reads as the first dawn of the run, which is a fair answer
+	// for an old save and a silent bug for a new one.
+	if loaded.Clock != g.Clock {
+		t.Errorf("saved at step %d, came back at %d", g.Clock.Step, loaded.Clock.Step)
+	}
+	if loaded.Clock.Phase() != g.Clock.Phase() {
+		t.Errorf("saved in the %s, came back in the %s",
+			g.Clock.Phase().Name(), loaded.Clock.Phase().Name())
 	}
 
 	if len(loaded.Allies) != len(g.Allies) {

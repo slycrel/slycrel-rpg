@@ -12,6 +12,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/render"
+	"github.com/slycrel/slycrel-rpg/internal/sky"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
@@ -76,13 +77,15 @@ func (s *localScene) Update(g *Game) error {
 	}
 
 	if Confirm() && !g.LocalWalk.Moving() {
-		// Interact with whatever is directly ahead.
-		ahead := g.LocalWalk.Tile.Add(g.LocalWalk.Dir().Delta())
-		if e := g.Local.EntityAt(ahead.X, ahead.Y); e != nil {
+		// Interact with whatever is directly ahead — or underfoot, since a
+		// doorway is stood on rather than faced. Both go through g.ahead's rule
+		// about who has gone home, or the town would be empty to look at and
+		// full to talk to.
+		if e := g.ahead(); e != nil {
 			g.interact(e)
 			return nil
 		}
-		if e := g.Local.EntityAt(g.LocalWalk.Tile.X, g.LocalWalk.Tile.Y); e != nil {
+		if e := g.Local.EntityAt(g.LocalWalk.Tile.X, g.LocalWalk.Tile.Y); e != nil && !g.abed(e) {
 			g.interact(e)
 			return nil
 		}
@@ -102,8 +105,9 @@ func (s *localScene) Update(g *Game) error {
 func (s *localScene) tryStep(g *Game, d core.Dir) {
 	next := g.LocalWalk.Tile.Add(d.Delta())
 
-	// Walking into a blocking entity is how you engage it.
-	if e := g.Local.EntityAt(next.X, next.Y); e != nil {
+	// Walking into a blocking entity is how you engage it. Anybody abed is
+	// walked straight through, which is correct: they are not there.
+	if e := g.Local.EntityAt(next.X, next.Y); e != nil && !g.abed(e) {
 		g.LocalWalk.Face(d)
 		s.moveDelay = 8
 		switch e.Kind {
@@ -124,6 +128,9 @@ func (s *localScene) tryStep(g *Game, d core.Dir) {
 	g.localFollow.Step(from)
 	s.moveDelay = 0
 	s.steps++
+	// Time passes indoors too. A player who could stop the clock by standing
+	// in a shop would have found the way to wait out every night in the game.
+	g.Clock.Tick(1)
 	g.sinceFight++
 
 	// Interiors have their own ambush rate; towns do not.
@@ -191,7 +198,12 @@ func (g *Game) interact(e *world.Entity) {
 			}
 			g.Player.Coins -= int64(cost)
 			g.restParty()
-			g.Say("", "You sleep like something that has stopped worrying. You wake fully restored and slightly sticky.")
+			// The bed buys the morning, which is the whole answer to night
+			// being dangerous: it is a thing you can pay to skip, and the
+			// price is already the one thing that scales with your level.
+			g.Clock.WakeAt(sky.Dawn)
+			g.Say("", "You sleep like something that has stopped worrying. "+
+				"You wake fully restored, slightly sticky, and at dawn.")
 		})
 
 	case world.EFoe, world.EBoss:
@@ -445,6 +457,9 @@ func (s *localScene) Draw(g *Game, dst *ebiten.Image) {
 		if e.Used && e.Kind != world.EExit {
 			continue
 		}
+		if g.abed(e) {
+			continue
+		}
 		drawEntity(g, ctx, e)
 	}
 
@@ -457,6 +472,11 @@ func (s *localScene) Draw(g *Game, dst *ebiten.Image) {
 	}
 	ctx.Shadow(px, py)
 	ctx.World(sp, frame, px, py, false)
+
+	// A settlement is open to the sky and a dungeon is not, so the rain stops
+	// at the door. The light still changes either way: a town at midnight is a
+	// town at midnight whether or not anything is falling on it.
+	g.drawSky(dst, g.weatherHere(), !g.Local.POI.Kind.Settlement())
 
 	s.drawHUD(g, dst)
 }
@@ -530,8 +550,7 @@ func drawEntity(g *Game, ctx *render.Ctx, e *world.Entity) {
 func (s *localScene) drawHUD(g *Game, dst *ebiten.Image) {
 	// Naming what is directly ahead means interaction is never a guess.
 	hint := "C sheet - H help"
-	ahead := g.LocalWalk.Tile.Add(g.LocalWalk.Dir().Delta())
-	if e := g.Local.EntityAt(ahead.X, ahead.Y); e != nil && !e.Used {
+	if e := g.ahead(); e != nil {
 		hint = "Z: " + e.Name
 	}
 	g.drawStatusBar(dst, g.Local.POI.Name, hint)

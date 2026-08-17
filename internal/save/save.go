@@ -24,6 +24,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
+	"github.com/slycrel/slycrel-rpg/internal/sky"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 )
 
@@ -76,6 +77,16 @@ type File struct {
 	Fog string `json:"fog"`
 
 	SinceFight int `json:"sinceFight"`
+
+	// Clock is the time of day, in steps taken. Absent in a save written before
+	// there was a sky, which reads back as the first dawn of the run — a fair
+	// answer, and the only one an old save can honestly give.
+	//
+	// The weather is deliberately not here. It is derived from the seed, this
+	// clock and the biome, so storing it would be storing a second copy of
+	// something already recoverable, with the usual consequence: a save whose
+	// recorded downpour disagrees with the world it is standing in.
+	Clock sky.Clock `json:"clock"`
 
 	// Quests are stored whole. They are a handful of indices and counters, so
 	// there is nothing to reconstruct and nothing that can drift out of step

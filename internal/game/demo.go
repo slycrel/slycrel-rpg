@@ -9,6 +9,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
+	"github.com/slycrel/slycrel-rpg/internal/sky"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
 
@@ -81,6 +82,14 @@ func buildDemoSteps() []demoStep {
 		// Walk a few tiles so the shot is not taken standing on the capital.
 		{at: 55, do: func(g *Game) { g.demoWalk(6) }},
 		{at: 75, shot: "03-overworld-wilds"},
+
+		// The same road after dark. The clock is wound forward and then slept
+		// off with WakeAt, which is exactly what a bed does — so this is the
+		// tour spending a night rather than a scenario being staged, and every
+		// frame after it is back in daylight without anything being restored.
+		{at: 78, do: func(g *Game) { g.Clock.Step += 400 }},
+		{at: 81, shot: "03b-after-dark"},
+		{at: 83, do: func(g *Game) { g.Clock.WakeAt(sky.Dawn) }},
 
 		{at: 85, do: func(g *Game) { g.Push(newMapScene(g)) }},
 		{at: 100, shot: "04-map"},

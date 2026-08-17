@@ -167,6 +167,20 @@ func buildManifest() error {
 	add("prop/desert16", filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
 		"23.03a - Desert Sands", "packaged", "desert sheets", "desert 16x16.png"), 16, 16)
 
+	// Weather. The rain and snow sheets are eight-frame animations laid out
+	// horizontally, two tiles wide and eight high, which the loader slices
+	// row-major into exactly the animation order.
+	weather := filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
+		"20.07b - Weather Effects", "packaged")
+	for _, f := range []struct{ key, file string }{
+		{"weather/rain_light", "weather effects, rain light anim 32x128.png"},
+		{"weather/rain_heavy", "weather effects, rain heavy anim 32x128.png"},
+		{"weather/snow_light", "weather effects, snow light anim 32x128.png"},
+		{"weather/snow_heavy", "weather effects, snow heavy anim 32x128.png"},
+	} {
+		add(f.key, filepath.Join(weather, f.file), 32, 128)
+	}
+
 	// Interior clutter.
 	add("prop/cozy16", filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
 		"19.04b - Cozy Furnishings", "packaged", "cozy furnishings 16x16.png"), 16, 16)

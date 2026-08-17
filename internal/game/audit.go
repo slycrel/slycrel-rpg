@@ -42,6 +42,13 @@ func (g *Game) Audit(w io.Writer) error {
 	for _, key := range g.heroFaces() {
 		check(key, "hero portrait")
 	}
+	// Weather. Four sheets, and a missing one is a screen full of magenta
+	// rather than a quiet fallback, because they are drawn over everything.
+	for _, sheets := range fallSheets {
+		for _, f := range sheets {
+			check(f.key, "weather")
+		}
+	}
 	// Unconditionally, and not merely because the roster usually contains it.
 	// This is what portraitOf substitutes for anybody with no face of their own,
 	// so if the probe above ever stops finding it the roster silently shortens

@@ -8,6 +8,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/assetsys"
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/render"
+	"github.com/slycrel/slycrel-rpg/internal/sky"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
 
@@ -111,7 +112,12 @@ func (s *overworldScene) tryStep(g *Game, d core.Dir) {
 	g.follow.Step(from)
 	// Rough terrain costs a pause before the next step is accepted.
 	s.moveDelay = g.World.At(next.X, next.Y).Info().Cost * 2
-	g.World.Reveal(next, 6)
+
+	// A step is what time is measured in, so this is where the clock moves.
+	g.Clock.Tick(1)
+	// And how far it reveals depends on whether you can see. Six was the
+	// number before there was a sky; it is still the number at noon.
+	g.World.Reveal(next, sky.Sight(g.Clock.Phase(), g.weatherAt(next)))
 	g.sinceFight++
 	g.travelWithCompany()
 
@@ -130,7 +136,11 @@ func (s *overworldScene) tryStep(g *Game, d core.Dir) {
 	// Encounter roll, with a short grace period after the last fight so you
 	// are not immediately re-jumped while limping away.
 	if g.sinceFight > 4 {
-		if biome, hit := g.World.RollEncounter(g.RNG, next, g.Player.Level); hit {
+		// The sky multiplies the terrain's own roll rather than replacing it,
+		// so somewhere quiet stays proportionally quiet after dark: the road
+		// home does not become the swamp because the sun went down.
+		if biome, hit := g.World.RollEncounter(g.RNG, next, g.Player.Level,
+			sky.Prowl(g.Clock.Phase(), g.weatherAt(next))); hit {
 			g.sinceFight = 0
 			level := g.encounterLevel(next)
 			count := 1
@@ -189,6 +199,13 @@ func (g *Game) encounterLevel(at core.Point) int {
 	}
 	lv := (g.Player.Level*2 + region) / 3
 	lv = core.Clamp(lv+g.RNG.Between(-1, 1), 1, 14)
+
+	// What is out at night is a level meaner. Added before the home clamp
+	// below, so the ground around the capital is still the ground around the
+	// capital after dark — the whole point of a home region is that it is
+	// predictable, and a rule that quietly suspended itself at night would be
+	// the least predictable thing in the game.
+	lv = core.Clamp(lv+g.Clock.Phase().LevelShift(), 1, 14)
 
 	// Close to home, nothing is above your weight. The cap lifts as you level,
 	// so the home region stops being a special case on its own rather than
@@ -263,6 +280,9 @@ func (s *overworldScene) Draw(g *Game, dst *ebiten.Image) {
 	}
 	ctx.Shadow(px, py)
 	ctx.World(sp, frame, px, py, false)
+
+	// The light and the weather, over the world and under the interface.
+	g.drawSky(dst, g.weatherAt(g.Walk.Tile), false)
 
 	s.drawHUD(g, dst)
 }

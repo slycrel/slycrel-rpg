@@ -263,6 +263,56 @@ func ScreenFit(dst *ebiten.Image, sp *assetsys.Sprite, frame int, x, y, w, h flo
 	dst.DrawImage(img, op)
 }
 
+// ScreenTinted is Screen with a colour multiplied through it, for art that has
+// to sit in a palette it was not drawn for. The alpha of the tint carries, so a
+// weather sheet can be laid over a scene at partial strength.
+func ScreenTinted(dst *ebiten.Image, sp *assetsys.Sprite, frame int, x, y float64, tint color.Color) {
+	img := sp.Frame(frame)
+	if img == nil {
+		return
+	}
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(round(x), round(y))
+	op.ColorScale.ScaleWithColor(tint)
+	dst.DrawImage(img, op)
+}
+
+// multiplyBlend is dst = src * dst, which is what a tint over a finished frame
+// has to be.
+//
+// Drawing a translucent rectangle over the screen instead would wash the image
+// toward the tint rather than darkening through it: midnight would come out as
+// a blue fog laid on the terrain, with the blacks lifted and the contrast gone.
+// Multiplying keeps the darks dark and moves the rest, which is what a change
+// in the light actually does.
+var multiplyBlend = ebiten.Blend{
+	BlendFactorSourceRGB:        ebiten.BlendFactorDestinationColor,
+	BlendFactorSourceAlpha:      ebiten.BlendFactorDestinationAlpha,
+	BlendFactorDestinationRGB:   ebiten.BlendFactorZero,
+	BlendFactorDestinationAlpha: ebiten.BlendFactorZero,
+	BlendOperationRGB:           ebiten.BlendOperationAdd,
+	BlendOperationAlpha:         ebiten.BlendOperationAdd,
+}
+
+// tintPixel is the one-pixel source every Multiply call stretches. Built once:
+// a fresh image per frame would be an allocation and a GPU upload sixty times a
+// second to draw a rectangle.
+var tintPixel = func() *ebiten.Image {
+	img := ebiten.NewImage(1, 1)
+	img.Fill(color.White)
+	return img
+}()
+
+// Multiply lays a colour over the whole target, darkening through it.
+func Multiply(dst *ebiten.Image, c color.Color) {
+	w, h := dst.Bounds().Dx(), dst.Bounds().Dy()
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(float64(w), float64(h))
+	op.ColorScale.ScaleWithColor(c)
+	op.Blend = multiplyBlend
+	dst.DrawImage(tintPixel, op)
+}
+
 // Rect fills an axis-aligned screen rectangle.
 func Rect(dst *ebiten.Image, x, y, w, h float64, c color.Color) {
 	vector.DrawFilledRect(dst, float32(x), float32(y), float32(w), float32(h), c, false)

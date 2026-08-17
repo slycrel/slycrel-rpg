@@ -120,13 +120,23 @@ func classify(elev, moist, temp float64) Terrain {
 // dangerRoll reports whether a step onto t triggers an encounter. Level is the
 // party level: low-level characters get a short grace period so the first walk
 // out of town is not immediately fatal.
-func dangerRoll(g *core.RNG, t Terrain, level int) bool {
+//
+// prowl scales it for what it is doing outside: above one after dark, below one
+// when it is coming down hard enough that nothing else wants to be out either.
+// Passing 1 is the old behaviour exactly.
+func dangerRoll(g *core.RNG, t Terrain, level int, prowl float64) bool {
 	d := t.Info().Danger
 	if d <= 0 {
 		return false
 	}
 	if level <= 2 {
 		d = d * 2 / 3
+	}
+	// Rounded rather than truncated, or a 1-in-100 tile in the rain would drop
+	// to zero and a corner of the map would stop being dangerous at all.
+	d = int(float64(d)*prowl + 0.5)
+	if d <= 0 {
+		return false
 	}
 	return g.Intn(100) < d
 }

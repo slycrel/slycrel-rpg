@@ -24,6 +24,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/party"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
+	"github.com/slycrel/slycrel-rpg/internal/sky"
 )
 
 // maxLevel is the top of the band content is written for.
@@ -58,6 +59,7 @@ func main() {
 	reportEndurance(out, g, t, *fights/4)
 	reportProgression(out, g, t)
 	reportEconomy(out, t)
+	reportSky(out)
 	reportSupplies(out, t)
 	reportCompany(out)
 	reportMonsterSpread(out, t)
@@ -881,6 +883,71 @@ func reportSupplies(out *os.File, t *gamedata.Tables) {
 	fmt.Fprintf(out, "\nA thief pays for one restorative and leaves with two, so its column is\n")
 	fmt.Fprintf(out, "half the one beside it. That is the whole of what it gets for having no\n")
 	fmt.Fprintf(out, "way to heal itself, and it is spent at a counter rather than in a fight.\n\n")
+}
+
+// reportSky is what the time of day and the weather do to the overworld loop.
+//
+// It is a statement rather than a simulation, and that is the honest shape for
+// it. Two of the three terms are already measured elsewhere and re-simulating
+// them would be inventing a second answer: night adds one to the encounter
+// level, and what one level over costs is exactly what the DANGER table above
+// spends four hundred thousand fights establishing. The third term — how often
+// a step turns into a fight at all — is not simulated anywhere, because
+// SimulateFight starts once a fight exists and knows nothing about the walking.
+//
+// So this prints the multipliers and lets them be read against the section that
+// already has the numbers. What it is really for is the shape: night and
+// weather have to pull opposite ways, and a table where every row moved the
+// same direction would mean the correct play is always "wait for a clear noon".
+func reportSky(out *os.File) {
+	fmt.Fprintf(out, "SKY — what the light and the weather do to a step\n\n")
+	fmt.Fprintf(out, "%-9s %8s %8s %7s   %s\n", "phase", "sight", "prowl", "level", "share of the day")
+	fmt.Fprintln(out, strings.Repeat("-", 62))
+
+	share := map[sky.Phase]int{}
+	for step := 0; step < sky.DayLength; step++ {
+		share[(sky.Clock{Step: step}).Phase()]++
+	}
+	for _, p := range []sky.Phase{sky.Dawn, sky.Day, sky.Dusk, sky.Night} {
+		fmt.Fprintf(out, "%-9s %8d %7.2fx %+7d   %d%%\n",
+			p.Name(), p.Sight(), p.Prowl(), p.LevelShift(),
+			share[p]*100/sky.DayLength)
+	}
+
+	fmt.Fprintf(out, "\n%-9s %8s %8s\n", "weather", "sight", "prowl")
+	fmt.Fprintln(out, strings.Repeat("-", 62))
+	for _, w := range []sky.Weather{sky.Clear, sky.Cloudy, sky.Rain, sky.Snow, sky.Storm} {
+		fmt.Fprintf(out, "%-9s %+8d %7.2fx\n", w.Name(), w.Sight(), w.Prowl())
+	}
+
+	// The corners, which is the only part of this that is not the two tables
+	// above read twice.
+	fmt.Fprintf(out, "\n%-22s %8s %8s\n", "an evening out", "sight", "prowl")
+	fmt.Fprintln(out, strings.Repeat("-", 62))
+	for _, c := range []struct {
+		label string
+		p     sky.Phase
+		w     sky.Weather
+	}{
+		{"clear noon", sky.Day, sky.Clear},
+		{"clear night", sky.Night, sky.Clear},
+		{"wet day", sky.Day, sky.Rain},
+		{"stormy night", sky.Night, sky.Storm},
+	} {
+		fmt.Fprintf(out, "%-22s %8d %7.2fx\n",
+			c.label, sky.Sight(c.p, c.w), sky.Prowl(c.p, c.w))
+	}
+
+	worst := sky.Prowl(sky.Night, sky.Clear)
+	best := sky.Prowl(sky.Night, sky.Storm)
+	fmt.Fprintf(out, "\nThe night to be afraid of is the clear one: %.2fx against %.2fx in a storm,\n",
+		worst, best)
+	fmt.Fprintf(out, "and a step at night draws an encounter one level over, which the DANGER\n")
+	fmt.Fprintf(out, "table above prices. Nothing here is a gate: a bed at an inn buys the morning.\n")
+	if best >= worst {
+		fmt.Fprintf(out, "WARNING: weather does not cover for you, so there is nothing to read in the sky.\n")
+	}
+	fmt.Fprintln(out)
 }
 
 // reportCompany shows what the people following you take off every haul, and

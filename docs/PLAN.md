@@ -133,10 +133,13 @@ Built and running:
   10 affixes, 42 items, 27 techniques
   (eleven of them party-facing, lingering, or gated on a hireling's ancestry),
   9 companion backstories and 4 for the people who stay put
+- A sky: a clock measured in steps, and weather derived from the seed rather
+  than stored. Night is dark and hunting, bad weather is dark and quiet, and
+  the dangerous night is the clear one. A bed buys the morning
 - Asset pipeline: inventory, selective extraction, manifest generation, and an
   audit that reports which art keys still fall back to placeholders
 
-Deliberately not built yet: day/night and weather, and a main thread.
+Deliberately not built yet: a main thread, and the curated UI art pass.
 
 Played twice end to end. The second pass is what turned up the home region, the
 starting kit, equipment as inventory, and four separate cases of the game
@@ -448,8 +451,69 @@ than a system.
    columns, which is the table saying out loud that the perk is sustain rather
    than shopping.
 
-6. **Day/night and weather.** The tileset collection includes a weather-effects
-   pack. Changes encounter tables and which NPCs are out.
+6. ~~**Day/night and weather.**~~ *(Built.)* `internal/sky`, pure and headless,
+   holding a clock and a derivation of what the weather is doing.
+
+   The design is one idea, and it is what makes the feature worth playing
+   rather than worth looking at: **night and weather pull in opposite
+   directions.** Night is dark and hunting — you see less and more things want
+   you, and what turns up is a level meaner. Bad weather is dark and *quiet* —
+   you see less and nothing else wants to be out in it either. So the dangerous
+   night is the clear one, a storm is cover, and the two compose into four
+   kinds of evening rather than one slider from good to bad. A table where
+   every row moved the same way would mean the correct play is always "wait for
+   a clear noon", and there would be nothing to read in the sky.
+
+   Ignorable, and progressively more expensive to keep ignoring, which is the
+   brief. A bed at an inn buys the morning — `Clock.WakeAt(Dawn)`, always
+   forwards — so night is a thing you can pay to skip at a price that already
+   scales with your level. Nothing is gated on the clock anywhere.
+
+   Time is measured in **steps**, not frames. A clock on wall time would
+   advance while somebody read a shop menu, and standing still would be a way
+   to wait out the night — which is the opposite of what the inn is for. Steps
+   indoors count too, or a shop would be a place to stop time.
+
+   Weather is **derived, not stored**: `sky.At(seed, clock, biome)`, the same
+   trick the scenery uses. A seed reproduces its weather exactly, walking from
+   forest into mountain turns rain into snow with nothing tracking a boundary,
+   and there is no second copy in the save to disagree with the world it
+   belongs to. The clock is the only new field in a save file, and its absence
+   in an older one reads as the first dawn of the run — the only answer an old
+   save can honestly give.
+
+   `LevelShift` is the load-bearing number: one level, at night, applied
+   *before* the home region clamps the roll to the player's own level, so the
+   ground around the capital stays predictable after dark. It is one level
+   because the DANGER table already spends four hundred thousand fights
+   establishing what one level over costs — which is how this was added without
+   re-tuning anything. The new SKY section in `cmd/balance` states the
+   multipliers rather than re-simulating them, because two of the three terms
+   are already measured and the third (how often a step becomes a fight at all)
+   is not simulated anywhere: `SimulateFight` begins once a fight exists.
+
+   "Which NPCs are out" turned out to be: the people, not the buildings.
+   Townsfolk and the hopefuls loitering outside inns go home after dusk;
+   counters, beds, altars, chests and anything with teeth stay put. A merchant
+   will always take money and a dungeon does not keep hours. It is never a dead
+   end — arrive at midnight with an errand to hand in, take a room, do it in
+   the morning — which turns "the town is asleep" from an obstruction into the
+   reason the bed exists.
+
+   Two drawing notes worth keeping. The tint is a **multiply** over the
+   finished frame (`render.Multiply`), not a translucent rectangle: a
+   rectangle washes the image toward the colour, lifting the blacks and
+   flattening the contrast, where multiplying keeps the darks dark and moves
+   the rest — which is what a change in the light actually does. And it goes
+   over the world but *under* the HUD, so the status bar stays legible at
+   midnight. The rain sheet is 32 pixels wide, so tiling it straight across put
+   fifteen identical columns on screen in lockstep and read as vertical
+   stripes; every column runs a different frame now, on strides of three and
+   five so the rows do not fall back into step either.
+
+   The status bar says "night, rain" in three words, because none of this is
+   discoverable from a tint. Clear weather says only the time — "day, clear" is
+   three quarters of a run's status bar spent saying nothing.
 7. ~~**Faction and reputation.**~~ *(built.)* Reputation is two numbers now,
    which was Jeremy's design and is the whole of why it works: `Fame` is what
    the deeds are worth and `Renown` is how well the face is known. They are

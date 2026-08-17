@@ -23,6 +23,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/party"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/render"
+	"github.com/slycrel/slycrel-rpg/internal/sky"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/tiles"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
@@ -94,6 +95,11 @@ type Game struct {
 	stack []Scene
 	tick  int
 	quit  bool
+
+	// Clock is the time of day, in steps. Weather is not stored beside it —
+	// sky.At derives that from the seed, the clock and the biome, the same way
+	// scenery is derived from position.
+	Clock sky.Clock
 
 	// Scripted capture mode; nil in normal play.
 	demo        *demoScript
@@ -259,6 +265,11 @@ func (g *Game) drawStatusBar(dst *ebiten.Image, place, hint string) {
 	p := g.Player
 
 	render.Text(dst, fmt.Sprintf("%s  L%d", p.Name, p.Level), 8, y+5, render.ColInk)
+	// What it is like outside, between the name and the place. The clock is
+	// only worth having if the player can read it: night raises what turns up
+	// by a level and rain keeps things indoors, and neither is discoverable
+	// from a tint alone. Three words is the whole interface for it.
+	render.Text(dst, g.skyLine(), 128, y+5, render.ColInkDim)
 	render.TextRight(dst, render.Trunc(place, 268), render.ScreenW-8, y+5, render.ColGold)
 
 	ui.Bar(dst, 8, y+18, 88, 6, p.HPFrac(), render.ColBlood)

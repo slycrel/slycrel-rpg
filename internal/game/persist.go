@@ -17,6 +17,7 @@ func (g *Game) Snapshot() *save.File {
 	f := &save.File{
 		Seed:       g.Seed,
 		Player:     g.Player,
+		Clock:      g.Clock,
 		Allies:     g.Allies,
 		At:         g.Walk.Tile,
 		Facing:     int(g.Walk.Dir()),
@@ -90,6 +91,7 @@ func (g *Game) Restore(f *save.File) error {
 	// list; both are already zero, so nothing needs converting.
 	g.World = world.Generate(f.Seed, g.Write)
 	g.sinceFight = f.SinceFight
+	g.Clock = f.Clock
 	g.Quests = quest.Log{Quests: f.Quests}
 	g.Threads = thread.Log{Threads: f.Threads}
 	g.pendingBeats, g.remindEndings = nil, false

@@ -2923,6 +2923,30 @@
       "file": "assets-raw/_generated/props/summer 32x32.png",
       "frameW": 32,
       "frameH": 32
+    },
+    {
+      "key": "weather/rain_heavy",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.07b - Weather Effects/packaged/weather effects, rain heavy anim 32x128.png",
+      "frameW": 32,
+      "frameH": 128
+    },
+    {
+      "key": "weather/rain_light",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.07b - Weather Effects/packaged/weather effects, rain light anim 32x128.png",
+      "frameW": 32,
+      "frameH": 128
+    },
+    {
+      "key": "weather/snow_heavy",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.07b - Weather Effects/packaged/weather effects, snow heavy anim 32x128.png",
+      "frameW": 32,
+      "frameH": 128
+    },
+    {
+      "key": "weather/snow_light",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/20.07b - Weather Effects/packaged/weather effects, snow light anim 32x128.png",
+      "frameW": 32,
+      "frameH": 128
     }
   ]
 }

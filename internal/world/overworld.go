@@ -508,9 +508,9 @@ func (m *Map) Describe(at core.Point) string {
 
 // RollEncounter reports whether stepping onto a tile starts a fight, and which
 // monster table to use.
-func (m *Map) RollEncounter(g *core.RNG, at core.Point, level int) (string, bool) {
+func (m *Map) RollEncounter(g *core.RNG, at core.Point, level int, prowl float64) (string, bool) {
 	t := m.At(at.X, at.Y)
-	if !dangerRoll(g, t, level) {
+	if !dangerRoll(g, t, level, prowl) {
 		return "", false
 	}
 	return t.Biome(), true
