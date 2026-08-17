@@ -1294,7 +1294,7 @@ func (b *battleScene) awardSpoils(g *Game) {
 			it.Count = n
 			p.AddItem(it)
 			g.Sound.Play("world/loot")
-			b.log.Add("Picked up %s x%d.", name, n)
+			b.log.Add("Picked up %s.", itemLine(it))
 		}
 	}
 

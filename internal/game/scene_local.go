@@ -251,18 +251,18 @@ func (g *Game) openChest(e *world.Entity) {
 	if g.Local.POI.Level >= 5 {
 		pool = append(pool, "Physician's Draught", "Philosopher's Espresso")
 	}
-	body := fmt.Sprintf("%d coins.", coins)
+	body := fmt.Sprintf("%d coins", coins)
 	if it, ok := g.Data.Item(core.Pick(g.RNG, pool)); ok {
 		it.Count = 1 + g.RNG.Intn(2)
 		g.Player.AddItem(it)
-		body += fmt.Sprintf("\n%s x%d.", it.Name, it.Count)
+		body += "\n" + itemLine(it)
 	}
 	if g.RNG.Chance(0.4) {
 		trinkets := []string{"Stolen Trinket", "Someone's Locket", "Cracked Crystal", "Hoard Coin"}
 		if it, ok := g.Data.Item(core.Pick(g.RNG, trinkets)); ok {
 			it.Count = 1
 			g.Player.AddItem(it)
-			body += "\n" + it.Name + "."
+			body += "\n" + itemLine(it)
 		}
 	}
 	if find, ok := g.rollAffixedGear(); ok {
@@ -270,6 +270,46 @@ func (g *Game) openChest(e *world.Entity) {
 		return
 	}
 	g.Say(e.Name, e.Line+"\n\n"+body)
+}
+
+// itemLine names something picked up and says what it is for.
+//
+// A chest used to report its contents as a list of bare names — "Bitter Root
+// x2. Someone's Locket." — which tells a player nothing about whether they have
+// found medicine, money or a quest item. The information was never missing; the
+// description sits on the item and the pack shows it. It was simply not being
+// said at the one moment somebody is looking straight at the thing and asking.
+func itemLine(it model.Item) string {
+	name := it.Name
+	if it.Count > 1 {
+		name = fmt.Sprintf("%s x%d", name, it.Count)
+	}
+	if what := itemPurpose(it); what != "" {
+		return name + " - " + what
+	}
+	return name
+}
+
+// itemPurpose is the short form: what this is good for, in a few words.
+// The item's own description is the joke; this is the answer.
+func itemPurpose(it model.Item) string {
+	switch it.Kind {
+	case model.ItemHeal:
+		return "drink it to heal"
+	case model.ItemPsyche:
+		return "drink it for psyche"
+	case model.ItemBuff:
+		return "drink it before a fight"
+	case model.ItemRevive:
+		return "stands somebody back up"
+	case model.ItemCure:
+		return "clears what you have caught"
+	case model.ItemTrinket:
+		return "worth something to a shopkeeper"
+	case model.ItemKey:
+		return "opens something, somewhere"
+	}
+	return ""
 }
 
 // find is a named piece of equipment turned up in a chest. Exactly one of the

@@ -296,6 +296,9 @@ func shopDescribe(data any) string {
 		}
 		return out
 	case model.Item:
+		if what := itemPurpose(v); what != "" {
+			return upper(what) + ". " + v.Desc
+		}
 		return v.Desc
 	}
 	return ""

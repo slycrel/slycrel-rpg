@@ -340,7 +340,13 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 
 	if it, ok := s.bag.Selected(); ok && !it.Disabled {
 		if idx, ok := it.Data.(int); ok && idx < len(p.Bag) {
-			lines := render.Wrap(p.Bag[idx].Desc, 178)
+			// Purpose first, then the joke. The description is flavour and the
+			// pack is where somebody goes to find out what a thing is for.
+			text := p.Bag[idx].Desc
+			if what := itemPurpose(p.Bag[idx]); what != "" {
+				text = upper(what) + ". " + text
+			}
+			lines := render.Wrap(text, 178)
 			ty := 26 + s.bag.Height() + 10
 			for i, ln := range lines {
 				if i > 3 {
