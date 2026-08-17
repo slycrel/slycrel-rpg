@@ -48,6 +48,10 @@ func (s *localScene) Update(g *Game) error {
 		g.Push(newPauseScene(g))
 		return nil
 	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyH) {
+		g.Push(newHelpScene(g))
+		return nil
+	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyJ) {
 		g.Push(newQuestScene(g))
 		return nil
@@ -511,7 +515,7 @@ func drawEntity(g *Game, ctx *render.Ctx, e *world.Entity) {
 
 func (s *localScene) drawHUD(g *Game, dst *ebiten.Image) {
 	// Naming what is directly ahead means interaction is never a guess.
-	hint := "C character"
+	hint := "C sheet - H help"
 	ahead := g.LocalWalk.Tile.Add(g.LocalWalk.Dir().Delta())
 	if e := g.Local.EntityAt(ahead.X, ahead.Y); e != nil && !e.Used {
 		hint = "Z: " + e.Name

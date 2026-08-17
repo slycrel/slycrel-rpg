@@ -53,6 +53,10 @@ func (s *overworldScene) Update(g *Game) error {
 		g.Push(newPauseScene(g))
 		return nil
 	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyH) {
+		g.Push(newHelpScene(g))
+		return nil
+	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyJ) {
 		g.Push(newQuestScene(g))
 		return nil
@@ -312,7 +316,7 @@ func scale(c color.RGBA, f float64) color.RGBA {
 }
 
 func (s *overworldScene) drawHUD(g *Game, dst *ebiten.Image) {
-	hint := "M map - C character"
+	hint := "M map - H help"
 	if poi := g.World.POIAt(g.Walk.Tile.X, g.Walk.Tile.Y); poi != nil {
 		hint = "Z to enter"
 	}

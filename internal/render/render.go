@@ -139,7 +139,12 @@ func (c *Ctx) World(sp *assetsys.Sprite, frame int, wx, wy float64, flip bool) {
 		op.GeoM.Scale(-1, 1)
 		op.GeoM.Translate(w, 0)
 	}
-	op.GeoM.Translate(round(wx-w/2)+ox, round(wy-h)+oy)
+	// Anchored on the artwork's feet, not the bottom of the frame. See
+	// assetsys.Sprite.Foot: a 64-pixel character box with a tile of empty
+	// space under the boots draws the character a whole tile above the square
+	// they are standing on, and everything the player judges a collision by is
+	// that square.
+	op.GeoM.Translate(round(wx-w/2)+ox, round(wy-h+float64(sp.Foot))+oy)
 	c.Dst.DrawImage(img, op)
 }
 

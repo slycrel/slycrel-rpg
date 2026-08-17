@@ -219,20 +219,33 @@ func (t *Tables) Item(name string) (model.Item, bool) {
 	return it, ok
 }
 
-// StarterWeapon returns the cheapest weapon, used to arm a new character.
+// StarterWeapon returns the cheapest real weapon, used to arm a new character.
+//
+// Tier zero is skipped, and that is the whole point of this function. The
+// tier-zero rows exist to give the *absence* of equipment a name — "Bare Hands"
+// at strike 1, "Regrettable Rags" at defence 0 — and picking the cheapest thing
+// in the table handed every new character exactly that. So the game opened by
+// issuing nothing and calling it a loadout: three points of damage a swing, no
+// armour at all, and 15 to 40 coins against the 66 it costs to reach what every
+// section of the balance report calls being on curve.
 func (t *Tables) StarterWeapon() model.Weapon {
-	if len(t.Weapons) == 0 {
-		return model.Weapon{Name: "Bare Hands", Strike: 1, Verb: "slap"}
+	for _, w := range t.Weapons {
+		if w.Tier >= 1 {
+			return w
+		}
 	}
-	return t.Weapons[0]
+	return model.Weapon{Name: "Bare Hands", Strike: 1, Verb: "slap"}
 }
 
-// StarterArmor returns the cheapest armor.
+// StarterArmor returns the cheapest real armour. Tier zero is skipped for the
+// same reason as StarterWeapon.
 func (t *Tables) StarterArmor() model.Armor {
-	if len(t.Armors) == 0 {
-		return model.Armor{Name: "Rags", Verb: "flaps"}
+	for _, a := range t.Armors {
+		if a.Tier >= 1 {
+			return a
+		}
 	}
-	return t.Armors[0]
+	return model.Armor{Name: "Rags", Verb: "flaps"}
 }
 
 // SpellsFor returns the spells a character currently knows.

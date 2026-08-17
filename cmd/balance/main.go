@@ -45,6 +45,7 @@ func main() {
 	g := core.NewRNG(*seed)
 	out := os.Stdout
 
+	reportOpening(out, core.NewRNG(*seed^0x09E4), t, *fights)
 	reportCombat(out, g, t, *fights)
 	// Its own generator, not the shared one. That keeps this section's
 	// placement in the report free: dropping it in the middle of the sequence
@@ -168,6 +169,75 @@ var dangerTargets = []struct {
 	// that is actually checked: what should be near zero at +5 is the *win*
 	// rate, not the survival rate.
 	{5, 100, 20, "unwinnable, and expensive to walk away from"},
+}
+
+// reportOpening measures the first ten minutes, which nothing else here does.
+//
+// Every other section dresses its subject through Equip — best weapon and
+// armour of the expected tier — and calls that "on curve". A character who has
+// just been created is not on that curve and cannot be: startRun hands out
+// StarterWeapon and StarterArmor, which are the *cheapest* entries in the
+// tables, and the cheapest entries are Bare Hands at strike 1 and Regrettable
+// Rags at defence 0. So the report has been describing a level-one character
+// carrying a mace and wearing boiled leather while the actual one has neither,
+// and the opening of the game was the only part of it never measured.
+func reportOpening(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+	fmt.Fprintf(out, "OPENING — the first fight, with what you actually start holding\n")
+	fmt.Fprintf(out, "against what every other section assumes you are wearing\n\n")
+
+	w, a := t.StarterWeapon(), t.StarterArmor()
+	fmt.Fprintf(out, "  you start with   %s (strike %d) / %s (defence %d)\n",
+		w.Name, w.Strike, a.Name, a.Defense)
+	onCurve := &model.Character{Level: 1}
+	t.Equip(onCurve)
+	fmt.Fprintf(out, "  on curve is      %s (strike %d) / %s (defence %d)\n\n",
+		onCurve.Weapon.Name, onCurve.Weapon.Strike,
+		onCurve.Armor.Name, onCurve.Armor.Defense)
+
+	fmt.Fprintf(out, "%-9s %-12s %9s %9s %9s %8s\n",
+		"class", "kit", "win", "died", "rounds", "hp left")
+	fmt.Fprintln(out, strings.Repeat("-", 62))
+
+	for _, class := range model.AllClasses {
+		for _, kit := range []string{"as created", "on curve"} {
+			var wins, deaths, rounds, hp, n int
+			for i := 0; i < fights; i++ {
+				c := rules.NewCharacter(g, "Subject", class)
+				if kit == "on curve" {
+					t.Equip(c)
+				} else {
+					c.Weapon, c.Armor = t.StarterWeapon(), t.StarterArmor()
+				}
+				mons := t.PickMonsters(g, biomeForLevel(1), 1, 1)
+				if len(mons) == 0 {
+					continue
+				}
+				fresh := *c
+				r := rules.SimulateFight(g, &fresh, []*model.MonsterDef{mons[0].Def},
+					1, 60, t.SpellsFor(c))
+				if r.Won {
+					wins++
+				}
+				if r.Died() {
+					deaths++
+				}
+				rounds += r.Rounds
+				hp += r.HPLeft * 100 / core.Max(1, c.MaxHP)
+				n++
+			}
+			if n == 0 {
+				continue
+			}
+			f := func(v int) float64 { return float64(v) * 100 / float64(n) }
+			fmt.Fprintf(out, "%-9s %-12s %8.1f%% %8.1f%% %9.1f %7d%%\n",
+				class, kit, f(wins), f(deaths), float64(rounds)/float64(n), hp/n)
+		}
+	}
+
+	// What the gap costs in coins, since the answer to it might simply be
+	// "walk into the shop first" — in which case the game has to say so.
+	fmt.Fprintf(out, "\n  the shop closes that gap for %d coins; a new character carries %d-%d\n\n",
+		onCurve.Weapon.Cost+onCurve.Armor.Cost, 15, 40)
 }
 
 // reportDanger measures the death curve against the brief above.

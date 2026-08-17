@@ -51,6 +51,13 @@ type Manifest struct {
 type Sprite struct {
 	Frames []*ebiten.Image
 	W, H   int
+	// Foot is how many transparent rows sit below the artwork inside the
+	// frame. Character art is drawn into a generous box — the hero sheets are
+	// 64x64 on a 16-pixel grid — and the feet do not reach the bottom of it, so
+	// anchoring a sprite by its frame puts the character above the tile it is
+	// standing on. Every hero in the game was drawing a full tile high, which
+	// read in play as the walls of a building having their hit box off by one.
+	Foot int
 }
 
 // Frame returns frame i, wrapping so animation callers never index out of
@@ -224,7 +231,38 @@ func (r *Registry) load(key string) *Sprite {
 	if len(sp.Frames) == 0 {
 		return nil
 	}
+	sp.Foot = footPadding(src, fw, fh)
 	return sp
+}
+
+// footPadding counts the transparent rows below the artwork in the first frame.
+//
+// Measured off the decoded source rather than the uploaded texture, because
+// ebiten refuses ReadPixels before the game loop starts and asset loading is
+// not guaranteed to happen inside it — the audit command loads every key
+// without ever opening a window. Measured at all, rather than declared in the
+// manifest, because the packs this game draws from pad differently from each
+// other and sometimes within themselves, and a number somebody has to remember
+// to write down is a number that will be wrong for the next sheet.
+func footPadding(src image.Image, w, h int) int {
+	if src == nil || w <= 0 || h <= 0 {
+		return 0
+	}
+	b := src.Bounds()
+	if w > b.Dx() {
+		w = b.Dx()
+	}
+	if h > b.Dy() {
+		h = b.Dy()
+	}
+	for y := h - 1; y >= 0; y-- {
+		for x := 0; x < w; x++ {
+			if _, _, _, a := src.At(b.Min.X+x, b.Min.Y+y).RGBA(); a > 4096 {
+				return h - 1 - y
+			}
+		}
+	}
+	return 0
 }
 
 // generate builds a deterministic placeholder from the key. Tile keys get a
