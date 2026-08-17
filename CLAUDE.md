@@ -25,6 +25,14 @@ Package tests while working. The full sweep — `go test ./internal/...`, `-audi
 `-demo`, and `cmd/balance` if rules or content changed — goes just before a
 commit, not after every edit.
 
+**When something is reported missing, check first whether it is merely
+unreachable.** Two playthroughs produced eleven complaints and seven of them
+were features the game already had and would not talk about: Save behind a
+switch that dispatched on row numbers after the rows had moved, the quest log
+on an unadvertised key, a chest listing item names with no hint what they were
+for, the shop showing two columns of prices. The fix each time was a sentence,
+not a system. Look for the capability before building it.
+
 Read the diff before committing anything stateful. In the session that built the
 party, status effects and equipment, twelve bugs surfaced: five from reading the
 code, five from looking at demo frames, and two from tests — and both of those
@@ -126,6 +134,15 @@ which event fires which trigger, and where it is safe to put a box on screen.
   is to be old saves — v1 predates the party, v2 predates the backstories — and
   rewriting either at the current version deletes the only evidence that the
   loader still reads the earlier format. `cmd/genfixtures` skips both.
+- **Never offer a choice you are about to refuse.** `g.AskMenu` takes rows
+  rather than strings, so a price goes in the detail column and an option
+  nobody can afford is greyed out in advance. The inn, the shrine, the hiring
+  board and the backstory endings all quote what you are holding next to what
+  the thing costs; anything new that charges for something should do the same.
+- **`render.Text` does not put ink where you think.** Text drawn at `y` inks
+  `y+2` through `y+12`, which is why `render.TextInkTop` and `TextInkH` exist —
+  measured off a render rather than derived from the font. Anything drawing a
+  background behind text has to use them or it clips the letters.
 - **The UI font is Latin-1 only.** `internal/render` folds typography to ASCII
   before drawing; do not bypass it, or an em-dash renders as `@`.
 - **Screen capture is blocked on this machine.** Use `-demo`, or `\` in game to
