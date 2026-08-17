@@ -8,6 +8,7 @@ assuming anything about the state of the project.
 ## Commands
 
 ```bash
+./play.command                       # build this checkout and play it (double-clickable)
 go run ./cmd/slycrel                 # play
 go run ./cmd/slycrel -seed 1994      # the same continent every time
 go run ./cmd/slycrel -demo           # scripted tour, one frame per screen into shots/

@@ -31,7 +31,14 @@ tone-setting rule is that nobody in the world ever acknowledges the joke.
 
 ## Running it
 
+Double-click **`play.command`**. It builds this checkout and launches it, so
+there is never a stale binary to wonder about — the title and pause screens
+show which commit is running.
+
+From a terminal, the same flags work either way:
+
 ```bash
+./play.command -seed 1994          # build and play a fixed continent
 go run ./cmd/slycrel               # a new continent every launch
 go run ./cmd/slycrel -seed 1994    # the same continent every time
 go run ./cmd/slycrel -scale 4      # bigger window (integer scales only)
