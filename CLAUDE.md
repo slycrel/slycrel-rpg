@@ -124,6 +124,14 @@ which event fires which trigger, and where it is safe to put a box on screen.
   *different continent*. Anything comparing a save against its world must use
   `content.New(&tables.Text)`. (`internal/gamedata`'s world tests use a stub
   deliberately — they assert structural properties, not identity.)
+- **A zero value that means something real will be wrong in every old save.**
+  The save format is seed plus deltas, so a field added today is *absent* in
+  every file written before today and unmarshals to zero. `Thread.HomePOI >= 0`
+  meaning "this belongs to a resident" turned every companion thread in every
+  existing save into a resident of whichever location happens to be first on the
+  map. Derive the flag from something authored (the skeleton), or carry an
+  explicit `On bool` whose zero value is the safe answer — which is what
+  `Track` does, having learned it the hard way one commit earlier.
 - **`saves/` is gitignored except `saves/fixtures/`**, which is committed: it is
   both the regression net and the set of playtest starting points.
 - **The `autosave` slot is written before every fight** and offered back if the

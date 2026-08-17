@@ -334,7 +334,7 @@ dl.qs dd { margin: 0; color: var(--ink-soft); }
 <div class="wrap">
 
 <header class="mast">
-  <p class="kicker">Implementation plan &nbsp;/&nbsp; 16 August 2026</p>
+  <p class="kicker">Implementation plan &nbsp;/&nbsp; 17 August 2026</p>
   <h1>SLYCREL</h1>
   <p class="deck">A 1994 BBS door game, rebuilt as an open-world sword-and-sorcery RPG. Fresh world, original bones: the combat maths still dates to the Pascal.</p>
   <div class="stamps">
@@ -423,7 +423,7 @@ dl.qs dd { margin: 0; color: var(--ink-soft); }
         <li><span class="tag built">Built</span><span>A 160&#215;120 generated continent — noise-driven elevation, moisture and temperature, island falloff, rivers that run downhill to the sea, roads connecting every settlement to the capital</span></li>
         <li><span class="tag built">Built</span><span>~40 locations per world across eleven kinds, each regenerating its own interior from its seed rather than being stored</span></li>
         <li><span class="tag built">Built</span><span>Turn-based combat: initiative rolled per party member, targeting on both sides of the field, techniques, items, defending, fleeing</span></li>
-        <li><span class="tag built">Built</span><span>62 monsters across nine biomes, each with its own attack verbs, taunts, death lines and drop table — and, for fourteen of them, something they leave in you</span></li>
+        <li><span class="tag built">Built</span><span>66 monsters across nine biomes, each with its own attack verbs, taunts, death lines and drop table — and, for fourteen of them, something they leave in you</span></li>
         <li><span class="tag built">Built</span><span>A party — up to two hirelings, hired outside inns, never commanded. They run the policy the balance simulator plays, take hits that would otherwise be yours, and level on their own curve</span></li>
         <li><span class="tag built">Built</span><span>Hirelings who are not entirely people — six lineages, each a stat trade-off with a discount attached, and each carrying one technique no hero of any class or level can learn</span></li>
         <li><span class="tag built">Built</span><span>Outfitting the company — the shop counter turns to whoever you point it at, and supplies bought for a hireling go in their pack and are drunk without asking</span></li>
@@ -434,8 +434,13 @@ dl.qs dd { margin: 0; color: var(--ink-soft); }
         <li><span class="tag built">Built</span><span>Save and load — three slots, plus a committed set of fixtures that double as a regression net and as playtest starting points</span></li>
         <li><span class="tag built">Built</span><span>Balance — a simulator that plays the game's own code, and the tuning passes it has justified four times now</span></li>
         <li><span class="tag built">Built</span><span>Sound, blended terrain, scenery, interior clutter, 229 icons, and an asset pipeline over a 16.7 GB bundle that never blocks the build</span></li>
-        <li><span class="tag later">Later</span><span>Companion and NPC backstories — the ordered-thread mechanism the generated errands deliberately are not</span></li>
-        <li><span class="tag later">Later</span><span>Alternative progression arcs, so that "on curve" stops being a single correct build</span></li>
+        <li><span class="tag built">Built</span><span>Backstories — nine for the companions, told while they happen, and four for the people who stay put, told in instalments on your return. The ordered-thread mechanism the generated errands deliberately are not</span></li>
+        <li><span class="tag built">Built</span><span>Alternative progression arcs — five archetypes, each with its own column in the balance report, so "on curve" stopped being a single correct build</span></li>
+        <li><span class="tag built">Built</span><span>A sky — a clock measured in steps and weather derived from the seed rather than stored. Night raises what turns up by a level; a storm keeps things indoors</span></li>
+        <li><span class="tag built">Built</span><span>Reputation on four numbers, on two ledgers — Fame and Renown are what the world reads and cannot be paid down; Honor and Faith are banked on purpose and spent</span></li>
+        <li><span class="tag built">Built</span><span>The long story — two spines of four and five places strung across the continent, and short arcs found in places nobody sent you, each ending on a choice</span></li>
+        <li><span class="tag built">Built</span><span>Combat effects, framed portraits, and a compass that points at whatever you are following</span></li>
+        <li><span class="tag later">Later</span><span>Whatever playing it turns up. The roadmap is empty and the compass was the first thing to come back that way</span></li>
       </ul>
     </div>
   </div>
@@ -486,33 +491,42 @@ dl.qs dd { margin: 0; color: var(--ink-soft); }
         </li>
         <li>
           <div>
-            <h3>Depth <em>(status effects and equipment done)</em></h3>
+            <h3>Depth <em>(done)</em></h3>
             <ul>
               <li><strong>Status effects</strong> — one timed list per combatant, replacing four ad-hoc mechanisms the battle screen had grown</li>
               <li><strong>Equipment slots and affixes</strong> — four slots, authored suffixes, every one a trade</li>
-              <li>Companion backstories — a two- or three-step thread per hireling, resolved at a place the world already generated</li>
-              <li>NPC backstories — the same shape for the townspeople who currently have one line each</li>
+              <li><strong>Companion backstories</strong> — nine authored threads, cast into places the world already generated, each ending on a choice with no right answer</li>
+              <li><strong>Backstories for the people who stay put</strong> — four more, told in instalments on your return, because a shopkeeper was not there for any of it</li>
             </ul>
           </div>
         </li>
         <li>
           <div>
-            <h3>A world that reacts</h3>
+            <h3>A world that reacts <em>(done)</em></h3>
             <ul>
-              <li><strong>Alternative progression arcs</strong> — two or three builds that are each viable rather than one that is correct, and a balance column for each</li>
-              <li>Day, night and weather, changing encounter tables and who is out</li>
-              <li>Reputation — fame, honour, faith and shame exist on the character and currently do almost nothing</li>
-              <li>A generated main thread stringing five or six locations into something with an ending</li>
+              <li><strong>Alternative progression arcs</strong> — five archetypes the balance report scores separately, so "is this balanced" became "is each of these playable"</li>
+              <li><strong>Day, night and weather</strong> — night is dark and hunting, bad weather is dark and quiet, and the dangerous night is the clear one. A bed at an inn buys the morning</li>
+              <li><strong>Reputation on four numbers</strong> — Fame and Renown come apart, and the corners where they disagree are the point. Honor and Faith are the other kind: banked on purpose, and spent</li>
+              <li><strong>A generated main thread</strong> — five places strung across the continent with an authored ending, plus short optional arcs found rather than given</li>
             </ul>
           </div>
         </li>
         <li>
           <div>
-            <h3>Polish</h3>
+            <h3>Polish <em>(done, and one of it went the other way)</em></h3>
             <ul>
-              <li>Curated interface art from the 4,488-file GUI kit, replacing the procedural panels</li>
-              <li>Title art, transitions, particles from the VFX pack</li>
-              <li>Balance simulation at volume: 10,000 headless fights per level band</li>
+              <li><strong>The interface art audit came back negative.</strong> All 4,488 GUI PNGs are painted mobile and MMO chrome at two to four times this game's scale, and the nearest thing to a match in the whole bundle is a description of the panel the game already draws. Nothing was imported; the vocabulary already here was extended to the screens that had none</li>
+              <li><strong>Combat effects from the VFX pack</strong> — that one <em>is</em> pixel art at this scale, and a burst now plays where a blow lands. Not a mechanic: it says <em>where</em>, which is the one thing a transcript is worst at</li>
+              <li><strong>The title screen shows the continent you are about to play</strong> — it was the only screen with no art on it at all, and terrain is what this game has most of</li>
+              <li><strong>Balance simulation at volume</strong> — the report plays the game's own rules across every level band, class and archetype, and prints where it disagrees with the design brief</li>
+            </ul>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h3>Since the roadmap ran out</h3>
+            <ul>
+              <li><strong>A followed destination, and a compass.</strong> The first thing play asked for once there was nothing left to build. A journal names a place and the map pins it; between those two facts was the business of actually getting there. Z follows any row — story, errand or backstory — and the status bar carries the name, the distance and a seven-pixel arrow</li>
             </ul>
           </div>
         </li>
