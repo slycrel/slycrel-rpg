@@ -97,23 +97,30 @@ func (s Standing) Key() string {
 	return ""
 }
 
-// Note is the one line the sheet adds under it.
+// Sheet is the one line a character sheet gets, naming the corner and saying
+// what it means in the same breath.
 //
-// Kept under about thirty characters: the sheet gives this line 230 pixels,
-// which is where the lineage note goes on a companion, and a note that has to
-// be truncated is a note that stops at the interesting half.
-func (s Standing) Note() string {
+// Name and Note used to be two separate things on that screen — a row reading
+// "They call you: a rumour" and a faint line underneath explaining it — which
+// is two lines to say one thing on a panel that had run out of room for the
+// spent ledger. Written together they are shorter than either arrangement and
+// read better, because the name is the subject of the sentence rather than the
+// answer to a form field.
+//
+// Kept under about forty characters: the sheet gives this line 230 pixels, and
+// a line that has to be truncated stops at the interesting half.
+func (s Standing) Sheet() string {
 	switch s {
 	case Rumoured:
-		return "The stories travel. You do not."
+		return "A rumour: the stories travel, not you."
 	case Celebrated:
-		return "Known, and known for something."
+		return "A name, and known for something."
 	case Recognised:
-		return "Known. Nobody says what for."
+		return "A face. Nobody says what for."
 	case Notorious:
-		return "Known. The wrong half of it."
+		return "Notorious. The wrong half travels."
 	}
-	return "Nobody has heard of you."
+	return "Nobody has heard of you. Yet."
 }
 
 // PriceMultiplier is what a shopkeeper charges you, relative to the sticker.

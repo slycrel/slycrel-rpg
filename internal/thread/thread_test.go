@@ -281,6 +281,65 @@ func TestNoEndingDominatesAnother(t *testing.T) {
 	}
 }
 
+// TestHonorIsNotJustTheMoneyAxisRenamed.
+//
+// Honour is worth having as a separate number only if it sometimes disagrees
+// with the coins. If every ending that paid nothing were honourable and every
+// ending that paid were not, the sheet would carry a fourth number that says
+// exactly what the third one already said, and the choice at the end of a
+// thread would be no wider than it was before.
+//
+// So: at least one thread has to put honour on both of its endings, and at
+// least one has to put it on neither. Those are the two shapes that prove the
+// axis is authored per thread rather than derived from the payout — a thread
+// where standing by somebody is not the question, and a thread where both ways
+// of standing by them are.
+func TestHonorIsNotJustTheMoneyAxisRenamed(t *testing.T) {
+	var bothHonourable, neitherHonourable int
+	for _, s := range tables(t).Threads.Threads {
+		with := 0
+		for _, e := range s.Endings {
+			if e.Honor > 0 {
+				with++
+			}
+		}
+		switch {
+		case with == len(s.Endings):
+			bothHonourable++
+		case with == 0:
+			neitherHonourable++
+		}
+	}
+	if bothHonourable == 0 {
+		t.Error("no thread has honour on every ending: without one, honour is " +
+			"only ever the name of the option that pays nothing")
+	}
+	// Not an error on its own — it is possible to author a good table without
+	// this shape — but worth saying out loud, because losing it is how the axis
+	// quietly collapses back into the payout.
+	if neitherHonourable == 0 {
+		t.Log("every thread turns on honour; nothing is left that is purely a question of money")
+	}
+}
+
+// TestNoThreadForcesADishonourableEnding. Everything that gives must take, but
+// a player must never be handed a story whose every exit costs them something
+// they were trying to keep.
+func TestNoThreadForcesADishonourableEnding(t *testing.T) {
+	for _, s := range tables(t).Threads.Threads {
+		clean := false
+		for _, e := range s.Endings {
+			if e.Honor >= 0 {
+				clean = true
+				break
+			}
+		}
+		if !clean {
+			t.Errorf("%q: every ending costs honour, so taking the thread was the mistake", s.ID)
+		}
+	}
+}
+
 // dominates reports whether a is at least as good as b everywhere and strictly
 // better somewhere. A lower cut is better; shame is a cost.
 func dominates(a, b thread.Ending) bool {
@@ -290,6 +349,7 @@ func dominates(a, b thread.Ending) bool {
 		{-a.Cut, -b.Cut},
 		{a.Fame, b.Fame},
 		{-a.Shame, -b.Shame},
+		{a.Honor, b.Honor},
 	}
 	better := false
 	for _, ax := range axes {

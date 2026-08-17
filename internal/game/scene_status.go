@@ -437,7 +437,7 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 		// The line a lineage note would occupy on a companion's sheet. A hero
 		// has no ancestry to describe, and what a standing means is worth more
 		// than the two numbers that produce it.
-		render.Text(dst, render.Trunc(rules.Read(p).Note(), 230), 20, 80, render.ColInkFaint)
+		render.Text(dst, render.Trunc(rules.Read(p).Sheet(), 230), 20, 80, render.ColInkFaint)
 		y = 96
 	}
 	next := rules.XPForLevel(p.Level + 1)
@@ -469,14 +469,14 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 			rows = append(rows, [2]string{"Story", t.Title})
 		}
 	} else {
-		// Two numbers and the word for the corner they put you in. The numbers
-		// alone do not say what they mean together, and what they mean together
-		// is the whole point of there being two of them.
-		st := rules.Read(p)
+		// Both ledgers, a row each. The top one is what the world reads and the
+		// player cannot pay down; the bottom one is what the player banked and
+		// gets to spend. Which corner the read numbers add up to is the faint
+		// line under the portrait — it needs a sentence, not a column.
 		rows = append(rows,
 			[2]string{"Experience", fmt.Sprintf("%d / %d", p.TotalXP, next)},
 			[2]string{"Fame / Renown", fmt.Sprintf("%d / %d", p.Fame, p.Renown)},
-			[2]string{"They call you", st.Name()})
+			[2]string{"Honor / Faith", fmt.Sprintf("%d / %d", p.Honor, p.Faith)})
 	}
 	for _, r := range rows {
 		render.Text(dst, r[0], 20, y, render.ColInkDim)

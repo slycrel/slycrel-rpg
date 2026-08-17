@@ -29,13 +29,15 @@
           "label": "Burn it in front of them",
           "text": "The document goes up fast, the way old paper does. {N} watches every word of it catch, then works their jaw like somebody testing a new tooth. The letters stop. Something quieter starts, and they do not mention it.",
           "cut": -5,
-          "xp": 22
+          "xp": 22,
+          "honor": 1
         },
         {
           "label": "Sell it back to the estate",
           "text": "The estate pays promptly, which tells you what the contract was worth. {N} takes the news like a professional, which is to say entirely, and calls you 'employer' for a week afterwards without once making it sound like a compliment.",
           "coins": 48,
-          "cut": 3
+          "cut": 3,
+          "honor": -1
         }
       ]
     },
@@ -69,13 +71,15 @@
           "text": "The sum is large and the receipt is a small cold weight in your pocket for about an hour before it stops existing. {N} does not thank you. They do start eating in front of people, which from them is a speech.",
           "coins": -38,
           "cut": -6,
-          "xp": 18
+          "xp": 18,
+          "honor": 1
         },
         {
           "label": "Let it stand",
           "text": "The arrangement continues, and the arrangement pays. {N} accepts this the way you accept weather. 'It was always going to,' they say. 'That is the shape of it.' They are cheerful for a week, which is much worse.",
           "coins": 30,
-          "shame": 1
+          "shame": 1,
+          "honor": -1
         }
       ]
     },
@@ -146,7 +150,8 @@
           "label": "Ask on their behalf",
           "text": "You ask. It is a small thing, said out loud, and the thing at {P} hands it over with the bad grace of a clerk at closing. {N} does not thank you, because that would also be a kind of lying, and instead is unbearably pleasant for a month.",
           "cut": -6,
-          "xp": 20
+          "xp": 20,
+          "honor": 1
         },
         {
           "label": "Make them find the words",
@@ -186,7 +191,8 @@
           "label": "Help them bury it",
           "text": "The ground is bad and it takes both of you the better part of the afternoon. {N} says a few words that are mostly logistics. Afterwards they are lighter by about a jar, and by rather more than that.",
           "cut": -4,
-          "xp": 24
+          "xp": 24,
+          "honor": 1
         },
         {
           "label": "Tell them to keep it",
@@ -224,13 +230,15 @@
           "label": "Burn the notes unread",
           "text": "{N} does not read a page of it, which you suspect took more out of them than the walk. The fire is brief and thorough. 'Now nobody has established what,' they say, apparently pleased. 'Including me.'",
           "cut": -5,
-          "xp": 25
+          "xp": 25,
+          "honor": 1
         },
         {
           "label": "Sell them to the college",
           "text": "The college pays without haggling, which is how you learn what {N} is worth on paper. {N} reads the receipt with great interest and asks to keep it. They are noticeably easier company and noticeably more expensive.",
           "coins": 44,
-          "cut": 3
+          "cut": 3,
+          "honor": -1
         }
       ]
     },
@@ -263,7 +271,8 @@
           "text": "The debt is smaller than the dread of it, which is how debts work. {N} watches it get paid, says 'right', and then says 'right' again about ten minutes later, out on the road, to nobody.",
           "coins": -30,
           "cut": -5,
-          "xp": 16
+          "xp": 16,
+          "honor": 1
         },
         {
           "label": "Introduce yourself to the creditor",
@@ -271,7 +280,8 @@
           "fame": 1,
           "shame": 1,
           "cut": -2,
-          "xp": 12
+          "xp": 12,
+          "honor": 1
         }
       ]
     },
@@ -304,13 +314,15 @@
           "text": "{N} takes it. It is not clean and it is not quick and nobody says anything encouraging while it is happening. Afterwards they hold up {I} in both hands and look at it for a very long time, and then put it in a pocket like a receipt.",
           "cut": -5,
           "xp": 22,
-          "fame": 1
+          "fame": 1,
+          "honor": 1
         },
         {
           "label": "Take it yourself and hand it over",
           "text": "You do it. It is easier than it should be, and that is the problem: {N} is grateful, thoroughly and out loud, and something goes out of them that you cannot put back. They ask for a bigger share the following week and you give it.",
           "coins": 26,
-          "cut": 4
+          "cut": 4,
+          "honor": -1
         }
       ]
     },
@@ -342,14 +354,16 @@
           "text": "It costs what it costs and the clerk does not look up once. {N} reads the amended page twice, mouths their own name off it, and is unreasonably good company for a fortnight.",
           "coins": -34,
           "cut": -6,
-          "xp": 18
+          "xp": 18,
+          "honor": 1
         },
         {
           "label": "Have it sold to somebody else",
           "text": "There is always a market for a name with a sum attached. The buyer is delighted, the clerk is incurious, and {N} is now legally somebody with a much worse reputation and considerably more money.",
           "coins": 40,
           "shame": 1,
-          "cut": 2
+          "cut": 2,
+          "honor": -1
         }
       ]
     }

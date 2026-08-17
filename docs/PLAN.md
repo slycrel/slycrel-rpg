@@ -122,6 +122,10 @@ Built and running:
   apart. Shop prices read the face, hiring fees read the deeds, and
   townspeople open with a line about you rather than their own. The corner
   worth having is high fame and low renown — the stories travel and you do not
+- And two more that are the other kind of number: Honor and Faith are banked
+  rather than read. Faith goes in the plate and buys anonymity back out of it,
+  lifting shame and renown together; Honor is what seeing a companion's story
+  through is worth, and it is spent on what the next hireling asks for
 - 66 monsters across nine biomes, 14 weapons, 10 armours, 6 shields, 12 charms,
   10 affixes, 42 items, 27 techniques
   (eleven of them party-facing, lingering, or gated on a hireling's ancestry),
@@ -130,8 +134,7 @@ Built and running:
   audit that reports which art keys still fall back to placeholders
 
 Deliberately not built yet: backstories for the townspeople, day/night and
-weather, anything that reads Honor or Faith, and the thief's discount on
-healing items.
+weather, and the thief's discount on healing items.
 
 Played twice end to end. The second pass is what turned up the home region, the
 starting kit, equipment as inventory, and four separate cases of the game
@@ -379,12 +382,63 @@ than a system.
    town where everybody comments on you has stopped being a place and started
    being a mirror.
 
-   The character sheet says both numbers and the word for the corner: "Fame /
-   Renown 11 / 2, they call you a rumour. The stories travel. You do not."
+   The character sheet says both numbers, and the faint line under the portrait
+   names the corner and explains it in one sentence: "A rumour: the stories
+   travel, not you."
 
-   Still open, and the reason this was worth building rather than gating on:
-   `Honor` and `Faith` are still inert. Faith at least has a source — the
-   shrine — so it is the next one with anywhere to go.
+   `Honor` and `Faith` are live too, and the split that made them worth keeping
+   is that they are a *different kind of number*. Fame, Renown and Shame are
+   what the world reads — you cannot pay them down, only outweigh them. Honor
+   and Faith are what you banked on purpose, and the only interesting question
+   about a banked number is what you traded it for. Four numbers on a sheet is
+   three too many if they all do the same job; two ledgers with two jobs is a
+   reason for each of them.
+
+   **Faith** is put in the plate and spent at the same altar. Confessing lifts
+   shame — and takes the same number of points of *renown* with it, which is
+   the whole design. Lifting shame and fame together would be free and useless,
+   because `Read` weighs one against the other and the character would end up
+   standing exactly where they started: a button that does nothing, dressed as
+   a sacrament. Taking renown instead means the deeds survive and the face
+   stops being known. What penance actually sells is anonymity, which is the
+   way out of Notorious and costs the renown that Celebrated is made of.
+
+   It also happens to be the exact inverse of being carried home: a rescue adds
+   a point of shame *and* a point of renown, because being carried through the
+   gate is the most public thing that can happen to anybody. A confession
+   removes one of each. The shrine is the thing that unhappens the walk of
+   shame, and `TestPenanceUndoesBeingCarriedHome` is what says so.
+
+   **Honor** is what you did when it cost you — seeing a companion's story
+   through to an ending that paid nothing, settling somebody's debt out of your
+   own purse — and it is spent at the hiring board. It moves the ongoing *cut*
+   rather than the fee up front, which is why it does not double up with
+   Standing: what a mercenary charges to walk out of the gate is a question
+   about who you are, and what they want off every haul afterwards is a
+   question about whether you will still be there at the end of it. Those have
+   different answers. Letting somebody go in the middle of their own story is
+   the one thing in the game that costs honour, and it should be — nothing else
+   the player does is as plainly a decision to stop being there.
+
+   The authoring rule that keeps honour from being the coins axis renamed: it
+   has to disagree with the payout sometimes. `debt-collector` puts honour on
+   *both* endings — settling the debt yourself and standing between them and
+   the creditor are both keeping faith, and they differ on money, fame and
+   shame instead. `beast-litter` puts it on neither, because going into the den
+   with somebody is courage, not loyalty. `TestHonorIsNotJustTheMoneyAxisRenamed`
+   asserts both shapes exist; it caught the first pass, where all nine threads
+   turned on honour.
+
+   The altar fix worth recording separately: it used to set `Used` on the live
+   entity instead of going through `spend`, so it came back every time the
+   interior regenerated. A shrine you could walk out of and back into was an
+   unlimited full heal for 25 coins, and would now have been an unlimited
+   supply of faith as well.
+
+   `cmd/balance` grew a COMPANY'S SHARE section, because the cut is the one
+   term in the economy the fight simulator cannot see. Two hirelings at the top
+   of the roll take 36% of every haul before the hero touches it, and honour
+   swings that band from 28% to 44%. Nothing else in the report said so.
 
 
 8. **A reason to be here.** A generated main thread that strings together

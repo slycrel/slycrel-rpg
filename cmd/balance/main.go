@@ -22,6 +22,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/gamedata"
 	"github.com/slycrel/slycrel-rpg/internal/model"
+	"github.com/slycrel/slycrel-rpg/internal/party"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
 )
 
@@ -57,6 +58,7 @@ func main() {
 	reportEndurance(out, g, t, *fights/4)
 	reportProgression(out, g, t)
 	reportEconomy(out, t)
+	reportCompany(out)
 	reportMonsterSpread(out, t)
 }
 
@@ -821,6 +823,60 @@ func reportEconomy(out *os.File, t *gamedata.Tables) {
 			a = as[len(as)-1]
 		}
 		fmt.Fprintf(out, "%-5d %5d %28s %8d %28s %8d\n", level, tier, w.Name, w.Cost, a.Name, a.Cost)
+	}
+	fmt.Fprintln(out)
+}
+
+// reportCompany shows what the people following you take off every haul, and
+// what honour does to it.
+//
+// This is here because the cut is the one term in the economy that the fight
+// simulator cannot see. Coins come out of Skim at the end of a battle, one
+// deduction per companion, and they add: two hirelings at the top of the roll
+// take better than a third of everything before the hero touches it. Nothing
+// else in the report says so, and a number that large has no business being
+// invisible.
+//
+// The percentages are exact — Recruit rolls in a known band and AskingCut is
+// arithmetic on it — so this section states the rule rather than sampling it.
+// What it deliberately does not do is convert to coins: that would need a model
+// of what a haul is worth per level, and inventing one to put a confident
+// number under it is how a report starts measuring a fiction.
+func reportCompany(out *os.File) {
+	fmt.Fprintf(out, "THE COMPANY'S SHARE — what honour is worth at the hiring board\n\n")
+
+	// The band Recruit rolls in. Named rather than repeated so this section
+	// fails loudly if the roll ever moves.
+	const (
+		rollLow  = 8
+		rollMid  = 13
+		rollHigh = 18
+	)
+	allies := party.MaxSize - 1
+
+	fmt.Fprintf(out, "%-7s %8s %8s %8s %s\n",
+		"honour", "low", "mid", "high", "full company, worst roll")
+	fmt.Fprintln(out, strings.Repeat("-", 60))
+
+	worst := 0
+	for _, honor := range []int{-8, -6, -4, -2, 0, 2, 4, 6, 8} {
+		hi := rules.AskingCut(rollHigh, honor)
+		full := hi * allies
+		if honor == 0 {
+			worst = full
+		}
+		fmt.Fprintf(out, "%-7d %7d%% %7d%% %7d%% %23d%%\n",
+			honor,
+			rules.AskingCut(rollLow, honor),
+			rules.AskingCut(rollMid, honor),
+			hi, full)
+	}
+
+	fmt.Fprintf(out, "\n%d companions, each taking a cut of the same haul; the shares add.\n", allies)
+	// Half the haul is where coins stop being the reward for a fight and start
+	// being a rounding error on somebody else's wages.
+	if worst > 50 {
+		fmt.Fprintf(out, "WARNING: a full company at the top of the roll takes %d%% of every haul.\n", worst)
 	}
 	fmt.Fprintln(out)
 }

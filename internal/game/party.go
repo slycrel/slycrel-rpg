@@ -11,6 +11,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/party"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
+	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
@@ -122,6 +123,13 @@ func (g *Game) hire(e *world.Entity, level int) {
 	c.Sprite = e.Look
 	c.Portrait = allyPortrait(g.RNG)
 
+	// What they ask for every haul from here, adjusted for what the last people
+	// you took on had to say about it. Applied here rather than inside Recruit
+	// because Recruit rolls a person and this is a negotiation: the same
+	// hireling asks a different number of two different employers.
+	rolled := c.Cut
+	c.Cut = rules.AskingCut(rolled, g.Player.Honor)
+
 	// Hiring happens outside an inn in front of whoever is passing.
 	g.Player.Renown++
 
@@ -132,6 +140,16 @@ func (g *Game) hire(e *world.Entity, level int) {
 
 	what := fmt.Sprintf("%s, %s, level %d. Takes %d%% of the coin.",
 		c.Name, c.Class, c.Level, c.Cut)
+	// The one sentence that makes honour a mechanic rather than a number on a
+	// sheet. Said only when it moved the figure, and said in terms of the
+	// figure, because "your Honor is 6" explains nothing to somebody who has
+	// never been told what Honor is for.
+	switch {
+	case c.Cut < rolled:
+		what += "\nLess than they would ask a stranger. Word gets round."
+	case c.Cut > rolled:
+		what += "\nMore than they would ask a stranger. Word gets round."
+	}
 	if l, ok := model.LineageOf(c.Blood); ok {
 		what += fmt.Sprintf("\n%s. %s", capitalise(l.Tag), l.Note)
 		// Say what the ancestry actually bought, since the numbers are already
@@ -168,10 +186,23 @@ func (g *Game) dismiss(c *model.Character) {
 		if a != c {
 			continue
 		}
+		// Letting somebody go in the middle of their own story is the one thing
+		// in the game that costs honour, and it is the right one: nothing else
+		// the player does is as plainly a decision to stop being there. Letting
+		// go of somebody who has nothing outstanding is free, because it is not
+		// the leaving that is the problem.
+		unfinished := false
+		if t := g.Threads.For(c.Name); t != nil && t.State != thread.Closed {
+			unfinished = true
+			g.Player.Honor--
+		}
 		g.Allies = append(g.Allies[:i], g.Allies[i+1:]...)
 		g.reformLines()
 		g.Threads.Drop(c.Name)
 		g.Log.AddColor(render.ColInkDim, "%s", g.Write.RecruitLeave(g.RNG, c.Name))
+		if unfinished {
+			g.Log.AddColor(render.ColInkDim, "They were in the middle of something. Somebody will hear about it.")
+		}
 		// Whatever you bought them comes back. They are being let go, not
 		// robbing you — and a pack that vanished on dismissal would make
 		// supplying anybody a bet rather than a purchase.

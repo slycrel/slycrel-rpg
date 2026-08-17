@@ -155,28 +155,7 @@ func (g *Game) interact(e *world.Entity) {
 		g.Say(e.Name, e.Line)
 
 	case world.EAltar:
-		const tithe = 25
-		g.AskMenu(e.Name, fmt.Sprintf(
-			"%s\n\nThe offering plate is right there. It is a large plate. You have %d coins.",
-			e.Line, g.Player.Coins),
-			[]ui.MenuItem{
-				{Label: "Pray", Detail: fmt.Sprintf("%d coins", tithe),
-					Disabled: g.Player.Coins < tithe},
-				{Label: "Leave it alone"},
-			}, func(g *Game, choice int) {
-				if choice != 0 {
-					return
-				}
-				if g.Player.Coins < 25 {
-					g.Say("", "You do not have 25 coins. The god notices this and says nothing, which is worse.")
-					return
-				}
-				g.Player.Coins -= 25
-				e.Used = true
-				g.restParty()
-				g.Player.Faith++
-				g.Say("", "Something old and largely retired takes an interest. You are made whole, and faintly indebted.")
-			})
+		g.offerAltar(e)
 
 	case world.EChest:
 		g.spend(e)

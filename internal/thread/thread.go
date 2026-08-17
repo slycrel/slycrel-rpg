@@ -97,6 +97,11 @@ type Ending struct {
 	Cut   int `json:"cut,omitempty"`
 	Fame  int `json:"fame,omitempty"`
 	Shame int `json:"shame,omitempty"`
+	// Honor is what the ending says about whether you stay for people. It is
+	// the axis that most often runs against the coins, which is the point of
+	// having it: without it the money ending and the right ending differ only
+	// in how much the player likes the paragraph.
+	Honor int `json:"honor,omitempty"`
 }
 
 // Costs reports whether taking this ending needs money up front.

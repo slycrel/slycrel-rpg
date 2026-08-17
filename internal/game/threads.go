@@ -221,6 +221,7 @@ func (g *Game) resolveThread(t *thread.Thread, e thread.Ending, owner *model.Cha
 	g.Player.SpendXP += xp
 	g.Player.Fame += e.Fame
 	g.Player.Shame += e.Shame
+	g.Player.Honor += e.Honor
 	if e.Cut != 0 {
 		// Floored at nothing rather than at their starting share: a companion
 		// working for free is a thing a story can earn, and one charging the
