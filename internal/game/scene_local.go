@@ -443,6 +443,7 @@ func (s *localScene) Draw(g *Game, dst *ebiten.Image) {
 	if !g.LocalWalk.Moving() {
 		frame = g.Tick() / 14
 	}
+	ctx.Shadow(px, py)
 	ctx.World(sp, frame, px, py, false)
 
 	s.drawHUD(g, dst)
@@ -471,6 +472,7 @@ func drawEntity(g *Game, ctx *render.Ctx, e *world.Entity) {
 	// sprite's size is what keeps unresolved keys out of the world as magenta
 	// boxes; they fall through to the markers below instead.
 	if e.Sprite != "" && g.Assets.Has(e.Sprite) {
+		ctx.Shadow(x, y)
 		ctx.World(g.Assets.Get(e.Sprite), g.Tick()/12, x, y, false)
 		return
 	}

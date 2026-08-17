@@ -175,6 +175,39 @@ func (c *Ctx) TileTinted(sp *assetsys.Sprite, frame, tx, ty int, tint color.Colo
 	c.Dst.DrawImage(img, op)
 }
 
+// shadowImg is the soft blot drawn under anything that stands on a tile. Built
+// once: it is the same ellipse every time and there are a lot of them.
+var shadowImg = func() *ebiten.Image {
+	const w, h = 14, 6
+	img := ebiten.NewImage(w, h)
+	cx, cy := float64(w-1)/2, float64(h-1)/2
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			dx, dy := (float64(x)-cx)/cx, (float64(y)-cy)/cy
+			if d := dx*dx + dy*dy; d <= 1 {
+				a := uint8(90 * (1 - d*0.7))
+				img.Set(x, y, color.RGBA{0, 0, 0, a})
+			}
+		}
+	}
+	return img
+}()
+
+// Shadow marks the tile something is standing on.
+//
+// Character art here is drawn into a 64-pixel box on a 16-pixel grid, so a
+// person is about two tiles tall and their body covers whatever is behind them.
+// Standing below a wall therefore reads as standing *on* the wall, and no
+// amount of correcting the anchor fixes that — the feet are in the right place
+// and simply cannot be seen. This puts a mark where the feet are.
+func (c *Ctx) Shadow(wx, wy float64) {
+	ox, oy := c.Cam.Offset()
+	w, h := float64(shadowImg.Bounds().Dx()), float64(shadowImg.Bounds().Dy())
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(round(wx-w/2)+ox, round(wy-h/2)+oy)
+	c.Dst.DrawImage(shadowImg, op)
+}
+
 // Screen draws a sprite frame at raw screen coordinates, top-left anchored,
 // optionally scaled. Used for portraits and interface art.
 func Screen(dst *ebiten.Image, sp *assetsys.Sprite, frame int, x, y, scale float64) {

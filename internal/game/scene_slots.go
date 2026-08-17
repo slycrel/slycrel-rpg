@@ -167,6 +167,11 @@ func (p *pauseScene) refresh(g *Game) {
 }
 
 func soundLabel(g *Game) string {
+	// A build with no audio device has no Bank at all, and the pause menu is
+	// not the place to find that out.
+	if g.Sound == nil {
+		return "unavailable"
+	}
 	switch {
 	case !g.Sound.Enabled() && g.Sound.Muted():
 		return "off"
@@ -186,14 +191,25 @@ func (p *pauseScene) Update(g *Game) error {
 	if !g.Accept() {
 		return nil
 	}
-	switch p.menu.Index {
-	case 0:
+	// Dispatch on the label rather than the row number.
+	//
+	// It was a switch on the index, and the Sound row had been inserted second
+	// without the numbers moving: Sound opened the save picker, Save opened the
+	// *load* picker — where every empty slot is disabled, so no slot could be
+	// selected at all — Load offered to abandon the run, and Abandon run did
+	// nothing. Saving was unreachable from the only menu that offers it. A
+	// position is not a name and should never have been used as one.
+	switch p.selected() {
+	case "Resume":
 		g.Pop()
-	case 1:
+	case "Sound":
+		g.cycleSound()
+		p.refresh(g)
+	case "Save":
 		g.Push(newSlotScene(g, slotSave))
-	case 2:
+	case "Load":
 		g.Push(newSlotScene(g, slotLoad))
-	case 3:
+	case "Abandon run":
 		g.Ask("", "Abandon this run and return to the title? Anything since your last save goes with it.",
 			[]string{"Abandon it", "Keep playing"}, func(g *Game, choice int) {
 				if choice != 0 {
@@ -205,6 +221,35 @@ func (p *pauseScene) Update(g *Game) error {
 			})
 	}
 	return nil
+}
+
+// selected returns the label of the highlighted row, which is what the pause
+// menu acts on.
+func (p *pauseScene) selected() string {
+	it, ok := p.menu.Selected()
+	if !ok {
+		return ""
+	}
+	return it.Label
+}
+
+// cycleSound steps the master volume down in quarters and round to full,
+// passing through silence. One row, one key, no submenu — it is a setting
+// somebody adjusts once and then forgets.
+func (g *Game) cycleSound() {
+	if g.Sound == nil {
+		return
+	}
+	v := g.Sound.Volume() - 0.25
+	if g.Sound.Muted() {
+		v = 1
+	}
+	if v <= 0.001 {
+		g.Sound.SetMuted(true)
+		return
+	}
+	g.Sound.SetMuted(false)
+	g.Sound.SetVolume(v)
 }
 
 func (p *pauseScene) Draw(g *Game, dst *ebiten.Image) {

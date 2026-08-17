@@ -277,6 +277,7 @@ func (g *Game) drawFollowers(ctx *render.Ctx, line party.Line) {
 		if w.Moving() {
 			frame = g.Tick() / 6
 		}
+		ctx.Shadow(px, py)
 		ctx.World(sp, frame, px, py, false)
 	}
 }

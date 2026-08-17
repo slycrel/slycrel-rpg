@@ -260,3 +260,71 @@ func TestTheDemoDoesNotAutosave(t *testing.T) {
 		t.Error("the tour wrote an autosave")
 	}
 }
+
+// The pause menu acts on the label of the highlighted row, not its position.
+//
+// It used to switch on the index, and the Sound row had been inserted second
+// without the numbers moving — so Save opened the *load* picker, where every
+// empty slot is disabled and no slot can be selected. Saving was unreachable
+// from the only menu that offers it, and nothing said so. This asserts the two
+// lists cannot drift apart again.
+func TestEveryPauseRowHasSomethingBehindIt(t *testing.T) {
+	g := &Game{Log: ui.NewLog(4)}
+	p := &pauseScene{}
+	p.refresh(g)
+
+	// Every row the menu offers must be a label the dispatch knows.
+	handled := map[string]bool{
+		"Resume": true, "Sound": true, "Save": true, "Load": true, "Abandon run": true,
+	}
+	if len(p.menu.Items) != len(handled) {
+		t.Errorf("the pause menu shows %d rows and the dispatch knows %d",
+			len(p.menu.Items), len(handled))
+	}
+	for i, it := range p.menu.Items {
+		if !handled[it.Label] {
+			t.Errorf("row %d is %q, which nothing acts on", i, it.Label)
+		}
+		p.menu.Index = i
+		if got := p.selected(); got != it.Label {
+			t.Errorf("row %d reads back as %q, not %q", i, got, it.Label)
+		}
+	}
+}
+
+// A save picker has to offer its slots. The load picker greys out the empty
+// ones on purpose; the save picker must not, or there is nowhere to save to on
+// a fresh run — which is every run the first time.
+func TestTheSavePickerOffersEmptySlots(t *testing.T) {
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Skipf("no data directory: %v", err)
+	}
+	g := &Game{Root: t.TempDir(), Log: ui.NewLog(4)}
+	_ = root
+
+	for _, mode := range []slotMode{slotSave, slotLoad} {
+		s := &slotScene{mode: mode}
+		s.refresh(g)
+		if len(s.menu.Items) == 0 {
+			t.Fatalf("mode %v offers no slots at all", mode)
+		}
+		enabled := 0
+		for _, it := range s.menu.Items {
+			if !it.Disabled {
+				enabled++
+			}
+		}
+		switch mode {
+		case slotSave:
+			if enabled != len(s.menu.Items) {
+				t.Errorf("the save picker greys out %d of %d empty slots",
+					len(s.menu.Items)-enabled, len(s.menu.Items))
+			}
+		case slotLoad:
+			if enabled != 0 {
+				t.Errorf("the load picker offers %d slots with nothing in them", enabled)
+			}
+		}
+	}
+}

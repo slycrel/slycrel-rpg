@@ -229,6 +229,7 @@ func (s *overworldScene) Draw(g *Game, dst *ebiten.Image) {
 	} else {
 		frame = g.Tick() / 14
 	}
+	ctx.Shadow(px, py)
 	ctx.World(sp, frame, px, py, false)
 
 	s.drawHUD(g, dst)
