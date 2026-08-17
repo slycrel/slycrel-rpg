@@ -194,15 +194,7 @@ const homeRadius = 14
 // so walking somewhere you should not be is dangerous immediately rather than
 // only once the plot says so.
 func (g *Game) encounterLevel(at core.Point) int {
-	region := 1
-	for _, p := range g.World.POIs {
-		if d := p.Pos.Manhattan(at); d < 18 {
-			if p.Level > region {
-				region = p.Level
-			}
-		}
-	}
-	lv := (g.Player.Level*2 + region) / 3
+	lv := (g.Player.Level*2 + g.World.RegionLevel(at)) / 3
 	lv = core.Clamp(lv+g.RNG.Between(-1, 1), 1, 14)
 
 	// What is out at night is a level meaner. Added before the home clamp

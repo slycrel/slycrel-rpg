@@ -19,12 +19,15 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/slycrel/slycrel-rpg/internal/content"
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/gamedata"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/party"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
+	"github.com/slycrel/slycrel-rpg/internal/saga"
 	"github.com/slycrel/slycrel-rpg/internal/sky"
+	"github.com/slycrel/slycrel-rpg/internal/world"
 )
 
 // maxLevel is the top of the band content is written for.
@@ -59,6 +62,7 @@ func main() {
 	reportEndurance(out, g, t, *fights/4)
 	reportProgression(out, g, t)
 	reportEconomy(out, t)
+	reportSaga(out, t)
 	reportSky(out)
 	reportSupplies(out, t)
 	reportCompany(out)
@@ -883,6 +887,96 @@ func reportSupplies(out *os.File, t *gamedata.Tables) {
 	fmt.Fprintf(out, "\nA thief pays for one restorative and leaves with two, so its column is\n")
 	fmt.Fprintf(out, "half the one beside it. That is the whole of what it gets for having no\n")
 	fmt.Fprintf(out, "way to heal itself, and it is spent at a counter rather than in a fight.\n\n")
+}
+
+// reportSaga measures the one claim the long stories rest on.
+//
+// A saga has no level gate anywhere in it. Its legs are dealt out at increasing
+// distance from where the story starts, and the whole design is the assertion
+// that this is enough — that the danger of a region rises with how far out it
+// is, so a spine paces itself and a player who runs it too early dies with
+// warning rather than by ambush.
+//
+// That claim was made in a commit message and never measured, which is exactly
+// the habit this whole command exists to break. So: cast every story on several
+// continents and print how far out each leg is and how dangerous the country
+// around it is, using the game's own RegionLevel rather than a copy of it.
+//
+// What the column has to do is climb. A leg that is further out and no more
+// dangerous is a leg the geography is not pacing, and enough of those would
+// mean the spine needs a gate after all.
+func reportSaga(out *os.File, t *gamedata.Tables) {
+	fmt.Fprintf(out, "SAGA — how far out each leg is, and how rough the country there is\n\n")
+	fmt.Fprintf(out, "%-18s %-5s %s\n", "story", "leg", "distance / region level, per seed")
+	fmt.Fprintln(out, strings.Repeat("-", 74))
+
+	seeds := []int64{1, 7, 1994, 20260817}
+	var climbs, total int
+
+	for _, sk := range t.Sagas.Sagas {
+		kind := "spine"
+		if sk.Arc {
+			kind = "arc"
+		}
+		// One row per leg, with every seed's answer on it, because the shape
+		// worth seeing is whether the numbers rise left to right down the
+		// column rather than what any single continent happened to produce.
+		type run struct {
+			dist, level []int
+		}
+		runs := map[int64]run{}
+		for _, seed := range seeds {
+			w := world.Generate(seed, content.New(&t.Text))
+			g := core.NewRNG(seed)
+			s, ok := saga.Cast(g, &t.Sagas, w, t, &sk, w.Start, 4, nil)
+			if !ok {
+				continue
+			}
+			r := run{}
+			for _, idx := range s.Places {
+				p := w.POIs[idx]
+				r.dist = append(r.dist, p.Pos.Manhattan(w.Start))
+				r.level = append(r.level, w.RegionLevel(p.Pos))
+			}
+			runs[seed] = r
+			// Did the danger actually climb from the first leg to the last?
+			if len(r.level) > 1 {
+				total++
+				if r.level[len(r.level)-1] > r.level[0] {
+					climbs++
+				}
+			}
+		}
+
+		for leg := 0; ; leg++ {
+			line, any := "", false
+			for _, seed := range seeds {
+				r, ok := runs[seed]
+				if !ok || leg >= len(r.dist) {
+					line += "     . "
+					continue
+				}
+				any = true
+				line += fmt.Sprintf(" %3d/%-2d", r.dist[leg], r.level[leg])
+			}
+			if !any {
+				break
+			}
+			label := ""
+			if leg == 0 {
+				label = fmt.Sprintf("%s (%s)", sk.ID, kind)
+			}
+			fmt.Fprintf(out, "%-18s %-5d %s\n", label, leg+1, line)
+		}
+	}
+
+	fmt.Fprintf(out, "\nEach cell is tiles-from-the-start / how rough the country is there.\n")
+	fmt.Fprintf(out, "The far end is rougher than the near end in %d of %d stagings.\n", climbs, total)
+	if total > 0 && climbs*2 < total {
+		fmt.Fprintf(out, "WARNING: distance is not buying difficulty, so the spine is not pacing\n")
+		fmt.Fprintf(out, "         itself and would need a level gate after all.\n")
+	}
+	fmt.Fprintln(out)
 }
 
 // reportSky is what the time of day and the weather do to the overworld loop.

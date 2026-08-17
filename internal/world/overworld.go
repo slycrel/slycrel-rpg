@@ -131,6 +131,30 @@ func (m *Map) POIAt(x, y int) *POI {
 	return nil
 }
 
+// regionRadius is how far around a point counts as "here" when working out how
+// dangerous the ground is.
+const regionRadius = 18
+
+// RegionLevel is how dangerous the country around a point is, read off the
+// locations near it. One means nothing worse than the outskirts of the capital.
+//
+// It lives here rather than in the scene layer because two things need it and
+// they must not disagree: the overworld, which blends it with the player's own
+// level to pick an encounter, and the balance report, which uses it to check
+// whether a long story's legs actually get harder as they get further out.
+// A copy of this loop in cmd/balance would be a report measuring its own
+// arithmetic rather than the game's, which is the one thing that report is not
+// allowed to do.
+func (m *Map) RegionLevel(at core.Point) int {
+	level := 1
+	for _, p := range m.POIs {
+		if p.Pos.Manhattan(at) < regionRadius && p.Level > level {
+			level = p.Level
+		}
+	}
+	return level
+}
+
 // Reveal marks the tiles within radius of a point as explored.
 func (m *Map) Reveal(at core.Point, radius int) {
 	for y := at.Y - radius; y <= at.Y+radius; y++ {

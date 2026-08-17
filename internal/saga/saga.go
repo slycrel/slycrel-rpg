@@ -9,13 +9,22 @@
 // purpose; a companion's thread is authored and belongs to a person; a saga is
 // authored and belongs to the map.
 //
-// The one idea that makes it work is that its legs are cast at *increasing
-// distance from where the player started*. Nothing here gates on level, checks
-// a flag, or refuses to advance — the difficulty curve does the pacing on its
-// own, because the danger of a region is a function of how far out it is and
-// the next leg is always further out than the last. A player who runs the whole
-// spine at level three will die in the fourth region, and will have been given
-// four increasingly obvious warnings on the way.
+// The one idea that makes it work is that its legs are spread across the reach
+// of the continent, each aimed at its share of the way out. Nothing here gates
+// on level, checks a flag, or refuses to advance — the difficulty curve does
+// the pacing on its own, because the danger of a region is a function of how
+// far out it is. A player who runs the whole spine at level three will die in
+// the fourth region, and will have been given three increasingly obvious
+// warnings on the way.
+//
+// "Spread across" rather than "increasing", and the difference is the whole
+// feature. The first version took the nearest place further out than the last,
+// which is strictly increasing and packed all five legs into the near end —
+// 6, 11, 12, 16 and 17 tiles, every one of them inside the eighteen-tile radius
+// RegionLevel reads. The country around the last leg was the country around the
+// first, and the pacing claim above was simply untrue. cmd/balance prints that
+// column now: it went from the far end being rougher in 6 stagings out of 16 to
+// 16 out of 16.
 //
 // An arc is the same machinery, shorter, and found rather than given: three or
 // four legs, cast when you walk into somewhere nobody sent you.
@@ -365,16 +374,34 @@ func stagePlaces(g *core.RNG, sk *Skeleton, w *world.Map, from core.Point) ([]in
 		pools[k] = idx
 	}
 
+	// How far the continent reaches from here, which is what the legs are
+	// spread across.
+	span := 0
+	for _, i := range pools[""] {
+		if d := w.POIs[i].Pos.Manhattan(from); d > span {
+			span = d
+		}
+	}
+
 	used := map[int]bool{}
 	// reach is how far out the previous leg was, so each one has to beat it.
 	reach := 0
 	var places []int
 	var names []string
 
-	for _, l := range sk.Legs {
-		pool := pools[l.Place]
-		pick := -1
-		for _, i := range pool {
+	for n, l := range sk.Legs {
+		// Where this leg wants to be: its share of the way out.
+		//
+		// The first version took the *nearest* place further than the last one,
+		// which sounds like the same thing and is not. It packed every leg into
+		// the near end — five legs at 6, 11, 12, 16 and 17 tiles, all inside
+		// the eighteen-tile radius RegionLevel reads — so the country around
+		// the last one was the country around the first, and the claim that a
+		// spine paces itself by geography was simply false. cmd/balance now
+		// prints that column, which is how this was found rather than shipped.
+		target := span * (n + 1) / len(sk.Legs)
+		pick, best := -1, 0
+		for _, i := range pools[l.Place] {
 			if used[i] {
 				continue
 			}
@@ -382,8 +409,9 @@ func stagePlaces(g *core.RNG, sk *Skeleton, w *world.Map, from core.Point) ([]in
 			if d <= reach {
 				continue
 			}
-			pick = i
-			break
+			if gap := core.Abs(d - target); pick < 0 || gap < best {
+				pick, best = i, gap
+			}
 		}
 		if pick < 0 {
 			// Not enough continent for this story, which is a supported answer

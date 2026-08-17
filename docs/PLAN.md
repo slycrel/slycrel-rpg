@@ -603,15 +603,29 @@ than a system.
    Quests are generated and forgettable on purpose; a companion's thread is
    authored and belongs to a person; a saga is authored and belongs to the map.
 
-   **The one idea that makes it work: legs are cast at increasing distance from
-   where the story starts.** Nothing in the package gates on level, checks a
-   flag, or refuses to advance. The difficulty curve does the pacing on its
-   own, because the danger of a region is already a function of how far out it
-   is and the next leg is always further than the last. A player who runs the
-   whole spine at level three dies in the fourth region, having been given
-   three increasingly obvious warnings on the way there.
-   `TestSpinesPointOutward` is what says so, and a generator that picked places
-   at random would have needed a gate — and a gate is a thing that says no.
+   **The one idea that makes it work: legs are spread across the reach of the
+   continent, each aimed at its share of the way out.** Nothing in the package
+   gates on level, checks a flag, or refuses to advance. The difficulty curve
+   does the pacing on its own, because the danger of a region is already a
+   function of how far out it is. A generator that picked places at random
+   would have needed a gate, and a gate is a thing that says no.
+
+   That claim was false for a while, and the fix is the reason `cmd/balance`
+   grew a SAGA section. The first version took the *nearest* qualifying place
+   further out than the last — strictly increasing, and therefore passing
+   `TestSpinesPointOutward` — which packed all five legs into the near end at
+   6, 11, 12, 16 and 17 tiles. Every one of those sits inside the eighteen-tile
+   radius `RegionLevel` reads, so the country around the last leg *was* the
+   country around the first. The far end came out rougher than the near end in
+   6 stagings out of 16; it is 16 of 16 now, with legs at 14, 31, 46, 60 and 78
+   tiles and region levels climbing 2, 5, 5, 6, 7.
+
+   The lesson is the one already written down twice: an assertion nobody
+   measured is a guess. The test that was supposed to protect this pinned the
+   wrong property — "each leg is further than the last" is true of a cluster —
+   and only building the instrument found it. `world.RegionLevel` was hoisted
+   out of the scene layer so the report reads the game's own arithmetic rather
+   than a copy, which is the only reason its column means anything.
 
    Three triggers, all of them things the game already notices for quests: a
    door, a cleared location, a kill. A saga that needed its own bookkeeping

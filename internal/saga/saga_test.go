@@ -65,6 +65,27 @@ func TestSpinesPointOutward(t *testing.T) {
 				}
 				last = d
 			}
+
+			// And it has to actually span the continent, which is the property
+			// this test was missing when it only checked the order.
+			//
+			// "Each leg is further than the last" is true of a cluster, and a
+			// cluster is what the first staging produced: five legs at 6 to 17
+			// tiles, all inside the eighteen-tile radius RegionLevel reads, so
+			// the last leg was no rougher than the first. It passed this test
+			// every time. cmd/balance found it; this is the assertion that
+			// would have.
+			span := 0
+			for _, p := range w.POIs {
+				if d := p.Pos.Manhattan(w.Start); d > span {
+					span = d
+				}
+			}
+			if span > 0 && last*10 < span*6 {
+				t.Errorf("%s on seed %d ends %d tiles out on a continent that reaches %d — "+
+					"the legs are bunched at the near end and distance is not buying difficulty",
+					sk.ID, seed, last, span)
+			}
 		}
 	}
 	if cast == 0 {
