@@ -33,6 +33,16 @@ var Font = text.NewGoXFace(basicfont.Face7x13)
 // LineH is the baseline-to-baseline distance for Font.
 const LineH = 12
 
+// TextInkTop is how far below the y given to Text the glyphs actually start,
+// and TextInkH how tall the inked box is. Measured off a render rather than
+// derived from the font: a highlight bar drawn on the nominal row instead of
+// the inked one clipped the bottom two rows of every selected glyph, which
+// read as the row being struck through.
+const (
+	TextInkTop = 2
+	TextInkH   = 11
+)
+
 // Palette holds the interface colours. Warm parchment on bruise-purple: it
 // reads as "tavern lit by one bad candle", which is the whole aesthetic.
 var (
@@ -299,6 +309,23 @@ func Text(dst *ebiten.Image, s string, x, y float64, c color.Color) {
 	op.GeoM.Translate(round(x), round(y))
 	op.ColorScale.ScaleWithColor(c)
 	text.Draw(dst, s, Font, op)
+}
+
+// TextFlat draws text with no drop shadow.
+//
+// The shadow exists to lift pale text off a busy background. On a solid
+// highlight bar with dark ink it does the opposite — a black smear behind a
+// nearly-black glyph, which is the muddiness on every selected row.
+func TextFlat(dst *ebiten.Image, s string, x, y float64, c color.Color) {
+	op := &text.DrawOptions{}
+	op.GeoM.Translate(round(x), round(y))
+	op.ColorScale.ScaleWithColor(c)
+	text.Draw(dst, fold.Replace(s), Font, op)
+}
+
+// TextFlatRight is TextFlat, right-aligned at x.
+func TextFlatRight(dst *ebiten.Image, s string, x, y float64, c color.Color) {
+	TextFlat(dst, s, x-TextW(s), y, c)
 }
 
 // TextW measures a string in pixels, as it will actually be drawn.

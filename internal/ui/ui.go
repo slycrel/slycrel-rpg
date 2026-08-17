@@ -215,8 +215,25 @@ func (m *Menu) Draw(dst *ebiten.Image, x, y, w float64) {
 			col = render.ColInkFaint
 		case i == m.Index:
 			col = render.ColSelectInk
-			render.Rect(dst, x-2, ly-1, w, m.rowH(), render.ColSelect)
-			render.Text(dst, ">", x-8, ly+m.textOffset(), render.ColGold)
+			// The bar covers the glyph box, not the nominal row.
+			//
+			// Text puts ink two pixels below the y it is handed, so a bar from
+			// ly-1 for LineH pixels stopped two rows short of the bottom of
+			// every letter: the base of each glyph fell onto the dark panel
+			// below the bar, dark on dark, and a selected row read as struck
+			// through. Rows with icons were never affected, because they are
+			// taller than the text and the bar covered it by accident — which
+			// is why the shop looked right and the title screen did not.
+			barY, barH := ly+render.TextInkTop-1, float64(render.TextInkH+2)
+			if h := m.rowH(); h > render.LineH {
+				barY, barH = ly-1, h
+			}
+			render.Rect(dst, x-2, barY, w, barH, render.ColSelect)
+			// Two pixels further out than looks necessary: Text draws a drop
+			// shadow one pixel right of the glyph, so a cursor at x-8 put its
+			// shadow against the first letter of the label and the two read as
+			// one smudged character.
+			render.Text(dst, ">", x-10, ly+m.textOffset(), render.ColGold)
 		}
 		// Icon first; the label indents past it so rows line up whether or not
 		// a given entry has art.
@@ -230,7 +247,12 @@ func (m *Menu) Draw(dst *ebiten.Image, x, y, w float64) {
 				}, 0, x, ly-2, IconSize, IconSize, iconTint(it.Disabled))
 			}
 		}
-		render.Text(dst, it.Label, lx, ly+m.textOffset(), col)
+		// The selected row sits on a solid bar, so it wants no drop shadow.
+		drawText, drawRight := render.Text, render.TextRight
+		if i == m.Index && !it.Disabled {
+			drawText, drawRight = render.TextFlat, render.TextFlatRight
+		}
+		drawText(dst, it.Label, lx, ly+m.textOffset(), col)
 
 		// The detail column gets whatever the label leaves, minus a gap. Sizing
 		// it as a fixed fraction of the row instead is what let "Abandon the
@@ -242,7 +264,7 @@ func (m *Menu) Draw(dst *ebiten.Image, x, y, w float64) {
 				if it.Disabled {
 					d = render.ColInkFaint
 				}
-				render.TextRight(dst, render.Trunc(it.Detail, avail), detailRight, ly+m.textOffset(), d)
+				drawRight(dst, render.Trunc(it.Detail, avail), detailRight, ly+m.textOffset(), d)
 			}
 		}
 	}
