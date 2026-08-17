@@ -1,0 +1,203 @@
+{
+  "sagas": [
+    {
+      "id": "register",
+      "title": "The Register",
+      "opening": "A clerk stops you at the gate with the unhurried confidence of somebody who has never been told no. 'The Register of Standing Places,' they say, holding up a book that is mostly corrections. 'Four entries have stopped agreeing with the country. I am not permitted to leave this building. You are going that way regardless.' The first is {P}.",
+      "legs": [
+        {
+          "trigger": "reach",
+          "note": "go to {P} and confirm it is there",
+          "text": "{P} is exactly where the Register says it is, which the clerk's margin note describes as 'unremarkable' in handwriting pressed very hard into the paper. You tick the box. It takes four seconds and feels like a formality you will be thinking about later."
+        },
+        {
+          "trigger": "reach",
+          "place": "settlement",
+          "note": "go to {P}; the Register calls it something else",
+          "text": "The Register calls this place something else. The people who live in {P} have never heard the other name, are cheerfully insistent about it, and one of them offers to fight you over it. Nobody here is lying. The book is not obviously lying either. You write down both, and feel the shape of the problem for the first time."
+        },
+        {
+          "trigger": "hunt",
+          "need": 4,
+          "note": "put down four of {X}; the Register says there are none left",
+          "text": "Four. The Register lists {X} as 'formerly present, no longer occurring', with a date on it older than the capital. You have now not-encountered four of them and every one was extremely present about it."
+        },
+        {
+          "trigger": "clear",
+          "place": "delve",
+          "note": "empty {P}; the Register has it down as a farm",
+          "text": "The Register has {P} down as forty acres of barley belonging to a family whose name nobody you can find recognises. There is no barley. There has never been barley. There is, however, a great deal of what used to be in your way."
+        },
+        {
+          "trigger": "reach",
+          "note": "go to {P}, the last entry",
+          "text": "{P} is not there.\n\nThe road goes to it. The road comes back from it. Between those two facts is a stretch of ordinary ground with nothing standing on it and no sign that anything ever did - and in your hand is a book that describes the place in four hundred words, including the colour of a door."
+        }
+      ],
+      "endings": [
+        {
+          "label": "Report it exactly as you found it",
+          "text": "The clerk reads your account twice, very slowly, then puts the Register in a drawer and locks it. 'Right,' they say. 'Right.' They do not open the drawer again while you are watching. You are paid the standard rate for a survey, which is insulting, and given a receipt, which is worse.",
+          "coins": 90,
+          "xp": 140,
+          "fame": 2,
+          "honor": 1
+        },
+        {
+          "label": "Sign it off as correct",
+          "text": "You tick the last box. The clerk is visibly relieved and stamps the Register closed, and somewhere a place that is not there remains officially somewhere. The bonus for a clean survey is substantial and arrives in a bag that was already counted.",
+          "coins": 260,
+          "shame": 1,
+          "honor": -1
+        },
+        {
+          "label": "Add yourself to the Register",
+          "text": "There is a page for standing places and you are, on balance, standing. The clerk watches you write and does not stop you, which you will think about. Nothing happens. Nothing continues to happen, at some length, and you leave with the strong sense of having been filed.",
+          "xp": 180,
+          "fame": 1,
+          "shame": 1
+        }
+      ]
+    },
+    {
+      "id": "instalments",
+      "title": "The Instalments",
+      "opening": "The parcel is heavy, wrapped in oilcloth, and has a name on it in a hand nobody at the treasury will admit to. 'Quarterly,' says the man handing it over, in the voice of somebody passing you a lit thing. 'Four of them. It has been paid every quarter for two hundred years and we would all prefer to keep it that way.' The first goes to {P}.",
+      "legs": [
+        {
+          "trigger": "reach",
+          "place": "settlement",
+          "note": "carry the first instalment to {P}",
+          "text": "At {P} an old woman takes the parcel without looking at it, signs for it in a ledger with two hundred years of signatures in it, and hands you the next one. It is heavier. She has already turned away and is doing something else entirely."
+        },
+        {
+          "trigger": "reach",
+          "note": "carry the second instalment to {P}",
+          "text": "The second goes to a house at {P} with the door open and nobody in it, a ledger on the table, and a pen already inked. You sign. The third parcel is under the table, wrapped and waiting, with today's date on it in the same hand as everything else."
+        },
+        {
+          "trigger": "hunt",
+          "need": 5,
+          "note": "put down five of {X}, which have been following the parcel",
+          "text": "{X} have been on the road behind you since the second house, at exactly the distance where you cannot be certain. Five of them stop being uncertain about it. Whatever is in the parcel does not react, which by now is the loudest thing about it."
+        },
+        {
+          "trigger": "reach",
+          "note": "carry the last instalment to {P}",
+          "text": "There is no house at {P}, no ledger, nobody to sign. There is a flat stone with two centuries of parcels stacked on it, unopened, in perfect condition, in the rain. The oldest is at the bottom and has not rotted. Nothing has been taken. Nothing has ever been taken."
+        }
+      ],
+      "endings": [
+        {
+          "label": "Add yours to the stack and go",
+          "text": "You put it on top, square it up out of an instinct you decline to examine, and walk away without looking back, which is harder than the walk there was. The treasury pays the courier's rate and asks not one question, which tells you they know.",
+          "coins": 140,
+          "xp": 150,
+          "honor": 1
+        },
+        {
+          "label": "Open it",
+          "text": "It is a very good lock and you are not gentle with it. Inside is a smaller parcel, wrapped identically, with the same name in the same hand. You stop there, which is the only decision in this whole business you are certain about. The treasury notices the seal. The treasury is extremely polite about noticing the seal.",
+          "xp": 190,
+          "shame": 2
+        },
+        {
+          "label": "Take the whole stack",
+          "text": "Two hundred years of unclaimed parcels are worth what unclaimed things are always worth, and the fences of three towns do very well out of you that month. You sleep badly and blame the beds, and go on blaming the beds.",
+          "coins": 420,
+          "shame": 3,
+          "honor": -1
+        }
+      ]
+    },
+    {
+      "id": "wrong-grave",
+      "title": "The Wrong Grave",
+      "arc": true,
+      "opening": "There is a marker here with your name cut into it, weathered to illegibility everywhere except the name. The dates are wrong by about two hundred years. Somebody has left flowers, and they are not old.",
+      "legs": [
+        {
+          "trigger": "reach",
+          "place": "settlement",
+          "note": "go to {P}, where the stone was cut",
+          "text": "The mason's yard at {P} keeps records, because masons do. Your stone was ordered, paid for and collected - by somebody giving your name, in advance, in coin that was current at the time."
+        },
+        {
+          "trigger": "hunt",
+          "need": 3,
+          "note": "put down three of {X}, which have been at the flowers",
+          "text": "{X} have been eating the flowers off that grave for as long as anybody has been leaving them, which turns out to be the only continuously documented fact in the entire business."
+        },
+        {
+          "trigger": "reach",
+          "place": "settlement",
+          "note": "go back to {P} and ask who has been leaving them",
+          "text": "The flowers come from a standing order at {P}, renewed yearly, paid yearly, by a name nobody has ever seen written down the same way twice. The clerk assumes you are the one paying. The clerk has assumed this for some time."
+        }
+      ],
+      "endings": [
+        {
+          "label": "Cancel the order",
+          "text": "It takes one line and a signature and the clerk is unbothered by any of it. The flowers stop. You do not go back to check whether anything else did.",
+          "xp": 90,
+          "honor": 1
+        },
+        {
+          "label": "Pay for another century",
+          "text": "It is not expensive, which is somehow the worst part. The clerk writes you a receipt for a hundred years of flowers on a grave with your name on it, and asks whether you would like it itemised.",
+          "coins": -40,
+          "xp": 110,
+          "fame": 1,
+          "honor": 1
+        },
+        {
+          "label": "Sell the plot",
+          "text": "It is a good plot: prepaid, quiet, well drained. There is no shortage of people who want one and the buyer is delighted. You have their name and they have your grave.",
+          "coins": 130,
+          "shame": 1,
+          "honor": -1
+        }
+      ]
+    },
+    {
+      "id": "long-bet",
+      "title": "The Long Bet",
+      "arc": true,
+      "opening": "Two names are scratched into the wall here and, between them in the same hand, a sum of money and a date. The date has not happened yet. The sum is enormous. Underneath, much later and much shakier: 'STILL WAITING'.",
+      "legs": [
+        {
+          "trigger": "reach",
+          "place": "settlement",
+          "note": "find the first name at {P}",
+          "text": "The first name is known at {P} the way a weather pattern is known. They made the bet, they have not conceded it, and they are extremely clear that the terms never specified who had to still be alive."
+        },
+        {
+          "trigger": "clear",
+          "place": "delve",
+          "note": "go to {P}, where the other one went",
+          "text": "The other one went to {P} to win the bet and has been winning it ever since, in the sense that nothing here has been able to stop them and nothing here has let them leave."
+        },
+        {
+          "trigger": "reach",
+          "place": "settlement",
+          "note": "go back to {P} and say what you found",
+          "text": "You describe it. The first one listens all the way through, nods once, and says 'so it holds' in the voice of somebody told a bridge is still standing."
+        }
+      ],
+      "endings": [
+        {
+          "label": "Tell them the truth about the terms",
+          "text": "You point out, gently, that the date is next spring and that one of the parties is somewhere they cannot walk out of. They take it the way you take a diagnosis, and then they laugh, and then they stop.",
+          "xp": 100,
+          "honor": 1
+        },
+        {
+          "label": "Hold the stakes yourself",
+          "text": "Somebody has to, they say, and there is nobody else in the room. The sum is enormous, the date is next spring, and you are now a party to a wager whose other side is a fixture.",
+          "coins": 180,
+          "shame": 1
+        }
+      ]
+    }
+  ]
+}

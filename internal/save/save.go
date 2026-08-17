@@ -24,6 +24,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
+	"github.com/slycrel/slycrel-rpg/internal/saga"
 	"github.com/slycrel/slycrel-rpg/internal/sky"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 )
@@ -77,6 +78,11 @@ type File struct {
 	Fog string `json:"fog"`
 
 	SinceFight int `json:"sinceFight"`
+
+	// Sagas are the long stories in progress: the spine and any arcs. Absent in
+	// a save written before there were any, which reads back as a run with no
+	// story in it — the honest answer, since it did not have one.
+	Sagas saga.Log `json:"sagas,omitempty"`
 
 	// Clock is the time of day, in steps taken. Absent in a save written before
 	// there was a sky, which reads back as the first dawn of the run — a fair

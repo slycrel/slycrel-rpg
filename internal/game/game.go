@@ -23,6 +23,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/party"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/render"
+	"github.com/slycrel/slycrel-rpg/internal/saga"
 	"github.com/slycrel/slycrel-rpg/internal/sky"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/tiles"
@@ -95,6 +96,11 @@ type Game struct {
 	stack []Scene
 	tick  int
 	quit  bool
+
+	// Sagas are the long stories: the spine, and any arcs picked up out in the
+	// world. pendingLegs is what has come due and not yet been said.
+	Sagas       saga.Log
+	pendingLegs []saga.Fired
 
 	// Clock is the time of day, in steps. Weather is not stored beside it —
 	// sky.At derives that from the seed, the clock and the biome, the same way

@@ -139,7 +139,8 @@ Built and running:
 - Asset pipeline: inventory, selective extraction, manifest generation, and an
   audit that reports which art keys still fall back to placeholders
 
-Deliberately not built yet: a main thread.
+Everything on the roadmap is built. What is left is playing it and
+finding out what it needs.
 
 Played twice end to end. The second pass is what turned up the home region, the
 starting kit, equipment as inventory, and four separate cases of the game
@@ -592,8 +593,56 @@ than a system.
    swings that band from 28% to 44%. Nothing else in the report said so.
 
 
-8. **A reason to be here.** A generated main thread that strings together
-   five or six POIs into something with an ending.
+8. ~~**A reason to be here.**~~ *(Built.)* `internal/saga`: a chain of places
+   strung across the continent with an authored ending on the far end.
+
+   It is the third system on the same split, and by now that split is the house
+   style — the *writing* is authored, in `data/text/sagas.json`, and the
+   *staging* is drawn from the world at cast time and frozen into the save.
+   Quests are generated and forgettable on purpose; a companion's thread is
+   authored and belongs to a person; a saga is authored and belongs to the map.
+
+   **The one idea that makes it work: legs are cast at increasing distance from
+   where the story starts.** Nothing in the package gates on level, checks a
+   flag, or refuses to advance. The difficulty curve does the pacing on its
+   own, because the danger of a region is already a function of how far out it
+   is and the next leg is always further than the last. A player who runs the
+   whole spine at level three dies in the fourth region, having been given
+   three increasingly obvious warnings on the way there.
+   `TestSpinesPointOutward` is what says so, and a generator that picked places
+   at random would have needed a gate — and a gate is a thing that says no.
+
+   Three triggers, all of them things the game already notices for quests: a
+   door, a cleared location, a kill. A saga that needed its own bookkeeping
+   would be one that quietly stopped advancing the next time somebody
+   rearranged a scene, and it is the one system a player cannot route around.
+
+   **The spine** is cast at `startRun` and its opening is pushed *under* the
+   welcome box, so the controls are read first and the story second. Two are
+   authored. *The Register* is a clerk's list of standing places that has
+   stopped agreeing with the country, and the fifth entry is not there. *The
+   Instalments* is a two-hundred-year-old quarterly debt paid in parcels, and
+   the far end is a flat stone with two centuries of them stacked on it,
+   unopened.
+
+   **Arcs** are the same machinery, shorter, and *found* rather than given:
+   three legs, rolled against a location's own seed when you walk into
+   somewhere nobody sent you, capped at two. *The Wrong Grave* is a marker with
+   your name on it and fresh flowers. *The Long Bet* is a wager whose date has
+   not happened yet and whose other party is a fixture.
+
+   `TestEverySagaCanActuallyBeFinished` plays each one through on four real
+   continents, firing exactly the events the game fires and nothing else. It is
+   the test the feature rests on: a spine is five places and possibly several
+   hours, and a leg that can never come due does not announce itself — it
+   becomes a dead entry at the top of the journal forever.
+
+   Two bugs found by reading rather than running, while the display was down.
+   The arc cap counted *stories* rather than arcs, so a finished spine freed a
+   slot for a third arc. And the arc roll was `p.Seed % 6 != 0` — a location's
+   seed comes off an RNG and can be negative, Go's `%` keeps the sign of the
+   dividend, so half the continent was silently ineligible in a way that would
+   have looked exactly like the rate being what it is.
 
 ### Phase 4 — polish
 

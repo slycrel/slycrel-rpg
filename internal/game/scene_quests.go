@@ -7,6 +7,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/render"
+	"github.com/slycrel/slycrel-rpg/internal/saga"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 )
@@ -43,6 +44,23 @@ func (s *questScene) refresh(g *Game) {
 		items = append(items, ui.MenuItem{
 			Label: "(nobody has asked you for anything)", Disabled: true,
 		})
+	}
+
+	// The long story goes on top, above the errands, because it is the reason
+	// to be here and everything else is something that came up.
+	if running := g.Sagas.Running(); len(running) > 0 {
+		var head []ui.MenuItem
+		for _, sg := range running {
+			detail := sg.Progress(&g.Data.Sagas)
+			if detail == "" {
+				detail = sg.PlaceName()
+			}
+			head = append(head, ui.MenuItem{
+				Label: sg.Fill(sg.Title), Detail: detail, Data: sg,
+			})
+		}
+		items = append(append([]ui.MenuItem{
+			{Label: "the long way round", Header: true}}, head...), items...)
 	}
 
 	// Backstories go underneath, behind headings, so one never looks like
@@ -106,14 +124,55 @@ func (s *questScene) Draw(g *Game, dst *ebiten.Image) {
 
 	ui.TitledPanel(dst, "", 14, 144, render.ScreenW-28, 96)
 	if it, ok := s.menu.Selected(); ok && !it.Disabled {
-		if t, ok := it.Data.(*thread.Thread); ok {
-			s.drawThread(g, dst, t)
-		} else {
-			s.drawQuest(g, dst, it.Data.(*quest.Quest))
+		switch d := it.Data.(type) {
+		case *saga.Saga:
+			s.drawSaga(g, dst, d)
+		case *thread.Thread:
+			s.drawThread(g, dst, d)
+		case *quest.Quest:
+			s.drawQuest(g, dst, d)
 		}
 	}
 
 	render.TextCenter(dst, "X to close", render.ScreenW/2, 250, render.ColInkFaint)
+}
+
+// drawSaga fills the detail panel for a long story. Same shape as the other
+// two — what, where, how far along — because from the player's side that is
+// what all three are.
+func (s *questScene) drawSaga(g *Game, dst *ebiten.Image, sg *saga.Saga) {
+	y := 152.0
+	for i, ln := range render.Wrap(sg.Note(&g.Data.Sagas), render.ScreenW-64) {
+		if i > 2 {
+			break
+		}
+		render.Text(dst, ln, 26, y, render.ColInk)
+		y += render.LineH
+	}
+	y += 4
+
+	if n := sg.PlaceName(); n != "" {
+		render.Text(dst, "Next", 26, y, render.ColInkDim)
+		render.TextRight(dst, n, render.ScreenW-26, y, render.ColInk)
+		y += render.LineH
+	}
+	// How far through, in legs. A spine is five places long and the useful
+	// thing to know is which one you are on, not how many creatures are left in
+	// whichever of them happens to be a hunt.
+	if sk, ok := g.Data.Sagas.Get(sg.Skeleton); ok {
+		render.Text(dst, "Stage", 26, y, render.ColInkDim)
+		render.TextRight(dst, fmt.Sprintf("%d of %d", sg.At+1, len(sk.Legs)),
+			render.ScreenW-26, y, render.ColInk)
+		y += render.LineH
+	}
+	if p := sg.Progress(&g.Data.Sagas); p != "" {
+		render.Text(dst, "Progress", 26, y, render.ColInkDim)
+		render.TextRight(dst, p, render.ScreenW-26, y, render.ColInk)
+		y += render.LineH
+	}
+
+	render.Text(dst, "Pays", 26, y, render.ColInkDim)
+	render.TextRight(dst, "depends what you decide", render.ScreenW-26, y, render.ColGold)
 }
 
 // drawThread fills the detail panel for a companion's backstory. It reads as

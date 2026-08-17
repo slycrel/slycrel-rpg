@@ -42,6 +42,11 @@ func (s *overworldScene) Update(g *Game) error {
 	// Somebody in the company may have something to say about their own life.
 	// Checked before input so the box goes up on the step that earned it, and
 	// the frame ends there so nothing else can be pushed on top of it.
+	// The long story first: a leg is the thing the player went somewhere for,
+	// and a companion's beat is a thing that happened on the way.
+	if g.serviceSagas() {
+		return nil
+	}
 	if g.serviceThreads() {
 		return nil
 	}
@@ -228,6 +233,7 @@ func (g *Game) enterPOI(poi *world.POI) {
 	g.Sound.Play("world/enter")
 	if idx := g.poiIndex(poi); idx >= 0 {
 		g.noteQuestProgress(g.Quests.OnEnteredPOI(idx))
+		g.sagasOnEnteringPOI(idx)
 		g.threadsOnEnteringPOI(idx)
 	}
 	g.Push(newLocalScene(g))

@@ -10,6 +10,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
+	"github.com/slycrel/slycrel-rpg/internal/saga"
 	"github.com/slycrel/slycrel-rpg/internal/save"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
@@ -1209,6 +1210,7 @@ func (b *battleScene) damageMonster(g *Game, idx, dmg int) {
 		g.Sound.Play("fight/die")
 		g.noteQuestProgress(g.Quests.OnMonsterKilled(m.Def.ID))
 		g.advanceThreads(thread.Event{Kind: thread.Kills, Monster: m.Def.ID})
+		g.advanceSagas(saga.Event{Kind: saga.Hunt, Monster: m.Def.ID})
 		b.log.AddColor(render.ColGold, "%s", g.Write.Death(g.RNG, m))
 	}
 }

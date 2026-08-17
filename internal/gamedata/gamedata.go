@@ -13,6 +13,7 @@ import (
 
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
+	"github.com/slycrel/slycrel-rpg/internal/saga"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 )
 
@@ -38,6 +39,9 @@ type Tables struct {
 	// in one. They live beside the rest of the writing rather than in the
 	// binary for the same reason everything else here does.
 	Threads thread.Book
+	// Sagas are the authored long stories: the spine that starts at the gate,
+	// and the short arcs found out in the world.
+	Sagas saga.Book
 }
 
 // Text is the writing room: word banks the generators recombine at runtime.
@@ -194,6 +198,9 @@ func Load(root string) (*Tables, error) {
 		return nil, err
 	}
 	if err := readJSON(filepath.Join(dd, "text", "flavor.json"), &t.Text); err != nil {
+		return nil, err
+	}
+	if err := readJSON(filepath.Join(dd, "text", "sagas.json"), &t.Sagas); err != nil {
 		return nil, err
 	}
 	if err := readJSON(filepath.Join(dd, "text", "threads.json"), &t.Threads); err != nil {

@@ -11,6 +11,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
+	"github.com/slycrel/slycrel-rpg/internal/saga"
 	"github.com/slycrel/slycrel-rpg/internal/save"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
@@ -512,6 +513,7 @@ func (g *Game) startRun(p *model.Character, name, epithet string) {
 	g.Allies = nil
 	g.follow, g.localFollow = nil, nil
 	g.Threads, g.pendingBeats, g.remindEndings = thread.Log{}, nil, false
+	g.Sagas, g.pendingLegs = saga.Log{}, nil
 
 	g.World = world.Generate(g.Seed, g.Write)
 	g.Quests = quest.Log{}
@@ -523,6 +525,10 @@ func (g *Game) startRun(p *model.Character, name, epithet string) {
 	g.Log.AddColor(render.ColGold, "%s %s steps out into a world that did not ask for them.",
 		g.Player.Name, g.Player.Epithet)
 	g.Replace(newOverworldScene(g))
+	// The reason to be here, before anything else has had a chance to happen.
+	// Pushed under the welcome box rather than over it, so the player reads the
+	// controls first and the story second.
+	g.beginSaga()
 	if poi := g.World.POIAt(g.World.Start.X, g.World.Start.Y); poi != nil {
 		g.Say(poi.Name, poi.Tag+"\n\nPress Z on a location to go inside. M opens the map.")
 	}

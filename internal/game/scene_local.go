@@ -12,6 +12,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/render"
+	"github.com/slycrel/slycrel-rpg/internal/saga"
 	"github.com/slycrel/slycrel-rpg/internal/sky"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
@@ -42,6 +43,11 @@ func (s *localScene) Update(g *Game) error {
 	g.localFollow.Advance()
 	s.cam.Update()
 
+	// The long story first: a leg is the thing the player went somewhere for,
+	// and a companion's beat is a thing that happened on the way.
+	if g.serviceSagas() {
+		return nil
+	}
 	if g.serviceThreads() {
 		return nil
 	}
@@ -230,6 +236,7 @@ func (g *Game) interact(e *world.Entity) {
 			g.Local.POI.Cleared = true
 			if idx := g.currentPOIIndex(); idx >= 0 {
 				g.noteQuestProgress(g.Quests.OnPOICleared(idx))
+				g.advanceSagas(saga.Event{Kind: saga.Clear, POI: idx})
 			}
 		}
 		g.autosave()

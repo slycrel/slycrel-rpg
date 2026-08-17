@@ -147,6 +147,11 @@ func (g *Game) serviceThreads() bool {
 	// on the next town: nagging on the road would make "not yet" meaningless.
 	if g.remindEndings {
 		g.remindEndings = false
+		// A saga's choice outranks a companion's for the same reason its legs
+		// do, and only one box goes up at a time.
+		if g.remindSagaEndings() {
+			return true
+		}
 		return g.remindThreadEndings()
 	}
 	return false
@@ -280,16 +285,19 @@ func (g *Game) threadsOnEnteringPOI(idx int) {
 	// Return is the resident's trigger and fires whether or not anybody is
 	// walking behind you — that is rather the point of somebody who stays put.
 	// Everything else is a companion's and needs one.
-	if g.World.POIs[idx].Kind.Settlement() {
+	town := g.World.POIs[idx].Kind.Settlement()
+	if town {
 		g.advanceThreads(thread.Event{Kind: thread.Return, POI: idx})
+		// Armed whether or not anybody is walking behind you: a saga's ending
+		// is the player's own business and does not need a companion present.
+		g.remindEndings = true
 	}
 	if len(g.Allies) == 0 {
 		return
 	}
 	g.advanceThreads(thread.Event{Kind: thread.Reach, POI: idx})
-	if g.World.POIs[idx].Kind.Settlement() {
+	if town {
 		g.advanceThreads(thread.Event{Kind: thread.Town, POI: idx})
-		g.remindEndings = true
 	}
 }
 
