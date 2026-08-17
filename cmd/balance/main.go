@@ -912,6 +912,7 @@ func reportSaga(out *os.File, t *gamedata.Tables) {
 
 	seeds := []int64{1, 7, 1994, 20260817}
 	var climbs, total int
+	firstMin, firstMax := 1<<30, 0
 
 	for _, sk := range t.Sagas.Sagas {
 		kind := "spine"
@@ -937,6 +938,10 @@ func reportSaga(out *os.File, t *gamedata.Tables) {
 				p := w.POIs[idx]
 				r.dist = append(r.dist, p.Pos.Manhattan(w.Start))
 				r.level = append(r.level, w.RegionLevel(p.Pos))
+			}
+			if len(r.dist) > 0 {
+				firstMin = core.Min(firstMin, r.dist[0])
+				firstMax = core.Max(firstMax, r.dist[0])
 			}
 			runs[seed] = r
 			// Did the danger actually climb from the first leg to the last?
@@ -972,6 +977,13 @@ func reportSaga(out *os.File, t *gamedata.Tables) {
 
 	fmt.Fprintf(out, "\nEach cell is tiles-from-the-start / how rough the country is there.\n")
 	fmt.Fprintf(out, "The far end is rougher than the near end in %d of %d stagings.\n", climbs, total)
+	// Where the first leg lands matters more than where the last one does. The
+	// spine is offered at level one, the compass points straight at it, and the
+	// home region — the only ground tuned for a fresh character — stops at
+	// HomeRadius. A first leg well beyond it is the opening being handed a
+	// difficulty nobody chose.
+	fmt.Fprintf(out, "First legs land %d-%d tiles out; the home region ends at %d.\n",
+		firstMin, firstMax, world.HomeRadius)
 	if total > 0 && climbs*2 < total {
 		fmt.Fprintf(out, "WARNING: distance is not buying difficulty, so the spine is not pacing\n")
 		fmt.Fprintf(out, "         itself and would need a level gate after all.\n")

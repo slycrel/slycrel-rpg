@@ -399,7 +399,7 @@ func stagePlaces(g *core.RNG, sk *Skeleton, w *world.Map, from core.Point) ([]in
 		// the last one was the country around the first, and the claim that a
 		// spine paces itself by geography was simply false. cmd/balance now
 		// prints that column, which is how this was found rather than shipped.
-		target := span * (n + 1) / len(sk.Legs)
+		target := legTarget(n, len(sk.Legs), span)
 		pick, best := -1, 0
 		for _, i := range pools[l.Place] {
 			if used[i] {
@@ -425,6 +425,26 @@ func stagePlaces(g *core.RNG, sk *Skeleton, w *world.Map, from core.Point) ([]in
 		names = append(names, w.POIs[pick].Name)
 	}
 	return places, names, true
+}
+
+// legTarget is how far out leg n of a story wants to be, given how far the
+// continent reaches.
+//
+// The first leg lands on the doorstep — inside the home region, the one stretch
+// of ground the opening was tuned for — and the last lands at the far edge,
+// with the rest spaced between. Spreading evenly from zero instead put first
+// legs 13 to 27 tiles out against a home region that ends at 14, which is the
+// story handing a level-one character a difficulty they did not choose and then
+// pointing the compass at it.
+//
+// The spine is offered at the gate on the first morning. Where it sends you
+// first is the one leg that has to be somewhere a new character can go.
+func legTarget(n, legs, span int) int {
+	near := world.HomeRadius
+	if span <= near || legs <= 1 {
+		return span
+	}
+	return near + (span-near)*n/(legs-1)
 }
 
 // biomeAround reports the monster table around a point, for casting.

@@ -135,6 +135,15 @@ func (m *Map) POIAt(x, y int) *POI {
 // dangerous the ground is.
 const regionRadius = 18
 
+// HomeRadius is how far the ground around the capital stays a place you can
+// learn the game in. Inside it the overworld caps an encounter at the player's
+// own level, which does not make it safe — it makes it predictable.
+//
+// Here rather than in the scene layer because it describes the map, and because
+// the balance report needs it to say whether a long story's first leg sends a
+// fresh character outside the one region that was tuned for them.
+const HomeRadius = 14
+
 // RegionLevel is how dangerous the country around a point is, read off the
 // locations near it. One means nothing worse than the outskirts of the capital.
 //

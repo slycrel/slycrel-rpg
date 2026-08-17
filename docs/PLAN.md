@@ -620,6 +620,15 @@ than a system.
    6 stagings out of 16; it is 16 of 16 now, with legs at 14, 31, 46, 60 and 78
    tiles and region levels climbing 2, 5, 5, 6, 7.
 
+   Fixing that raised a second question the same section could answer. Spreading
+   evenly from zero put *first* legs 13 to 27 tiles out, against a home region
+   that ends at 14 — the one stretch of ground the opening was tuned for. The
+   spine is offered at the gate on the first morning and the compass points
+   straight at it, so that was the story handing a level-one character a
+   difficulty nobody chose. Legs now interpolate from the home radius to the far
+   edge rather than from zero, and first legs land 7 to 21 tiles out, with the
+   stragglers being continents that have no second settlement any closer.
+
    The lesson is the one already written down twice: an assertion nobody
    measured is a guess. The test that was supposed to protect this pinned the
    wrong property — "each leg is further than the last" is true of a cluster —

@@ -188,7 +188,7 @@ func ambienceFor(biome string) string {
 // own level, which does not make it safe — an on-level fight is still a fight,
 // and every other rule is unchanged — it makes it *predictable*, which is the
 // thing the opening was missing.
-const homeRadius = 14
+const homeRadius = world.HomeRadius
 
 // encounterLevel blends the player's level with how far out they have wandered,
 // so walking somewhere you should not be is dangerous immediately rather than
