@@ -263,6 +263,7 @@ func (p *pauseScene) Draw(g *Game, dst *ebiten.Image) {
 
 	render.TextCenter(dst, g.summary(), render.ScreenW/2, 176, render.ColInkDim)
 	render.TextCenter(dst, fmt.Sprintf("seed %d", g.Seed), render.ScreenW/2, 190, render.ColInkFaint)
+	render.TextCenter(dst, BuildStamp, render.ScreenW/2, 202, render.ColInkFaint)
 	if p.menu.Index == 1 {
 		render.TextCenter(dst, "left/right adjusts - Z mutes", render.ScreenW/2, 206, render.ColInkFaint)
 	}

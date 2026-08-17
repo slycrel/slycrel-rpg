@@ -5,7 +5,6 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
@@ -94,77 +93,101 @@ func (t *titleScene) Draw(g *Game, dst *ebiten.Image) {
 	render.TextCenter(dst, "arrows / WASD to move - Z or Enter to confirm - X to go back",
 		render.ScreenW/2, 232, render.ColInkFaint)
 	render.TextCenter(dst, fmt.Sprintf("seed %d", g.Seed), render.ScreenW/2, 248, render.ColInkFaint)
+	render.TextCenter(dst, BuildStamp, render.ScreenW/2, 258, render.ColInkFaint)
 }
 
-// createScene rolls a character: pick a class, accept or reroll the name.
+// createScene rolls a character: pick a class, reroll either half of them, and
+// go.
+//
+// The three rolled characters here are the ones the game gets. They used to be
+// previews in the ordinary sense — rolled from their own forked generator to
+// keep the panel steady while browsing — and then startRun rolled a *fresh*
+// character from the main stream and handed that to the player instead. So the
+// prospects panel had never once shown the hit points anybody actually started
+// with, and a stat reroll would have been rerolling numbers that never left
+// this screen.
 type createScene struct {
-	menu      ui.Menu
-	preview   map[model.Class]*model.Character
-	name      string
-	epithet   string
-	nameRNG   *core.RNG
-	confirmed bool
+	menu    ui.Menu
+	rolled  map[model.Class]*model.Character
+	name    string
+	epithet string
+	nameRNG *core.RNG
+	statRNG *core.RNG
 	// shown is the class the preview panel is describing. It sticks when the
-	// cursor moves onto a row that is not a class, so that stepping down to
-	// reroll the name does not blank out half the screen.
+	// cursor moves onto a row that is not a class, so nothing blanks out.
 	shown model.Class
 }
 
 func newCreateScene(g *Game) *createScene {
 	c := &createScene{
-		preview: map[model.Class]*model.Character{},
+		rolled:  map[model.Class]*model.Character{},
 		nameRNG: g.RNG.Fork("names", g.Seed),
+		statRNG: g.RNG.Fork("stats", g.Seed),
 	}
-	// Roll one preview per class up front so the stat block is stable while
-	// the player browses, rather than shuffling under the cursor.
-	for _, cl := range model.AllClasses {
-		c.preview[cl] = rules.NewCharacter(g.RNG.Fork(string(cl), g.Seed), "", cl)
-	}
-	c.reroll(g)
+	c.rerollStats()
+	c.rerollName(g)
 
-	items := make([]ui.MenuItem, 0, len(model.AllClasses)+2)
+	items := make([]ui.MenuItem, 0, len(model.AllClasses)+1)
 	for _, cl := range model.AllClasses {
 		items = append(items, ui.MenuItem{Label: string(cl), Data: cl})
 	}
-	items = append(items,
-		ui.MenuItem{Label: "Reroll name"},
-		ui.MenuItem{Label: "Back"},
-	)
+	items = append(items, ui.MenuItem{Label: "Back"})
 	c.menu.SetItems(items)
 	c.shown = model.AllClasses[0]
 	return c
 }
 
-func (c *createScene) reroll(g *Game) {
+// rerollStats rolls a fresh set of all three, so whichever class the cursor
+// lands on is showing numbers from the same throw and the comparison between
+// them stays a fair one.
+func (c *createScene) rerollStats() {
+	for _, cl := range model.AllClasses {
+		c.rolled[cl] = rules.NewCharacter(c.statRNG, "", cl)
+	}
+}
+
+func (c *createScene) rerollName(g *Game) {
 	c.name = g.Write.HeroName(c.nameRNG)
 	c.epithet = g.Write.Epithet(c.nameRNG)
 }
 
 func (c *createScene) Update(g *Game) error {
-	g.MenuNav(&c.menu)
 	if g.Back() {
 		g.Replace(newTitleScene(g))
 		return nil
 	}
-	// R rerolls from anywhere in the list, so the name can be changed without
-	// leaving the class you are looking at.
-	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
-		c.reroll(g)
-		return nil
-	}
-	if !g.Accept() {
+
+	// Up and down pick the class; left and right reroll the two halves of the
+	// person. Both land in view — the numbers are on screen when you throw them
+	// and so is the name — which a menu row underneath the list could not do,
+	// since choosing it moved the cursor off the class whose stats you were
+	// looking at.
+	if d, ok := MenuDir(); ok {
+		switch d {
+		case core.DirUp:
+			c.menu.Move(-1)
+		case core.DirDown:
+			c.menu.Move(1)
+		case core.DirLeft:
+			c.rerollStats()
+			g.Sound.Play("ui/move")
+		case core.DirRight:
+			c.rerollName(g)
+			g.Sound.Play("ui/move")
+		}
 		return nil
 	}
 
+	if !g.Accept() {
+		return nil
+	}
 	it, _ := c.menu.Selected()
-	switch {
-	case it.Label == "Back":
+	if it.Label == "Back" {
 		g.Replace(newTitleScene(g))
-	case it.Label == "Reroll name":
-		c.reroll(g)
-	default:
-		class := it.Data.(model.Class)
-		g.startRun(c.name, c.epithet, class)
+		return nil
+	}
+	if class, ok := it.Data.(model.Class); ok {
+		g.startRun(c.rolled[class], c.name, c.epithet)
 	}
 	return nil
 }
@@ -178,7 +201,11 @@ func (c *createScene) Draw(g *Game, dst *ebiten.Image) {
 	// It used to live inside the stat preview, which only draws when the cursor
 	// is over a class — so moving down to "Reroll name" made the name itself
 	// disappear, and the player was rerolling something they could not see.
+	// The two rerolls flank the name, on the side that triggers them, so which
+	// arrow does which is answered by looking rather than remembering.
+	render.Text(dst, "< new stats", 12, 28, render.ColInkFaint)
 	render.TextCenter(dst, c.name+" "+c.epithet, render.ScreenW/2, 28, render.ColInk)
+	render.TextRight(dst, "new name >", render.ScreenW-12, 28, render.ColInkFaint)
 
 	ui.TitledPanel(dst, "class", 12, 44, 236, 134)
 	c.menu.Draw(dst, 24, 54, 216)
@@ -189,7 +216,7 @@ func (c *createScene) Draw(g *Game, dst *ebiten.Image) {
 			c.shown = cl
 		}
 	}
-	if p := c.preview[c.shown]; p != nil {
+	if p := c.rolled[c.shown]; p != nil {
 		cl := c.shown
 		ui.TitledPanel(dst, "prospects", 258, 44, 210, 134)
 		x, y := 268, 54.0
@@ -212,13 +239,19 @@ func (c *createScene) Draw(g *Game, dst *ebiten.Image) {
 		}
 	}
 
-	render.TextCenter(dst, "Z to accept  -  R for another name  -  X to go back",
-		render.ScreenW/2, 246, render.ColInkFaint)
+	render.TextCenter(dst, "up/down class  -  left rolls stats  -  right rolls a name",
+		render.ScreenW/2, 234, render.ColInkFaint)
+	render.TextCenter(dst, "Z to accept  -  X to go back", render.ScreenW/2, 246, render.ColInkFaint)
 }
 
 // startRun generates the continent and drops the player into it.
-func (g *Game) startRun(name, epithet string, class model.Class) {
-	g.Player = rules.NewCharacter(g.RNG, name, class)
+//
+// It takes the character rather than rolling one. Rolling here is what made the
+// creation screen's stat panel a work of fiction: it showed numbers from one
+// throw and the game began with another.
+func (g *Game) startRun(p *model.Character, name, epithet string) {
+	g.Player = p
+	g.Player.Name = name
 	g.Player.Epithet = epithet
 	g.Player.Weapon = g.Data.StarterWeapon()
 	g.Player.Armor = g.Data.StarterArmor()

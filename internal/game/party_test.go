@@ -328,3 +328,91 @@ func TestTheSavePickerOffersEmptySlots(t *testing.T) {
 		}
 	}
 }
+
+// The creation screen hands the game the character it was showing.
+//
+// It used to show one and start another: the panel rolled a preview per class
+// from its own forked generator, and startRun then rolled a fresh character
+// from the main stream and gave the player that. Every number on that screen
+// was a number from a throw nobody kept, which is a strange thing to let
+// somebody choose a class on and an impossible thing to offer a reroll of.
+func TestCreationHandsOverTheCharacterItShowed(t *testing.T) {
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Skipf("no data directory: %v", err)
+	}
+	tables, err := gamedata.Load(root)
+	if err != nil {
+		t.Fatalf("loading content: %v", err)
+	}
+	g := &Game{
+		Root: t.TempDir(), Data: tables, Write: content.New(&tables.Text),
+		RNG: core.NewRNG(7), Seed: 7, Log: ui.NewLog(4),
+	}
+	c := newCreateScene(g)
+
+	for _, class := range model.AllClasses {
+		p := c.rolled[class]
+		if p == nil {
+			t.Fatalf("no character rolled for %s", class)
+		}
+		if p.Class != class {
+			t.Errorf("the %s row is showing a %s", class, p.Class)
+		}
+		if p.MaxHP < 1 || p.MaxPsyche < 0 {
+			t.Errorf("%s rolled %d hit points and %d psyche", class, p.MaxHP, p.MaxPsyche)
+		}
+	}
+
+	// Rolling again has to actually move the numbers, or the control is a lie.
+	before := *c.rolled[model.ClassFighter]
+	moved := false
+	for i := 0; i < 20 && !moved; i++ {
+		c.rerollStats()
+		after := c.rolled[model.ClassFighter]
+		moved = after.MaxHP != before.MaxHP || after.Strength != before.Strength ||
+			after.Dexterity != before.Dexterity || after.Speed != before.Speed ||
+			after.MaxPsyche != before.MaxPsyche || after.Coins != before.Coins
+	}
+	if !moved {
+		t.Error("twenty stat rerolls produced the same fighter every time")
+	}
+
+	// And so does the other side of the screen.
+	name := c.name
+	changed := false
+	for i := 0; i < 20 && !changed; i++ {
+		c.rerollName(g)
+		changed = c.name != name || c.epithet != ""
+	}
+	if !changed {
+		t.Error("rerolling the name never changed it")
+	}
+}
+
+// Nothing in the class list may be an action. Left and right are the rerolls
+// now, and a row that is not a class or the way out would be a third thing the
+// cursor can land on with no stats to show for it.
+func TestTheClassListIsOnlyClasses(t *testing.T) {
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Skipf("no data directory: %v", err)
+	}
+	tables, err := gamedata.Load(root)
+	if err != nil {
+		t.Fatalf("loading content: %v", err)
+	}
+	g := &Game{
+		Root: t.TempDir(), Data: tables, Write: content.New(&tables.Text),
+		RNG: core.NewRNG(7), Seed: 7, Log: ui.NewLog(4),
+	}
+	c := newCreateScene(g)
+	for i, it := range c.menu.Items {
+		if it.Label == "Back" {
+			continue
+		}
+		if _, ok := it.Data.(model.Class); !ok {
+			t.Errorf("row %d is %q, which is neither a class nor the way out", i, it.Label)
+		}
+	}
+}

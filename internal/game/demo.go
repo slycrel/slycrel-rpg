@@ -58,7 +58,8 @@ func buildDemoSteps() []demoStep {
 		{at: 10, shot: "01-title"},
 
 		{at: 20, do: func(g *Game) {
-			g.startRun("Bosk", "the Regrettable", model.ClassFighter)
+			g.startRun(rules.NewCharacter(g.RNG, "Bosk", model.ClassFighter),
+				"Bosk", "the Regrettable")
 			g.dropOverlays() // startRun opens a welcome box; not wanted in the shot
 		}},
 		{at: 50, shot: "02-overworld"},
