@@ -97,6 +97,11 @@ type File struct {
 	// before there was a compass, which is the honest answer.
 	Track TrackState `json:"track,omitempty"`
 
+	// LastSpell is the technique the combat menu opens on. Saved because the
+	// autosave means a death is followed by fighting the same fight again, and
+	// that is exactly when having the cursor reset would be felt.
+	LastSpell string `json:"lastSpell,omitempty"`
+
 	// Clock is the time of day, in steps taken. Absent in a save written before
 	// there was a sky, which reads back as the first dawn of the run — a fair
 	// answer, and the only one an old save can honestly give.

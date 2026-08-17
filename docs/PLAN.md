@@ -871,6 +871,27 @@ The colours live on the detail column rather than the label, because that is
 the one part of a menu row whose colour survives the cursor landing on it — a
 label goes dark on the selection bar, and green on gold is unreadable.
 
+**The combat menu opens on the technique you cast last.** A fight is mostly the
+same two or three moves in some order, and scrolling past the same four
+techniques every round to reach the one being used is friction that stays
+invisible until somebody counts the keypresses. Recorded only once the psyche
+is actually paid, so a technique selected and then backed out of at the
+targeting step does not become the one the menu opens on; saved, because the
+autosave means a death is followed by fighting the same fight again and that is
+exactly when a reset cursor would be felt.
+
+`ui.Menu.Select` refuses a disabled row rather than snapping past it. Parking on
+a technique the player can no longer pay for means the first thing they press is
+declined, which is the opposite of what greying it out is for.
+
+Looking for that turned up an accident: one `Menu` serves the root list and the
+technique list, and `SetItems` preserves the index — so opening Techniques from
+row one landed on the *second* technique, and Item from row two on the second
+item, for no reason anybody chose. Both start at the top now.
+
+Still open, and Jeremy's: **a hotkey for the autosave slot.** It is written
+before every fight and the death prompt is currently the only way back to it.
+
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on

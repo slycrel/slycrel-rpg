@@ -102,6 +102,11 @@ type Game struct {
 	Sagas       saga.Log
 	pendingLegs []saga.Fired
 
+	// LastSpell is the technique the hero cast most recently, by id, so the
+	// combat menu can open on it. Companions do not count: they are not
+	// commanded, and their choices are not the player's habits.
+	LastSpell string
+
 	// Track is the destination the player has asked to be pointed at.
 	Track Track
 

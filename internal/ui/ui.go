@@ -251,6 +251,27 @@ func (m *Menu) scrollToCursor() {
 	m.top = core.Clamp(m.top, 0, len(m.Items)-m.Visible)
 }
 
+// Select parks the cursor on a row and scrolls it into view, and reports
+// whether it took.
+//
+// A disabled row is refused rather than snapped past. The one caller is a menu
+// remembering what was chosen last time, and "you picked this before, and you
+// cannot afford it now" is better said by leaving the cursor where a fresh menu
+// would have put it than by pointing at something the next keypress will
+// decline. Callers set Visible first: scrolling is measured against it.
+func (m *Menu) Select(i int) bool {
+	if i < 0 || i >= len(m.Items) || m.Items[i].Disabled || m.Items[i].Header {
+		return false
+	}
+	m.Index = i
+	m.scrollToCursor()
+	return true
+}
+
+// Window is the first row currently shown, for a caller that needs to know
+// what the scrolling window is looking at.
+func (m *Menu) Window() int { return m.top }
+
 // Selected returns the current item, or false when the menu is empty.
 func (m *Menu) Selected() (MenuItem, bool) {
 	if len(m.Items) == 0 {

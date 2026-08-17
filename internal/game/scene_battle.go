@@ -483,12 +483,29 @@ func (b *battleScene) chooseRoot(g *Game) {
 			return
 		}
 		b.menu.Icons = g.Assets
+		// From the top, not from wherever the root menu's cursor happened to
+		// be. One Menu serves both, and SetItems preserves the index — so
+		// opening Techniques from row one landed on the *second* technique, and
+		// Item from row two on the second item, for no reason anybody chose.
+		b.menu.Index = 0
 		b.menu.SetItems(items)
 		// Icon rows are taller, so fewer fit the command panel.
 		b.menu.Visible = 3
+		// Open on whatever was cast last, if it is still castable. A fight is
+		// mostly the same two or three moves in some order, and scrolling past
+		// the same four techniques every round to reach the one being used is
+		// the sort of friction that is invisible until somebody counts the
+		// keypresses. Visible is set first: Select scrolls against it.
+		for i, it := range items {
+			if s, ok := it.Data.(model.Spell); ok && s.ID == g.LastSpell {
+				b.menu.Select(i)
+				break
+			}
+		}
 		b.mode = modeSpell
 	case 2: // Item
 		fallen := b.anyoneDown()
+		b.menu.Index = 0
 		items := make([]ui.MenuItem, 0, len(g.Player.Bag))
 		for i, it := range g.Player.Bag {
 			off := it.Kind == model.ItemTrinket ||
@@ -851,6 +868,12 @@ func (b *battleScene) castSpell(g *Game, c cast) {
 		return
 	}
 	p.Psyche -= s.Cost
+	// Remembered only once it is actually paid for, so a technique the player
+	// selected and then backed out of at the targeting step does not become
+	// the one the menu opens on next round.
+	if p == g.Player {
+		g.LastSpell = s.ID
+	}
 	switch s.Kind {
 	case model.SpellHeal, model.SpellRevive:
 		g.Sound.Play("fight/heal")
