@@ -46,16 +46,35 @@ func (g *Game) SayThen(speaker, body string, then func(*Game)) {
 
 // Ask pushes a message box with choices. onChoose fires after the box closes.
 func (g *Game) Ask(speaker, body string, choices []string, onChoose func(*Game, int)) {
+	items := make([]ui.MenuItem, len(choices))
+	for i, c := range choices {
+		items[i] = ui.MenuItem{Label: c}
+	}
+	g.AskMenu(speaker, body, items, onChoose)
+}
+
+// AskMenu is Ask with the rows built by the caller, so a choice can carry a
+// price in its detail column or be greyed out entirely.
+//
+// Ask only took strings, which meant a box could offer a thing and then refuse
+// it: the ending of a backstory quoted a price, let you select it, and only
+// then said you could not afford it. A menu that can say no in advance is the
+// difference between a choice and a trick, and the same gap is why a section
+// header in a list has to be a disabled row with dashes around it.
+//
+// onChoose receives the row index, which counts disabled rows too, so it lines
+// up with what the caller passed in.
+func (g *Game) AskMenu(speaker, body string, items []ui.MenuItem, onChoose func(*Game, int)) {
+	labels := make([]string, len(items))
+	for i, it := range items {
+		labels[i] = it.Label
+	}
 	m := &messageScene{
 		under:    g.Top(),
 		speaker:  speaker,
 		body:     render.Wrap(body, render.ScreenW-56),
-		choices:  choices,
+		choices:  labels,
 		onChoose: onChoose,
-	}
-	items := make([]ui.MenuItem, len(choices))
-	for i, c := range choices {
-		items[i] = ui.MenuItem{Label: c}
 	}
 	m.menu.SetItems(items)
 	g.Push(m)
@@ -74,6 +93,13 @@ func (m *messageScene) Update(g *Game) error {
 
 	g.MenuNav(&m.menu)
 	if g.Accept() {
+		// A disabled row is an answer the caller has already said no to; taking
+		// it would put the refusal after the decision, which is the thing
+		// AskMenu exists to stop.
+		if it, ok := m.menu.Selected(); ok && it.Disabled {
+			g.Sound.Play("ui/deny")
+			return nil
+		}
 		i := m.menu.Index
 		g.Pop()
 		if m.onChoose != nil {

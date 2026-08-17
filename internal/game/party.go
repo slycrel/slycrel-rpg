@@ -84,7 +84,14 @@ func (g *Game) offerRecruit(e *world.Entity) {
 		return
 	}
 
-	g.Ask(e.Name, body, []string{fmt.Sprintf("Pay %d", cost), "Walk away"},
+	// The purse is already checked above, so this cannot be greyed out — but it
+	// says what the hire costs against what you are holding, which is the half
+	// that was missing.
+	g.AskMenu(e.Name, fmt.Sprintf("%s\n\nYou have %d coins.", body, g.Player.Coins),
+		[]ui.MenuItem{
+			{Label: "Pay", Detail: fmt.Sprintf("%d coins", cost)},
+			{Label: "Walk away"},
+		},
 		func(g *Game, choice int) {
 			if choice != 0 {
 				return

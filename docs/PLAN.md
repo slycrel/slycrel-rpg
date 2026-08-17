@@ -388,23 +388,26 @@ than a system.
    time, because half of them are the same missing capability wearing different
    hats and a single pass will be cheaper than eight patches.
 
-   Noticed so far, from building the backstories:
+   **The first pass is done.** It was the right call to batch them: three of the
+   five were the same missing capability, and fixing that once fixed all three.
 
-   - `Ask` has no disabled option. An ending the player cannot afford is
-     offered, selected, and only then refused with a line of text. The same gap
-     is why a menu section header has to be a disabled row with dashes round it
-     (`- the company -` in the journal).
-   - A price is quoted with the purse off screen. The ending menu says
-     "Buy out the terms (418)" and nothing on that screen says what you have.
-   - A companion's sheet does not mention their own backstory. There was no
-     room left on the 208-pixel panel, so the journal is the only place it
-     appears — which is the wrong place to look for "who is this person".
-   - The status panel is at its height limit generally. Four gear rows under six
-     stat rows already forced it from 200 to 208, and the next thing that wants
-     a row has nowhere to go.
+   - `Ask` only took strings, so a box could offer a thing and then refuse it —
+     the ending of a backstory quoted a price, let you pick it, and only then
+     said you could not pay. `AskMenu` takes rows, so a choice can carry a
+     price and be greyed out in advance. The inn, the altar and the hiring
+     board went the same way, and all four now say what is in your purse next
+     to what the thing costs.
+   - Menus have a real section header instead of a disabled row with dashes
+     round it, which is a heading the player spends a moment trying to select.
+   - A companion's sheet names their backstory. The panel grew from 208 to 220
+     to fit it, and that is the last of the room: the footer sits at 244 and
+     the frame ends at 236, so the next row has to come out of something else.
+   - The selected row in every menu was losing the bottom two pixels of every
+     letter off the bottom of the highlight bar. See the commit; I got that one
+     wrong twice before measuring it.
 
-   Jeremy has his own list from playing. Add to this as things turn up; do not
-   fix them in ones.
+   Add to this as things turn up; do not fix them in ones. What is left is the
+   art pass below, which is a different kind of job.
 
 10. Curated UI art from the 4,488-file GUI Pro kit, replacing the procedural panels.
 11. Title screen art, transitions, particles from the 115-file VFX pack.

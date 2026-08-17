@@ -87,7 +87,12 @@ type MenuItem struct {
 	Detail   string // right-aligned annotation: cost, count, price
 	Icon     string // asset key; blank rows simply have no icon
 	Disabled bool
-	Data     any // caller payload, e.g. the item or spell being chosen
+	// Header marks a row that names the group under it rather than being a
+	// choice. It draws as a label with a rule rather than as a greyed-out
+	// option, because a heading dressed as an unavailable choice is a heading
+	// the player spends a moment trying to select.
+	Header bool
+	Data   any // caller payload, e.g. the item or spell being chosen
 }
 
 // IconSource resolves an icon key to a drawable image, or nil when the key has
@@ -159,7 +164,7 @@ func (m *Menu) snapToEnabled(dir int) {
 		dir = 1
 	}
 	for i := 0; i < len(m.Items); i++ {
-		if !m.Items[m.Index].Disabled {
+		if !m.Items[m.Index].Disabled && !m.Items[m.Index].Header {
 			return
 		}
 		m.Index = ((m.Index+dir)%len(m.Items) + len(m.Items)) % len(m.Items)
@@ -208,6 +213,17 @@ func (m *Menu) Draw(dst *ebiten.Image, x, y, w float64) {
 		}
 		it := m.Items[i]
 		ly := y + float64(row)*m.rowH()
+
+		if it.Header {
+			ty := ly + m.textOffset() + render.TextInkTop
+			render.Text(dst, it.Label, x, ly+m.textOffset(), render.ColInkFaint)
+			// A rule from the end of the label to the edge of the list, so the
+			// heading reads as a divider rather than as a row you missed.
+			if rx := x + render.TextW(it.Label) + 6; rx < x+w-4 {
+				render.Rect(dst, rx, ty+float64(render.TextInkH)/2, x+w-4-rx, 1, render.ColInkFaint)
+			}
+			continue
+		}
 
 		col := render.ColInk
 		switch {

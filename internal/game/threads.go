@@ -7,6 +7,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
+	"github.com/slycrel/slycrel-rpg/internal/ui"
 )
 
 // ensureThreads casts a backstory for anybody in the company who does not have
@@ -168,20 +169,28 @@ func (g *Game) offerThreadEnding(t *thread.Thread, setup string) bool {
 		return false
 	}
 
-	labels := make([]string, len(opts))
-	for i, e := range opts {
-		labels[i] = e.Label
+	// The price goes in the detail column and an ending nobody can pay for is
+	// greyed out, rather than being offered and then refused after the fact.
+	rows := make([]ui.MenuItem, 0, len(opts)+1)
+	for _, e := range opts {
+		row := ui.MenuItem{Label: e.Label}
 		if cost := e.Costs() * int64(core.Max(1, owner.Level)); cost > 0 {
-			labels[i] = fmt.Sprintf("%s (%d)", e.Label, cost)
+			row.Detail = fmt.Sprintf("%d coins", cost)
+			row.Disabled = g.Player.Coins < cost
 		}
+		rows = append(rows, row)
 	}
-	labels = append(labels, "Not yet")
+	rows = append(rows, ui.MenuItem{Label: "Not yet"})
 
 	if setup == "" {
 		setup = t.Fill(t.Title) + "\n\n" + t.Owner + " is still waiting on an answer."
 	}
+	// And what you have, next to what things cost. Quoting a price on a screen
+	// that does not say what is in the purse is asking somebody to remember a
+	// number from another room.
+	setup += fmt.Sprintf("\n\nYou have %d coins.", g.Player.Coins)
 
-	g.Ask(t.Owner, setup, labels, func(g *Game, choice int) {
+	g.AskMenu(t.Owner, setup, rows, func(g *Game, choice int) {
 		if choice < 0 || choice >= len(opts) {
 			return // "Not yet", or backed out: ask again in the next town
 		}

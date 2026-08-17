@@ -12,6 +12,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/render"
+	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
 
@@ -154,8 +155,15 @@ func (g *Game) interact(e *world.Entity) {
 		g.Say(e.Name, e.Line)
 
 	case world.EAltar:
-		g.Ask(e.Name, e.Line+"\n\nThe offering plate is right there. It is a large plate.",
-			[]string{"Pray (25 coins)", "Leave it alone"}, func(g *Game, choice int) {
+		const tithe = 25
+		g.AskMenu(e.Name, fmt.Sprintf(
+			"%s\n\nThe offering plate is right there. It is a large plate. You have %d coins.",
+			e.Line, g.Player.Coins),
+			[]ui.MenuItem{
+				{Label: "Pray", Detail: fmt.Sprintf("%d coins", tithe),
+					Disabled: g.Player.Coins < tithe},
+				{Label: "Leave it alone"},
+			}, func(g *Game, choice int) {
 				if choice != 0 {
 					return
 				}
@@ -186,19 +194,26 @@ func (g *Game) interact(e *world.Entity) {
 		if beds > 1 {
 			body = fmt.Sprintf("%s\n\n%d beds, since you brought people.", body, beds)
 		}
-		g.Ask(e.Name, fmt.Sprintf("%s\n\nA night costs %d coins.", body, cost),
-			[]string{"Sleep", "Decline"}, func(g *Game, choice int) {
-				if choice != 0 {
-					return
-				}
-				if g.Player.Coins < int64(cost) {
-					g.Say("", "You are turned away, politely, by someone who has done it many times today.")
-					return
-				}
-				g.Player.Coins -= int64(cost)
-				g.restParty()
-				g.Say("", "You sleep like something that has stopped worrying. You wake fully restored and slightly sticky.")
-			})
+		// Greyed rather than offered and refused: the innkeeper can see your
+		// purse from where they are standing.
+		rows := []ui.MenuItem{
+			{Label: "Sleep", Detail: fmt.Sprintf("%d coins", cost),
+				Disabled: g.Player.Coins < int64(cost)},
+			{Label: "Decline"},
+		}
+		g.AskMenu(e.Name, fmt.Sprintf("%s\n\nA night costs %d coins. You have %d.",
+			body, cost, g.Player.Coins), rows, func(g *Game, choice int) {
+			if choice != 0 {
+				return
+			}
+			if g.Player.Coins < int64(cost) {
+				g.Say("", "You are turned away, politely, by someone who has done it many times today.")
+				return
+			}
+			g.Player.Coins -= int64(cost)
+			g.restParty()
+			g.Say("", "You sleep like something that has stopped worrying. You wake fully restored and slightly sticky.")
+		})
 
 	case world.EFoe, world.EBoss:
 		g.spend(e)

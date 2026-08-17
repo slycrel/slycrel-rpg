@@ -404,7 +404,12 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 	// 208 rather than 200: a hireling's sheet runs to four gear rows under six
 	// stat rows, and the old height clipped the last one against the frame.
 	// The footer hint sits at 232, so this still leaves a clear gap.
-	ui.TitledPanel(dst, title, 10, 16, 250, 208)
+	// 220 rather than 208: an ally's sheet gained a line for their backstory,
+	// and the panel was already at its limit with four gear rows under six stat
+	// rows. This is the last of the room — the footer sits at 244 and the frame
+	// ends at 236, so the next thing that wants a row has to take one from
+	// something else rather than from the bottom of the panel.
+	ui.TitledPanel(dst, title, 10, 16, 250, 220)
 
 	render.ScreenFit(dst, g.Assets.Get(portraitOf(p)), 0, 18, 24, 56, 56, nil)
 	render.Text(dst, p.Name, 82, 26, render.ColGold)
@@ -452,6 +457,12 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 			// What they are carrying, because they drink it without asking and
 			// the player is the one who has to decide whether that is enough.
 			[2]string{"Carrying", carrying(p)})
+		// And what they are dealing with, on the screen that is meant to answer
+		// "who is this person". The journal knows, but the journal is the list
+		// of things outstanding, which is a different question.
+		if t := g.Threads.For(p.Name); t != nil {
+			rows = append(rows, [2]string{"Story", t.Title})
+		}
 	} else {
 		rows = append(rows,
 			[2]string{"Experience", fmt.Sprintf("%d / %d", p.TotalXP, next)},
@@ -459,7 +470,10 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 	}
 	for _, r := range rows {
 		render.Text(dst, r[0], 20, y, render.ColInkDim)
-		render.TextRight(dst, r[1], 250, y, render.ColInk)
+		// Truncated to what the label leaves rather than right-aligned straight
+		// through it: "The Favour They Cannot Ask For" is wider than the panel.
+		avail := 250 - (20 + render.TextW(r[0]) + 8)
+		render.TextRight(dst, render.Trunc(r[1], avail), 250, y, render.ColInk)
 		y += render.LineH
 	}
 
@@ -529,7 +543,7 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 			hint = "Left / Right - G give - T take back - R let go - X close"
 		}
 	}
-	render.TextCenter(dst, hint, render.ScreenW/2, 232, render.ColInkFaint)
+	render.TextCenter(dst, hint, render.ScreenW/2, 244, render.ColInkFaint)
 }
 
 // gearWidth is the room a gear row leaves for its value after the label.

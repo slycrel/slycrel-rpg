@@ -48,7 +48,7 @@ func (s *questScene) refresh(g *Game) {
 	// The company's own business goes underneath, behind a heading, so that a
 	// backstory never looks like something a stranger in a town asked for.
 	if running := g.Threads.Running(); len(running) > 0 {
-		items = append(items, ui.MenuItem{Label: "- the company -", Disabled: true})
+		items = append(items, ui.MenuItem{Label: "the company", Header: true})
 		for _, t := range running {
 			items = append(items, ui.MenuItem{
 				Label: t.Title, Detail: t.Progress(&g.Data.Threads), Data: t,
