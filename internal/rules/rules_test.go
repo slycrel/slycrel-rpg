@@ -112,20 +112,53 @@ func TestMonstersFleeOnlyWhenNearlyDead(t *testing.T) {
 	g := core.NewRNG(2)
 	healthy := &model.Monster{Def: &model.MonsterDef{}, HP: 100, MaxHP: 100}
 	for i := 0; i < 2000; i++ {
-		if rules.ChooseMonsterAction(g, healthy) == rules.MonFlee {
-			t.Fatal("a monster at full health tried to run")
+		for _, alone := range []bool{false, true} {
+			if rules.ChooseMonsterAction(g, healthy, alone) == rules.MonFlee {
+				t.Fatal("a monster at full health tried to run")
+			}
 		}
 	}
 	dying := &model.Monster{Def: &model.MonsterDef{}, HP: 1, MaxHP: 100}
 	fled := false
 	for i := 0; i < 200; i++ {
-		if rules.ChooseMonsterAction(g, dying) == rules.MonFlee {
+		if rules.ChooseMonsterAction(g, dying, false) == rules.MonFlee {
 			fled = true
 			break
 		}
 	}
 	if !fled {
 		t.Error("a monster at 1%% health never once considered leaving")
+	}
+}
+
+// TestTheLastOneStandingHoldsItsNerve. A fight that ends because the only thing
+// left in it walked off is a fight that ends in an anticlimax, and at levels
+// one to three — where an encounter is one or two creatures — that was most of
+// what "the monsters keep running away" meant.
+//
+// Damped, not forbidden: a cornered animal bolting is worth keeping. So this
+// asserts the shape (rarer when alone, still possible) rather than a rate.
+func TestTheLastOneStandingHoldsItsNerve(t *testing.T) {
+	const tries = 4000
+	count := func(alone bool) int {
+		g := core.NewRNG(7)
+		n := 0
+		for i := 0; i < tries; i++ {
+			dying := &model.Monster{Def: &model.MonsterDef{}, HP: 1, MaxHP: 100}
+			if rules.ChooseMonsterAction(g, dying, alone) == rules.MonFlee {
+				n++
+			}
+		}
+		return n
+	}
+	withFriends, lastOne := count(false), count(true)
+	if lastOne >= withFriends {
+		t.Errorf("the last one standing ran %d times in %d and one with friends ran %d: "+
+			"something with nowhere to run to should try it less often",
+			lastOne, tries, withFriends)
+	}
+	if lastOne == 0 {
+		t.Error("the last one standing never ran at all; this is meant to be damped, not forbidden")
 	}
 }
 

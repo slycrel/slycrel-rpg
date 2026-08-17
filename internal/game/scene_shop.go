@@ -118,8 +118,16 @@ func (s *shopScene) refresh(g *Game) {
 					continue
 				}
 				price := g.askingPrice(it.Value * 2)
+				// Quoted before the purchase, not discovered after it. The
+				// thief's two-for-one is the class's answer to having no way to
+				// heal itself, and a player who never notices it is a player
+				// who thinks the class is simply worse.
+				detail := fmt.Sprintf("%d", price)
+				if rules.SleightOfHand(s.buyer(g), it.Kind) > 1 {
+					detail = fmt.Sprintf("%d for two", price)
+				}
 				items = append(items, ui.MenuItem{
-					Label: it.Name, Detail: fmt.Sprintf("%d", price), Icon: it.Icon,
+					Label: it.Name, Detail: detail, Icon: it.Icon,
 					Disabled: int64(price) > g.Player.Coins, Data: it,
 				})
 			}
@@ -239,12 +247,21 @@ func (s *shopScene) buy(g *Game, it ui.MenuItem) {
 	case model.Charm:
 		carry(model.Carried{Charm: &v}, v.Cost)
 	case model.Item:
-		v.Count = 1
+		// A thief pays for one restorative and leaves with two. Said out loud
+		// rather than left as a quiet extra in the pack, because a perk the
+		// game will not talk about is a perk nobody knows they have.
+		n := rules.SleightOfHand(p, v.Kind)
+		v.Count = n
 		pay(v.Value * 2)
 		p.AddItem(v)
-		if p == g.Player {
+		switch {
+		case n > 1 && p == g.Player:
+			s.note = fmt.Sprintf("One %s, wrapped in something. And one that was not wrapped in anything.", v.Name)
+		case n > 1:
+			s.note = fmt.Sprintf("Two %s for %s, of which one was paid for.", v.Name, p.Name)
+		case p == g.Player:
 			s.note = fmt.Sprintf("One %s, wrapped in something.", v.Name)
-		} else {
+		default:
 			// Supplies bought for a companion go in their pack, and they drink
 			// them without asking. That is the point of buying them.
 			s.note = fmt.Sprintf("One %s, handed straight to %s.", v.Name, p.Name)

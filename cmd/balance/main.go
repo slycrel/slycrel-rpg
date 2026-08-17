@@ -58,6 +58,7 @@ func main() {
 	reportEndurance(out, g, t, *fights/4)
 	reportProgression(out, g, t)
 	reportEconomy(out, t)
+	reportSupplies(out, t)
 	reportCompany(out)
 	reportMonsterSpread(out, t)
 }
@@ -825,6 +826,61 @@ func reportEconomy(out *os.File, t *gamedata.Tables) {
 		fmt.Fprintf(out, "%-5d %5d %28s %8d %28s %8d\n", level, tier, w.Name, w.Cost, a.Name, a.Cost)
 	}
 	fmt.Fprintln(out)
+}
+
+// shopStock is the restorative shelf, in the order the shop lists it. Kept
+// here so this section measures what a player can actually walk in and buy,
+// rather than every healing item that exists in the data — several of which
+// only ever come off a monster.
+var shopStock = []string{
+	"Small Beer", "Field Poultice", "Physician's Draught",
+	"Bottled Nap", "Philosopher's Espresso", "Bitter Root", "Suspicious Pollen",
+	"Smelling Salts, Militant", "Still-Warm Heart",
+	"Damp Compress", "Broad Antidote",
+}
+
+// reportSupplies is what staying upright costs at a counter, and it exists
+// because the combat simulator deliberately does not model potions — ENDURANCE
+// says "no potions" in its own header.
+//
+// That was fine while items were a convenience. It stopped being fine when the
+// thief started leaving the counter with two of everything restorative, which
+// is the class's compensation for having no healing technique at all: the whole
+// mechanic lives on the buying side of the game, where the fight simulator
+// cannot see it. Measuring it here rather than teaching SimulateFight to drink
+// is the honest trade — modelling potion use would re-tune every endurance
+// number in the report to answer a question about prices.
+func reportSupplies(out *os.File, t *gamedata.Tables) {
+	fmt.Fprintf(out, "SUPPLIES — what the pack costs, and what the thief pays for it\n\n")
+	fmt.Fprintf(out, "%-26s %-8s %6s %7s %9s %9s\n",
+		"item", "kind", "power", "price", "per point", "as thief")
+	fmt.Fprintln(out, strings.Repeat("-", 70))
+
+	thief := &model.Character{Class: model.ClassThief}
+
+	for _, name := range shopStock {
+		it, ok := t.Item(name)
+		if !ok {
+			fmt.Fprintf(out, "%-26s MISSING — the shop lists it and the data does not have it\n", name)
+			continue
+		}
+		price := it.Value * 2
+		n := rules.SleightOfHand(thief, it.Kind)
+		// Cost per point of effect, which is the only figure that compares a
+		// Small Beer to a Still-Warm Heart. Items with no power — a cure, an
+		// antidote — have nothing to divide by and say so.
+		per, asThief := "-", "-"
+		if it.Power > 0 {
+			per = fmt.Sprintf("%.1f", float64(price)/float64(it.Power))
+			asThief = fmt.Sprintf("%.1f", float64(price)/float64(it.Power*n))
+		}
+		fmt.Fprintf(out, "%-26s %-8s %6d %7d %9s %9s\n",
+			it.Name, it.Kind, it.Power, price, per, asThief)
+	}
+
+	fmt.Fprintf(out, "\nA thief pays for one restorative and leaves with two, so its column is\n")
+	fmt.Fprintf(out, "half the one beside it. That is the whole of what it gets for having no\n")
+	fmt.Fprintf(out, "way to heal itself, and it is spent at a counter rather than in a fight.\n\n")
 }
 
 // reportCompany shows what the people following you take off every haul, and

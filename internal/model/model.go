@@ -314,7 +314,12 @@ type Monster struct {
 	Name  string // may be uniquified, e.g. "Gutter Troll B"
 	HP    int
 	MaxHP int
-	Dead  bool
+	// Dead means out of the fight, which is not the same as killed: something
+	// that ran is Dead with hit points left. Fled says which, because the two
+	// are worth different amounts and reading it off the hit points alone was
+	// what made a runner worth nothing at all.
+	Dead bool
+	Fled bool
 
 	Offense int
 	Defense int

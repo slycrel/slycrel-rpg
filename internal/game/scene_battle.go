@@ -1109,9 +1109,12 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 		return
 	}
 
-	switch rules.ChooseMonsterAction(g.RNG, m) {
+	switch rules.ChooseMonsterAction(g.RNG, m, len(b.living()) == 1) {
 	case rules.MonFlee:
-		m.Dead = true // it leaves the fight; no experience for a runner
+		// It leaves the fight, and it leaves its purse. What it does not leave
+		// is the whole reward — see awardSpoils.
+		m.Dead = true
+		m.Fled = true
 		b.log.AddColor(render.ColInkDim, "%s decides this is not its problem and goes.", m.Name)
 		return
 	case rules.MonDefend:
@@ -1222,17 +1225,31 @@ func (b *battleScene) checkEnd(g *Game) bool {
 func (b *battleScene) awardSpoils(g *Game) {
 	p := g.Player
 	killed := make([]*model.Monster, 0, len(b.mons))
+	routed := make([]*model.Monster, 0, len(b.mons))
 	for _, m := range b.mons {
-		if m.HP <= 0 { // a monster that fled has HP left and earns nothing
+		switch {
+		case m.Fled:
+			routed = append(routed, m)
+		case m.HP <= 0:
 			killed = append(killed, m)
 		}
 	}
-	if len(killed) == 0 {
+	if len(killed)+len(routed) == 0 {
 		return
 	}
 
-	xp := rules.XPAward(killed)
-	coins := rules.CoinAward(g.RNG, killed)
+	// Driving something off pays. It used to pay nothing, which meant a fight
+	// could end with the player having done ninety percent of the work on every
+	// creature in it and walking away with an empty purse — and at levels one
+	// to three, where an encounter is one or two creatures, that was most of
+	// what "the monsters keep running away" felt like.
+	//
+	// The coins come across whole, because something running is not stopping to
+	// collect anything. The experience is halved, because you did not finish
+	// it. The gear roll below stays on kills alone: a runner still has whatever
+	// it was wearing, since it is wearing it as it goes.
+	xp := rules.XPAward(killed) + rules.RoutedXP(rules.XPAward(routed))
+	coins := rules.CoinAward(g.RNG, killed) + rules.CoinAward(g.RNG, routed)
 
 	// Something occasionally has gear on it.
 	//
@@ -1244,9 +1261,12 @@ func (b *battleScene) awardSpoils(g *Game) {
 	// and the spoils have not finished being read out.
 	if b.result == 1 && g.RNG.Chance(0.07) {
 		// Banded off what was actually fought, so the reward tracks the risk
-		// rather than where the fight happened to start.
+		// rather than where the fight happened to start. Runners count for the
+		// band even though they drop nothing themselves: the danger of the
+		// encounter is what was in the room, not what was still in it at the
+		// end.
 		lv := 1
-		for _, m := range killed {
+		for _, m := range append(append([]*model.Monster{}, killed...), routed...) {
 			if m.Def.Level > lv {
 				lv = m.Def.Level
 			}
@@ -1284,8 +1304,21 @@ func (b *battleScene) awardSpoils(g *Game) {
 	} else {
 		b.log.AddColor(render.ColGold, "%d experience. %d coins.", xp, coins)
 	}
+	// Say that the ones which ran still paid, or the player reads the smaller
+	// number as the game having taken something off them.
+	if len(routed) > 0 {
+		b.log.AddColor(render.ColInkDim, "%s dropped %s running. Half credit for the ones that got away.",
+			plural(len(routed), "One", "Some"), plural(len(routed), "its purse", "their purses"))
+	}
 
-	for _, m := range killed {
+	// The bodies. A thief also works the ones that got away, which is the whole
+	// of its share in a fight that ends with something bolting: everybody gets
+	// the purse a runner drops, and the thief gets what it was holding.
+	looted := killed
+	if rules.Pickpocket(p) && len(routed) > 0 {
+		looted = append(append([]*model.Monster{}, killed...), routed...)
+	}
+	for _, m := range looted {
 		for name, n := range rules.RollLoot(g.RNG, m.Def.Loot) {
 			it, ok := g.Data.Item(name)
 			if !ok {
@@ -1294,7 +1327,11 @@ func (b *battleScene) awardSpoils(g *Game) {
 			it.Count = n
 			p.AddItem(it)
 			g.Sound.Play("world/loot")
-			b.log.Add("Picked up %s.", itemLine(it))
+			if m.Fled {
+				b.log.Add("Lifted %s on its way past.", itemLine(it))
+			} else {
+				b.log.Add("Picked up %s.", itemLine(it))
+			}
 		}
 	}
 

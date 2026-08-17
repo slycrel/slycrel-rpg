@@ -431,10 +431,31 @@ const (
 	MonFlee
 )
 
+// fleeWhenAlone is how much of the usual bolting instinct survives being the
+// last one standing.
+//
+// Something that runs while its friends are still swinging has somewhere to
+// run to. The last one in the room does not, and more to the point a fight
+// that ends because the only thing left in it walked off is a fight that ends
+// in an anticlimax — which is what it felt like at levels one to three, where
+// an encounter is one or two creatures and the whole thing could evaporate
+// after the player had done all the work.
+//
+// Damped rather than forbidden. A cornered animal bolting is worth keeping;
+// it just should not be the ordinary way a low-level fight finishes.
+const fleeWhenAlone = 0.3
+
 // ChooseMonsterAction picks a monster's move. Roughly the original's 50-sided
 // table: mostly attack, sometimes turtle, and bolt when nearly dead.
-func ChooseMonsterAction(g *core.RNG, m *model.Monster) MonsterAction {
-	if m.HPFrac() < 0.15 && g.Chance(0.35) {
+//
+// alone says whether this is the last one still in the fight, which is the only
+// thing outside the monster itself that its nerve depends on.
+func ChooseMonsterAction(g *core.RNG, m *model.Monster, alone bool) MonsterAction {
+	bolt := 0.35
+	if alone {
+		bolt *= fleeWhenAlone
+	}
+	if m.HPFrac() < 0.15 && g.Chance(bolt) {
 		return MonFlee
 	}
 	if roll := g.Between(1, 50); roll > 38 {
@@ -442,6 +463,19 @@ func ChooseMonsterAction(g *core.RNG, m *model.Monster) MonsterAction {
 	}
 	return MonAttack
 }
+
+// RoutedXP is what driving something off is worth next to putting it down.
+//
+// Not nothing, which is what it used to be. A monster only runs below fifteen
+// percent health, so by the time it goes the player has done nearly all of the
+// work and the fight ends with the reward withheld on a coin flip the player
+// had no part in. Half the experience says you did most of it; the missing half
+// says you did not finish it.
+//
+// Its coins come across in full and are handled at the call site rather than
+// here, because that is not a discount — a creature that turns and runs is a
+// creature that is not stopping to pick anything up.
+func RoutedXP(full int64) int64 { return full / 2 }
 
 // --- companions -----------------------------------------------------------
 
@@ -952,14 +986,25 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 			}
 			hurt(target, sw.Damage)
 		}
+		// standing counts what is still in the fight, which is what decides
+		// whether the one taking its turn has anybody left to run behind.
+		standing := func() int {
+			n := 0
+			for _, m := range living {
+				if !m.Dead {
+					n++
+				}
+			}
+			return n
+		}
 		monsterTurns := func() {
 			for _, m := range living {
 				if m.Dead || sim.HP <= 0 {
 					continue
 				}
-				switch ChooseMonsterAction(g, m) {
+				switch ChooseMonsterAction(g, m, standing() == 1) {
 				case MonFlee:
-					m.Dead = true // leaves the fight; earns the player nothing
+					m.Dead = true // leaves the fight; the player is not chasing it
 				case MonDefend:
 					// no attack this turn
 				default:
