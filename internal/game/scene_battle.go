@@ -1271,13 +1271,19 @@ func (b *battleScene) checkEnd(g *Game) bool {
 		return true
 	}
 	// The hero falling ends the fight either way. What it does to the run
-	// depends on whether anybody is left to do something about it: with a
-	// companion still standing you get carried to a town and charged for it,
-	// and alone it is still the end. That is the whole argument for a party —
-	// not that they hit things, but that somebody is there to pick you up.
+	// depends on whether anybody was hired: with a company you are carried to a
+	// town and charged for it, and alone you wake up at your last rest with
+	// everything since undone. That is the whole argument for a party — not
+	// that they hit things, but that somebody is there to pick you up.
+	//
+	// Any hireling counts, standing or not. A companion who runs out of hit
+	// points is out of the fight and not dead — reviveFallen puts them back on
+	// their feet the moment it stops — so a company wiped alongside the hero
+	// still walks out of the room, and being offered a reload for a death
+	// somebody was there for was the game contradicting its own fiction.
 	if g.Player.HP <= 0 {
 		b.result = 2
-		if len(b.livingParty()) > 0 {
+		if len(g.Allies) > 0 {
 			b.result = 4
 		}
 		b.finish(g)

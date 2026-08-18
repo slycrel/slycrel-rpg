@@ -77,8 +77,9 @@ Built and running:
   everything comes back on dismissal
 - Getting back up: a fallen companion is out of the fight rather than dead and
   stands up afterwards, or sooner via an item or Reknit. A hero who falls with
-  somebody still standing is carried to the nearest town for a large share of
-  the purse and a point of Shame; a hero who falls alone still ends the run
+  *anybody* hired is carried to the nearest town for a third of the purse and a
+  point of Shame, keeping every yard of progress; a hero who falls alone wakes
+  up at the last place they slept, with everything since undone
 - Companion backstories: nine authored threads, one per lineage plus three for
   the ordinary hirelings, each a short ordered chain of beats that surfaces
   while you travel together. The writing is authored and the staging is cast
@@ -950,8 +951,8 @@ and turns "should I pay for a bed" into a question.
 
 That is a *time* penalty rather than an in-game one, which Jeremy flagged, and
 the answer is that the game already has the other kind and now they pair up:
-die with somebody hired and you are carried to town for 40% of the purse and a
-point of Shame, keeping every yard of progress. Die alone and you pay in
+die with somebody hired and you are carried to town for a third of the purse
+and a point of Shame, keeping every yard of progress. Die alone and you pay in
 replayed minutes instead. Hiring a companion converts a time penalty into a
 money one, which is a better reason to hire than "an extra sword".
 
@@ -970,11 +971,19 @@ before every fight and the death prompt is currently the only way back to it.
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on
   foot. Larger needs fast travel; smaller needs denser points of interest.
-- ~~**Death.**~~ *Settled.* The company carries a fallen hero to the nearest
-  town for a large share of the purse and a point of Shame. Dying with nobody
-  left standing still ends the run, so permadeath is intact for anyone playing
-  alone, and the hirelings are the thing that buys it off — which makes the fee
-  a reason to hire rather than a softening of the stakes.
+- ~~**Death.**~~ *Settled, and then settled again.* A hero who falls with
+  anybody hired is carried to the nearest town for a third of the purse and a
+  point of Shame — and any hireling counts, standing or not, because a
+  companion out of hit points is out of the fight rather than dead and gets up
+  the moment it stops. Offering a reload for a death somebody was present for
+  was the game contradicting its own fiction.
+
+  A hero who falls alone gets the reload instead, back to their last rest. So
+  the two deaths cost different currencies: coins and reputation with a company,
+  replayed minutes without one. The fee came down from 40% to 30% because at a
+  late-game purse the higher number stopped reading as a fee and started reading
+  as a punishment — it is meant to be why hiring is worth it, not why dying is
+  unthinkable.
 - **Multiplayer.** `new-slycrel` was built session-per-user with a shared store,
   because the original was a door game. Worth deciding before save format
   hardens.

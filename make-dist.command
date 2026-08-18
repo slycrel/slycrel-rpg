@@ -146,9 +146,13 @@ Everything else the game will tell you. Press H first if it does not.
 
 ONE THING WORTH KNOWING
 
-Dying alone ends the run. Dying with somebody hired means being carried to the
-nearest town for a large share of your purse, which is the entire argument for
-hiring anybody. The game autosaves before every fight.
+Sleep at an inn. That is what saves the run — not every fight, the way most
+games do it. Die on your own and you wake up at the last place you slept, with
+everything since undone.
+
+Die with somebody hired and they carry you to the nearest town instead, for a
+third of your purse. You keep every yard of progress. That is the entire
+argument for hiring anybody, and it is worth more than the extra sword.
 
 
 WHAT IS IN HERE
