@@ -91,10 +91,10 @@
     "name": "Second Wind",
     "class": "Fighter",
     "level": 3,
-    "cost": 3,
+    "cost": 4,
     "power": 16,
     "kind": "heal",
-    "target": "self",
+    "target": "one",
     "cast": "{A} decides, out loud, to be fine.",
     "icon": "icon/rune/47"
   },
@@ -288,7 +288,7 @@
     "cost": 4,
     "power": 18,
     "kind": "heal",
-    "target": "self",
+    "target": "one",
     "cast": "{A} flows back into approximately the previous shape.",
     "icon": "icon/rune/49"
   },

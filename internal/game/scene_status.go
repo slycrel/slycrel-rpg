@@ -10,6 +10,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
+	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 )
 
@@ -131,6 +132,10 @@ func (s *statusScene) Update(g *Game) error {
 		}
 	}
 
+	if inpututil.IsKeyJustPressed(ebiten.KeyB) {
+		s.askSubject(g)
+		return nil
+	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyR) {
 		s.releaseSubject(g)
 		return nil
@@ -267,6 +272,51 @@ func (s *statusScene) equipCarried(g *Game, i int) {
 	g.Sound.Play("world/equip")
 	g.Log.AddColor(render.ColGold, "%s puts on %s.", c.Name, gear.Titled())
 	s.refresh(g)
+}
+
+// askSubject asks the shown companion where their own business stands.
+//
+// Everything a hireling had to say, they said at you on a schedule: beats fire
+// as you travel and endings are put in towns. There was no way to ask. That is
+// a strange gap in a game with nine authored backstories in it — the player is
+// carrying somebody's story around and cannot enquire after it.
+//
+// It answers the question they are actually being asked, which changes with
+// where the story is: a decision if one is waiting, otherwise what they are
+// waiting on, and if they have no story at all then something about themselves.
+func (s *statusScene) askSubject(g *Game) {
+	c := s.subject(g)
+	if c == g.Player || !c.Ally || g.Data == nil {
+		return
+	}
+	t := g.Threads.For(&g.Data.Threads, c.Name)
+	if t == nil {
+		// No story cast — a continent with nothing to stage one in, or a
+		// hireling taken on before there were any. They still get a line,
+		// because "nothing" is a worse answer than anything.
+		if l, ok := model.LineageOf(c.Blood); ok {
+			g.Say(c.Name, capitalise(l.Tag)+". "+l.Note+
+				"\n\nBeyond that they have nothing they want to get into.")
+			return
+		}
+		g.Say(c.Name, "They have nothing they want to get into, and say so at "+
+			"a length that rather undermines it.")
+		return
+	}
+	if t.State == thread.Ready {
+		g.offerThreadEnding(t, "")
+		return
+	}
+	note := t.Note(&g.Data.Threads)
+	if note == "" {
+		g.Say(c.Name, "They would rather not, just now.")
+		return
+	}
+	if p := t.Progress(&g.Data.Threads); p != "" {
+		note += "  (" + p + ")"
+	}
+	g.Sound.Play("ui/page")
+	g.Say(c.Name, t.Fill(t.Title)+"\n\n"+note)
 }
 
 // releaseSubject lets the shown companion go, with a confirmation, because
@@ -551,7 +601,7 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 	if len(party) > 1 {
 		hint = "Left / Right for the company - Z use or put on - C to close"
 		if p.Ally {
-			hint = "Left / Right - G give - T take back - R let go - X close"
+			hint = "L/R - B ask - G give - T take - R let go - X close"
 		}
 	}
 	render.TextCenter(dst, hint, render.ScreenW/2, 244, render.ColInkFaint)

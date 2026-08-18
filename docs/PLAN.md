@@ -964,6 +964,43 @@ run that wrote it, so a fresh character could have been handed somebody else's.
 `save.LatestForRun` matches on seed and hero name, and its test writes four
 saves across three runs to check it picks the right one.
 
+**Hirelings answer back, and two of them can now patch you up.** *(Jeremy's,
+as four questions about companions. Three were "does this exist", which is the
+failure mode this project keeps finding, so they were checked rather than
+answered.)*
+
+*Firing one* already existed — `R` on their sheet, with a confirmation, and the
+footer advertises it whenever a companion is being looked at. Exchanging is
+fire-then-hire; there is no swap.
+
+*Talking to one* did not, and that was a strange gap: nine authored backstories
+and no way to ask after any of them. Everything a hireling had to say, they
+said at you on a schedule. `B` on their sheet now asks, and it answers whatever
+question they are actually being asked — the ending if one is waiting, else
+what they are waiting on with its counter, else something about themselves if
+the continent could not stage them a story at all.
+
+*Healing you* was the interesting one, and the first answer given was wrong.
+The spell dump defaulted a missing `class` field to "any" and `reconstitute`
+was read as a general technique; it is `"blood": "ooze"`, a lineage perk no
+hero can learn. So the real picture was worse than reported: **only a Mage
+hireling could heal the player**, via `mend`. `secondwind` and `reconstitute`
+were both self-only and `reknit` cannot reach a hero, because the fight ends
+the instant one falls.
+
+`secondwind` targets one now, so a Fighter hireling patches you up from level
+three — and its cost went 3 to 4, because reach is a real gain and the
+alternative was a level-three Fighter technique strictly beating the Mage's
+level-one one. `reconstitute` targets one as well, which costs nothing to weigh
+since no hero can learn it and makes a part-ooze hireling a medic. A Thief
+hireling still never heals anybody, which is not an oversight: that class has no
+healing technique by design and the two-for-one at the counter is what it gets
+instead.
+
+Measured rather than assumed: the combat table moved by at most 2.3 points, all
+of it at level three where the cost increase bites, and ENDURANCE did not move
+at all.
+
 Still open, and Jeremy's: **a hotkey for the autosave slot.** It is written
 before every fight and the death prompt is currently the only way back to it.
 
