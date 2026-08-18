@@ -980,10 +980,23 @@ before every fight and the death prompt is currently the only way back to it.
 
   A hero who falls alone gets the reload instead, back to their last rest. So
   the two deaths cost different currencies: coins and reputation with a company,
-  replayed minutes without one. The fee came down from 40% to 30% because at a
-  late-game purse the higher number stopped reading as a fee and started reading
-  as a punishment — it is meant to be why hiring is worth it, not why dying is
-  unthinkable.
+  replayed minutes without one.
+
+  The fee is a third of the purse **capped at 250**. A share is the right shape
+  at the bottom and the wrong one at the top — the same rule that stings at
+  level two confiscates at level twelve — and past the cap the cost of dying
+  holds still while the cost of *not* having hired anybody keeps rising, which
+  is the direction the pressure should point.
+
+  And it is a choice rather than a deduction: **pay them, or they leave.** The
+  fee used to come out of the purse on the way past, which made the whole
+  business something that happened to the player. The person owed it is
+  standing right there with an obvious second option. Losing them is usually
+  the more expensive answer — a companion is the reason there is a rescue at
+  all, and going solo means the next death costs replayed hours instead of
+  coins — which is exactly why it is worth offering. It also costs a point of
+  honour if they were mid-story, because that is what walking away from
+  somebody's story costs everywhere else.
 - **Multiplayer.** `new-slycrel` was built session-per-user with a shared store,
   because the original was a door game. Worth deciding before save format
   hardens.

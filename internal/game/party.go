@@ -259,8 +259,6 @@ func (g *Game) rescueToTown() {
 	}
 	g.follow.Place(g.Walk.Tile)
 
-	fee := rules.RescueFee(g.Player.Coins)
-	g.Player.Coins -= fee
 	g.Player.Shame++
 	// Being carried through the gate is the most public thing that can happen
 	// to anybody, and it is not the deeds half that it adds to.
@@ -268,14 +266,66 @@ func (g *Game) rescueToTown() {
 	g.restParty()
 	g.sinceFight = 0
 
-	body := g.Write.Rescue(g.RNG, carrier, place)
-	if fee > 0 {
-		body += fmt.Sprintf("\n\nIt cost %d coins. Nobody itemised it.", fee)
-	} else {
-		body += "\n\nYou had nothing to take, which they establish thoroughly."
-	}
 	g.Sound.Play("world/enter")
-	g.Say("", body)
+	g.settleUp(carrier, g.Write.Rescue(g.RNG, carrier, place))
+}
+
+// settleUp puts the bill for a rescue, and the alternative to paying it.
+//
+// The fee used to come out of the purse on the way past, which made the whole
+// business something that happened *to* the player. It is a negotiation now,
+// because the person owed it is standing right there and has an obvious second
+// option: take the money, or take their leave and call it square.
+//
+// Losing them is the more expensive answer most of the time — a companion is
+// the reason there is a rescue at all, and going solo means the next death
+// costs replayed hours instead of coins. That is exactly why it is worth
+// offering. A choice where one side is plainly correct is not a choice, and a
+// choice between money now and safety later is one somebody can get wrong on
+// purpose.
+func (g *Game) settleUp(carrier, body string) {
+	fee := rules.RescueFee(g.Player.Coins)
+	if fee <= 0 || len(g.Allies) == 0 {
+		// Nothing to take, or nobody left to take it. Either way there is no
+		// decision in it and a box with one usable row is a box that wastes a
+		// keypress.
+		g.Player.Coins -= fee
+		g.Say("", body+"\n\nYou had nothing to take, which they establish thoroughly.")
+		return
+	}
+
+	// Whoever carried you is the one owed, and the one who leaves if you decline.
+	leaver := g.allyNamed(carrier)
+	rows := []ui.MenuItem{
+		{Label: "Pay them", Detail: fmt.Sprintf("%d coins", fee),
+			Disabled: g.Player.Coins < fee},
+	}
+	if leaver != nil {
+		rows = append(rows, ui.MenuItem{
+			Label: "Settle it another way", Detail: leaver.Name + " leaves",
+		})
+	}
+
+	g.AskMenu("", fmt.Sprintf(
+		"%s\n\nSomebody has to be paid, and it is %d coins. You have %d.",
+		body, fee, g.Player.Coins), rows, func(g *Game, choice int) {
+		if choice == 1 && leaver != nil {
+			// dismiss handles the rest: their supplies come back, their story
+			// goes with them, and it costs a point of honour if they were in
+			// the middle of one. Which is correct — this is a person leaving
+			// because you would not settle up.
+			g.Log.AddColor(render.ColInkDim, "%s counts the coins you are not offering.", leaver.Name)
+			g.dismiss(leaver)
+			return
+		}
+		// Re-checked: the box was drawn a frame ago. Backing out pays, because
+		// the alternative is somebody walking off over a keypress.
+		if g.Player.Coins < fee {
+			return
+		}
+		g.Player.Coins -= fee
+		g.Log.AddColor(render.ColInkDim, "%d coins. Nobody itemised it.", fee)
+	})
 }
 
 // nearestSettlement finds somewhere with a bed, measured from where the player

@@ -224,3 +224,13 @@ func Max64(a, b int64) int64 {
 	}
 	return b
 }
+
+// Min64 returns the smaller of a and b, for the same reason Max64 exists: coins
+// are int64, and narrowing them to compare is a bug that only shows up once
+// somebody is rich.
+func Min64(a, b int64) int64 {
+	if a < b {
+		return a
+	}
+	return b
+}

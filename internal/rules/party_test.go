@@ -362,8 +362,21 @@ func TestRescueIsAlwaysAffordable(t *testing.T) {
 		t.Errorf("a rescue with an empty purse cost %d", fee)
 	}
 	// It has to actually hurt when there is something to take.
-	if fee := rules.RescueFee(1000); fee < 200 {
-		t.Errorf("a rescue with 1000 coins cost only %d, which is not a consequence", fee)
+	if fee := rules.RescueFee(500); fee < 100 {
+		t.Errorf("a rescue with 500 coins cost only %d, which is not a consequence", fee)
+	}
+	// And it has to stop growing. A share of the purse is the right shape at
+	// the bottom and the wrong one at the top: the same rule that stings at
+	// level two confiscates at level twelve, and past the cap the cost of dying
+	// should hold still while the cost of not having hired anybody keeps
+	// rising.
+	big := rules.RescueFee(1_000_000)
+	if big != rules.RescueFee(50_000) {
+		t.Errorf("a rescue cost %d with a million and %d with fifty thousand; "+
+			"the fee is still climbing past the cap", big, rules.RescueFee(50_000))
+	}
+	if big > 250 {
+		t.Errorf("the cap let a rescue cost %d", big)
 	}
 }
 

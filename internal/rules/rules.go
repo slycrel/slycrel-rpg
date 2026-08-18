@@ -783,14 +783,22 @@ func ReviveAmount(c *model.Character, power int) int {
 	return core.Clamp(c.MaxHP*power/100, 1, c.MaxHP)
 }
 
-// rescueShare is the percentage of the purse a rescue costs.
+// What a rescue costs: a share of the purse, up to a point.
 //
-// Thirty, down from forty. A share of the purse hurts proportionally at every
-// level and can never be unpayable, which is why it is a share — but forty per
-// cent of a late-game purse is a number that stops reading as a fee and starts
-// reading as a punishment, and the fee is meant to be the reason hiring
-// somebody is worth it rather than the reason dying is unthinkable.
-const rescueShare = 30
+// The share hurts proportionally at every level and can never be unpayable,
+// which is why it is a share and not a flat sum — a run must not be able to end
+// because the player could not afford to survive. But a percentage grows
+// without limit, so the same rule that is a fair sting at level two is a
+// confiscation at level twelve, and the fee is meant to be why hiring somebody
+// is worth it rather than why dying is unthinkable.
+//
+// So it is a third of the purse, and never more than a good weapon's worth.
+// Past the cap the cost of dying stops rising and the cost of *not* having
+// hired anybody keeps going, which is the direction the pressure should point.
+const (
+	rescueShare = 30
+	rescueCap   = 250
+)
 
 // RescueFee is what the hirelings take for carrying a dead employer to the
 // nearest town and paying somebody to argue with the situation.
@@ -803,7 +811,7 @@ func RescueFee(coins int64) int64 {
 	if coins <= 0 {
 		return 0
 	}
-	return core.Max64(1, coins*rescueShare/100)
+	return core.Min64(rescueCap, core.Max64(1, coins*rescueShare/100))
 }
 
 // Disposition is the nine-way read on how a fight is going, used to select
