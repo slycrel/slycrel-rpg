@@ -63,7 +63,7 @@ var helpNotes = []string{
 	"Z in the journal aims the arrow in the corner.",
 	"C heals: potions and techniques, one list.",
 	"After dark things hit harder. An inn buys the morning.",
-	"Dying offers the moment before the fight. Take it.",
+	"Sleeping at an inn saves the run. Dying goes back to it.",
 }
 
 func (s *helpScene) Draw(g *Game, dst *ebiten.Image) {

@@ -272,6 +272,39 @@ type Slot struct {
 	Path    string
 	Summary string
 	Saved   time.Time
+	// Seed and Hero identify which run the file belongs to, so a caller can ask
+	// for the newest save of *this* character rather than the newest save on
+	// disk. Without them the death prompt would happily offer somebody else's
+	// run back, which is a strange thing to be handed at the worst moment.
+	Seed int64
+	Hero string
+}
+
+// hero names the character a save belongs to, closely enough to tell two runs
+// apart. Name and epithet together, because the generator will hand out the
+// same first name again eventually and the pair almost never repeats.
+func (f *File) hero() string {
+	if f.Player == nil {
+		return ""
+	}
+	return f.Player.Name + " " + f.Player.Epithet
+}
+
+// LatestForRun is the most recent save belonging to one character, whichever
+// slot it happens to be in, including the autosave.
+//
+// This is what a death offers back. Reaching straight for the autosave was
+// wrong in a way that only shows up in ordinary play: save to slot two, carry
+// on for half an hour, die, and the game would offer the checkpoint from before
+// the save you made deliberately — or, worse, a run belonging to a character
+// who is not this one at all, since the autosave outlives the run that wrote it.
+func LatestForRun(root string, seed int64, hero string) (Slot, bool) {
+	for _, sl := range List(root) { // List is newest first
+		if sl.Seed == seed && sl.Hero == hero {
+			return sl, true
+		}
+	}
+	return Slot{}, false
 }
 
 // List returns the saves under root, newest first. Unreadable files are
@@ -298,6 +331,8 @@ func List(root string) []Slot {
 			Path:    path,
 			Summary: f.describe(),
 			Saved:   t,
+			Seed:    f.Seed,
+			Hero:    f.hero(),
 		})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Saved.After(out[j].Saved) })

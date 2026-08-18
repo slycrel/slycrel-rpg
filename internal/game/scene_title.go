@@ -541,6 +541,10 @@ func (g *Game) startRun(p *model.Character, name, epithet string) {
 	// Pushed under the welcome box rather than over it, so the player reads the
 	// controls first and the story second.
 	g.ensureSaga()
+	// The opening is a checkpoint too, or a character who dies before finding
+	// their first bed has nowhere to go back to and the whole safety net only
+	// starts working once you can afford one.
+	g.autosave()
 	if poi := g.World.POIAt(g.World.Start.X, g.World.Start.Y); poi != nil {
 		g.Say(poi.Name, poi.Tag+"\n\nPress Z on a location to go inside. M opens the map.")
 	}

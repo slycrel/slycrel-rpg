@@ -144,7 +144,6 @@ func (s *localScene) tryStep(g *Game, d core.Dir) {
 		g.sinceFight = 0
 		mons := g.Data.PickMonsters(g.RNG, g.Local.Biome, g.Local.POI.Level, g.encounterSize(1+g.RNG.Intn(2)))
 		if len(mons) > 0 {
-			g.autosave()
 			g.Push(newBattleScene(g, mons, "dark"))
 		}
 	}
@@ -208,6 +207,10 @@ func (g *Game) interact(e *world.Entity) {
 			// being dangerous: it is a thing you can pay to skip, and the
 			// price is already the one thing that scales with your level.
 			g.Clock.WakeAt(sky.Dawn)
+			// A bed is where the run is written down. This is the whole of
+			// what a night at an inn now buys beyond hit points, and the
+			// reason its price is worth paying.
+			g.autosave()
 			g.Say("", "You sleep like something that has stopped worrying. "+
 				"You wake fully restored, slightly sticky, and at dawn.")
 		})
@@ -239,7 +242,6 @@ func (g *Game) interact(e *world.Entity) {
 				g.advanceSagas(saga.Event{Kind: saga.Clear, POI: idx})
 			}
 		}
-		g.autosave()
 		g.Push(newBattleScene(g, mons, g.Local.POI.Name))
 	}
 }

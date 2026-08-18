@@ -88,6 +88,10 @@ type battleScene struct {
 	// answer land harder for the rest of the round. Cleared when the round is.
 	feintFailed bool
 
+	// fade counts the ticks since the hero went down, which is the only thing
+	// the scene does afterwards. Zero means nobody has died.
+	fade int
+
 	// bursts are the combat effects currently playing. Screen-positioned and
 	// self-retiring; nothing else in the scene reads them.
 	bursts []burst
@@ -341,6 +345,18 @@ func (b *battleScene) Update(g *Game) error {
 		i++
 	}
 
+	// Going dark. Every key is ignored while it happens, including the one that
+	// would have dismissed the fight — a player mashing Z through the last
+	// round should not skip the only moment the game takes for itself.
+	if b.fade > 0 {
+		b.fade++
+		if b.fade > deathFade {
+			g.Pop()
+			b.onPopped(g)
+		}
+		return nil
+	}
+
 	switch b.mode {
 	case modeBusy:
 		b.updateBusy(g)
@@ -354,6 +370,13 @@ func (b *battleScene) Update(g *Game) error {
 	}
 	return nil
 }
+
+// deathFade is how long the screen takes to go out, in ticks.
+//
+// A hundred and five is a shade under two seconds: long enough to read as the
+// world closing rather than as a transition, short enough that somebody who has
+// died four times running is not sitting through a ceremony.
+const deathFade = 105
 
 func (b *battleScene) updateBusy(g *Game) {
 	if b.timer > 0 {
@@ -1426,7 +1449,11 @@ func (b *battleScene) finish(g *Game) {
 	case 2:
 		g.Sound.Play("fight/defeat")
 		g.Sound.Play("vo/death")
-		b.log.AddColor(render.ColBlood, "You die. Press Z.")
+		b.log.AddColor(render.ColBlood, "You die.")
+		// No "press Z". Dying is the one ending the player does not get to
+		// acknowledge: the screen goes rather than waiting to be dismissed,
+		// which is most of the difference between an outcome and a dialog box.
+		b.fade = 1
 	case 3:
 		b.log.AddColor(render.ColGold, "Escaped. Press Z.")
 	case 4:
@@ -1477,13 +1504,17 @@ func (b *battleScene) onPopped(g *Game) {
 	}
 }
 
-// offerRewind puts the run back to just before the fight, if the player wants
-// it and there is anything to put it back to.
+// offerRewind puts the run back to the last time the player was safe, if they
+// want it and there is anything to go back to.
 //
-// The encounter that killed you was rolled at you rather than chosen, so this
-// is not softening a decision the player made — it is declining to end a run on
-// a step they had no way to evaluate. Taking it is a choice: the alternative is
-// on the same box, and the run ends there the way it always did.
+// The offer is on a black screen the battle faded into, so the question arrives
+// after the run has visibly ended rather than over the corpse.
+//
+// What it costs is the thing worth being explicit about. It used to rewind one
+// fight, which is barely a cost — the run resumed from a step already taken.
+// The checkpoint is a bed now, so going back costs everything since the last
+// one, and the box says how long that is. A player choosing between an hour
+// replayed and a run ended should be choosing with the number in front of them.
 func (g *Game) offerRewind() {
 	toTitle := func(g *Game) {
 		for len(g.stack) > 0 {
@@ -1492,25 +1523,41 @@ func (g *Game) offerRewind() {
 		g.quit = false
 		g.Push(newTitleScene(g))
 	}
-	if _, err := save.Load(g.Root, AutosaveSlot); err != nil {
+	// The newest save of *this* character, in whatever slot it is, rather than
+	// the autosave specifically. A player who saved by hand ten minutes ago and
+	// last slept an hour ago should be offered the ten minutes — and the
+	// autosave outlives the run that wrote it, so reaching for it by name could
+	// hand somebody back a character who is not theirs.
+	sl, ok := save.LatestForRun(g.Root, g.Seed, g.Player.Name+" "+g.Player.Epithet)
+	if !ok {
 		toTitle(g)
 		return
 	}
-	g.Ask("", "You are dead.\n\nThere is a version of this where you had not "+
-		"walked that way. Nobody would know.",
-		[]string{"Take it back", "Let it stand"},
+
+	// The black stays under the question. Popped by whichever answer wins:
+	// loading rebuilds the stack from nothing, and letting it stand empties it.
+	g.Push(&deathScene{})
+
+	when := humanAge(sl.Saved)
+	if when == "" {
+		when = "some time ago"
+	}
+	g.Ask("", "There is a version of this where you were still asleep.\n\n"+
+		"The last time you were safe was "+when+". Everything since would "+
+		"have to happen again.",
+		[]string{"Go back to it", "Let it stand"},
 		func(g *Game, choice int) {
 			if choice != 0 {
 				toTitle(g)
 				return
 			}
-			if err := g.LoadFrom(AutosaveSlot); err != nil {
+			if err := g.LoadFrom(sl.Name); err != nil {
 				g.Log.AddColor(render.ColBlood, "The moment would not come back: %v", err)
 				toTitle(g)
 				return
 			}
 			g.Sound.Play("world/enter")
-			g.Log.AddColor(render.ColGold, "You decide against it, retroactively.")
+			g.Log.AddColor(render.ColGold, "You wake up, and decide against all of it.")
 		})
 }
 
@@ -1679,7 +1726,10 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 	case modeBusy:
 		render.Text(dst, "...", 214, 224, render.ColInkDim)
 	case modeDone:
-		render.Text(dst, "Press Z.", 214, 224, render.ColGold)
+		// Nothing to press while the screen is going out.
+		if b.fade == 0 {
+			render.Text(dst, "Press Z.", 214, 224, render.ColGold)
+		}
 	}
 
 	for _, f := range b.floaters {
@@ -1687,5 +1737,15 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		c := f.col
 		c.A = alpha
 		render.TextCenter(dst, f.text, f.x, f.y, c)
+	}
+
+	// And then the lights, over everything including the interface.
+	if b.fade > 0 {
+		// Linear, after a cubic ease turned out to spend the first second doing
+		// nothing visible and then slam shut — which is not a fade over two
+		// seconds, it is a delay followed by a cut.
+		f := core.ClampF(float64(b.fade)/deathFade, 0, 1)
+		render.Rect(dst, 0, 0, render.ScreenW, render.ScreenH,
+			color.RGBA{0, 0, 0, uint8(f * 255)})
 	}
 }

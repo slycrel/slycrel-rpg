@@ -157,7 +157,6 @@ func (s *overworldScene) tryStep(g *Game, d core.Dir) {
 			}
 			mons := g.Data.PickMonsters(g.RNG, biome, level, g.encounterSize(count))
 			if len(mons) > 0 {
-				g.autosave()
 				g.Push(newBattleScene(g, mons, g.World.At(next.X, next.Y).Name()))
 			}
 		}

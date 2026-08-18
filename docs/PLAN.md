@@ -933,6 +933,36 @@ Shipping with the art baked in is the licensed use case rather than an edge
 around it; `docs/ASSET-LICENSING.md` says so at length, and says equally
 clearly why none of it may be committed to a public repo.
 
+**Death is a screen now, and the checkpoint moved.** *(Jeremy's.)*
+
+The battle fades to black over about two seconds and the question arrives on
+the black rather than over the corpse. Every key is ignored while it happens —
+somebody mashing Z through the last round should not skip the one moment the
+game takes for itself. A cubic ease was the first attempt and it spent the
+first second doing nothing visible and then slammed shut, which is a delay
+followed by a cut rather than a fade; it is linear.
+
+The autosave moved off "before every fight" and onto **rest**: a bed, an altar,
+the first morning. Checkpointing each encounter meant a death cost one fight,
+which is barely a cost — the run resumed from a step already taken. Costing
+everything since the last stop is what gives the inn a job beyond hit points
+and turns "should I pay for a bed" into a question.
+
+That is a *time* penalty rather than an in-game one, which Jeremy flagged, and
+the answer is that the game already has the other kind and now they pair up:
+die with somebody hired and you are carried to town for 40% of the purse and a
+point of Shame, keeping every yard of progress. Die alone and you pay in
+replayed minutes instead. Hiring a companion converts a time penalty into a
+money one, which is a better reason to hire than "an extra sword".
+
+And death goes back to **the newest save belonging to that character**, not to
+the autosave slot by name — also Jeremy's, and a real hole. Save by hand, play
+for half an hour, die, and the old behaviour would have offered the checkpoint
+from before the save you deliberately made. Worse, the autosave outlives the
+run that wrote it, so a fresh character could have been handed somebody else's.
+`save.LatestForRun` matches on seed and hero name, and its test writes four
+saves across three runs to check it picks the right one.
+
 Still open, and Jeremy's: **a hotkey for the autosave slot.** It is written
 before every fight and the death prompt is currently the only way back to it.
 

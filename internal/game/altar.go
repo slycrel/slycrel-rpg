@@ -64,6 +64,10 @@ func (g *Game) offerAltar(e *world.Entity) {
 			g.Player.Coins -= tithe
 			g.spend(e)
 			g.restParty()
+			// Somewhere safe that put the company back on its feet, which is
+			// the same thing a bed is. An altar is scattered and one-shot, so
+			// this is a checkpoint you find rather than one you buy.
+			g.autosave()
 			g.Player.Faith++
 			g.Say("", "Something old and largely retired takes an interest. "+
 				"You are made whole, and faintly indebted.")

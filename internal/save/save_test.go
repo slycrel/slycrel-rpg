@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
@@ -284,5 +285,52 @@ func TestCompanionsRoundTripWholesale(t *testing.T) {
 	// An ordinary hireling must not acquire an ancestry on the way through.
 	if got.Allies[1].Blood != "" {
 		t.Errorf("an ordinary hireling came back as part-%s", got.Allies[1].Blood)
+	}
+}
+
+// TestLatestForRunFindsThisCharacterAndNoOther.
+//
+// What a death offers back. Reaching for the autosave slot by name was wrong in
+// two ordinary ways: a player who saved by hand more recently than they last
+// slept would be handed the older checkpoint, and the autosave outlives the run
+// that wrote it, so a fresh character could be offered somebody else's.
+func TestLatestForRunFindsThisCharacterAndNoOther(t *testing.T) {
+	root := t.TempDir()
+
+	write := func(slot string, seed int64, name, epithet string, ago time.Duration) {
+		t.Helper()
+		f := &save.File{
+			Version: save.Version,
+			Seed:    seed,
+			Saved:   time.Now().Add(-ago).Format(time.RFC3339),
+			Player:  &model.Character{Name: name, Epithet: epithet, Class: model.ClassFighter},
+		}
+		if err := save.Write(root, slot, f); err != nil {
+			t.Fatalf("writing %s: %v", slot, err)
+		}
+	}
+
+	const seed = 1994
+	write("autosave", seed, "Bosk", "the Regrettable", 2*time.Hour)
+	write("1", seed, "Bosk", "the Regrettable", 10*time.Minute) // the deliberate one
+	write("2", seed, "Ilsabet", "the Unasked", time.Minute)     // somebody else, newer
+	write("3", 77, "Bosk", "the Regrettable", time.Second)      // same name, other run
+
+	got, ok := save.LatestForRun(root, seed, "Bosk the Regrettable")
+	if !ok {
+		t.Fatal("no save found for a character who has three")
+	}
+	if got.Name != "1" {
+		t.Errorf("offered slot %q, want the hand-made save in slot 1 — "+
+			"the autosave is older, and the newer files belong to other runs", got.Name)
+	}
+
+	// And a character with nothing of their own gets nothing, rather than the
+	// newest file on disk.
+	if _, ok := save.LatestForRun(root, seed, "Nobody at All"); ok {
+		t.Error("a character with no saves was offered one anyway")
+	}
+	if _, ok := save.LatestForRun(root, 4242, "Bosk the Regrettable"); ok {
+		t.Error("a run on a different seed was offered another run's save")
 	}
 }

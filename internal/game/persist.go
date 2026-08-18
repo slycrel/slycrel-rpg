@@ -176,8 +176,16 @@ const AutosaveSlot = "autosave"
 
 // autosave records the run as it stands, for the death prompt to offer back.
 //
-// Failures are swallowed on purpose. A full disk should not stop a fight from
-// starting; it should cost the safety net and nothing else.
+// Written when the player is *safe* — a bed, an altar, the first morning — and
+// not before every fight, which is where it used to go. Checkpointing each
+// encounter meant a death cost one fight, which is barely a cost: the run
+// carried on from a step the player had already taken. Checkpointing at rest
+// means a death costs everything since the last time you stopped, which turns
+// "should I pay for a bed" into a real question and gives the inn a job beyond
+// hit points.
+//
+// Failures are swallowed on purpose. A full disk should not stop somebody
+// sleeping; it should cost the safety net and nothing else.
 func (g *Game) autosave() {
 	if g.InDemo() || g.Player == nil || g.World == nil {
 		return
