@@ -158,6 +158,10 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
   thinner. So a mage is casting all the time and paying only for the big ones —
   and technique itself is priced by class, cheapest for the mage and dearest for
   the fighter.
+- **Techniques that are not just a bigger swing.** Two of them have two sides: a
+  *sap* takes the edge off everything opposite and puts it on you, and a *pact*
+  hits far above its band and leaves you wearing the difference for the rest of
+  the fight. The menu quotes both halves before you commit.
 - **You get your breath back.** Walk away from a fight — won or run from — and
   part of what it cost comes straight back, more of the psyche than the blood.
   A share of the spend rather than the pool, so it is a discount on the

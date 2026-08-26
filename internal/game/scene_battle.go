@@ -512,8 +512,20 @@ func (b *battleScene) chooseRoot(g *Game) {
 			cost := rules.PsycheCost(g.Player, s)
 			off := cost > g.Player.Psyche ||
 				(s.Kind == model.SpellRevive && !fallen)
+			detail, tint := fmt.Sprintf("%d SP", cost), color.Color(nil)
+			// A technique with two sides quotes both, in the one column whose
+			// colour survives the cursor landing on it. There is room for about
+			// nine characters after a long name, which is why this is a signed
+			// number rather than a sentence — and the transcript says it in
+			// words the first time anybody casts one.
+			switch s.Kind {
+			case model.SpellSap:
+				detail, tint = fmt.Sprintf("%d SP  +%d", cost, s.Power), render.ColBetter
+			case model.SpellPact:
+				detail, tint = fmt.Sprintf("%d SP  -%d", cost, rules.PactCost(s)), render.ColWorse
+			}
 			items = append(items, ui.MenuItem{
-				Label: s.Name, Detail: fmt.Sprintf("%d SP", cost), Icon: s.Icon,
+				Label: s.Name, Detail: detail, DetailTint: tint, Icon: s.Icon,
 				Disabled: off, Data: s,
 			})
 		}
@@ -1067,6 +1079,20 @@ func (b *battleScene) castOnFoes(g *Game, c cast) {
 				Kind: model.EffectBurn, Power: s.Power, Rounds: 3,
 			})
 			b.log.Add("%s is on fire, and has noticed.", m.Name)
+		case model.SpellSap:
+			// Half the exchange. The other half lands on the caster once,
+			// below, rather than once per target — otherwise pointing it at
+			// three things would be three blessings, and a technique whose
+			// value scales with how outnumbered you are is the wrong shape for
+			// the one that is meant to even a fight up.
+			m.Active = rules.Apply(m.Active, model.Effect{
+				Kind: model.EffectWeaken, Power: s.Power, Rounds: model.Forever,
+			})
+			b.log.Add("%s has less of whatever that was.", m.Name)
+		case model.SpellPact:
+			d := rules.AfterWard(rules.SpellDamage(g.RNG, p, s), m.Ward)
+			b.damageMonster(g, i, d)
+			b.log.Add("%s takes %d.", m.Name, d)
 		}
 	}
 
@@ -1075,13 +1101,40 @@ func (b *battleScene) castOnFoes(g *Game, c cast) {
 			apply(i)
 		}
 		b.cam.Shake(2)
-		return
+	} else {
+		if idx < 0 || idx >= len(b.mons) || b.mons[idx].Dead {
+			idx = b.firstLiving()
+		}
+		if idx >= 0 {
+			apply(idx)
+		}
 	}
-	if idx < 0 || idx >= len(b.mons) || b.mons[idx].Dead {
-		idx = b.firstLiving()
-	}
-	if idx >= 0 {
-		apply(idx)
+	b.settleUpWith(g, p, s, hx, hy)
+}
+
+// settleUpWith puts the caster's own half of a two-sided technique on them,
+// once, after everything it did to the other side.
+//
+// Both directions exist and they are the point of the pair: a sap takes what it
+// took off them and gives it to you, and a pact hits far above its band and
+// leaves you wearing the difference. Doing it here rather than inside the
+// per-target loop is what stops "aimed at three things" from being three times
+// the bargain.
+func (b *battleScene) settleUpWith(g *Game, p *model.Character, s model.Spell, hx, hy float64) {
+	switch s.Kind {
+	case model.SpellSap:
+		p.Active = rules.Apply(p.Active, model.Effect{
+			Kind: model.EffectBless, Power: s.Power, Rounds: model.Forever,
+		})
+		b.playOnAlly(g, p, "vfx/cross")
+		b.addFloater(hx, hy, "+", render.ColMagic)
+		b.log.AddColor(render.ColMagic, "%s is holding it now, and hits harder for it.", p.Name)
+	case model.SpellPact:
+		p.Active = rules.Apply(p.Active, model.Effect{
+			Kind: model.EffectWeaken, Power: rules.PactCost(s), Rounds: model.Forever,
+		})
+		b.playOnAlly(g, p, "vfx/wind")
+		b.log.AddColor(render.ColBlood, "%s will be feeling that for the rest of this.", p.Name)
 	}
 }
 

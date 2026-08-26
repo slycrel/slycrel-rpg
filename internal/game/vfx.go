@@ -79,6 +79,8 @@ var spellVFX = map[model.SpellKind]string{
 	model.SpellRevive: "vfx/wings",
 	model.SpellPoison: "vfx/poison",
 	model.SpellBurn:   "vfx/burn",
+	model.SpellSap:    "vfx/drain",
+	model.SpellPact:   "vfx/boom",
 }
 
 // vfxForSpell picks the art for a technique: whatever it names, or its kind's.

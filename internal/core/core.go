@@ -189,6 +189,14 @@ func Clamp(n, lo, hi int) int {
 }
 
 // ClampF constrains f to [lo,hi].
+// MaxF returns the larger of two floats.
+func MaxF(a, b float64) float64 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 func ClampF(f, lo, hi float64) float64 {
 	if f < lo {
 		return lo

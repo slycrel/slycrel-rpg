@@ -396,6 +396,25 @@ func SpellPower(c *model.Character, s model.Spell) float64 {
 		float64(c.Focus())*focusStudy + float64(c.Level)*0.8
 }
 
+// --- the two-sided techniques ---------------------------------------------
+
+// pactShare is what a pact charges the caster, as a fraction of the technique's
+// own power. A quarter is the value at which the report stops treating it as a
+// straight upgrade: much less and it is simply the best attack in the list,
+// much more and the simulator's policy never picks it, which is the same as it
+// not existing.
+const pactShare = 0.25
+
+// PactCost is the weakness the caster wears for the rest of the fight, in the
+// same units OffenseMod reads.
+//
+// It is derived from the technique rather than authored beside it for the
+// reason the whole content layer follows: two numbers that must move together
+// are one number and a rule. A pact whose power was raised in a balance pass
+// and whose cost was not would silently become the free lunch the kind exists
+// to not be.
+func PactCost(s model.Spell) int { return core.Max(1, int(float64(s.Power)*pactShare)) }
+
 // --- what a technique costs, and who it costs it ---------------------------
 
 // psycheRate is how dearly each class buys the pool it spends.
@@ -1196,6 +1215,24 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 					d := AfterWard(SpellDamage(g, sim, s), target.Ward)
 					hurt(target, d)
 					sim.HP = core.Clamp(sim.HP+d/2, 0, sim.MaxHP)
+				case model.SpellSap:
+					// Off them and onto you, once, however many it reached.
+					for _, m := range sapTargets(s, living, target) {
+						m.Active = Apply(m.Active, model.Effect{
+							Kind: model.EffectWeaken, Power: s.Power, Rounds: model.Forever,
+						})
+					}
+					sim.Active = Apply(sim.Active, model.Effect{
+						Kind: model.EffectBless, Power: s.Power, Rounds: model.Forever,
+					})
+				case model.SpellPact:
+					raw := SpellDamage(g, sim, s)
+					for _, m := range sapTargets(s, living, target) {
+						hurt(m, AfterWard(raw, m.Ward))
+					}
+					sim.Active = Apply(sim.Active, model.Effect{
+						Kind: model.EffectWeaken, Power: PactCost(s), Rounds: model.Forever,
+					})
 				default:
 					raw := SpellDamage(g, sim, s)
 					if s.Target == model.TargetAll {
@@ -1210,7 +1247,13 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 				}
 				return
 			}
-			sw := PlayerAttack(g, sim, target, 0, 0)
+			// Buffs and weakenings, which the simulator used to pass as zero.
+			// That was a hole rather than a simplification: the battle screen
+			// has always read them, so a blessing was worth something in the
+			// game and nothing in the report — and it is the whole payload of
+			// the two-sided techniques below, which would otherwise have been
+			// measured as an attack that does nothing.
+			sw := PlayerAttack(g, sim, target, OffenseMod(sim.Active), DexterityMod(sim.Active))
 			if sw.Miss {
 				return
 			}
@@ -1238,7 +1281,9 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 				case MonDefend:
 					// no attack this turn
 				default:
-					dmg := MonsterDamage(g, sim, m)
+					// The other half of the same hole: a weakened monster hits
+					// softer in the game and hit full strength in the report.
+					dmg := core.Max(0, MonsterDamage(g, sim, m)+OffenseMod(m.Active))
 					if punished {
 						dmg = FeintPunish(dmg)
 					}
@@ -1356,6 +1401,21 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 	return res
 }
 
+// sapTargets is who a two-sided technique reaches: everything standing, or the
+// one thing it was pointed at.
+func sapTargets(s model.Spell, living []*model.Monster, target *model.Monster) []*model.Monster {
+	if s.Target != model.TargetAll {
+		return []*model.Monster{target}
+	}
+	out := make([]*model.Monster, 0, len(living))
+	for _, m := range living {
+		if !m.Dead {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
 // bestHeal returns the strongest affordable technique that restores hit points.
 func bestHeal(c *model.Character, spells []model.Spell) (model.Spell, bool) {
 	return affordable(c, spells, model.SpellHeal)
@@ -1374,10 +1434,15 @@ func bestAttack(c *model.Character, spells []model.Spell) (model.Spell, bool) {
 		if PsycheCost(c, s) > c.Psyche || !s.Known(c) {
 			continue
 		}
-		if s.Kind != model.SpellDamage && s.Kind != model.SpellDrain {
+		switch s.Kind {
+		case model.SpellDamage, model.SpellDrain, model.SpellPact:
+		default:
 			continue
 		}
-		if !found || s.Power > attack.Power {
+		// A pact is weighed on what is left of it after the caster has paid.
+		// Comparing raw power would make it the answer to every round in the
+		// game, since paying for it later is free at the moment of choosing.
+		if !found || attackWorth(s) > attackWorth(attack) {
 			attack, found = s, true
 		}
 	}
@@ -1388,6 +1453,15 @@ func bestAttack(c *model.Character, spells []model.Spell) (model.Spell, bool) {
 		return model.Spell{}, false
 	}
 	return attack, true
+}
+
+// attackWorth ranks two attacking techniques against each other: the magnitude,
+// less whatever the caster is going to be wearing afterwards.
+func attackWorth(s model.Spell) float64 {
+	if s.Kind == model.SpellPact {
+		return float64(s.Power - PactCost(s))
+	}
+	return float64(s.Power)
 }
 
 // freeSwingWorth is what the round costs nothing to spend: a swing, or the bolt
@@ -1427,7 +1501,49 @@ func bestSpell(c *model.Character, spells []model.Spell, living []*model.Monster
 			return heal, true
 		}
 	}
+	// A sap goes first or not at all: it pays out over the rest of the fight,
+	// so a round spent on it late buys almost nothing, and casting a second one
+	// would only stack a blessing the caster already has. Both conditions are
+	// read off the board rather than remembered, which is what keeps this a
+	// policy rather than a piece of state the simulator has to carry.
+	if s, ok := worthSapping(c, spells, living); ok {
+		return s, true
+	}
 	return bestAttack(c, spells)
+}
+
+// worthSapping picks a two-sided debuff to open with, when there is a fight
+// left to spend it on.
+func worthSapping(c *model.Character, spells []model.Spell, living []*model.Monster) (model.Spell, bool) {
+	if Has(c.Active, model.EffectBless) {
+		return model.Spell{}, false
+	}
+	var best model.Spell
+	found := false
+	for _, s := range spells {
+		if s.Kind != model.SpellSap || PsycheCost(c, s) > c.Psyche || !s.Known(c) {
+			continue
+		}
+		if !found || s.Power > best.Power {
+			best, found = s, true
+		}
+	}
+	if !found {
+		return model.Spell{}, false
+	}
+	// Only while there is something to spend the blessing on. Against one thing
+	// already most of the way down, the round is better spent finishing it —
+	// which is the same judgement the feint makes and for the same reason.
+	whole := 0
+	for _, m := range living {
+		if !m.Dead && m.HP*2 > m.MaxHP {
+			whole++
+		}
+	}
+	if whole == 0 {
+		return model.Spell{}, false
+	}
+	return best, true
 }
 
 func livingMonsters(mons []*model.Monster) []*model.Monster {

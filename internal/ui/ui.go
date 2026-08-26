@@ -407,23 +407,35 @@ func (m *Menu) Draw(dst *ebiten.Image, x, y, w float64) {
 		if i == m.Index && !it.Disabled {
 			drawText, drawRight = render.TextFlat, render.TextFlatRight
 		}
-		drawText(dst, it.Label, lx, ly+m.textOffset(), col)
 
-		// The detail column gets whatever the label leaves, minus a gap. Sizing
-		// it as a fixed fraction of the row instead is what let "Abandon the
-		// run" and "back to the title" draw through each other.
+		// The detail is served first and the label is cut to fit around it.
+		//
+		// It used to be the other way round — detail took whatever the label
+		// left — and the label always wins that fight, because names in this
+		// game are jokes and jokes are long. "Strongly Worded Unmaking" left
+		// twenty-eight pixels for a price needing thirty-five, so the strongest
+		// technique a Mage owns showed its cost as "12." and the row before it
+		// showed a whole number. The detail column is where the price, the
+		// count and the verdict live: it is the half a player is reading the
+		// row *for*, and the half that is short enough to always fit.
+		label, detailW := it.Label, 0.0
 		if it.Detail != "" {
-			avail := detailRight - (lx + render.TextW(it.Label)) - 10
-			if avail >= 20 {
-				var d color.Color = render.ColInkDim
-				switch {
-				case it.Disabled:
-					d = render.ColInkFaint
-				case it.DetailTint != nil:
-					d = it.DetailTint
-				}
-				drawRight(dst, render.Trunc(it.Detail, avail), detailRight, ly+m.textOffset(), d)
+			detailW = render.TextW(it.Detail)
+			if room := detailRight - detailW - 10 - lx; room < render.TextW(label) {
+				label = render.Trunc(label, core.MaxF(room, 24))
 			}
+		}
+		drawText(dst, label, lx, ly+m.textOffset(), col)
+
+		if it.Detail != "" {
+			var d color.Color = render.ColInkDim
+			switch {
+			case it.Disabled:
+				d = render.ColInkFaint
+			case it.DetailTint != nil:
+				d = it.DetailTint
+			}
+			drawRight(dst, it.Detail, detailRight, ly+m.textOffset(), d)
 		}
 	}
 	// Scroll hints when the list runs past the window.

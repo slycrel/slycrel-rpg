@@ -527,7 +527,7 @@ func TestSpellTargetingIsCoherent(t *testing.T) {
 		}
 		switch s.Kind {
 		case model.SpellDamage, model.SpellDrain, model.SpellWeaken, model.SpellStun,
-			model.SpellPoison, model.SpellBurn,
+			model.SpellPoison, model.SpellBurn, model.SpellSap, model.SpellPact,
 			model.SpellHeal, model.SpellBless, model.SpellRevive:
 		default:
 			t.Errorf("%s is of kind %q, which nothing implements", s.ID, s.Kind)
@@ -1296,6 +1296,66 @@ func TestTheStartingKitFitsTheClassItIsIssuedTo(t *testing.T) {
 		if w.Cost >= curve.Weapon.Cost && a.Cost >= curve.Armor.Cost {
 			t.Errorf("a new %s opens already on curve; the first morning is supposed to "+
 				"be a shopping trip", class)
+		}
+	}
+}
+
+// A technique with two sides has to have both. A sap that weakened nobody or a
+// pact that cost the caster nothing would be an ordinary technique with a
+// misleading name, and the house rule the whole content layer follows is that
+// everything which gives must take.
+func TestTheTwoSidedTechniquesAreActuallyTwoSided(t *testing.T) {
+	saps, pacts := 0, 0
+	for _, s := range load(t).Spells {
+		switch s.Kind {
+		case model.SpellSap:
+			saps++
+			if s.Power < 1 {
+				t.Errorf("%s saps nothing, so it takes from nobody and gives to nobody", s.ID)
+			}
+		case model.SpellPact:
+			pacts++
+			if rules.PactCost(s) < 1 {
+				t.Errorf("%s is a pact that costs the caster nothing", s.ID)
+			}
+			if rules.PactCost(s) >= s.Power {
+				t.Errorf("%s costs the caster %d for %d of effect, which is not a bargain "+
+					"anybody would take", s.ID, rules.PactCost(s), s.Power)
+			}
+		}
+	}
+	if saps == 0 || pacts == 0 {
+		t.Errorf("the table holds %d saps and %d pacts; the pair only means something "+
+			"if both directions exist", saps, pacts)
+	}
+}
+
+// Each class's list has to be more than three flavours of "hit it". A technique
+// that only ever means "a bigger swing this round" is a number, and the reason
+// to spend psyche on one rather than swinging is that it does something a swing
+// cannot: land on everything, linger past the round, or move a stat.
+func TestNoClassIsJustThreeKindsOfDamage(t *testing.T) {
+	tables := load(t)
+	for _, class := range []model.Class{model.ClassFighter, model.ClassThief, model.ClassMage} {
+		plain, lasting := 0, 0
+		for _, s := range tables.Spells {
+			if s.Class != class {
+				continue
+			}
+			switch s.Kind {
+			case model.SpellDamage, model.SpellDrain, model.SpellHeal:
+				if s.Target != model.TargetAll {
+					plain++
+				} else {
+					lasting++
+				}
+			default:
+				lasting++
+			}
+		}
+		if lasting < plain {
+			t.Errorf("%s has %d techniques that are a better swing and only %d that do "+
+				"something a swing cannot", class, plain, lasting)
 		}
 	}
 }

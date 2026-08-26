@@ -13,6 +13,15 @@ const (
 	SpellRevive SpellKind = "revive" // stands a fallen ally back up
 	SpellPoison SpellKind = "poison" // damage over several rounds
 	SpellBurn   SpellKind = "burn"   // more damage over fewer rounds
+	// SpellSap takes the edge off them and puts it on you: the same magnitude
+	// of weakness on the target and blessing on the caster. One technique, both
+	// halves of the exchange, which is the shape a swing does not have.
+	SpellSap SpellKind = "sap"
+	// SpellPact is the other direction — it hits far harder than its band pays
+	// for, and the caster wears the weakness for the rest of the fight. The
+	// house rule that everything which gives must take, written as a technique
+	// rather than as an item.
+	SpellPact SpellKind = "pact"
 )
 
 // Side is which half of the battlefield an effect is aimed at.

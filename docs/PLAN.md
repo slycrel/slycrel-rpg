@@ -130,9 +130,10 @@ Built and running:
   rather than read. Faith goes in the plate and buys anonymity back out of it,
   lifting shame and renown together; Honor is what seeing a companion's story
   through is worth, and it is spent on what the next hireling asks for
-- 66 monsters across nine biomes, 14 weapons, 10 armours, 6 shields, 12 charms,
-  10 affixes, 42 items, 27 techniques
-  (eleven of them party-facing, lingering, or gated on a hireling's ancestry),
+- 66 monsters across nine biomes, 27 weapons in five lanes, 19 armours in three
+  weights, 6 shields, 12 charms, 10 affixes, 42 items, 35 techniques
+  (thirty of them party-facing, lingering, aimed at everything, two-sided, or
+  gated on a hireling's ancestry),
   9 companion backstories and 4 for the people who stay put
 - A sky: a clock measured in steps, and weather derived from the seed rather
   than stored. Night is dark and hunting, bad weather is dark and quiet, and
@@ -1180,6 +1181,74 @@ levels over dies 40% of the time against a brief that allows 36. It was 36.3%
 before, and it is the same cell that was already the worst in the table. The
 class is fragile by construction now — cloth and eleven guard against plate and
 twenty — and the report prints the miss.
+
+**A technique that is worth more than a swing.** *(The other half of Jeremy's
+complaint, and his own list of what would fix it: damage that scales off the
+rod, more lingering and multi-target effects, technique priced by class, and —
+his addition — "some spells give a positive effect for you and negative for your
+opponent, or vice versa".)*
+
+Eight new techniques and two new kinds. Before this, most of each class's list
+was a bigger swing that cost psyche: the Mage had three single-target damage
+techniques out of eight, the Fighter three of six. A technique whose only
+argument is "more damage this round" is a number, and the reason to spend psyche
+on one has to be that it does something a swing cannot — reach everything, last
+past the round, or move a stat.
+
+The two new kinds are Jeremy's pairing, one in each direction:
+
+- **`sap`** takes the edge off them and puts it on you: the same magnitude of
+  weakness on the target and blessing on the caster, in one technique. The
+  caster's half lands *once*, however many it reached — otherwise pointing it at
+  three things would be three blessings, and a technique whose value scales with
+  how outnumbered you are is the wrong shape for the one meant to even a fight
+  up.
+- **`pact`** is the other direction: it hits far above its band and the caster
+  wears the weakness for the rest of the fight. `PactCost` is derived from the
+  technique's own power rather than authored beside it, because two numbers that
+  have to move together are one number and a rule — a pact whose power was
+  raised in a balance pass and whose cost was not would silently become the free
+  lunch the kind exists to not be.
+
+The battle menu quotes both halves in the detail column — `10 SP  -4` in red,
+`6 SP  +3` in green — because that is the one part of a menu row whose colour
+survives the cursor landing on it, and because a technique that charges you
+something and does not say so is the exact failure this project keeps finding.
+There is room for about nine characters after a long name, which is why it is a
+signed number rather than a sentence; the transcript says it in words the first
+time anybody casts one.
+
+**Two holes in the simulator turned up on the way, and both were older than this
+pass.** `SimulateFight` called `PlayerAttack` with zero buffs and read monster
+damage without `OffenseMod`, so a blessing was worth something in the game and
+nothing in the report, and a weakened monster hit at full strength. Every
+existing weaken, bless and smoke bomb had been invisible to the balance pass
+since the effects system landed. Fixing it is most of why the stretch bands
+softened when the new techniques went in — the report was catching up with a
+game that already behaved this way.
+
+The simulator's policy learned to open with a sap and to weigh a pact on what is
+left of it after the caster has paid. Both conditions are read off the board —
+"am I already blessed", "is anything still above half" — rather than remembered,
+which is what keeps it a policy rather than state the simulator has to carry.
+
+Tuned in two passes: the first draft put the Thief +5.1 mean points and dropped
+the whole +3 band five points below the brief, because a sap-all at power 4
+against three creatures is a sixteen-point swing per round bought with one. At
+power 3 it lands at Fighter −0.8, Thief +1.9, Mage −0.7 against the numbers
+before any of this started.
+
+**And a menu bug found by measuring rather than by playing.** Fitting a
+two-sided technique's second number into the detail column meant working out how
+much room a row actually has, and the answer was that "Strongly Worded Unmaking"
+left twenty-eight pixels for a price needing thirty-five — so the strongest
+technique a Mage owns had been showing its cost as "12." while the row above it
+showed a whole number. `Menu.Draw` served the label first and gave the detail
+whatever was left, and the label always wins that fight, because names in this
+game are jokes and jokes are long. It is the other way round now: the detail is
+measured first and the label is cut to fit around it. The detail column is where
+the price, the count and the verdict live — it is the half a player is reading
+the row *for*, and the half short enough to always fit.
 
 **What is deliberately not different.** A Fighter and a Thief buy the same
 one-handed weapon on curve. The Fighter's lane advantage is an *option* — the
