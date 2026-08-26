@@ -363,24 +363,28 @@ func balanceBiome(level int) string {
 	}
 }
 
-func geared(t *gamedata.Tables, c *model.Character) {
-	tier := core.Clamp(1+(c.Level-1)/3, 1, 5)
-	ws, as := t.StockFor(tier)
-	if len(ws) > 0 {
-		c.Weapon = ws[len(ws)-1]
-	}
-	if len(as) > 0 {
-		c.Armor = as[len(as)-1]
-	}
-}
+// geared dresses a subject the way the game would. It goes through Equip rather
+// than reaching into the shelf itself, which it used to do: since weapons have
+// lanes, "the last row of the tier" is a rod a fighter cannot hold and a maul a
+// mage cannot lift, and a test that dressed everybody out of the same drawer
+// would be measuring a character nobody can build.
+func geared(t *gamedata.Tables, c *model.Character) { t.Equip(c) }
 
-// winRate simulates isolated on-curve fights at an encounter level.
+// winRate simulates isolated on-curve fights at an encounter level, in the
+// region where that level of thing actually lives.
+//
+// The biome comes off encLevel rather than off the character's level, which is
+// the same correction cmd/balance had to make and for the same reason: eight of
+// fourteen levels cannot supply a fight three bands over their own doorstep, so
+// asking the local biome for one gets whatever it has, which is a fight the
+// player has already outgrown. Straying means going somewhere rougher, and the
+// probe has to go there too or it is measuring the walk rather than the risk.
 func winRate(g *core.RNG, tables *gamedata.Tables, class model.Class, level, encLevel, n int) float64 {
 	wins := 0
 	for i := 0; i < n; i++ {
 		c := rules.BuildCharacter(g, class, level)
 		geared(tables, c)
-		mons := tables.PickMonsters(g, balanceBiome(level), encLevel, 1)
+		mons := tables.PickMonsters(g, balanceBiome(encLevel), encLevel, 1)
 		if len(mons) == 0 {
 			continue
 		}
@@ -947,51 +951,92 @@ func TestEveryArchetypeArrivesDressed(t *testing.T) {
 	}
 }
 
-// The top of each gear band is what Equip buys, so those five numbers are the
-// ladder every archetype trades bands along. They have to climb evenly.
+// The top of each lane in each gear band is what Equip buys for the class that
+// fights in that lane, so those numbers are the ladder every archetype trades
+// bands along. Each lane has to climb evenly.
 //
-// They did not: the weapon tops ran 5, 7, 12, 17, 21 — a +2 step into tier 2
-// and +5 into tier 3 — which meant "a band behind on the weapon" cost two and a
-// half times as much at one tier as at the next, and any build paying in weapon
-// bands lurched in and out of viability by level. Evening it to 5, 9, 13, 17, 21
-// halved the worst gap in the ARCS section.
+// They did not, before there were lanes: the weapon tops ran 5, 7, 12, 17, 21 —
+// a +2 step into tier 2 and +5 into tier 3 — which meant "a band behind on the
+// weapon" cost two and a half times as much at one tier as at the next, and any
+// build paying in weapon bands lurched in and out of viability by level.
 //
-// Armour is deliberately not asserted here. Its steps are also uneven (+3, +4,
-// +6, +4) but nothing in the report currently blames it for anything, and
-// pinning a rule that has not earned itself is how a table ends up shaped by its
-// tests rather than by play.
+// The test is per lane now because there is no longer one ladder. A Fighter's
+// two-handed top, a Thief's dagger and a Mage's focus climb separately, and a
+// step that is even overall while one lane stalls is exactly the failure this
+// is here to catch — it would read as a class quietly falling off the curve at
+// one tier, which is the hardest kind of imbalance to see from play.
+//
+// Armour is deliberately not asserted here. Its steps are also uneven and
+// nothing in the report currently blames them for anything, and pinning a rule
+// that has not earned itself is how a table ends up shaped by its tests rather
+// than by play.
 func TestWeaponBandsStepEvenly(t *testing.T) {
 	tables := load(t)
 
-	var tops []int
-	for tier := 1; tier <= 5; tier++ {
-		ws, _ := tables.StockFor(tier)
-		if len(ws) == 0 {
-			t.Fatalf("tier %d has no weapons at all", tier)
-		}
-		tops = append(tops, ws[len(ws)-1].Strike)
+	lanes := map[string]func(model.Weapon) int{
+		"two-handed": func(w model.Weapon) int {
+			if !w.TwoHanded() {
+				return 0
+			}
+			return w.Strike
+		},
+		"one-handed": func(w model.Weapon) int {
+			if w.TwoHanded() || w.Kind == model.WeaponDagger || w.Kind == model.WeaponFocus {
+				return 0
+			}
+			return w.Strike
+		},
+		"dagger": func(w model.Weapon) int {
+			if w.Kind != model.WeaponDagger {
+				return 0
+			}
+			return w.Strike
+		},
+		"focus": func(w model.Weapon) int {
+			if w.Kind != model.WeaponFocus {
+				return 0
+			}
+			return w.Focus
+		},
 	}
 
-	var steps []int
-	for i := 1; i < len(tops); i++ {
-		steps = append(steps, tops[i]-tops[i-1])
-	}
-	lo, hi := steps[0], steps[0]
-	for _, s := range steps {
-		if s < lo {
-			lo = s
+	for lane, rate := range lanes {
+		var tops []int
+		for tier := 1; tier <= 5; tier++ {
+			ws, _ := tables.StockFor(tier)
+			best := 0
+			for _, w := range ws {
+				if v := rate(w); v > best {
+					best = v
+				}
+			}
+			if best == 0 {
+				t.Errorf("the %s lane has nothing at tier %d, so a class that "+
+					"fights in it has no band to buy there", lane, tier)
+				break
+			}
+			tops = append(tops, best)
 		}
-		if s > hi {
-			hi = s
+		if len(tops) < 5 {
+			continue
 		}
-	}
-	if hi-lo > 1 {
-		t.Errorf("weapon band steps are %v across tops %v; the widest is %d and the "+
-			"narrowest %d, so a band behind means something different at every tier",
-			steps, tops, hi, lo)
-	}
-	if lo < 1 {
-		t.Errorf("weapon band steps are %v; a band that buys nothing is not a band", steps)
+
+		var steps []int
+		for i := 1; i < len(tops); i++ {
+			steps = append(steps, tops[i]-tops[i-1])
+		}
+		lo, hi := steps[0], steps[0]
+		for _, s := range steps {
+			lo, hi = core.Min(lo, s), core.Max(hi, s)
+		}
+		if hi-lo > 1 {
+			t.Errorf("%s band steps are %v across tops %v; the widest is %d and the "+
+				"narrowest %d, so a band behind means something different at every tier",
+				lane, steps, tops, hi, lo)
+		}
+		if lo < 1 {
+			t.Errorf("%s band steps are %v; a band that buys nothing is not a band", lane, steps)
+		}
 	}
 }
 
@@ -1151,5 +1196,106 @@ func TestEveryStandingHasSomethingSaidAboutIt(t *testing.T) {
 	}
 	if got := tables.Text.StandingLine[rules.Unknown.Key()]; len(got) > 0 {
 		t.Errorf("being a nobody has %d lines written for it; it should have none", len(got))
+	}
+}
+
+// --- class lanes -----------------------------------------------------------
+
+// Equip is what dresses a hireling, a fixture and every simulated subject, and
+// it is now the only thing that knows a class cannot hold everything. If it
+// ever hands somebody a piece their own character sheet would refuse, the
+// balance report is measuring a character the player cannot build — which is
+// precisely the failure the archetype work already found once, in the slot
+// where an underspending build measured the spec rather than the content.
+func TestNobodyIsDressedInGearTheyCannotUse(t *testing.T) {
+	tables := load(t)
+	for _, class := range []model.Class{model.ClassFighter, model.ClassThief, model.ClassMage} {
+		for level := 1; level <= 14; level++ {
+			for _, a := range gamedata.Archetypes {
+				c := &model.Character{Level: level, Class: class}
+				tables.EquipAs(c, a)
+				if !model.CanWield(class, c.Weapon) {
+					t.Errorf("%s %s at level %d is holding %q, which that class cannot",
+						class, a.Name, level, c.Weapon.Name)
+				}
+				if !model.CanWear(class, c.Armor) {
+					t.Errorf("%s %s at level %d is wearing %q, which that class cannot",
+						class, a.Name, level, c.Armor.Name)
+				}
+				if c.Shield.Worn() && !c.CanHold() {
+					t.Errorf("%s %s at level %d has a shield on an arm that is not free",
+						class, a.Name, level)
+				}
+			}
+		}
+	}
+}
+
+// Every class needs a ladder of its own to climb, at every band a shop stocks.
+// A lane that runs out two tiers early is a class that quietly stops improving
+// halfway through the game, and it would read from play as "the numbers got
+// hard around level nine" rather than as the content gap it is.
+func TestEveryClassCanKeepBuyingUpgrades(t *testing.T) {
+	tables := load(t)
+	for _, class := range []model.Class{model.ClassFighter, model.ClassThief, model.ClassMage} {
+		var lastW, lastA string
+		for tier := 1; tier <= 5; tier++ {
+			c := &model.Character{Level: (tier-1)*3 + 1, Class: class}
+			tables.Equip(c)
+			if c.Weapon.Name == "" || c.Armor.Name == "" {
+				t.Fatalf("%s has nothing to buy at tier %d", class, tier)
+			}
+			if tier > 1 && c.Weapon.Name == lastW && c.Armor.Name == lastA {
+				t.Errorf("%s buys nothing new at tier %d: still %q and %q",
+					class, tier, lastW, lastA)
+			}
+			lastW, lastA = c.Weapon.Name, c.Armor.Name
+		}
+	}
+}
+
+// A caster's shopping list is the focus ladder, so a Mage has to actually end
+// up holding a focus. Ranking their shelf by strike would send them home with a
+// dagger every time — the rod is deliberately terrible at hitting people, which
+// is the whole trade — and the free bolt would never fire.
+func TestAMageIsSoldSomethingToCastWith(t *testing.T) {
+	tables := load(t)
+	for level := 1; level <= 14; level++ {
+		c := &model.Character{Level: level, Class: model.ClassMage}
+		tables.Equip(c)
+		if !c.Casting() {
+			t.Errorf("level %d mage is on-curve holding %q, which casts nothing",
+				level, c.Weapon.Name)
+		}
+	}
+}
+
+// The kit a new character is handed has to be a kit they can put on.
+//
+// This broke the moment weapons had lanes: the starter was "the cheapest row in
+// the file", the cheapest row is a table leg, and a Mage may not hold one. A
+// character sheet showing gear beside a pack that refuses to equip it is worse
+// than starting with nothing, because nothing at least explains itself.
+func TestTheStartingKitFitsTheClassItIsIssuedTo(t *testing.T) {
+	tables := load(t)
+	for _, class := range []model.Class{model.ClassFighter, model.ClassThief, model.ClassMage} {
+		w, a := tables.StarterKit(class)
+		if !model.CanWield(class, w) {
+			t.Errorf("a new %s opens holding %q, which that class cannot use", class, w.Name)
+		}
+		if !model.CanWear(class, a) {
+			t.Errorf("a new %s opens wearing %q, which that class cannot use", class, a.Name)
+		}
+		if w.Tier < 1 || a.Tier < 1 {
+			t.Errorf("a new %s opens with tier-zero kit (%q / %q), which is the name "+
+				"this game gives to owning nothing", class, w.Name, a.Name)
+		}
+		// And below the curve, or the first shop has nothing to sell them.
+		curve := &model.Character{Level: 1, Class: class}
+		tables.Equip(curve)
+		if w.Cost >= curve.Weapon.Cost && a.Cost >= curve.Armor.Cost {
+			t.Errorf("a new %s opens already on curve; the first morning is supposed to "+
+				"be a shopping trip", class)
+		}
 	}
 }

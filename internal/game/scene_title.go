@@ -512,8 +512,7 @@ func (g *Game) startRun(p *model.Character, name, epithet string) {
 	g.Player = p
 	g.Player.Name = name
 	g.Player.Epithet = epithet
-	g.Player.Weapon = g.Data.StarterWeapon()
-	g.Player.Armor = g.Data.StarterArmor()
+	g.Player.Weapon, g.Player.Armor = g.Data.StarterKit(g.Player.Class)
 	if it, ok := g.Data.Item("Small Beer"); ok {
 		it.Count = 2
 		g.Player.AddItem(it)

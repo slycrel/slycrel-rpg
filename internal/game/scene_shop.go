@@ -71,9 +71,15 @@ func (s *shopScene) gearRow(g *Game, name, icon string, cost int, data any) ui.M
 		detail = fmt.Sprintf("%s  %s", detail, verdict)
 		tint = c
 	}
+	// Greyed for what the buyer cannot use as well as for what they cannot
+	// afford: it is the same courtesy the inn and the shrine already do, which
+	// is never to offer a thing you are about to refuse. Tab turns the counter
+	// to somebody else, and a maul greyed out for a mage is available the
+	// moment the fighter steps up.
+	usable, _ := s.buyer(g).CanUse(carriedOf(data))
 	return ui.MenuItem{
 		Label: name, Detail: detail, DetailTint: tint, Icon: icon,
-		Disabled: int64(price) > g.Player.Coins, Data: data,
+		Disabled: int64(price) > g.Player.Coins || !usable, Data: data,
 	}
 }
 
@@ -354,9 +360,26 @@ func carriedDescribe(c model.Carried) string {
 func shopDescribe(data any) string {
 	switch v := data.(type) {
 	case model.Weapon:
-		return fmt.Sprintf("Strike %d. %s", v.Strike, bonusWords(v.Affix))
+		out := fmt.Sprintf("Strike %d.", v.Strike)
+		if v.Focus > 0 {
+			// The important number on a rod, and it goes first, because the
+			// strike beside it is what the thing is worth as a stick.
+			out = fmt.Sprintf("Focus %d, strike %d. Attacks for free with magic.",
+				v.Focus, v.Strike)
+		}
+		if v.TwoHanded() {
+			out += " Both hands, so no shield."
+		}
+		if v.Extra != nil {
+			out += " " + statWords(*v.Extra)
+		}
+		return strings.TrimSpace(out + " " + bonusWords(v.Affix))
 	case model.Armor:
-		return fmt.Sprintf("Guard %d. %s", v.Defense, bonusWords(v.Affix))
+		out := fmt.Sprintf("Guard %d.", v.Defense)
+		if v.Extra != nil {
+			out += " " + statWords(*v.Extra)
+		}
+		return strings.TrimSpace(out + " " + bonusWords(v.Affix))
 	case model.Shield:
 		out := fmt.Sprintf("Guard %d on the off arm.", v.Defense)
 		if v.Extra != nil {

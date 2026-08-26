@@ -157,30 +157,78 @@ func (c *Character) TakeItem(i int) (Item, bool) {
 	return it, true
 }
 
+// WeaponKind is what sort of implement something is, which is the whole of who
+// is allowed to carry it.
+//
+// The empty string means "anyone", and that is not a placeholder: it is what
+// every weapon in every save written before classes had lanes unmarshals to,
+// and it is the only answer that leaves an old character still holding what
+// they were holding. Bare Hands is authored that way on purpose too.
+type WeaponKind string
+
+const (
+	WeaponAny     WeaponKind = ""
+	WeaponDagger  WeaponKind = "dagger"  // short, quick, and never the biggest number
+	WeaponBlade   WeaponKind = "blade"   // swords and axes
+	WeaponBlunt   WeaponKind = "blunt"   // maces, hammers, a table leg
+	WeaponPolearm WeaponKind = "polearm" // reach, and both hands
+	WeaponFocus   WeaponKind = "focus"   // wands and staves: a spell's weapon
+)
+
 // Weapon is a wielded implement. Strike feeds the damage roll and Quality is
 // the durability/refinement rating carried over from the original armory.
 type Weapon struct {
-	Name    string `json:"name"`
-	Strike  int    `json:"strike"`
-	Range   int    `json:"range"` // 0 = melee
-	Cost    int    `json:"cost"`
-	Quality int    `json:"quality"`
-	Verb    string `json:"verb"` // "slash", "bash", "thwack"
-	Tier    int    `json:"tier"` // shop stocking band
-	Icon    string `json:"icon"`
-	Affix   *Affix `json:"affix,omitempty"`
+	Name    string     `json:"name"`
+	Kind    WeaponKind `json:"kind,omitempty"`
+	Strike  int        `json:"strike"`
+	Range   int        `json:"range"` // 0 = melee
+	Cost    int        `json:"cost"`
+	Quality int        `json:"quality"`
+	Verb    string     `json:"verb"` // "slash", "bash", "thwack"
+	Tier    int        `json:"tier"` // shop stocking band
+	Icon    string     `json:"icon"`
+	Affix   *Affix     `json:"affix,omitempty"`
+	// Hands is how many are needed. Zero reads as one, which is the answer
+	// every weapon in every old save gives and the right one for all of them.
+	Hands int `json:"hands,omitempty"`
+	// Focus is spell strike: what a wand or staff is *for*. It feeds the
+	// magnitude of everything cast and the free bolt a focus attacks with, and
+	// it is zero on anything with an edge, which is the trade — a caster's
+	// weapon is a bad thing to hit somebody with.
+	Focus int `json:"focus,omitempty"`
+	// Extra is what a weapon does besides land: a dagger's dexterity, mostly.
+	Extra *Bonus `json:"extra,omitempty"`
 }
+
+// TwoHanded reports whether the weapon occupies the shield arm as well.
+func (w Weapon) TwoHanded() bool { return w.Hands >= 2 }
+
+// ArmorKind is how heavy a coat is, which is the whole of who can move in it.
+// The empty string means "anyone", for the same reason WeaponKind's does.
+type ArmorKind string
+
+const (
+	ArmorAny   ArmorKind = ""
+	ArmorCloth ArmorKind = "cloth"
+	ArmorLight ArmorKind = "light"
+	ArmorHeavy ArmorKind = "heavy"
+)
 
 // Armor is worn protection.
 type Armor struct {
-	Name    string `json:"name"`
-	Defense int    `json:"defense"`
-	Cost    int    `json:"cost"`
-	Quality int    `json:"quality"`
-	Verb    string `json:"verb"` // "absorbs", "deflects"
-	Tier    int    `json:"tier"`
-	Icon    string `json:"icon"`
-	Affix   *Affix `json:"affix,omitempty"`
+	Name    string    `json:"name"`
+	Kind    ArmorKind `json:"kind,omitempty"`
+	Defense int       `json:"defense"`
+	Cost    int       `json:"cost"`
+	Quality int       `json:"quality"`
+	Verb    string    `json:"verb"` // "absorbs", "deflects"
+	Tier    int       `json:"tier"`
+	Icon    string    `json:"icon"`
+	Affix   *Affix    `json:"affix,omitempty"`
+	// Extra is what a coat does besides stop things. Robes carry ward, which
+	// is the whole reason a caster is not simply worse off for being unable to
+	// wear plate.
+	Extra *Bonus `json:"extra,omitempty"`
 }
 
 // ItemKind sorts consumables from junk from quest goods.

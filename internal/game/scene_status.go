@@ -60,10 +60,20 @@ func (s *statusScene) refresh(g *Game) {
 	// Equipment being carried rather than worn, in the same list. This is where
 	// gear gets put on: it is a thing you own, so the sheet is where you decide
 	// what to do with it, and Z means "use this" for a potion and a sword alike.
+	// Greyed for whoever is being looked at rather than hidden: a maul in the
+	// pack is still a maul, and a player paging to the fighter should find it
+	// waiting rather than wonder where it went. The detail column says the slot
+	// when it fits and who it is for when it does not.
 	for i, gear := range g.Player.Carried {
+		detail := gear.Slot()
+		usable, why := s.subject(g).CanUse(gear)
+		if !usable {
+			detail = why
+		}
 		items = append(items, ui.MenuItem{
-			Label: gear.Titled(), Detail: gear.Slot(), Icon: gear.Icon(),
-			Data: packRow{idx: i, gear: true},
+			Label: gear.Titled(), Detail: detail, Icon: gear.Icon(),
+			Disabled: !usable,
+			Data:     packRow{idx: i, gear: true},
 		})
 	}
 	// Techniques that do something with nobody swinging at you. There was no
@@ -77,9 +87,10 @@ func (s *statusScene) refresh(g *Game) {
 		if !castableOutOfCombat(sp.Kind) {
 			continue
 		}
+		cost := rules.PsycheCost(s.subject(g), sp)
 		items = append(items, ui.MenuItem{
-			Label: sp.Name, Detail: fmt.Sprintf("%d SP", sp.Cost), Icon: sp.Icon,
-			Disabled: sp.Cost > s.subject(g).Psyche,
+			Label: sp.Name, Detail: fmt.Sprintf("%d SP", cost), Icon: sp.Icon,
+			Disabled: cost > s.subject(g).Psyche,
 			Data:     packRow{idx: 0, spell: &sp},
 		})
 	}
@@ -192,7 +203,8 @@ func castableOutOfCombat(k model.SpellKind) bool {
 // a decision.
 func (s *statusScene) castOutOfCombat(g *Game, sp model.Spell) {
 	caster := s.subject(g)
-	if sp.Cost > caster.Psyche {
+	cost := rules.PsycheCost(caster, sp)
+	if cost > caster.Psyche {
 		g.Sound.Play("ui/deny")
 		return
 	}
@@ -211,7 +223,7 @@ func (s *statusScene) castOutOfCombat(g *Game, sp model.Spell) {
 			g.Log.AddColor(render.ColInkDim, "Everybody is already upright.")
 			return
 		}
-		caster.Psyche -= sp.Cost
+		caster.Psyche -= cost
 		down.HP = rules.ReviveAmount(down, sp.Power)
 		g.Sound.Play("fight/heal")
 		g.Log.AddColor(render.ColHeal, "%s", g.Write.Revived(g.RNG, down.Name))
@@ -231,7 +243,7 @@ func (s *statusScene) castOutOfCombat(g *Game, sp model.Spell) {
 			g.Log.AddColor(render.ColInkDim, "Nobody is hurt enough to be worth the psyche.")
 			return
 		}
-		caster.Psyche -= sp.Cost
+		caster.Psyche -= cost
 		healed := target.Heal(rules.SpellDamage(g.RNG, caster, sp))
 		g.Sound.Play("fight/heal")
 		g.Log.AddColor(render.ColHeal, "%s casts %s. %s recovers %d.",
@@ -249,6 +261,14 @@ func (s *statusScene) equipCarried(g *Game, i int) {
 		return
 	}
 	gear := g.Player.Carried[i]
+	// Belt and braces: the row is greyed already, but equipCarried is the one
+	// door onto the body and a refusal that only lives in a menu is a refusal
+	// that stops existing the next time somebody adds a second way in.
+	if ok, why := c.CanUse(gear); !ok {
+		g.Sound.Play("ui/deny")
+		g.Log.AddColor(render.ColInkDim, "%s cannot use %s: %s.", c.Name, gear.Titled(), why)
+		return
+	}
 
 	// The hero's pack is the shared one, so equipping onto a companion moves
 	// the item out of it and whatever they were wearing back into it.
@@ -503,6 +523,13 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 		// Strike and guard are totals across all four slots, which is the only
 		// place an affix's contribution can actually be read.
 		{"Strike / Guard", fmt.Sprintf("%d / %d", p.Strike(), p.Defense())},
+	}
+	// Focus only appears on somebody holding something magic, because for
+	// everybody else it is a permanent zero — and a stat that is always nothing
+	// teaches the player that the row is decoration. On a caster it is the
+	// number their whole shopping list is about.
+	if p.Casting() {
+		rows = append(rows, [2]string{"Focus / Ward", fmt.Sprintf("%d / %d", p.Focus(), p.Ward())})
 	}
 	// A companion has no purse of their own — what they have instead is a
 	// standing claim on yours. Their standing in the world is nobody's concern

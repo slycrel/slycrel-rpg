@@ -185,23 +185,27 @@ var dangerTargets = []struct {
 // Every other section dresses its subject through Equip — best weapon and
 // armour of the expected tier — and calls that "on curve". A character who has
 // just been created is not on that curve and cannot be: startRun hands out
-// StarterWeapon and StarterArmor, which are the *cheapest* entries in the
-// tables, and the cheapest entries are Bare Hands at strike 1 and Regrettable
-// Rags at defence 0. So the report has been describing a level-one character
-// carrying a mace and wearing boiled leather while the actual one has neither,
+// StarterKit, which is the *cheapest* thing in the tables their class can hold,
+// and the cheapest entries used to be Bare Hands at strike 1 and Regrettable
+// Rags at defence 0. So the report was describing a level-one character
+// carrying a mace and wearing boiled leather while the actual one had neither,
 // and the opening of the game was the only part of it never measured.
 func reportOpening(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "OPENING — the first fight, with what you actually start holding\n")
 	fmt.Fprintf(out, "against what every other section assumes you are wearing\n\n")
 
-	w, a := t.StarterWeapon(), t.StarterArmor()
-	fmt.Fprintf(out, "  you start with   %s (strike %d) / %s (defence %d)\n",
-		w.Name, w.Strike, a.Name, a.Defense)
-	onCurve := &model.Character{Level: 1}
-	t.Equip(onCurve)
-	fmt.Fprintf(out, "  on curve is      %s (strike %d) / %s (defence %d)\n\n",
-		onCurve.Weapon.Name, onCurve.Weapon.Strike,
-		onCurve.Armor.Name, onCurve.Armor.Defense)
+	// A row per class, because the kit is per class now: a Mage opens holding
+	// a humming stick and a Fighter a table leg, and reporting one of them as
+	// "what you start with" would be describing two thirds of a game.
+	for _, class := range model.AllClasses {
+		w, a := t.StarterKit(class)
+		onCurve := &model.Character{Level: 1, Class: class}
+		t.Equip(onCurve)
+		fmt.Fprintf(out, "  %-8s starts %s / %s, on curve %s / %s\n",
+			strings.ToLower(string(class)), w.Name, a.Name,
+			onCurve.Weapon.Name, onCurve.Armor.Name)
+	}
+	fmt.Fprintln(out)
 
 	fmt.Fprintf(out, "%-9s %-12s %9s %9s %9s %8s\n",
 		"class", "kit", "win", "died", "rounds", "hp left")
@@ -215,7 +219,7 @@ func reportOpening(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 				if kit == "on curve" {
 					t.Equip(c)
 				} else {
-					c.Weapon, c.Armor = t.StarterWeapon(), t.StarterArmor()
+					c.Weapon, c.Armor = t.StarterKit(class)
 				}
 				// What the ground around the capital actually throws, rather
 				// than plains at exactly level one.
@@ -268,8 +272,15 @@ func reportOpening(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 			hi = int(c.Coins)
 		}
 	}
-	fmt.Fprintf(out, "\n  the shop closes that gap for %d coins; a new character carries %d-%d\n\n",
-		onCurve.Weapon.Cost+onCurve.Armor.Cost, lo, hi)
+	// What closing the gap costs, per class, since the shelves differ now.
+	fmt.Fprintf(out, "\n  a new character carries %d-%d coins; on curve costs", lo, hi)
+	for _, class := range model.AllClasses {
+		onCurve := &model.Character{Level: 1, Class: class}
+		t.Equip(onCurve)
+		fmt.Fprintf(out, " %s %d", strings.ToLower(string(class)),
+			onCurve.Weapon.Cost+onCurve.Armor.Cost)
+	}
+	fmt.Fprintln(out, "\n")
 }
 
 // openingBiomes are what turned up within twelve tiles of the start across a
@@ -688,20 +699,24 @@ func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 func reportSlotValue(out *os.File, t *gamedata.Tables) {
 	fmt.Fprintf(out, "WHY — what one band is worth in each slot\n")
 	fmt.Fprintf(out, "every archetype is a trade of bands between slots, so these are the\n")
-	fmt.Fprintf(out, "exchange rates it trades at\n\n")
+	fmt.Fprintf(out, "exchange rates it trades at, read off a Fighter's lane\n\n")
 	fmt.Fprintf(out, "%-6s %14s %14s %14s %14s\n",
 		"tier", "weapon step", "armour step", "shield step", "charm def step")
 	fmt.Fprintln(out, strings.Repeat("-", 66))
 
 	best := func(tier int) (int, int, int, int) {
-		ws, as := t.StockFor(tier)
+		ws, as := t.StockForClass(tier, model.ClassFighter)
 		ss, cs := t.SidearmsFor(tier)
 		var strike, def, shield, charm int
-		if len(ws) > 0 {
-			strike = ws[len(ws)-1].Strike
+		for _, w := range ws {
+			if w.Strike > strike {
+				strike = w.Strike
+			}
 		}
-		if len(as) > 0 {
-			def = as[len(as)-1].Defense
+		for _, a := range as {
+			if a.Defense > def {
+				def = a.Defense
+			}
 		}
 		if len(ss) > 0 {
 			shield = ss[len(ss)-1].Defense
@@ -815,21 +830,19 @@ func reportProgression(out *os.File, g *core.RNG, t *gamedata.Tables) {
 }
 
 func reportEconomy(out *os.File, t *gamedata.Tables) {
-	fmt.Fprintf(out, "ECONOMY — what the tier you should be wearing costs\n\n")
-	fmt.Fprintf(out, "%-5s %5s %28s %8s %28s %8s\n",
-		"level", "tier", "weapon", "cost", "armor", "cost")
-	fmt.Fprintln(out, strings.Repeat("-", 92))
-	for level := 1; level <= maxLevel; level += 2 {
-		tier := gamedata.GearTierFor(level)
-		ws, as := t.StockFor(tier)
-		w, a := model.Weapon{Name: "-"}, model.Armor{Name: "-"}
-		if len(ws) > 0 {
-			w = ws[len(ws)-1]
+	fmt.Fprintf(out, "ECONOMY — what the tier you should be wearing costs\n")
+	fmt.Fprintf(out, "one row per class, because the shelf a class can read is not the shelf\n\n")
+	fmt.Fprintf(out, "%-8s %-5s %5s %30s %7s %30s %7s\n",
+		"class", "level", "tier", "weapon", "cost", "armor", "cost")
+	fmt.Fprintln(out, strings.Repeat("-", 96))
+	for _, class := range []model.Class{model.ClassFighter, model.ClassThief, model.ClassMage} {
+		for level := 1; level <= maxLevel; level += 4 {
+			c := &model.Character{Level: level, Class: class}
+			t.Equip(c)
+			fmt.Fprintf(out, "%-8s %-5d %5d %30s %7d %30s %7d\n",
+				strings.ToLower(string(class)), level, gamedata.GearTierFor(level),
+				c.Weapon.Name, c.Weapon.Cost, c.Armor.Name, c.Armor.Cost)
 		}
-		if len(as) > 0 {
-			a = as[len(as)-1]
-		}
-		fmt.Fprintf(out, "%-5d %5d %28s %8d %28s %8d\n", level, tier, w.Name, w.Cost, a.Name, a.Cost)
 	}
 	fmt.Fprintln(out)
 }

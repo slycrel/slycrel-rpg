@@ -1,6 +1,7 @@
 [
   {
     "name": "Regrettable Rags",
+    "kind": "",
     "defense": 0,
     "cost": 0,
     "quality": 0,
@@ -9,7 +10,34 @@
     "icon": "icon/loot/fur_tuft"
   },
   {
+    "name": "Robe, Second-Best",
+    "kind": "cloth",
+    "defense": 1,
+    "cost": 8,
+    "quality": 20,
+    "verb": "catches on",
+    "tier": 1,
+    "icon": "icon/loot/fur_tuft",
+    "extra": {
+      "ward": 1
+    }
+  },
+  {
+    "name": "Apprentice Robe, Inherited",
+    "kind": "cloth",
+    "defense": 2,
+    "cost": 20,
+    "quality": 35,
+    "verb": "billows against",
+    "tier": 1,
+    "icon": "icon/loot/fur_tuft",
+    "extra": {
+      "ward": 2
+    }
+  },
+  {
     "name": "Padded Jerkin",
+    "kind": "light",
     "defense": 2,
     "cost": 14,
     "quality": 40,
@@ -19,6 +47,7 @@
   },
   {
     "name": "Boiled Leather",
+    "kind": "light",
     "defense": 3,
     "cost": 30,
     "quality": 55,
@@ -27,9 +56,24 @@
     "icon": "icon/loot/bear_pelt"
   },
   {
-    "name": "Studded Leather",
+    "name": "Vestments, Improperly Worn",
+    "kind": "cloth",
     "defense": 4,
-    "cost": 52,
+    "cost": 70,
+    "quality": 50,
+    "verb": "shrugs at",
+    "tier": 2,
+    "icon": "icon/loot/fur_tuft",
+    "extra": {
+      "ward": 4,
+      "psyche": 1
+    }
+  },
+  {
+    "name": "Studded Leather",
+    "kind": "light",
+    "defense": 6,
+    "cost": 66,
     "quality": 62,
     "verb": "turns aside",
     "tier": 2,
@@ -37,7 +81,8 @@
   },
   {
     "name": "Ringmail, Secondhand",
-    "defense": 6,
+    "kind": "heavy",
+    "defense": 7,
     "cost": 90,
     "quality": 68,
     "verb": "catches",
@@ -45,7 +90,35 @@
     "icon": "icon/loot/blackbear_pelt"
   },
   {
+    "name": "Mantle of Slight Misgiving",
+    "kind": "cloth",
+    "defense": 6,
+    "cost": 190,
+    "quality": 64,
+    "verb": "unravels around",
+    "tier": 3,
+    "icon": "icon/loot/fur_tuft",
+    "extra": {
+      "ward": 6,
+      "psyche": 1
+    }
+  },
+  {
+    "name": "Brigandine, Reupholstered",
+    "kind": "light",
+    "defense": 10,
+    "cost": 165,
+    "quality": 72,
+    "verb": "swallows",
+    "tier": 3,
+    "icon": "icon/loot/blackbear_pelt",
+    "extra": {
+      "dexterity": 1
+    }
+  },
+  {
     "name": "Chain Hauberk",
+    "kind": "heavy",
     "defense": 8,
     "cost": 150,
     "quality": 76,
@@ -55,7 +128,8 @@
   },
   {
     "name": "Scale of the Overconfident",
-    "defense": 10,
+    "kind": "heavy",
+    "defense": 11,
     "cost": 230,
     "quality": 80,
     "verb": "scatters",
@@ -63,7 +137,35 @@
     "icon": "icon/loot/monster_scale"
   },
   {
+    "name": "Star-Chart Coat",
+    "kind": "cloth",
+    "defense": 8,
+    "cost": 420,
+    "quality": 78,
+    "verb": "misfiles",
+    "tier": 4,
+    "icon": "icon/loot/fur_tuft",
+    "extra": {
+      "ward": 8,
+      "psyche": 2
+    }
+  },
+  {
+    "name": "Cuirass of Selective Attention",
+    "kind": "light",
+    "defense": 14,
+    "cost": 370,
+    "quality": 82,
+    "verb": "declines",
+    "tier": 4,
+    "icon": "icon/loot/turtle_shell",
+    "extra": {
+      "dexterity": 2
+    }
+  },
+  {
     "name": "Half-Plate, Dented Fondly",
+    "kind": "heavy",
     "defense": 13,
     "cost": 360,
     "quality": 86,
@@ -73,20 +175,56 @@
   },
   {
     "name": "Full Plate 'Do Not Perceive Me'",
+    "kind": "heavy",
     "defense": 16,
     "cost": 560,
     "quality": 90,
     "verb": "denies",
     "tier": 4,
-    "icon": "icon/loot/turtle_shell"
+    "icon": "icon/loot/turtle_shell",
+    "extra": {
+      "speed": -1
+    }
+  },
+  {
+    "name": "Shroud of Ongoing Argument",
+    "kind": "cloth",
+    "defense": 10,
+    "cost": 780,
+    "quality": 88,
+    "verb": "disputes",
+    "tier": 5,
+    "icon": "icon/loot/fur_tuft",
+    "extra": {
+      "ward": 10,
+      "psyche": 2
+    }
+  },
+  {
+    "name": "Wyrmhide, Unlicensed",
+    "kind": "light",
+    "defense": 17,
+    "cost": 700,
+    "quality": 90,
+    "verb": "sheds",
+    "tier": 5,
+    "icon": "icon/loot/dragon_scale",
+    "extra": {
+      "dexterity": 2,
+      "speed": 1
+    }
   },
   {
     "name": "Dragonscale, Ethically Sourced",
+    "kind": "heavy",
     "defense": 20,
     "cost": 900,
     "quality": 95,
     "verb": "laughs off",
     "tier": 5,
-    "icon": "icon/loot/dragon_scale"
+    "icon": "icon/loot/dragon_scale",
+    "extra": {
+      "speed": -1
+    }
   }
 ]

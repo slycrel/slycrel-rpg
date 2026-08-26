@@ -526,3 +526,102 @@ func TestBandFracSpansItsRange(t *testing.T) {
 		t.Errorf("a band with no spread reads %v, want the middle", got)
 	}
 }
+
+// --- the focus slot and getting your breath back ---------------------------
+
+// The load-bearing property of CatchBreath: it is a discount on a fight, never
+// a profit from one. A refund larger than what the fight cost means the world
+// cannot wear a character down, and endurance runs away to infinity.
+//
+// That is not hypothetical. The first draft handed back a flat tenth of the
+// maximum pools, which at level one is more than a level-one fight takes, and
+// ENDURANCE went from sixteen fights on one rest to forty — the cap the harness
+// stops counting at.
+func TestCatchingYourBreathIsADiscountAndNeverAProfit(t *testing.T) {
+	g := core.NewRNG(5)
+	for i := 0; i < 400; i++ {
+		c := rules.BuildCharacter(g, model.ClassFighter, 1+g.Intn(14))
+		lost := g.Between(1, c.MaxHP)
+		spent := g.Between(0, c.MaxPsyche)
+		c.HP = core.Max(1, c.MaxHP-lost)
+		c.Psyche = core.Max(0, c.MaxPsyche-spent)
+		hp, ps := rules.CatchBreath(c, lost, spent)
+		if hp > lost || ps > spent {
+			t.Fatalf("a fight costing %d/%d handed back %d/%d", lost, spent, hp, ps)
+		}
+		if c.HP > c.MaxHP || c.Psyche > c.MaxPsyche {
+			t.Fatalf("catching breath overfilled: %d/%d hp, %d/%d psyche",
+				c.HP, c.MaxHP, c.Psyche, c.MaxPsyche)
+		}
+	}
+}
+
+// Nobody gets their breath back off the floor. The rescue and the reload are
+// what a defeat is for; a corpse quietly topping itself up would make both of
+// them unreachable.
+func TestTheFallenGetNothingBack(t *testing.T) {
+	g := core.NewRNG(6)
+	c := rules.BuildCharacter(g, model.ClassMage, 7)
+	c.HP, c.Psyche = 0, 0
+	if hp, ps := rules.CatchBreath(c, 50, 12); hp != 0 || ps != 0 {
+		t.Fatalf("somebody on the floor got %d hp and %d psyche back", hp, ps)
+	}
+}
+
+// Technique costs what the class pays, and the surcharge can never round a
+// price down to nothing — a rate that did would hand the worst caster in the
+// game a free move for being bad at casting.
+func TestTechniqueIsDearerForTheClassesThatAreNotMadeOfIt(t *testing.T) {
+	g := core.NewRNG(8)
+	mage := rules.BuildCharacter(g, model.ClassMage, 5)
+	fighter := rules.BuildCharacter(g, model.ClassFighter, 5)
+	thief := rules.BuildCharacter(g, model.ClassThief, 5)
+
+	for _, cost := range []int{1, 2, 4, 8, 12} {
+		s := model.Spell{Cost: cost}
+		m, f, th := rules.PsycheCost(mage, s), rules.PsycheCost(fighter, s), rules.PsycheCost(thief, s)
+		if m != cost {
+			t.Errorf("a mage pays %d for a technique listed at %d; the list is their price", m, cost)
+		}
+		if f < th || th < m {
+			t.Errorf("cost %d: mage %d, thief %d, fighter %d — the order is meant to be "+
+				"mage cheapest and fighter dearest", cost, m, th, f)
+		}
+		if m < 1 || th < 1 || f < 1 {
+			t.Errorf("cost %d rounded somebody's technique to free: %d/%d/%d", cost, m, th, f)
+		}
+	}
+}
+
+// The claim the whole focus slot rests on: a caster out of psyche still has
+// something to do, and what it is worth is a read of the rod they bought.
+//
+// Without this a Mage's empty round is a poke with a stick worth strike five,
+// which is worse than a Fighter with a table leg — and the class would spend
+// every round it could not pay for being a bad fighter.
+func TestACasterOutOfPsycheStillHasSomethingToThrow(t *testing.T) {
+	g := core.NewRNG(9)
+	def := &model.MonsterDef{Name: "Dummy", Level: 5, HP: 200, Offense: 1, Defense: 4, Ward: 4, Speed: 1}
+
+	weak := rules.BuildCharacter(g, model.ClassMage, 5)
+	weak.Weapon = model.Weapon{Name: "Twig", Kind: model.WeaponFocus, Strike: 2, Focus: 4}
+	strong := rules.BuildCharacter(g, model.ClassMage, 5)
+	strong.Weapon = model.Weapon{Name: "Rod", Kind: model.WeaponFocus, Strike: 2, Focus: 16}
+
+	avg := func(c *model.Character) float64 {
+		total := 0
+		const n = 4000
+		for i := 0; i < n; i++ {
+			total += rules.PlayerAttack(g, c, def.Spawn(g, 5), 0, 0).Damage
+		}
+		return float64(total) / n
+	}
+	lo, hi := avg(weak), avg(strong)
+	if lo < 1 {
+		t.Errorf("a caster's free round lands for %.1f, which is nothing at all", lo)
+	}
+	if hi <= lo {
+		t.Errorf("a better rod throws %.1f against the cheap one's %.1f; the focus ladder "+
+			"is the mage's whole shopping list and it has to buy something", hi, lo)
+	}
+}

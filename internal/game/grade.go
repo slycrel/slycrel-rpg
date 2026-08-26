@@ -65,10 +65,26 @@ func shelfVerdict(buyer *model.Character, data any) (string, color.Color) {
 	if buyer == nil {
 		return "", nil
 	}
+	// A row nobody at this counter could leave with says who could, and says it
+	// where the comparison would have gone. There is no point grading a maul
+	// against a mage's rod: the answer is not "worse", it is "not for you", and
+	// the two read completely differently to somebody deciding what to save up
+	// for.
+	if ok, why := buyer.CanUse(carriedOf(data)); !ok {
+		return why, render.ColInkFaint
+	}
+
 	var have, want int
 	switch v := data.(type) {
 	case model.Weapon:
 		have, want = buyer.Weapon.Strike+affixOf(buyer.Weapon.Affix).Strike, v.Strike
+		// A caster shops for focus, so that is the number the shelf grades.
+		// Comparing a rod's strike against a rod's strike would rank the whole
+		// caster ladder as identical junk, which is what it is at hitting
+		// people with.
+		if v.Kind == model.WeaponFocus || buyer.Casting() {
+			have, want = buyer.Weapon.Focus, v.Focus
+		}
 	case model.Armor:
 		have, want = buyer.Armor.Defense+affixOf(buyer.Armor.Affix).Defense, v.Defense
 	case model.Shield:
@@ -90,6 +106,22 @@ func shelfVerdict(buyer *model.Character, data any) (string, color.Color) {
 		return fmt.Sprintf("%d", d), gradeDelta(d)
 	}
 	return "=", render.ColInkDim
+}
+
+// carriedOf boxes a shelf row as a piece of equipment, so one wielding rule
+// serves the counter, the pack and the character sheet.
+func carriedOf(data any) model.Carried {
+	switch v := data.(type) {
+	case model.Weapon:
+		return model.Carried{Weapon: &v}
+	case model.Armor:
+		return model.Carried{Armor: &v}
+	case model.Shield:
+		return model.Carried{Shield: &v}
+	case model.Charm:
+		return model.Carried{Charm: &v}
+	}
+	return model.Carried{}
 }
 
 // affixOf is a nil-safe read of a suffix's bonus.

@@ -146,6 +146,22 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
   a tower shield blocks more and slows you down, a courier's anklet buys speed
   with strength. What the dice actually use is the total across all four, so a
   charm that raises strength really does raise the damage roll.
+- **Each class fights in its own lane.** Five kinds of weapon and three weights
+  of armour, gated hard: a two-hander is a fighter's and takes the shield arm
+  with it, a mage wears cloth and holds a wand, a thief buys dexterity where the
+  fighter buys plate. The shelf greys out what you cannot take and says who
+  could, rather than selling you something that turns out to be for somebody
+  else.
+- **A wand attacks for free.** A focus weapon carries Focus instead of Strike:
+  it makes every technique land harder, and the ordinary Attack becomes a bolt
+  that costs no psyche and goes through whichever of the target's defences is
+  thinner. So a mage is casting all the time and paying only for the big ones —
+  and technique itself is priced by class, cheapest for the mage and dearest for
+  the fighter.
+- **You get your breath back.** Walk away from a fight — won or run from — and
+  part of what it cost comes straight back, more of the psyche than the blood.
+  A share of the spend rather than the pool, so it is a discount on the
+  encounter and never a way to outrun it.
 - **Affixes** — "of the Damp", "of Poor Decisions", "of Consequences". Authored
   rather than rolled from a range, each one giving with one hand and taking with
   the other, and banded so a level-two hand-axe cannot turn up "of

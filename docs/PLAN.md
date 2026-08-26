@@ -1067,6 +1067,126 @@ had already done the first.)*
   that closed itself the instant you tried to photograph it would be a box
   nobody could photograph.
 
+**Equipment has lanes, and the mage's lane is magic.** *(Jeremy's: "revamp
+equipment to be class specific — wands or staves that do spells for the mage,
+2H weapons only for the fighter", and its second half, "it seems better to just
+whack things with a good weapon than use technique like you might expect".)*
+
+The gate is **hard** — Jeremy's call, and the right one. A soft version, where
+anybody may hold anything and off-class gear simply works badly, reads on a shop
+counter as a number that is wrong for reasons nobody explained, and it leaves
+"what should I be saving up for" answerable only by arithmetic the player cannot
+see. A refusal is legible, and it lets the shelf grey a row out in advance,
+which is the rule every other menu in this game already follows. The counter
+says `thief, mage only` where the comparison would have gone.
+
+Five lanes of weapon — dagger, blade, blunt, polearm, focus — plus a hand count,
+and three weights of armour. Each class gives something up, and that is the
+point of having lanes at all:
+
+- A **Fighter** reaches the biggest numbers in the table, and the weapons that
+  get there need both hands, so the shield arm is the price. Two-handed gear
+  carries −2 speed and −1 dexterity as well: hit harder, hit less often, act
+  later. It is the duelist archetype's whole content, and the report says that
+  build now wins four of the seven measured levels rather than two.
+- A **Thief** tops out a band below on strike and buys dexterity back with it,
+  and wears light armour that carries the same. They also lose nothing relative
+  to before, which was deliberate — they were already the weakest class in the
+  report and a lane pass that cost them anything would have been a nerf wearing
+  a feature's clothes.
+- A **Mage** cannot wear steel or hold a shield, and their weapon is a rod that
+  is nearly useless to swing. What they get for it is that the rod is what their
+  magic is made of.
+
+**The wand question was Jeremy's, and it is the one that made the feature
+work.** "Can't tell if we're getting an auto-attack here, a free spell, or a
+discount." The answer is the first: **a focus weapon's ordinary attack is a
+bolt, and it is free.** Without that, a caster holding a stick with strike five
+has a plain Attack worth nothing, so every round they cannot afford a technique
+is a round they are worse than a Fighter with a table leg. Making the free action
+itself magical is what "magic is what a mage does" has to mean if it is going to
+mean anything — and it is why no in-combat psyche regeneration was needed, which
+was the other candidate and the one Jeremy did not pick.
+
+It is resisted by whichever of the target's two defences is **thinner**. Going
+through the ward alone was the tidy answer and the wrong one: ward outgrows
+armour at the top of the monster table, so a level-thirteen Mage's free round
+against a dragon landed for about three, and the class stopped having a free
+action exactly where every other class's got better — death three levels over
+went to 47% against a brief that allows 36. A bolt is a shove of raw force
+rather than a shaped working, so it goes where the thing is thinnest. The
+interesting choice survives: a dagger still carries strength behind it and still
+hits a dragon harder than the rod does.
+
+`SpellPower` grew a focus term at half the bolt's rate. Three terms, each a
+different thing the player did: Power is the technique, Psyche is what they are,
+Focus is what they are holding. Paying focus at full rate in spells too
+compounded three growth curves into one build and put a level-eleven Mage at 94%
+on the stretch fights a Fighter was losing half of.
+
+**Technique costs what the class pays.** Mage 1.0, Thief 1.15, Fighter 1.3,
+rounded up and floored at one. The arithmetic is not the point — a Fighter's
+pool was always small and their techniques always rationed — the point is that
+the surcharge is *stated*, on the row, before the cast. It cost something to add:
+a level-twelve Fighter had nine psyche against a Haymaker costing eleven, so the
+technique at the top of their own list was a row that could be read and never
+selected. Martial psyche growth went from nothing-or-one per level to one-or-two,
+which is what makes the surcharge a price rather than a wall.
+
+**Getting your breath back.** *(Jeremy's, mid-build: "might be worth a bonus to
+psyche back on end of combat, same with health".)* A share of what the fight
+actually took, handed to anybody still standing — won or run from, since a
+retreat already pays no experience, coin or drop.
+
+A share of the **spend**, not of the pool, and that is the whole of making it
+safe. A flat tenth of maximum hit points is larger than what a level-one fight
+costs, so the character heals faster than the world hurts them: the first draft
+put a level-one Fighter at forty fights on one rest against sixteen before, and
+`TestEnduranceHoldsAcrossLevels` said so. A share of the damage taken is a
+discount on the encounter — it can never be net positive, it scales with how bad
+the fight was without being told the level, and it moves endurance by a factor
+anybody can compute. Per fight rather than per round, because regeneration
+inside a fight makes a long fight cheaper than a short one and quietly makes
+stalling the correct play.
+
+**What the report said, and what it took.** Ten passes. The instrument is a
+diff against the previous run's stretch-fight column, per class, because the
+question is not "is this balanced" but "did this move anybody off where they
+were". Landed at Fighter +0.6, Thief +3.7, Mage +2.2 mean points across
+fourteen levels, with the thief's drift deliberately left positive.
+
+Four things only the report could have said:
+
+- The first pass moved the Fighter's on-curve build onto one-handed weapons and
+  it fell eight points, because the old table's top-of-tier entries were mostly
+  two-handed — so "best weapon of your tier" had silently meant a two-hander
+  *and* a shield for the whole life of the game. The one-handed ladder had to be
+  the old ladder for anything else to be comparable.
+- The Mage's first draft was +9 on average and +20 at level twelve, and none of
+  it was the bolt: the probe said their free round was *worse* than the sword
+  they used to carry at every level. It was that a lower free-action floor makes
+  more techniques worth paying for, so they cast in rounds they used to swing in.
+- Cloth armour with a tier-five ward of 14 — the same as the best ward charm —
+  made a Mage take less damage than a Fighter in plate, because half of what
+  attacks you at that level attacks the ward. Robes carry a third of that now.
+- A `winRate` helper in the test suite was rolling the *local* biome for its
+  "three levels over" probe, which is the same mistake `cmd/balance` had already
+  found and fixed in its own stretch column. It reads the region that far out
+  now. The failing assertion was noise at 250 samples; the fix was the
+  measurement, not the threshold.
+
+Left standing and stated rather than tuned away: a level-thirteen Mage three
+levels over dies 40% of the time against a brief that allows 36. It was 36.3%
+before, and it is the same cell that was already the worst in the table. The
+class is fragile by construction now — cloth and eleven guard against plate and
+twenty — and the report prints the miss.
+
+**What is deliberately not different.** A Fighter and a Thief buy the same
+one-handed weapon on curve. The Fighter's lane advantage is an *option* — the
+two-hander nobody else may hold — rather than a better default, and the ARCS
+section is where it shows up. Making the default differ would have meant one of
+them was simply behind.
+
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on

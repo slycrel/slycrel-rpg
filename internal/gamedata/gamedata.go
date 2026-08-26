@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -231,33 +232,51 @@ func (t *Tables) Item(name string) (model.Item, bool) {
 	return it, ok
 }
 
-// StarterWeapon returns the cheapest real weapon, used to arm a new character.
+// StarterKit is the cheapest real weapon and coat a class can actually use.
 //
-// Tier zero is skipped, and that is the whole point of this function. The
+// Two rules, and both were paid for. Tier zero is skipped, because the
 // tier-zero rows exist to give the *absence* of equipment a name — "Bare Hands"
 // at strike 1, "Regrettable Rags" at defence 0 — and picking the cheapest thing
 // in the table handed every new character exactly that. So the game opened by
-// issuing nothing and calling it a loadout: three points of damage a swing, no
-// armour at all, and 15 to 40 coins against the 66 it costs to reach what every
-// section of the balance report calls being on curve.
-func (t *Tables) StarterWeapon() model.Weapon {
-	for _, w := range t.Weapons {
-		if w.Tier >= 1 {
-			return w
-		}
-	}
-	return model.Weapon{Name: "Bare Hands", Strike: 1, Verb: "slap"}
-}
+// issuing nothing and calling it a loadout.
+//
+// And the class gate is honoured, because the moment weapons had lanes the
+// cheapest row in the file became a table leg no Mage may pick up and a robe no
+// Fighter would be issued. A starting kit somebody cannot equip is worse than
+// no kit: it is a sheet showing gear next to a pack that refuses to take it
+// off. The cheap end of each lane exists so that this can be a real answer for
+// everybody — a Mage opens holding a humming stick and shops up to a switch,
+// which is the same first morning a Fighter has with a table leg and a mace.
+func (t *Tables) StarterKit(class model.Class) (model.Weapon, model.Armor) {
+	// The cheap end of the lane they will be shopping in, which is a stronger
+	// rule than "cheapest thing they are allowed". A Fighter is allowed to wear
+	// a robe — nothing stops anybody wearing cloth — so "cheapest allowed" put
+	// every class in the same eight-coin robe and the armour lanes vanished
+	// from the one screen where the player meets them. Reading the lane off
+	// what Equip buys at tier one means the starting kit and the first upgrade
+	// are the same sentence, which is what a starting kit is for.
+	curve := &model.Character{Level: 1, Class: class}
+	t.EquipAs(curve, Archetypes[0])
 
-// StarterArmor returns the cheapest real armour. Tier zero is skipped for the
-// same reason as StarterWeapon.
-func (t *Tables) StarterArmor() model.Armor {
-	for _, a := range t.Armors {
-		if a.Tier >= 1 {
-			return a
+	w := model.Weapon{Name: "Bare Hands", Strike: 1, Verb: "slap"}
+	for _, c := range t.Weapons {
+		if c.Tier < 1 || c.Kind != curve.Weapon.Kind || c.TwoHanded() != curve.Weapon.TwoHanded() {
+			continue
+		}
+		if w.Name == "Bare Hands" || c.Cost < w.Cost {
+			w = c
 		}
 	}
-	return model.Armor{Name: "Rags", Verb: "flaps"}
+	a := model.Armor{Name: "Rags", Verb: "flaps"}
+	for _, c := range t.Armors {
+		if c.Tier < 1 || c.Kind != curve.Armor.Kind {
+			continue
+		}
+		if a.Name == "Rags" || c.Cost < a.Cost {
+			a = c
+		}
+	}
+	return w, a
 }
 
 // SpellsFor returns the spells a character currently knows.
@@ -288,6 +307,64 @@ func (t *Tables) StockFor(tier int) ([]model.Weapon, []model.Armor) {
 		}
 	}
 	return ws, as
+}
+
+// StockForClass narrows a shelf to what one character could actually leave with.
+//
+// The shop still lists everything — a row nobody can take is greyed rather than
+// hidden, because a mage should be able to see that plate exists and that it is
+// not for them. This is for the callers who need the answer rather than the
+// question: what to dress a simulated subject in, and what a chest should
+// bother leaving on the floor.
+func (t *Tables) StockForClass(tier int, class model.Class) ([]model.Weapon, []model.Armor) {
+	ws, as := t.StockFor(tier)
+	ws = slices.DeleteFunc(ws, func(w model.Weapon) bool { return !model.CanWield(class, w) })
+	as = slices.DeleteFunc(as, func(a model.Armor) bool { return !model.CanWear(class, a) })
+	return ws, as
+}
+
+// bestWeapon picks what a class would buy off a shelf.
+//
+// A mage reads the same shelf differently from everybody else, and that is the
+// whole point of the focus slot: the number they are shopping for is Focus, and
+// the strike on a rod is close enough to nothing that ranking by it would send
+// them home with a dagger. One comparison with two orderings beats a second
+// stock function that means "the caster's shelf".
+func bestWeapon(ws []model.Weapon, class model.Class, hands int) (model.Weapon, bool) {
+	var best model.Weapon
+	found := false
+	for _, w := range ws {
+		switch {
+		case hands == 1 && w.TwoHanded():
+			continue
+		case hands == 2 && !w.TwoHanded():
+			continue
+		}
+		if !found || betterWeapon(w, best, class) {
+			best, found = w, true
+		}
+	}
+	return best, found
+}
+
+func betterWeapon(a, b model.Weapon, class model.Class) bool {
+	if class == model.ClassMage && (a.Focus > 0 || b.Focus > 0) {
+		if a.Focus != b.Focus {
+			return a.Focus > b.Focus
+		}
+	}
+	return a.Strike > b.Strike
+}
+
+func bestArmor(as []model.Armor) (model.Armor, bool) {
+	var best model.Armor
+	found := false
+	for _, a := range as {
+		if !found || a.Defense > best.Defense {
+			best, found = a, true
+		}
+	}
+	return best, found
 }
 
 // SidearmsFor returns the shields and charms a shop of the given tier carries.
@@ -366,6 +443,16 @@ type Archetype struct {
 	Note string
 
 	Weapon, Armor, Shield, Charm Slot
+
+	// Hands is how the weapon arm is spent: 1 leaves the off arm free for a
+	// shield, 2 commits both, 0 takes whatever is best in the band.
+	//
+	// It exists because the biggest numbers in the weapon table now need both
+	// hands, so "best weapon of your tier" and "a weapon and a shield" stopped
+	// being the same sentence. That is the trade the duelist was always meant
+	// to be measuring and could not, back when nothing in the tables let a
+	// build spend defence on offence.
+	Hands int
 }
 
 // Archetypes are the builds the balance report measures.
@@ -385,6 +472,7 @@ var Archetypes = []Archetype{
 		// than it is.
 		Shield: Slot{Back: 1},
 		Charm:  Slot{Back: 1},
+		Hands:  1,
 	},
 	{
 		Name: "attrition",
@@ -393,6 +481,7 @@ var Archetypes = []Archetype{
 		// is the ability to still be standing at the end of one.
 		Weapon: Slot{Back: 1},
 		Charm:  Slot{Back: 1},
+		Hands:  1,
 	},
 	{
 		Name: "duelist",
@@ -410,6 +499,7 @@ var Archetypes = []Archetype{
 		// See the cost column: an archetype that underspends is measuring the
 		// spec, not the content.
 		Shield: Slot{Skip: true},
+		Hands:  2,
 	},
 }
 
@@ -445,21 +535,32 @@ func (t *Tables) Equip(c *model.Character) { t.EquipAs(c, Archetypes[0]) }
 func (t *Tables) EquipAs(c *model.Character, a Archetype) {
 	base := GearTierFor(c.Level)
 
+	// The hand count is a preference rather than a rule: a Mage asked for a
+	// two-handed weapon owns none, and handing them nothing would measure the
+	// spec rather than the content — which is the mistake the duelist's first
+	// draft already made once, in a different slot.
 	if tier := core.Max(1, a.Weapon.tierAt(base)); tier >= 1 {
-		if ws, _ := t.StockFor(tier); len(ws) > 0 {
-			c.Weapon = ws[len(ws)-1]
+		ws, _ := t.StockForClass(tier, c.Class)
+		if w, ok := bestWeapon(ws, c.Class, a.Hands); ok {
+			c.Weapon = w
+		} else if w, ok := bestWeapon(ws, c.Class, 0); ok {
+			c.Weapon = w
 		}
 	}
 	if tier := core.Max(1, a.Armor.tierAt(base)); tier >= 1 {
-		if _, as := t.StockFor(tier); len(as) > 0 {
-			c.Armor = as[len(as)-1]
+		_, as := t.StockForClass(tier, c.Class)
+		if ar, ok := bestArmor(as); ok {
+			c.Armor = ar
 		}
 	}
-	if tier := a.Shield.tierAt(base); tier >= 1 {
+	// A shield needs a class that uses one and a hand to put it on.
+	c.Shield = model.Shield{}
+	if tier := a.Shield.tierAt(base); tier >= 1 && c.CanHold() {
 		if ss, _ := t.SidearmsFor(tier); len(ss) > 0 {
 			c.Shield = ss[len(ss)-1]
 		}
 	}
+	c.Charm = model.Charm{}
 	if tier := a.Charm.tierAt(base); tier >= 1 {
 		if _, cs := t.SidearmsFor(tier); len(cs) > 0 {
 			c.Charm = cs[len(cs)-1]

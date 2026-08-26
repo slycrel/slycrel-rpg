@@ -108,6 +108,133 @@ func (s Shield) Worn() bool { return s.Name != "" }
 // Worn reports whether the slot holds anything.
 func (c Charm) Worn() bool { return c.Name != "" }
 
+// --- who may carry what ---------------------------------------------------
+
+// arms is the lane each class fights in.
+//
+// The gate is hard rather than a penalty, and that is the decision the rest of
+// this follows from. A soft version — anyone may wield anything, off-class gear
+// simply works badly — reads on the shop counter as a number that is wrong for
+// reasons nobody explained, and it leaves "what should I be buying" answerable
+// only by arithmetic the player cannot see. A refusal is legible. It also lets
+// the shelf grey a row out in advance, which is the rule the rest of this
+// game's menus already follow.
+//
+// What each class gives up is the point of having lanes at all:
+//   - A Fighter reaches the biggest numbers in the table, and the weapons that
+//     get there need both hands, so the shield arm is the price.
+//   - A Thief tops out a band below on strike and buys dexterity back with it,
+//     which is crit and accuracy rather than raw damage.
+//   - A Mage cannot wear steel or hold a shield, and their weapon is a rod that
+//     is nearly useless to swing. What they get for it is that the rod is what
+//     their magic is *made of*.
+var arms = map[Class]struct {
+	weapons   map[WeaponKind]bool
+	twoHanded bool
+	armors    map[ArmorKind]bool
+	shield    bool
+}{
+	ClassFighter: {
+		weapons:   map[WeaponKind]bool{WeaponBlade: true, WeaponBlunt: true, WeaponPolearm: true},
+		twoHanded: true,
+		armors:    map[ArmorKind]bool{ArmorCloth: true, ArmorLight: true, ArmorHeavy: true},
+		shield:    true,
+	},
+	ClassThief: {
+		weapons: map[WeaponKind]bool{WeaponDagger: true, WeaponBlade: true, WeaponBlunt: true},
+		armors:  map[ArmorKind]bool{ArmorCloth: true, ArmorLight: true},
+		shield:  true,
+	},
+	ClassMage: {
+		weapons: map[WeaponKind]bool{WeaponDagger: true, WeaponFocus: true},
+		armors:  map[ArmorKind]bool{ArmorCloth: true},
+	},
+}
+
+// CanWield reports whether a class may carry a weapon.
+func CanWield(class Class, w Weapon) bool {
+	a, ok := arms[class]
+	if !ok {
+		return true
+	}
+	if w.TwoHanded() && !a.twoHanded {
+		return false
+	}
+	return w.Kind == WeaponAny || a.weapons[w.Kind]
+}
+
+// CanWear reports whether a class may put a coat on.
+func CanWear(class Class, a Armor) bool {
+	l, ok := arms[class]
+	if !ok {
+		return true
+	}
+	return a.Kind == ArmorAny || l.armors[a.Kind]
+}
+
+// CanHoldShield reports whether a class uses the off arm at all. It says
+// nothing about what is in the other hand — see Character.CanHold, which is the
+// one a caller wants, because a two-handed weapon closes the slot for anybody.
+func CanHoldShield(class Class) bool {
+	a, ok := arms[class]
+	if !ok {
+		return true
+	}
+	return a.shield
+}
+
+// CanHold reports whether this character, holding what they are holding, could
+// put a shield on the other arm.
+func (c *Character) CanHold() bool {
+	return CanHoldShield(c.Class) && !c.Weapon.TwoHanded()
+}
+
+// CanUse reports whether the character may equip a carried piece, and says why
+// not when they may not. The reason is for the shelf and the character sheet,
+// which both have a detail column to put it in.
+func (c *Character) CanUse(g Carried) (bool, string) {
+	switch {
+	case g.Weapon != nil:
+		if !CanWield(c.Class, *g.Weapon) {
+			return false, wieldedBy(*g.Weapon)
+		}
+	case g.Armor != nil:
+		if !CanWear(c.Class, *g.Armor) {
+			return false, wornBy(*g.Armor)
+		}
+	case g.Shield != nil:
+		if !CanHoldShield(c.Class) {
+			return false, "not with a free hand"
+		}
+		if c.Weapon.TwoHanded() {
+			return false, "both hands are full"
+		}
+	}
+	return true, ""
+}
+
+// wieldedBy names who could carry this, for a row the reader cannot take.
+//
+// Naming the classes beats naming the rule: "fighter, thief" is something a
+// player can act on, where "no polearms" needs them to already know which
+// classes take polearms, which is the thing they are trying to find out.
+func wieldedBy(w Weapon) string { return listClasses(func(c Class) bool { return CanWield(c, w) }) }
+
+func wornBy(a Armor) string { return listClasses(func(c Class) bool { return CanWear(c, a) }) }
+
+func listClasses(ok func(Class) bool) string {
+	var names []string
+	for _, c := range []Class{ClassFighter, ClassThief, ClassMage} {
+		if ok(c) {
+			names = append(names, strings.ToLower(string(c)))
+		}
+	}
+	if len(names) == 0 {
+		return "nobody, apparently"
+	}
+	return strings.Join(names, ", ") + " only"
+}
+
 // Gear totals everything the character is wearing that is not already folded
 // into the base weapon and armour ratings: the shield, the charm, and every
 // affix across all four slots.
@@ -117,8 +244,14 @@ func (c Charm) Worn() bool { return c.Name != "" }
 // them being updated alone.
 func (c *Character) Gear() Bonus {
 	var b Bonus
+	if c.Weapon.Extra != nil {
+		b = b.Add(*c.Weapon.Extra)
+	}
 	if c.Weapon.Affix != nil {
 		b = b.Add(c.Weapon.Affix.Bonus)
+	}
+	if c.Armor.Extra != nil {
+		b = b.Add(*c.Armor.Extra)
 	}
 	if c.Armor.Affix != nil {
 		b = b.Add(c.Armor.Affix.Bonus)
@@ -178,6 +311,20 @@ func (c *Character) Ward() int { return max0(c.Gear().Ward) }
 // reason they could see. A charm makes what you cast hit harder; a bed is still
 // what gets you more of them.
 func (c *Character) MaxPsy() int { return max0(c.MaxPsyche + c.Gear().Psyche) }
+
+// Focus returns spell strike: the rod in the hand, and nothing else yet.
+//
+// It is the caster's half of the weapon slot. Everything a fighter buys in that
+// slot raises the damage roll and nothing else; everything a mage buys there
+// raises the magnitude of what they cast and the bolt they throw for free. The
+// two are the same purchase asked for by two different characters, which is
+// what makes a shop counter mean something different depending on who is
+// standing at it.
+func (c *Character) Focus() int { return max0(c.Weapon.Focus) }
+
+// Casting reports whether the character is holding something magic, which is
+// what turns their ordinary attack into a bolt.
+func (c *Character) Casting() bool { return c.Weapon.Kind == WeaponFocus && c.Weapon.Focus > 0 }
 
 func atLeast(n int) int {
 	if n < 1 {

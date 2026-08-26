@@ -366,8 +366,16 @@ func (g *Game) rollAffixedGearOfTier(tier int) (find, bool) {
 		return find{}, false
 	}
 
-	// Only gear whose name is free of a flourish can take one.
-	weapons, armors := g.Data.StockFor(tier)
+	// Only gear whose name is free of a flourish can take one, and only gear
+	// the hero could actually put on.
+	//
+	// The second filter is what a hard class gate costs if nobody pays it: a
+	// chest is the one place a *named* piece turns up, and a table with three
+	// lanes in it would otherwise hand a mage a two-handed maul two thirds of
+	// the time. That is not a find, it is a coin with a longer name on it.
+	// Companions are deliberately not counted — the roll is for the person
+	// opening the box, and a hireling can be let go tomorrow.
+	weapons, armors := g.Data.StockForClass(tier, g.Player.Class)
 	weapons = slices.DeleteFunc(weapons, func(w model.Weapon) bool { return !model.Affixable(w.Name) })
 	armors = slices.DeleteFunc(armors, func(a model.Armor) bool { return !model.Affixable(a.Name) })
 

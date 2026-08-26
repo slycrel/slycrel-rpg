@@ -12,8 +12,8 @@
     "spendXP": 0,
     "hp": 48,
     "maxHP": 48,
-    "psyche": 5,
-    "maxPsyche": 5,
+    "psyche": 8,
+    "maxPsyche": 8,
     "strength": 13,
     "dexterity": 7,
     "speed": 12,
@@ -24,18 +24,20 @@
     "shame": 0,
     "coins": 250,
     "weapon": {
-      "name": "Spear, Regrettably Long",
+      "name": "Hand Axe, Sincere",
+      "kind": "blade",
       "strike": 9,
-      "range": 3,
+      "range": 0,
       "cost": 96,
-      "quality": 68,
-      "verb": "skewer",
+      "quality": 72,
+      "verb": "chop",
       "tier": 2,
-      "icon": "icon/ab/2_weapon_sword"
+      "icon": "icon/ab/2_weapon_axe"
     },
     "armor": {
       "name": "Ringmail, Secondhand",
-      "defense": 6,
+      "kind": "heavy",
+      "defense": 7,
       "cost": 90,
       "quality": 68,
       "verb": "catches",
@@ -119,8 +121,8 @@
       "spendXP": 0,
       "hp": 47,
       "maxHP": 47,
-      "psyche": 5,
-      "maxPsyche": 5,
+      "psyche": 8,
+      "maxPsyche": 8,
       "strength": 17,
       "dexterity": 10,
       "speed": 9,
@@ -131,18 +133,20 @@
       "shame": 0,
       "coins": 0,
       "weapon": {
-        "name": "Spear, Regrettably Long",
+        "name": "Hand Axe, Sincere",
+        "kind": "blade",
         "strike": 9,
-        "range": 3,
+        "range": 0,
         "cost": 96,
-        "quality": 68,
-        "verb": "skewer",
+        "quality": 72,
+        "verb": "chop",
         "tier": 2,
-        "icon": "icon/ab/2_weapon_sword"
+        "icon": "icon/ab/2_weapon_axe"
       },
       "armor": {
         "name": "Ringmail, Secondhand",
-        "defense": 6,
+        "kind": "heavy",
+        "defense": 7,
         "cost": 90,
         "quality": 68,
         "verb": "catches",
@@ -334,18 +338,18 @@
         "title": "The Register",
         "state": "open",
         "places": [
-          8,
-          13,
-          22,
-          18,
-          31
+          37,
+          12,
+          17,
+          23,
+          4
         ],
         "placeNames": [
-          "Thistleford",
-          "Ashfell",
-          "Fendell",
-          "Warren of Quiet Screaming",
-          "Tower of Cold Soup"
+          "Blighthaven",
+          "Gorseshanks",
+          "Delve of Late Harvest",
+          "Thistlegallow",
+          "Bellbottom"
         ],
         "roles": {
           "{X}": "Wolf, Deeply Unimpressed"

@@ -12,8 +12,8 @@
     "spendXP": 0,
     "hp": 94,
     "maxHP": 94,
-    "psyche": 5,
-    "maxPsyche": 5,
+    "psyche": 15,
+    "maxPsyche": 15,
     "strength": 28,
     "dexterity": 10,
     "speed": 19,
@@ -24,14 +24,15 @@
     "shame": 0,
     "coins": 250,
     "weapon": {
-      "name": "Flamberge 'The Apology'",
-      "strike": 15,
+      "name": "Stiletto 'Second Thoughts'",
+      "kind": "dagger",
+      "strike": 16,
       "range": 0,
       "cost": 340,
-      "quality": 90,
-      "verb": "unmake",
+      "quality": 84,
+      "verb": "puncture",
       "tier": 4,
-      "icon": "icon/ab/4_weapon_sword",
+      "icon": "icon/ab/4_throwing_1",
       "affix": {
         "suffix": "of the Last Word",
         "bonus": {
@@ -39,16 +40,23 @@
           "speed": -2
         },
         "tier": 4
+      },
+      "extra": {
+        "dexterity": 2
       }
     },
     "armor": {
       "name": "Full Plate 'Do Not Perceive Me'",
+      "kind": "heavy",
       "defense": 16,
       "cost": 560,
       "quality": 90,
       "verb": "denies",
       "tier": 4,
-      "icon": "icon/loot/turtle_shell"
+      "icon": "icon/loot/turtle_shell",
+      "extra": {
+        "speed": -1
+      }
     },
     "shield": {
       "name": "Kite Shield of Modest Convictions",
@@ -130,8 +138,8 @@
       "spendXP": 0,
       "hp": 100,
       "maxHP": 100,
-      "psyche": 7,
-      "maxPsyche": 7,
+      "psyche": 17,
+      "maxPsyche": 17,
       "strength": 29,
       "dexterity": 10,
       "speed": 16,
@@ -142,23 +150,28 @@
       "shame": 0,
       "coins": 0,
       "weapon": {
-        "name": "Runed Maul of the Last Word",
+        "name": "Sabre of Selective Memory",
+        "kind": "blade",
         "strike": 17,
         "range": 0,
-        "cost": 520,
-        "quality": 92,
-        "verb": "conclude",
+        "cost": 420,
+        "quality": 86,
+        "verb": "draw across",
         "tier": 4,
-        "icon": "icon/ab/4_weapon_hammer"
+        "icon": "icon/ab/4_weapon_sword"
       },
       "armor": {
         "name": "Full Plate 'Do Not Perceive Me'",
+        "kind": "heavy",
         "defense": 16,
         "cost": 560,
         "quality": 90,
         "verb": "denies",
         "tier": 4,
-        "icon": "icon/loot/turtle_shell"
+        "icon": "icon/loot/turtle_shell",
+        "extra": {
+          "speed": -1
+        }
       },
       "shield": {
         "name": "Kite Shield of Modest Convictions",
@@ -198,8 +211,8 @@
       "spendXP": 0,
       "hp": 98,
       "maxHP": 98,
-      "psyche": 13,
-      "maxPsyche": 13,
+      "psyche": 22,
+      "maxPsyche": 22,
       "strength": 19,
       "dexterity": 28,
       "speed": 28,
@@ -210,23 +223,28 @@
       "shame": 0,
       "coins": 0,
       "weapon": {
-        "name": "Runed Maul of the Last Word",
+        "name": "Sabre of Selective Memory",
+        "kind": "blade",
         "strike": 17,
         "range": 0,
-        "cost": 520,
-        "quality": 92,
-        "verb": "conclude",
+        "cost": 420,
+        "quality": 86,
+        "verb": "draw across",
         "tier": 4,
-        "icon": "icon/ab/4_weapon_hammer"
+        "icon": "icon/ab/4_weapon_sword"
       },
       "armor": {
-        "name": "Full Plate 'Do Not Perceive Me'",
-        "defense": 16,
-        "cost": 560,
-        "quality": 90,
-        "verb": "denies",
+        "name": "Cuirass of Selective Attention",
+        "kind": "light",
+        "defense": 14,
+        "cost": 370,
+        "quality": 82,
+        "verb": "declines",
         "tier": 4,
-        "icon": "icon/loot/turtle_shell"
+        "icon": "icon/loot/turtle_shell",
+        "extra": {
+          "dexterity": 2
+        }
       },
       "shield": {
         "name": "Kite Shield of Modest Convictions",
@@ -310,18 +328,18 @@
         "title": "The Register",
         "state": "open",
         "places": [
-          20,
-          4,
           5,
-          18,
-          35
+          13,
+          10,
+          17,
+          7
         ],
         "placeNames": [
-          "Ruin of the Unread Letter",
-          "Drear Town",
           "Steading of the Sunken Barge",
-          "Ruin of the Wrong King",
-          "Fencombe"
+          "Fen Hold",
+          "Saltbarrow",
+          "Remnant of the Unread Letter",
+          "Rookhaven"
         ],
         "roles": {
           "{X}": "Extremely Loose Hound"

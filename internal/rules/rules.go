@@ -132,7 +132,15 @@ func LevelUp(g *core.RNG, c *model.Character) {
 		c.Speed++
 		c.Strength += g.Between(1, 2)
 		c.Dexterity += g.Between(0, 1)
-		c.MaxPsyche += g.Between(0, 1)
+		// A point or two rather than nothing-or-one, which is what it was.
+		//
+		// The old growth left a level-twelve Fighter with nine psyche against a
+		// Haymaker costing eleven, so the technique at the top of their own
+		// list was a row that could be read and never selected — and once
+		// technique got a class surcharge, "never" stopped being an accident of
+		// a bad roll and became the rule. A class whose best move is
+		// permanently greyed out has a shorter menu than the one it is shown.
+		c.MaxPsyche += g.Between(1, 2)
 	case model.ClassMage:
 		c.MaxHP += g.Between(2, 3+c.Level)
 		c.Speed++
@@ -144,7 +152,7 @@ func LevelUp(g *core.RNG, c *model.Character) {
 		c.Speed += g.Between(1, 2)
 		c.Strength += g.Between(1, 2)
 		c.Dexterity += g.Between(1, 2)
-		c.MaxPsyche += g.Between(0, 2)
+		c.MaxPsyche += g.Between(1, 2)
 	}
 	c.Fame++
 	c.HP = c.MaxHP
@@ -237,6 +245,9 @@ type Swing struct {
 	Miss   bool
 	Crit   bool
 	Damage int
+	// Magic is set when the blow was a bolt off a focus rather than a hit with
+	// something heavy, so the transcript and the burst can say which happened.
+	Magic bool
 }
 
 // PlayerAttack resolves a character's attack, hit roll and all. Buffs are the
@@ -254,12 +265,73 @@ func PlayerAttack(g *core.RNG, c *model.Character, m *model.Monster, buffStr, bu
 	}
 
 	sw := Swing{Crit: g.Chance(0.07 + float64(c.Dex())/400)}
+	if c.Casting() {
+		// A rod's ordinary attack is a bolt, and it is free.
+		//
+		// This is the answer to the question a focus slot otherwise begs: a
+		// caster holding a stick with strike 5 has a plain Attack worth
+		// nothing, so every round they cannot afford a technique is a round
+		// they are worse than a fighter with a table leg. Making the free
+		// action itself magical means a Mage is casting all the time and
+		// *paying* only for the big ones, which is what "magic is what a mage
+		// does" has to mean if it is going to mean anything.
+		//
+		// It is resisted by whichever of the target's two defences is thinner.
+		//
+		// The first version went through the ward alone, which is the tidy
+		// answer and the wrong one: ward outgrows armour at the top of the
+		// monster table, so a level-thirteen Mage's free round against a dragon
+		// landed for about three, and the class simply stopped having a free
+		// action exactly where every other class's got better. Death at three
+		// levels over went to 47% against a brief that allows 36.
+		//
+		// A bolt is a shove of raw force rather than a shaped working, so it
+		// goes wherever the thing is thinnest. That keeps the rod a *floor* —
+		// it is a small number in every matchup rather than a coin flip on one
+		// — and it leaves the interesting choice intact, because a dagger still
+		// carries strength behind it and still hits a dragon harder than the
+		// rod does.
+		sw.Magic = true
+		sw.Damage = AfterWard(FocusBolt(g, c)+buffStr, core.Min(m.Defense, m.Ward))
+		if sw.Crit {
+			sw.Damage = sw.Damage*3/2 + 2
+		}
+		return sw
+	}
 	sw.Damage = PlayerDamage(g, c, m) + buffStr
 	if sw.Crit {
 		sw.Damage = sw.Damage*3/2 + 2
 	}
 	return sw
 }
+
+// FocusBolt rolls the free attack a wand or staff makes, before resistance.
+//
+// Deliberately flatter than a weapon swing: strength is not in it, so a Mage's
+// output is a straight read of what they are holding and what level they are.
+// That is the shape a caster is supposed to have — gear and study rather than
+// arms — and it is why the focus ladder is the mage's whole shopping list.
+func FocusBolt(g *core.RNG, c *model.Character) int {
+	base := float64(c.Focus())*focusBite + float64(c.Level)*0.6
+	return core.Max(1, g.Between(int(base*0.75), int(base*1.25)))
+}
+
+// focusBite is what a point of focus is worth in the free bolt. Tuned against
+// the COMBAT table rather than picked: it is the value that leaves a Mage's
+// unpaid round roughly where a Thief's swing is, which is the claim the whole
+// slot rests on.
+const focusBite = 0.85
+
+// focusStudy is what the same point of focus is worth inside a *paid*
+// technique, and it is deliberately half what the free bolt gets.
+//
+// The rod is the mage's whole shopping list, so it has to move both numbers or
+// buying one is a decision about the cheap round only. But a spell already
+// scales off the psyche pool and the level, so paying focus at full rate there
+// compounds three growth terms into one build — which is exactly what the first
+// draft did, and it put a level-eleven Mage at 94% on the stretch fights the
+// Fighter was losing half of.
+const focusStudy = 0.25
 
 // MonsterDamage rolls the damage a monster deals to a character.
 // Original: DoDamage(false).
@@ -301,10 +373,108 @@ const magicBite = 0.62
 // roll is what a heal restores. Damage spells go through AfterWard on the way
 // to a target; healing must not.
 func SpellDamage(g *core.RNG, c *model.Character, s model.Spell) int {
-	base := float64(s.Power) + float64(c.MaxPsy())*0.6 + float64(c.Level)*0.8
+	base := SpellPower(c, s)
 	lo := int(base * 0.8)
 	hi := int(base * 1.3)
 	return core.Max(1, g.Between(lo, hi))
+}
+
+// SpellPower is the magnitude a technique lands for before the roll's spread.
+//
+// Three terms, and each is a different thing the player did. Power is the
+// technique. Psyche is what they are — the pool a level-up grows and a charm
+// widens, and the only term a Fighter's techniques have ever had. Focus is what
+// they are *holding*, and it is the term that exists so a caster has something
+// to spend money on: before it, a mage's shopping list was a sword they were
+// bad at swinging and their magic got better only by levelling.
+//
+// It reads out here rather than inside SpellDamage because two callers need the
+// number without the dice: the AI weighing a technique against a swing, and the
+// character sheet, which cannot show a range it does not know the middle of.
+func SpellPower(c *model.Character, s model.Spell) float64 {
+	return float64(s.Power) + float64(c.MaxPsy())*0.6 +
+		float64(c.Focus())*focusStudy + float64(c.Level)*0.8
+}
+
+// --- what a technique costs, and who it costs it ---------------------------
+
+// psycheRate is how dearly each class buys the pool it spends.
+//
+// A Mage pays the number on the tin. Everybody else pays a surcharge, and the
+// point of it is not the arithmetic — a Fighter's psyche pool was always small
+// and their techniques always rationed — it is that the surcharge is *stated*.
+// The pool used to be one bar with one price, so "why does the mage cast so
+// much more than I do" was answered by two stat tables nobody puts side by
+// side. Now the shop of techniques quotes a different figure to each of them
+// and the reason is on the row.
+//
+// It is a multiplier rather than a second cost column in the data, because the
+// spell table is authored per class already and a second number per row would
+// be a second number to keep in step for no reader's benefit.
+var psycheRate = map[model.Class]float64{
+	model.ClassMage:    1.00,
+	model.ClassThief:   1.15,
+	model.ClassFighter: 1.30,
+}
+
+// PsycheCost is what this character actually pays to cast this technique.
+//
+// Rounded up, and floored at one: a rate that could round a cost to nothing
+// would hand somebody a free technique for being bad at techniques.
+func PsycheCost(c *model.Character, s model.Spell) int {
+	rate, ok := psycheRate[c.Class]
+	if !ok {
+		rate = 1
+	}
+	return core.Max(1, int(math.Ceil(float64(s.Cost)*rate)))
+}
+
+// --- getting your breath back ---------------------------------------------
+
+// The share of what a fight actually *took* that comes back to anybody still
+// standing at the end of it.
+//
+// A share of the spend rather than a share of the pool, and that is the whole
+// of making this safe. A flat tenth of maximum hit points refunded per fight is
+// larger than what a level-one fight costs, so the character heals faster than
+// the world hurts them and endurance goes to infinity — which the first draft
+// did, and the table said so: forty fights on one rest at level one and level
+// five, against sixteen before. A share of the damage taken is a *discount* on
+// the encounter. It can never be net positive, it scales with how bad the fight
+// was without being told the level, and it moves endurance by a factor anybody
+// can compute: one over one minus the share.
+//
+// Per fight rather than per round, which is the other thing this could have
+// been. Regeneration inside a fight makes a long fight cheaper than a short
+// one, which rewards turtling and quietly makes stalling the correct play. The
+// encounter is the unit the overworld counts in, the unit ENDURANCE measures,
+// and the unit a player is thinking in when they decide whether they can take
+// one more before the inn.
+//
+// Psyche comes back at a higher share than blood on purpose. A caster out of
+// psyche has no second option and stands there waving a stick; somebody at low
+// hit points still has every option they had at full, and being made to weigh
+// that is what a health bar is for.
+const (
+	restHPShare     = 0.20
+	restPsycheShare = 0.40
+)
+
+// CatchBreath hands back a share of what the fight cost to somebody who walked
+// away from it, whether they won or ran. Reports what came back.
+//
+// Running counts, and that is not generosity: a retreat already pays no
+// experience, no coin and no drop, and charging it the full price of the fight
+// as well is what makes "leave" the answer nobody picks.
+func CatchBreath(c *model.Character, hpLost, psycheSpent int) (hp, psyche int) {
+	if c == nil || c.HP <= 0 {
+		return 0, 0
+	}
+	hp = core.Clamp(int(float64(hpLost)*restHPShare), 0, c.MaxHP-c.HP)
+	psyche = core.Clamp(int(float64(psycheSpent)*restPsycheShare), 0, c.MaxPsyche-c.Psyche)
+	c.HP += hp
+	c.Psyche += psyche
+	return hp, psyche
 }
 
 // AfterWard reduces a magical hit by the target's resistance to magic.
@@ -689,7 +859,7 @@ func affordable(c *model.Character, spells []model.Spell, kind model.SpellKind) 
 	var best model.Spell
 	found := false
 	for _, s := range spells {
-		if s.Kind != kind || s.Cost > c.Psyche || !s.Known(c) {
+		if s.Kind != kind || PsycheCost(c, s) > c.Psyche || !s.Known(c) {
 			continue
 		}
 		if !found || s.Power > best.Power {
@@ -880,6 +1050,11 @@ type FightResult struct {
 	DamageDealt int
 	DamageTaken int
 	HPLeft      int
+	// What CatchBreath handed back at the end. Reported rather than only
+	// applied, because a section measuring the cost of a fight has to be able
+	// to say what the fight refunded.
+	HPBack     int
+	PsycheBack int
 }
 
 // Died reports the outcome that actually costs a run.
@@ -976,6 +1151,8 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 	}
 
 	var res FightResult
+	// What the fight cost in psyche, which is half of what it refunds.
+	spent := 0
 	for res.Rounds = 1; res.Rounds <= maxRounds; res.Rounds++ {
 		living := livingMonsters(mons)
 		if len(living) == 0 {
@@ -1009,7 +1186,9 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 				return
 			}
 			if s, ok := bestSpell(sim, spells, living); ok {
-				sim.Psyche -= s.Cost
+				cost := PsycheCost(sim, s)
+				sim.Psyche -= cost
+				spent += cost
 				switch s.Kind {
 				case model.SpellHeal:
 					sim.HP = core.Clamp(sim.HP+SpellDamage(g, sim, s), 0, sim.MaxHP)
@@ -1167,6 +1346,12 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 	if len(livingMonsters(mons)) == 0 && sim.HP > 0 {
 		res.Won = true
 	}
+	// Getting your breath back happens here rather than at the call site, so
+	// the ENDURANCE table and the battle screen cannot disagree about how much
+	// a fight actually costs. It is the single number this whole section is
+	// about; a simulator that could not see it would be measuring a game where
+	// every encounter is paid for in full and never repaid.
+	res.HPBack, res.PsycheBack = CatchBreath(sim, res.DamageTaken, spent)
 	res.HPLeft = sim.HP
 	return res
 }
@@ -1186,7 +1371,7 @@ func bestAttack(c *model.Character, spells []model.Spell) (model.Spell, bool) {
 	var attack model.Spell
 	found := false
 	for _, s := range spells {
-		if s.Cost > c.Psyche || !s.Known(c) {
+		if PsycheCost(c, s) > c.Psyche || !s.Known(c) {
 			continue
 		}
 		if s.Kind != model.SpellDamage && s.Kind != model.SpellDrain {
@@ -1199,12 +1384,23 @@ func bestAttack(c *model.Character, spells []model.Spell) (model.Spell, bool) {
 	if !found {
 		return model.Spell{}, false
 	}
-	weapon := float64(c.Str())/2 + float64(c.Strike())
-	spell := float64(attack.Power) + float64(c.MaxPsy())*0.6 + float64(c.Level)*0.8
-	if spell <= weapon {
+	if SpellPower(c, attack) <= freeSwingWorth(c) {
 		return model.Spell{}, false
 	}
 	return attack, true
+}
+
+// freeSwingWorth is what the round costs nothing to spend: a swing, or the bolt
+// off a rod. It is what a paid technique has to beat to be worth paying for.
+//
+// A caster's floor rises with their rod, which is the point — a level-one spark
+// should stop being worth two psyche once the staff throws harder for free,
+// exactly as a fighter's opening technique retires behind a better sword.
+func freeSwingWorth(c *model.Character) float64 {
+	if c.Casting() {
+		return float64(c.Focus())*focusBite + float64(c.Level)*0.6
+	}
+	return float64(c.Str())/2 + float64(c.Strike())
 }
 
 // bestSpell picks what a competent solo player would cast this round: a heal

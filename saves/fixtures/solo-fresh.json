@@ -25,6 +25,7 @@
     "coins": 250,
     "weapon": {
       "name": "Mace of Modest Ambition",
+      "kind": "blunt",
       "strike": 5,
       "range": 0,
       "cost": 36,
@@ -35,6 +36,7 @@
     },
     "armor": {
       "name": "Boiled Leather",
+      "kind": "light",
       "defense": 3,
       "cost": 30,
       "quality": 55,
@@ -167,18 +169,18 @@
         "title": "The Register",
         "state": "open",
         "places": [
-          8,
-          13,
-          22,
-          18,
-          31
+          37,
+          12,
+          17,
+          23,
+          4
         ],
         "placeNames": [
-          "Thistleford",
-          "Ashfell",
-          "Fendell",
-          "Warren of Quiet Screaming",
-          "Tower of Cold Soup"
+          "Blighthaven",
+          "Gorseshanks",
+          "Delve of Late Harvest",
+          "Thistlegallow",
+          "Bellbottom"
         ],
         "roles": {
           "{X}": "Wolf, Deeply Unimpressed"

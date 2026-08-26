@@ -13,7 +13,7 @@
     "hp": 3,
     "maxHP": 85,
     "psyche": 0,
-    "maxPsyche": 7,
+    "maxPsyche": 14,
     "strength": 19,
     "dexterity": 10,
     "speed": 16,
@@ -24,18 +24,20 @@
     "shame": 0,
     "coins": 250,
     "weapon": {
-      "name": "Glaive, Overcompensating",
+      "name": "Longsword of Adequate Repute",
+      "kind": "blade",
       "strike": 13,
-      "range": 1,
-      "cost": 240,
-      "quality": 82,
-      "verb": "cleave",
+      "range": 0,
+      "cost": 200,
+      "quality": 85,
+      "verb": "run through",
       "tier": 3,
-      "icon": "icon/ab/3_weapon_axe"
+      "icon": "icon/ab/3_weapon_sword"
     },
     "armor": {
       "name": "Scale of the Overconfident",
-      "defense": 10,
+      "kind": "heavy",
+      "defense": 11,
       "cost": 230,
       "quality": 80,
       "verb": "scatters",
@@ -119,8 +121,8 @@
       "spendXP": 0,
       "hp": 0,
       "maxHP": 96,
-      "psyche": 9,
-      "maxPsyche": 9,
+      "psyche": 16,
+      "maxPsyche": 16,
       "strength": 22,
       "dexterity": 6,
       "speed": 14,
@@ -131,18 +133,20 @@
       "shame": 0,
       "coins": 0,
       "weapon": {
-        "name": "Glaive, Overcompensating",
+        "name": "Longsword of Adequate Repute",
+        "kind": "blade",
         "strike": 13,
-        "range": 1,
-        "cost": 240,
-        "quality": 82,
-        "verb": "cleave",
+        "range": 0,
+        "cost": 200,
+        "quality": 85,
+        "verb": "run through",
         "tier": 3,
-        "icon": "icon/ab/3_weapon_axe"
+        "icon": "icon/ab/3_weapon_sword"
       },
       "armor": {
         "name": "Scale of the Overconfident",
-        "defense": 10,
+        "kind": "heavy",
+        "defense": 11,
         "cost": 230,
         "quality": 80,
         "verb": "scatters",
@@ -184,8 +188,8 @@
       "spendXP": 0,
       "hp": 4,
       "maxHP": 57,
-      "psyche": 6,
-      "maxPsyche": 6,
+      "psyche": 15,
+      "maxPsyche": 15,
       "strength": 21,
       "dexterity": 23,
       "speed": 20,
@@ -196,23 +200,28 @@
       "shame": 0,
       "coins": 0,
       "weapon": {
-        "name": "Glaive, Overcompensating",
+        "name": "Longsword of Adequate Repute",
+        "kind": "blade",
         "strike": 13,
-        "range": 1,
-        "cost": 240,
-        "quality": 82,
-        "verb": "cleave",
+        "range": 0,
+        "cost": 200,
+        "quality": 85,
+        "verb": "run through",
         "tier": 3,
-        "icon": "icon/ab/3_weapon_axe"
+        "icon": "icon/ab/3_weapon_sword"
       },
       "armor": {
-        "name": "Scale of the Overconfident",
+        "name": "Brigandine, Reupholstered",
+        "kind": "light",
         "defense": 10,
-        "cost": 230,
-        "quality": 80,
-        "verb": "scatters",
+        "cost": 165,
+        "quality": 72,
+        "verb": "swallows",
         "tier": 3,
-        "icon": "icon/loot/monster_scale"
+        "icon": "icon/loot/blackbear_pelt",
+        "extra": {
+          "dexterity": 1
+        }
       },
       "shield": {
         "name": "Buckler, Previously Owned",
@@ -301,18 +310,18 @@
         "title": "The Register",
         "state": "open",
         "places": [
-          8,
-          13,
-          22,
-          18,
-          31
+          37,
+          12,
+          17,
+          23,
+          4
         ],
         "placeNames": [
-          "Thistleford",
-          "Ashfell",
-          "Fendell",
-          "Warren of Quiet Screaming",
-          "Tower of Cold Soup"
+          "Blighthaven",
+          "Gorseshanks",
+          "Delve of Late Harvest",
+          "Thistlegallow",
+          "Bellbottom"
         ],
         "roles": {
           "{X}": "Bear With Boundaries"

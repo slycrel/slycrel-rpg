@@ -189,6 +189,9 @@ func vfxKeys(spells []model.Spell) []string {
 		add(k)
 	}
 	add("vfx/boom")
+	// The free bolt off a focus weapon, which belongs to no technique and so
+	// appears in neither table above.
+	add("vfx/bolt")
 	for _, s := range spells {
 		add(s.VFX)
 	}

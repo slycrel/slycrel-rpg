@@ -1,6 +1,7 @@
 [
   {
     "name": "Bare Hands",
+    "kind": "",
     "strike": 1,
     "range": 0,
     "cost": 0,
@@ -11,6 +12,7 @@
   },
   {
     "name": "Table Leg",
+    "kind": "blunt",
     "strike": 2,
     "range": 0,
     "cost": 4,
@@ -21,16 +23,45 @@
   },
   {
     "name": "Farmer's Knife",
-    "strike": 3,
+    "kind": "dagger",
+    "strike": 4,
     "range": 0,
-    "cost": 11,
+    "cost": 12,
     "quality": 45,
     "verb": "stick",
     "tier": 1,
-    "icon": "icon/ab/1_weapon_sword"
+    "icon": "icon/ab/1_throwing_1",
+    "extra": {
+      "dexterity": 1
+    }
+  },
+  {
+    "name": "Stick, Faintly Humming",
+    "kind": "focus",
+    "strike": 1,
+    "focus": 5,
+    "range": 0,
+    "cost": 6,
+    "quality": 15,
+    "verb": "wave",
+    "tier": 1,
+    "icon": "icon/ab/1_lightning_1"
+  },
+  {
+    "name": "Hazel Switch, Overqualified",
+    "kind": "focus",
+    "strike": 2,
+    "focus": 10,
+    "range": 0,
+    "cost": 34,
+    "quality": 40,
+    "verb": "prod",
+    "tier": 1,
+    "icon": "icon/ab/1_lightning_1"
   },
   {
     "name": "Notched Blade",
+    "kind": "blade",
     "strike": 4,
     "range": 0,
     "cost": 24,
@@ -41,6 +72,7 @@
   },
   {
     "name": "Mace of Modest Ambition",
+    "kind": "blunt",
     "strike": 5,
     "range": 0,
     "cost": 36,
@@ -50,10 +82,53 @@
     "icon": "icon/ab/1_weapon_hammer"
   },
   {
-    "name": "Actual Sword",
+    "name": "Splitting Maul, Borrowed",
+    "kind": "blunt",
+    "hands": 2,
     "strike": 6,
     "range": 0,
-    "cost": 55,
+    "cost": 48,
+    "quality": 60,
+    "verb": "split",
+    "tier": 1,
+    "icon": "icon/ab/1_weapon_hammer",
+    "extra": {
+      "speed": -2,
+      "dexterity": -1
+    }
+  },
+  {
+    "name": "Poniard, Previously Sheathed",
+    "kind": "dagger",
+    "strike": 8,
+    "range": 0,
+    "cost": 70,
+    "quality": 70,
+    "verb": "perforate",
+    "tier": 2,
+    "icon": "icon/ab/2_throwing_1",
+    "extra": {
+      "dexterity": 1
+    }
+  },
+  {
+    "name": "Rod of Reasonable Objection",
+    "kind": "focus",
+    "strike": 3,
+    "focus": 13,
+    "range": 0,
+    "cost": 88,
+    "quality": 66,
+    "verb": "jab",
+    "tier": 2,
+    "icon": "icon/ab/2_lightning_1"
+  },
+  {
+    "name": "Actual Sword",
+    "kind": "blade",
+    "strike": 7,
+    "range": 0,
+    "cost": 58,
     "quality": 75,
     "verb": "slash",
     "tier": 2,
@@ -61,9 +136,10 @@
   },
   {
     "name": "Hand Axe, Sincere",
-    "strike": 7,
+    "kind": "blade",
+    "strike": 9,
     "range": 0,
-    "cost": 74,
+    "cost": 96,
     "quality": 72,
     "verb": "chop",
     "tier": 2,
@@ -71,72 +147,209 @@
   },
   {
     "name": "Spear, Regrettably Long",
-    "strike": 9,
+    "kind": "polearm",
+    "hands": 2,
+    "strike": 11,
     "range": 3,
-    "cost": 96,
+    "cost": 110,
     "quality": 68,
     "verb": "skewer",
     "tier": 2,
-    "icon": "icon/ab/2_weapon_sword"
+    "icon": "icon/ab/2_weapon_sword",
+    "extra": {
+      "speed": -2,
+      "dexterity": -1
+    }
   },
   {
-    "name": "Warhammer 'Consequences'",
-    "strike": 10,
+    "name": "Fang, Unlicensed",
+    "kind": "dagger",
+    "strike": 12,
     "range": 0,
-    "cost": 130,
-    "quality": 80,
-    "verb": "flatten",
+    "cost": 165,
+    "quality": 78,
+    "verb": "open",
     "tier": 3,
-    "icon": "icon/ab/3_weapon_hammer"
+    "icon": "icon/ab/3_throwing_1",
+    "extra": {
+      "dexterity": 2
+    }
+  },
+  {
+    "name": "Staff of the Second Opinion",
+    "kind": "focus",
+    "strike": 4,
+    "focus": 16,
+    "range": 0,
+    "cost": 215,
+    "quality": 74,
+    "verb": "rap",
+    "tier": 3,
+    "icon": "icon/ab/3_lightning_1"
   },
   {
     "name": "Longsword of Adequate Repute",
-    "strike": 11,
+    "kind": "blade",
+    "strike": 13,
     "range": 0,
-    "cost": 165,
+    "cost": 200,
     "quality": 85,
     "verb": "run through",
     "tier": 3,
     "icon": "icon/ab/3_weapon_sword"
   },
   {
+    "name": "Warhammer 'Consequences'",
+    "kind": "blunt",
+    "hands": 2,
+    "strike": 14,
+    "range": 0,
+    "cost": 215,
+    "quality": 80,
+    "verb": "flatten",
+    "tier": 3,
+    "icon": "icon/ab/3_weapon_hammer",
+    "extra": {
+      "speed": -2,
+      "dexterity": -1
+    }
+  },
+  {
     "name": "Glaive, Overcompensating",
-    "strike": 13,
+    "kind": "polearm",
+    "hands": 2,
+    "strike": 16,
     "range": 1,
-    "cost": 240,
+    "cost": 260,
     "quality": 82,
     "verb": "cleave",
     "tier": 3,
-    "icon": "icon/ab/3_weapon_axe"
+    "icon": "icon/ab/3_weapon_axe",
+    "extra": {
+      "speed": -2,
+      "dexterity": -1
+    }
+  },
+  {
+    "name": "Stiletto 'Second Thoughts'",
+    "kind": "dagger",
+    "strike": 16,
+    "range": 0,
+    "cost": 340,
+    "quality": 84,
+    "verb": "puncture",
+    "tier": 4,
+    "icon": "icon/ab/4_throwing_1",
+    "extra": {
+      "dexterity": 2
+    }
+  },
+  {
+    "name": "Ashen Rod of Mild Threat",
+    "kind": "focus",
+    "strike": 5,
+    "focus": 19,
+    "range": 0,
+    "cost": 480,
+    "quality": 82,
+    "verb": "poke",
+    "tier": 4,
+    "icon": "icon/ab/4_lightning_1"
+  },
+  {
+    "name": "Sabre of Selective Memory",
+    "kind": "blade",
+    "strike": 17,
+    "range": 0,
+    "cost": 420,
+    "quality": 86,
+    "verb": "draw across",
+    "tier": 4,
+    "icon": "icon/ab/4_weapon_sword"
   },
   {
     "name": "Flamberge 'The Apology'",
-    "strike": 15,
+    "kind": "blade",
+    "hands": 2,
+    "strike": 19,
     "range": 0,
-    "cost": 340,
+    "cost": 470,
     "quality": 90,
     "verb": "unmake",
     "tier": 4,
-    "icon": "icon/ab/4_weapon_sword"
+    "icon": "icon/ab/4_weapon_sword",
+    "extra": {
+      "speed": -2,
+      "dexterity": -1
+    }
   },
   {
     "name": "Runed Maul of the Last Word",
-    "strike": 17,
+    "kind": "blunt",
+    "hands": 2,
+    "strike": 21,
     "range": 0,
-    "cost": 520,
+    "cost": 560,
     "quality": 92,
     "verb": "conclude",
     "tier": 4,
-    "icon": "icon/ab/4_weapon_hammer"
+    "icon": "icon/ab/4_weapon_hammer",
+    "extra": {
+      "speed": -2,
+      "dexterity": -1
+    }
   },
   {
-    "name": "Blade of Escalating Poor Decisions",
+    "name": "Kris, Regrettably Personal",
+    "kind": "dagger",
+    "strike": 20,
+    "range": 0,
+    "cost": 700,
+    "quality": 88,
+    "verb": "insist",
+    "tier": 5,
+    "icon": "icon/ab/4_throwing_1",
+    "extra": {
+      "dexterity": 3
+    }
+  },
+  {
+    "name": "Sceptre of Ongoing Consequence",
+    "kind": "focus",
+    "strike": 6,
+    "focus": 22,
+    "range": 0,
+    "cost": 820,
+    "quality": 90,
+    "verb": "indicate",
+    "tier": 5,
+    "icon": "icon/ab/4_lightning_1"
+  },
+  {
+    "name": "Rapier 'After You'",
+    "kind": "blade",
     "strike": 21,
     "range": 0,
     "cost": 800,
+    "quality": 90,
+    "verb": "correct",
+    "tier": 5,
+    "icon": "icon/ab/4_weapon_sword"
+  },
+  {
+    "name": "Blade of Escalating Poor Decisions",
+    "kind": "blade",
+    "hands": 2,
+    "strike": 26,
+    "range": 0,
+    "cost": 900,
     "quality": 95,
     "verb": "resolve",
     "tier": 5,
-    "icon": "icon/ab/4_weapon_sword"
+    "icon": "icon/ab/4_weapon_sword",
+    "extra": {
+      "speed": -2,
+      "dexterity": -1
+    }
   }
 ]

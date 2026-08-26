@@ -73,6 +73,13 @@ type battleScene struct {
 	queue []func(*Game)
 	timer int
 
+	// What the fight has cost each member so far, which is what it hands part
+	// of back at the end. Counted rather than read off the health bar: a
+	// potion drunk mid-fight would otherwise erase the damage that earned the
+	// refund, and the simulator counts it the same way.
+	spentHP     map[*model.Character]int
+	spentPsyche map[*model.Character]int
+
 	cam       render.Camera
 	floaters  []floater
 	hurt      []int // per-monster hit flash timer
@@ -107,14 +114,16 @@ type battleScene struct {
 
 func newBattleScene(g *Game, mons []*model.Monster, where string) *battleScene {
 	b := &battleScene{
-		under:     g.Top(),
-		mons:      mons,
-		where:     where,
-		party:     g.Party(),
-		log:       ui.NewLog(60),
-		hurt:      make([]int, len(mons)),
-		partyHurt: map[*model.Character]int{},
-		guarding:  map[*model.Character]bool{},
+		under:       g.Top(),
+		mons:        mons,
+		where:       where,
+		party:       g.Party(),
+		log:         ui.NewLog(60),
+		hurt:        make([]int, len(mons)),
+		partyHurt:   map[*model.Character]int{},
+		spentHP:     map[*model.Character]int{},
+		spentPsyche: map[*model.Character]int{},
+		guarding:    map[*model.Character]bool{},
 	}
 	// Nobody carries anything in from the last fight.
 	for _, c := range b.party {
@@ -184,6 +193,7 @@ func (b *battleScene) tickEffects(g *Game) {
 		}
 		for _, t := range rules.TickDamage(g.RNG, c.Active) {
 			c.HP = core.Max(0, c.HP-t.Damage)
+			b.spentHP[c] += t.Damage
 			b.partyHurt[c] = 10
 			fx, fy := b.memberFloat(c)
 			b.addFloater(fx, fy, fmt.Sprintf("-%d", t.Damage), render.ColBlood)
@@ -496,10 +506,14 @@ func (b *battleScene) chooseRoot(g *Game) {
 			// Greying out a revive while everybody is upright is the same
 			// courtesy as greying out a technique you cannot pay for: the menu
 			// should not offer a move that does nothing.
-			off := s.Cost > g.Player.Psyche ||
+			// Quoted at what this caster pays rather than what the table
+			// says, because a Fighter's surcharge that only shows up as a
+			// failed cast is a rule nobody can plan around.
+			cost := rules.PsycheCost(g.Player, s)
+			off := cost > g.Player.Psyche ||
 				(s.Kind == model.SpellRevive && !fallen)
 			items = append(items, ui.MenuItem{
-				Label: s.Name, Detail: fmt.Sprintf("%d SP", s.Cost), Icon: s.Icon,
+				Label: s.Name, Detail: fmt.Sprintf("%d SP", cost), Icon: s.Icon,
 				Disabled: off, Data: s,
 			})
 		}
@@ -865,14 +879,29 @@ func (b *battleScene) playerAttack(g *Game, p *model.Character, idx int) {
 	// The swing lands where it lands. Played here rather than inside
 	// damageMonster because that is also where a spell's damage goes, and a
 	// fireball should not come with a sword slash behind it.
-	b.playOnMonster(g, idx, b.nextSlash())
+	//
+	// A rod's free attack is a bolt, so it gets the bolt's burst and the bolt's
+	// verb. It costs no psyche and is not on the technique list, which means
+	// the transcript is the only place the game can say that this class's
+	// ordinary round is magic — and if it says "clobbers" while a wand is in
+	// their hand, the player has been told they are a bad fighter rather than a
+	// caster with a free hand.
+	if sw.Magic {
+		b.playOnMonster(g, idx, "vfx/bolt")
+	} else {
+		b.playOnMonster(g, idx, b.nextSlash())
+	}
 	if crit {
 		g.Sound.Play("fight/crit")
 		b.cam.Shake(3)
 	} else {
 		g.Sound.Play("fight/hit")
 	}
-	b.log.Add("%s", g.Write.Hit(g.RNG, p.Name, p.Weapon.Verb, m.Name, dmg, crit))
+	verb := p.Weapon.Verb
+	if sw.Magic {
+		verb = "bolt"
+	}
+	b.log.Add("%s", g.Write.Hit(g.RNG, p.Name, verb, m.Name, dmg, crit))
 }
 
 // buffsFor returns what the conditions riding on a member are worth to a blow.
@@ -887,11 +916,13 @@ func (b *battleScene) buffsFor(_ *Game, c *model.Character) (str, dex int) {
 // accidentally be aimed at a monster and a stun can never be aimed at a friend.
 func (b *battleScene) castSpell(g *Game, c cast) {
 	p, s := c.by, c.spell
-	if s.Cost > p.Psyche {
+	cost := rules.PsycheCost(p, s)
+	if cost > p.Psyche {
 		b.log.Add("%s reaches for it and finds nothing there.", p.Name)
 		return
 	}
-	p.Psyche -= s.Cost
+	p.Psyche -= cost
+	b.spentPsyche[p] += cost
 	// Remembered only once it is actually paid for, so a technique the player
 	// selected and then backed out of at the targeting step does not become
 	// the one the menu opens on next round.
@@ -1217,6 +1248,7 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 		return
 	}
 	tgt.HP = core.Max(0, tgt.HP-dmg)
+	b.spentHP[tgt] += dmg
 	g.Sound.Play("fight/hurt")
 	// A claw landing on your own row, small. The party panel is where a player
 	// watches their own health, so this is the half of the fight that most
@@ -1471,6 +1503,7 @@ func (b *battleScene) finish(g *Game) {
 	// whose company is about to carry him somewhere with a roof.
 	if b.result != 2 {
 		b.reviveFallen(g)
+		b.catchBreath(g)
 	}
 	// A fight the company came out of, which is what a backstory beat counts.
 	// Dying is not a shared anecdote.
@@ -1479,6 +1512,32 @@ func (b *battleScene) finish(g *Game) {
 	}
 	// Copy the battle transcript into the world log so it survives the pop.
 	g.sinceFight = 0
+}
+
+// catchBreath hands everybody still standing part of what the fight took off
+// them. Won or run from: a retreat already pays nothing, and charging it the
+// full price of the fight on top of that is what made leaving the answer
+// nobody picks.
+//
+// It is announced rather than applied quietly. The whole point of it is that
+// the player can feel the encounter costing less than it looks like it costs,
+// and a number that moves while nobody is saying why is a number they will
+// assume is a bug in their own reading of the bar.
+func (b *battleScene) catchBreath(g *Game) {
+	for _, c := range b.party {
+		hp, sp := rules.CatchBreath(c, b.spentHP[c], b.spentPsyche[c])
+		if hp == 0 && sp == 0 {
+			continue
+		}
+		switch {
+		case sp == 0:
+			b.log.AddColor(render.ColHeal, "%s gets their breath back. +%d HP.", c.Name, hp)
+		case hp == 0:
+			b.log.AddColor(render.ColHeal, "%s gets their breath back. +%d SP.", c.Name, sp)
+		default:
+			b.log.AddColor(render.ColHeal, "%s gets their breath back. +%d HP, +%d SP.", c.Name, hp, sp)
+		}
+	}
 }
 
 // reviveFallen stands the downed companions back up on one hit point once the
