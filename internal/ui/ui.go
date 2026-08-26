@@ -17,6 +17,7 @@ package ui
 import (
 	"fmt"
 	"image/color"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/slycrel/slycrel-rpg/internal/assetsys"
@@ -94,6 +95,58 @@ func Cursor(dst *ebiten.Image, x, y float64, c color.Color) {
 		render.Rect(dst, x+i, cy-2+i, 1, 5-i*2, c)
 	}
 }
+
+// Tag draws a floating label in world space: a line or two of text on a dark
+// plate, centred on cx with its bottom edge at bottomY, so it sits above
+// whatever it names.
+//
+// It is the answer to a town where the only way to find out what a building was
+// was to walk into it and read the box that came up. A label is cheaper than an
+// interaction, and the information — "the smithy", "a weathered sign" — was
+// never worth a modal.
+//
+// The plate is not decoration. Pale text over grass, cobble and a lit window is
+// unreadable at 7x13 whatever colour it is, and the drop shadow Text already
+// carries is one pixel of contrast against a background that has plenty.
+func Tag(dst *ebiten.Image, lines []string, cx, bottomY float64, c color.Color) {
+	if len(lines) == 0 {
+		return
+	}
+	pw, ph := TagSize(lines)
+	w, h := pw-6, ph-4 // back to the ink; the plate pads around it
+	x := round(cx - w/2)
+	y := round(bottomY - h - 3)
+	render.Rect(dst, x-3, y-2, w+6, h+4, tagPlate)
+	render.Frame(dst, x-3, y-2, w+6, h+4, tagEdge)
+	for i, ln := range lines {
+		render.TextFlat(dst, ln, x, y-render.TextInkTop+float64(i)*render.LineH, c)
+	}
+}
+
+// TagSize measures the plate Tag would draw, so a caller can move one out of
+// the way of something it would otherwise sit on top of.
+func TagSize(lines []string) (w, h float64) {
+	if len(lines) == 0 {
+		return 0, 0
+	}
+	for _, ln := range lines {
+		if lw := render.TextW(ln); lw > w {
+			w = lw
+		}
+	}
+	// The plate is measured off the ink rather than the line box: a label
+	// padded by the font's own descender space reads as loose at this size.
+	return w + 6, float64(len(lines)-1)*render.LineH + float64(render.TextInkH) + 4
+}
+
+// round keeps a tag on whole pixels. A plate on a half pixel gets an extra
+// column of edge on one side and reads as a wobble while the camera scrolls.
+func round(f float64) float64 { return math.Floor(f + 0.5) }
+
+var (
+	tagPlate = color.RGBA{0x14, 0x10, 0x1C, 0xD8}
+	tagEdge  = color.RGBA{0x4A, 0x3C, 0x2C, 0xC0}
+)
 
 // Bar draws a labelled meter. frac is clamped to [0,1].
 func Bar(dst *ebiten.Image, x, y, w, h, frac float64, fill color.Color) {

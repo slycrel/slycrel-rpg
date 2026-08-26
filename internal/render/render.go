@@ -75,6 +75,17 @@ type Camera struct {
 	// Clamp is true. Small maps that fit on screen simply centre instead.
 	W, H  float64
 	Clamp bool
+	// ViewH is how much of the screen is actually *looked at* — the frame
+	// minus whatever chrome is painted over the bottom of it. Zero means the
+	// whole screen.
+	//
+	// The distinction matters at a map's edge. Clamping to the full frame
+	// parks the last row of the world under the status bar, so a town's gate
+	// sat behind the HUD and the ground the player could still walk on was
+	// ground they could not see. Centring on the same rectangle keeps the
+	// character in the middle of what is visible rather than in the middle of
+	// what is drawn.
+	ViewH float64
 	shake float64
 	// wobble advances every tick so Offset can derive the shake displacement
 	// from a cheap trig pair. A counter beats an RNG here: it needs no
@@ -82,22 +93,32 @@ type Camera struct {
 	wobble float64
 }
 
+// View reports the rectangle the player can actually see, which is the frame
+// less any chrome along the bottom.
+func (c *Camera) View() (w, h float64) {
+	if c.ViewH <= 0 {
+		return ScreenW, ScreenH
+	}
+	return ScreenW, c.ViewH
+}
+
 // CenterOn points the camera at a world pixel position.
 func (c *Camera) CenterOn(wx, wy float64) {
-	c.X = wx - ScreenW/2
-	c.Y = wy - ScreenH/2
+	vw, vh := c.View()
+	c.X = wx - vw/2
+	c.Y = wy - vh/2
 	if !c.Clamp {
 		return
 	}
-	if c.W <= ScreenW {
-		c.X = (c.W - ScreenW) / 2
+	if c.W <= vw {
+		c.X = (c.W - vw) / 2
 	} else {
-		c.X = core.ClampF(c.X, 0, c.W-ScreenW)
+		c.X = core.ClampF(c.X, 0, c.W-vw)
 	}
-	if c.H <= ScreenH {
-		c.Y = (c.H - ScreenH) / 2
+	if c.H <= vh {
+		c.Y = (c.H - vh) / 2
 	} else {
-		c.Y = core.ClampF(c.Y, 0, c.H-ScreenH)
+		c.Y = core.ClampF(c.Y, 0, c.H-vh)
 	}
 }
 

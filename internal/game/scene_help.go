@@ -37,7 +37,7 @@ type helpRow struct{ key, what string }
 
 var helpKeys = []helpRow{
 	{"Arrows / WASD", "walk"},
-	{"Z", "talk, enter, confirm"},
+	{"Z", "confirm; walking into a thing already does it"},
 	{"X", "back out"},
 	{"", ""},
 	{"C or I", "character sheet, pack, techniques"},

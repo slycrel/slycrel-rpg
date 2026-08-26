@@ -1004,6 +1004,69 @@ at all.
 Still open, and Jeremy's: **a hotkey for the autosave slot.** It is written
 before every fight and the death prompt is currently the only way back to it.
 
+**The friction pass.** *(Jeremy's, in a batch of five, and they turned out to be
+one complaint: the game kept asking the player to do a second thing after they
+had already done the first.)*
+
+- **The world stopped going under the status bar.** `render.Camera` grew a
+  `ViewH` — how much of the frame is actually *looked at* — and clamps and
+  centres on that rectangle rather than on the whole screen. The bug was worst
+  in towns, and it was two bugs: at a map's bottom edge the camera clamped to
+  the full frame, so the last rows of the world (the gate among them) sat
+  behind the HUD, and the compensating `py-hudH/2` on the centring had its sign
+  the wrong way round, which parked the hero forty-four pixels *below* the
+  middle of what could be seen rather than above it.
+- **A town has four gates now**, one in each wall, opening onto the street
+  cross that was already there. The player still arrives at the south one,
+  because that is where the road is; what changed is that leaving from the far
+  side of a fifty-six-tile capital is not a walk back across it. No RNG is
+  consumed by any of this, so every existing save still generates its own town.
+- **Things say what they are without being asked.** `ui.Tag` floats a name on a
+  dark plate over whatever it belongs to: locations on the continent, doors and
+  gates and chests in an interior. Three ranges rather than one, because the
+  question is different for each — a door is a destination and worth naming
+  from across the square, a townsperson's name is not and a capital has ten of
+  them, and a foe is neither, since walking into one starts a fight and what it
+  turns out to be is what the fight is for. A signpost the player is facing
+  shows *what it says* rather than what it is, which is the whole of a sign.
+
+  Two details. A tag slides sideways when it would be drawn over the hero, not
+  up: there is far more room across a 480-pixel screen than between a doorway
+  and the top of the frame, and lifting is what stacks two labels into one pile,
+  since everything driven out of the hero's way vertically arrives at the same
+  height. And tags are drawn *over* the night tint, because a name that dims at
+  dusk is a name nobody can read at the hour they most need it.
+
+  The status bar's right-hand corner stopped naming what was ahead, since the
+  thing ahead now names itself. That corner is the furthest point on the screen
+  from where the player is looking.
+- **Walking into something is doing it.** Foes, bosses and the way out already
+  worked this way; shop counters, inns, chests, altars and the hiring board
+  blocked the step and then waited to be pressed at. Nothing was gained by the
+  wait — you cannot bump a counter by accident, because you had to walk at it
+  to get there. On the continent, stepping onto a location enters it. A sign is
+  the one exception, and only because it says what it says on the ground next
+  to it now, so a box over the top would be the interface saying it twice.
+
+  The trap here is the doorstep: walking out of a town leaves the hero standing
+  on its tile, and without a guard the step out is the step back in, forever.
+  `Game.arrived` is that guard, and it is on the *game* rather than on the
+  overworld scene because the hero is put down in three ways that are not a
+  step — a new run, a loaded save, and being carried home by the company — and
+  all three can land on a town. Being carried home is the one that makes it
+  worth a field: that is a place you were taken to, and walking straight
+  through the door afterwards is the game taking one more decision off somebody
+  who has just had a bad afternoon.
+- **Any key gets on with it.** A box that is only *reporting* — a chest's
+  contents, a sign, the end of a fight — closes on anything. "Z to continue" is
+  a rule that has to be taught and then remembered, for a screen whose entire
+  content is "you have read this". A box with a *choice* in it still wants a
+  deliberate key, because there the wrong answer costs something. `Keystroke`
+  excludes the screenshot keys, which is load-bearing: dumping the framebuffer
+  is how anything in this game gets looked at, and a dismiss-on-anything box
+  that closed itself the instant you tried to photograph it would be a box
+  nobody could photograph.
+
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on

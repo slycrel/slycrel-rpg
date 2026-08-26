@@ -254,6 +254,8 @@ func (g *Game) rescueToTown() {
 	if town != nil {
 		place = town.Name
 		g.Walk.Place(town.Pos)
+		// Carried to the gate, not through it: see Game.arrived.
+		g.arrived = town.Pos
 		g.World.Reveal(town.Pos, 8)
 		town.Discovered, town.Visited = true, true
 	}

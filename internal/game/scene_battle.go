@@ -361,7 +361,8 @@ func (b *battleScene) Update(g *Game) error {
 	case modeBusy:
 		b.updateBusy(g)
 	case modeDone:
-		if g.Accept() || Cancel() {
+		// The fight is over and the panel is a report. Any key gets on with it.
+		if g.Dismiss() {
 			g.Pop()
 			b.onPopped(g)
 		}

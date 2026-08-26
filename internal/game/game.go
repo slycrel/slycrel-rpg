@@ -90,6 +90,18 @@ type Game struct {
 	// Steps since the last encounter, so fights cannot chain immediately.
 	sinceFight int
 
+	// arrived is the overworld tile the hero counts as having already walked
+	// onto, so stepping onto a location enters it exactly once.
+	//
+	// It lives here rather than on the overworld scene because the hero is put
+	// down in three ways that are not a step — a new run, a loaded save, and
+	// being carried home by the company — and all three can land on a town.
+	// Being carried through the gate is the case that makes it worth a field:
+	// it is a *place* you were taken to, and walking straight through the door
+	// afterwards is the game taking one more decision off somebody who has
+	// just had a bad afternoon.
+	arrived core.Point
+
 	// tiles is the terrain renderer, composed on first draw.
 	tiles *tiles.Renderer
 
@@ -393,6 +405,49 @@ func (g *Game) Back() bool {
 
 // Confirm reports an accept press this frame.
 func Confirm() bool { return anyJustPressed(confirmKeys) }
+
+// notAKeystroke is everything that arrives as a key press without being one
+// somebody meant as "go on".
+//
+// The screenshot keys are the load-bearing entries. Dumping the framebuffer is
+// how anything in this game gets looked at, and a dismiss-on-anything box that
+// closed itself the instant you tried to photograph it would be a box nobody
+// could photograph. The modifiers are there because holding shift to type is
+// not an answer to a question.
+var notAKeystroke = map[ebiten.Key]bool{
+	ebiten.KeyF12: true, ebiten.KeyBackslash: true,
+	ebiten.KeyShift: true, ebiten.KeyShiftLeft: true, ebiten.KeyShiftRight: true,
+	ebiten.KeyControl: true, ebiten.KeyControlLeft: true, ebiten.KeyControlRight: true,
+	ebiten.KeyAlt: true, ebiten.KeyAltLeft: true, ebiten.KeyAltRight: true,
+	ebiten.KeyMeta: true, ebiten.KeyMetaLeft: true, ebiten.KeyMetaRight: true,
+	ebiten.KeyCapsLock: true, ebiten.KeyTab: true,
+}
+
+// Keystroke reports any deliberate key press this frame.
+//
+// It is what dismisses a box that is only telling you something. "Z to
+// continue" is a rule the player has to be taught and then remember, for a
+// screen whose entire content is "you have read this" — and the fastest way to
+// find out somebody had not learned it was watching them press every key on
+// the board except that one. A prompt with a *choice* in it still wants a
+// deliberate key, because there the wrong answer costs something.
+func Keystroke() bool {
+	for _, k := range inpututil.AppendJustPressedKeys(nil) {
+		if !notAKeystroke[k] {
+			return true
+		}
+	}
+	return false
+}
+
+// Dismiss is Keystroke with the click.
+func (g *Game) Dismiss() bool {
+	if Keystroke() {
+		g.Sound.Play("ui/confirm")
+		return true
+	}
+	return false
+}
 
 // Cancel reports a back press this frame.
 func Cancel() bool { return anyJustPressed(cancelKeys) }

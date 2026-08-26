@@ -9,6 +9,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/sky"
+	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
 
@@ -29,8 +30,14 @@ func newOverworldScene(g *Game) *overworldScene {
 	s := &overworldScene{}
 	s.cam = render.Camera{
 		W: world.Width * assetsys.TileSize, H: world.Height * assetsys.TileSize, Clamp: true,
+		ViewH: render.ScreenH - hudH,
 	}
 	s.idleTimer = 600
+	// Wherever the hero is when this screen appears counts as already arrived.
+	// A new run starts in the capital's own tile and a loaded one can be stood
+	// anywhere, so a zero value here would walk the player straight through a
+	// door they did not open.
+	g.arrived = g.Walk.Tile
 	return s
 }
 
@@ -72,7 +79,23 @@ func (s *overworldScene) Update(g *Game) error {
 		return nil
 	}
 
-	// Enter a location.
+	// Walking onto a location walks in. Z was a second thing to do after the
+	// thing you had already done: nobody steps onto a town's tile by accident,
+	// the marker is named on the ground in front of them now, and a confirm
+	// key that only ever means yes is a key that only ever gets pressed.
+	//
+	// Held until the step animation lands, so the hero is standing in the
+	// gateway rather than halfway to it when the screen changes.
+	if !g.Walk.Moving() && g.Walk.Tile != g.arrived {
+		g.arrived = g.Walk.Tile
+		if poi := g.World.POIAt(g.Walk.Tile.X, g.Walk.Tile.Y); poi != nil {
+			g.enterPOI(poi)
+			return nil
+		}
+	}
+
+	// Z still enters, which matters for exactly one case: you have just walked
+	// out and want back in without stepping off the doorstep first.
 	if Confirm() && !g.Walk.Moving() {
 		if poi := g.World.POIAt(g.Walk.Tile.X, g.Walk.Tile.Y); poi != nil {
 			g.enterPOI(poi)
@@ -214,6 +237,9 @@ func (g *Game) encounterLevel(at core.Point) int {
 
 // enterPOI builds the interior and switches scenes.
 func (g *Game) enterPOI(poi *world.POI) {
+	// Whatever put you here, you are here: the doorstep is a tile you have
+	// arrived at, so walking back out of it does not walk straight back in.
+	g.arrived = poi.Pos
 	g.Local = world.BuildLocal(poi, g.Write)
 	g.LocalWalk = core.NewWalker(7)
 	g.LocalWalk.Place(g.Local.Entry)
@@ -235,7 +261,7 @@ func (s *overworldScene) Draw(g *Game, dst *ebiten.Image) {
 	dst.Fill(color.RGBA{0x0A, 0x0C, 0x14, 0xFF})
 
 	px, py := g.Walk.Pixel()
-	s.cam.CenterOn(px, py-hudH/2)
+	s.cam.CenterOn(px, py)
 	ctx := &render.Ctx{Dst: dst, Cam: s.cam}
 
 	// Only draw the tiles the camera can see, plus a one-tile margin.
@@ -281,7 +307,52 @@ func (s *overworldScene) Draw(g *Game, dst *ebiten.Image) {
 	// The light and the weather, over the world and under the interface.
 	g.drawSky(dst, g.weatherAt(g.Walk.Tile), false)
 
+	// Names over the tint, so a place is still readable after dark.
+	s.drawLabels(g, dst, x0, y0, x1, y1)
+
 	s.drawHUD(g, dst)
+}
+
+// poiLabelRadius is how close a location has to be before it says its name, in
+// tiles. Wide enough to name the thing you are walking toward and everything
+// on the way, narrow enough that a road between two towns is not a wall of
+// text.
+const poiLabelRadius = 7
+
+// drawLabels floats the name of every nearby location.
+//
+// The overworld's markers are silhouettes — a gabled house, a hole in a hill —
+// which say what *kind* of place something is and nothing about which one. The
+// name was already known to the game and printed to the log once, on the step
+// that entered it, which is exactly one step too late to be a decision.
+func (s *overworldScene) drawLabels(g *Game, dst *ebiten.Image, x0, y0, x1, y1 int) {
+	const ts = assetsys.TileSize
+	ox, oy := s.cam.Offset()
+	px, py := g.Walk.Pixel()
+	hx, hy := px+ox, py+oy
+	here := g.Walk.Tile
+	for _, p := range g.World.POIs {
+		if p.Pos.X < x0 || p.Pos.X > x1 || p.Pos.Y < y0 || p.Pos.Y > y1 {
+			continue
+		}
+		if !g.World.IsExplored(p.Pos.X, p.Pos.Y) {
+			continue
+		}
+		if core.Abs(p.Pos.X-here.X) > poiLabelRadius || core.Abs(p.Pos.Y-here.Y) > poiLabelRadius {
+			continue
+		}
+		// Gold within one step, which under auto-entry is the last moment the
+		// player can still choose not to. The tagline stays out of it: it runs
+		// to seventy characters and a plate that wide over the terrain is a
+		// billboard, not a label.
+		col := render.ColInkDim
+		if p.Pos.Manhattan(here) <= 1 {
+			col = render.ColGold
+		}
+		lines := []string{p.Name}
+		cx, by := float64(p.Pos.X*ts)+ts/2+ox, float64(p.Pos.Y*ts)+oy+2
+		ui.Tag(dst, lines, clearOfHero(lines, cx, by, hx, hy), by, col)
+	}
 }
 
 // drawPOIMarker paints the icon for a location. These are drawn rather than
@@ -366,9 +437,7 @@ func scale(c color.RGBA, f float64) color.RGBA {
 }
 
 func (s *overworldScene) drawHUD(g *Game, dst *ebiten.Image) {
-	hint := "M map - H help"
-	if poi := g.World.POIAt(g.Walk.Tile.X, g.Walk.Tile.Y); poi != nil {
-		hint = "Z to enter"
-	}
-	g.drawStatusBar(dst, g.World.Describe(g.Walk.Tile), hint)
+	// The location under your feet is named on the map beside you rather than
+	// in this corner, which the compass has a better use for.
+	g.drawStatusBar(dst, g.World.Describe(g.Walk.Tile), "M map - H help")
 }

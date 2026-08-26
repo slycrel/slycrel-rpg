@@ -267,17 +267,31 @@ func buildSettlement(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 		l.set(0, y, LWall)
 		l.set(l.W-1, y, LWall)
 	}
-	gateX := l.W / 2
-	l.set(gateX, l.H-1, LDoor)
-	l.Entry = core.Point{X: gateX, Y: l.H - 2}
-	l.Entities = append(l.Entities, &Entity{
-		Kind: EExit, Pos: core.Point{X: gateX, Y: l.H - 1},
-		Name: "town gate", Line: "Back out into the world.",
-	})
+	gateX, gateY := l.W/2, l.H/2
 
-	// Paved main streets.
+	// Paved main streets, laid before the gates so every gate opens onto one.
 	l.rect(gateX-1, 1, 3, l.H-2, LCobble)
-	l.rect(1, l.H/2-1, l.W-2, 3, LCobble)
+	l.rect(1, gateY-1, l.W-2, 3, LCobble)
+
+	// A gate in each wall. The player arrives at the south one — that is where
+	// the road is — but a walled town with a single way out means crossing it
+	// twice for every errand, and the streets already run to all four sides.
+	l.Entry = core.Point{X: gateX, Y: l.H - 2}
+	for _, gate := range []struct {
+		at   core.Point
+		name string
+	}{
+		{core.Point{X: gateX, Y: l.H - 1}, "south gate"},
+		{core.Point{X: gateX, Y: 0}, "north gate"},
+		{core.Point{X: 0, Y: gateY}, "west gate"},
+		{core.Point{X: l.W - 1, Y: gateY}, "east gate"},
+	} {
+		l.set(gate.at.X, gate.at.Y, LDoor)
+		l.Entities = append(l.Entities, &Entity{
+			Kind: EExit, Pos: gate.at,
+			Name: gate.name, Line: "Back out into the world.",
+		})
+	}
 
 	// Buildings, avoiding the streets.
 	type building struct{ x, y, w, h int }

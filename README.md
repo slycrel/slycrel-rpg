@@ -66,8 +66,8 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 
 | | |
 |---|---|
-| Arrows / WASD | walk |
-| Z, Enter, Space | confirm, talk, enter a location |
+| Arrows / WASD | walk — and walking into a thing is how you use it |
+| Z, Enter, Space | confirm; any key dismisses a box that is only telling you something |
 | X, Esc | back out |
 | M | the map of everywhere you have been |
 | C or I | character sheet and pack; left/right pages through the company |

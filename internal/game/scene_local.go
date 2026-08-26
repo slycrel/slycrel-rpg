@@ -33,6 +33,7 @@ func newLocalScene(g *Game) *localScene {
 	return &localScene{
 		cam: render.Camera{
 			W: float64(l.W * assetsys.TileSize), H: float64(l.H * assetsys.TileSize), Clamp: true,
+			ViewH: render.ScreenH - hudH,
 		},
 		foeTimer: 30,
 	}
@@ -111,13 +112,20 @@ func (s *localScene) Update(g *Game) error {
 func (s *localScene) tryStep(g *Game, d core.Dir) {
 	next := g.LocalWalk.Tile.Add(d.Delta())
 
-	// Walking into a blocking entity is how you engage it. Anybody abed is
-	// walked straight through, which is correct: they are not there.
+	// Walking into a thing is how you engage it. Anybody abed is walked
+	// straight through, which is correct: they are not there.
+	//
+	// This used to be true of foes, bosses and the way out, and everything else
+	// in a town blocked the step and then waited to be pressed at. Nothing was
+	// gained by the wait: you cannot bump a shop counter by accident, because
+	// you had to walk at it to get there. A sign is the one exception, and only
+	// because it now says what it says on the ground next to it — popping a box
+	// over the top of writing the player is already reading is the interface
+	// telling them something twice.
 	if e := g.Local.EntityAt(next.X, next.Y); e != nil && !g.abed(e) {
 		g.LocalWalk.Face(d)
 		s.moveDelay = 8
-		switch e.Kind {
-		case world.EFoe, world.EBoss, world.EExit:
+		if e.Kind != world.ESign {
 			g.interact(e)
 		}
 		return
@@ -432,7 +440,7 @@ func (s *localScene) Draw(g *Game, dst *ebiten.Image) {
 	l := g.Local
 
 	px, py := g.LocalWalk.Pixel()
-	s.cam.CenterOn(px, py-hudH/2)
+	s.cam.CenterOn(px, py)
 	ctx := &render.Ctx{Dst: dst, Cam: s.cam}
 
 	const ts = assetsys.TileSize
@@ -487,7 +495,113 @@ func (s *localScene) Draw(g *Game, dst *ebiten.Image) {
 	// town at midnight whether or not anything is falling on it.
 	g.drawSky(dst, g.weatherHere(), !g.Local.POI.Kind.Settlement())
 
+	// Labels go over the tint, because a name that dims at dusk is a name
+	// nobody can read at the hour they most need it.
+	s.drawLabels(g, dst)
+
 	s.drawHUD(g, dst)
+}
+
+// labelRadius is how close a fixture has to be before it says what it is, in
+// tiles. Four is roughly a building's width: near enough that a label belongs
+// to the thing under it, far enough that a street is legible from the middle
+// of it rather than one doorway at a time.
+const labelRadius = 4
+
+// drawLabels floats the name of every interactable in reach.
+//
+// The old rule was that a shop was a coloured box until you walked into it and
+// read the modal that came up, which made finding the armourer a matter of
+// trying every door. Nothing here is new information — it is the same Name the
+// message box was already going to print — it is that information arriving
+// before the interaction rather than as its reward.
+func (s *localScene) drawLabels(g *Game, dst *ebiten.Image) {
+	const ts = assetsys.TileSize
+	ox, oy := s.cam.Offset()
+	px, py := g.LocalWalk.Pixel()
+	hx, hy := px+ox, py+oy
+	here := g.LocalWalk.Tile
+	focus := g.ahead()
+	if focus == nil {
+		focus = g.Local.EntityAt(here.X, here.Y)
+		if focus != nil && g.abed(focus) {
+			focus = nil
+		}
+	}
+
+	for _, e := range g.Local.Entities {
+		if e.Used || g.abed(e) {
+			continue
+		}
+		r := labelRange(e.Kind)
+		if r == 0 || core.Abs(e.Pos.X-here.X) > r || core.Abs(e.Pos.Y-here.Y) > r {
+			continue
+		}
+		lines, col := []string{e.Name}, render.ColInkDim
+		if e == focus {
+			col = render.ColGold
+			// A sign has nothing to it *but* what it says, so standing at one
+			// is the whole interaction. Reading it should not cost a keypress
+			// and a box over the town it is standing in.
+			if e.Kind == world.ESign && e.Line != "" {
+				lines = render.Wrap(e.Line, 172)
+			}
+		}
+		cx, by := float64(e.Pos.X*ts)+ts/2+ox, float64(e.Pos.Y*ts)+oy
+		ui.Tag(dst, lines, clearOfHero(lines, cx, by, hx, hy), by, col)
+	}
+}
+
+// clearOfHero slides a label sideways when it would otherwise be drawn across
+// the character the player is steering, returning the centre to draw it at.
+//
+// A tag sits above its own tile, which is the right place until the thing being
+// named is *below* the hero: the sprite is two tiles tall and stands on one, so
+// the gate you walk out of puts its name across your own head. Sideways rather
+// than up, for two reasons. There is far more room across a 480-pixel screen
+// than there is between a doorway and the top of the frame, and lifting is what
+// stacks two labels into one unreadable pile — everything driven out of the
+// hero's way vertically arrives at the same height, while two things in
+// different columns slide to different places.
+//
+// hx, hy is the hero's feet in screen pixels.
+func clearOfHero(lines []string, cx, bottomY, hx, hy float64) float64 {
+	// A box round the sprite rather than the sprite itself: the art differs
+	// per walk sheet and a label does not need to be flush against it.
+	const halfW, height, gap = 10.0, 30.0, 3.0
+	w, h := ui.TagSize(lines)
+	if cx+w/2 < hx-halfW || cx-w/2 > hx+halfW {
+		return cx
+	}
+	if bottomY-h > hy || bottomY < hy-height {
+		return cx
+	}
+	// Away from the hero, so a label stays on the side its own tile is on.
+	if cx <= hx {
+		return hx - halfW - gap - w/2
+	}
+	return hx + halfW + gap + w/2
+}
+
+// labelRange is how far off a kind is worth naming, in tiles, zero meaning
+// never.
+//
+// Three answers rather than one, because the question a label answers is
+// different for each. A door or a gate is a *destination*, and knowing which
+// one is the armourer from across the square is the whole point. A townsperson
+// is not: their name tells you nothing you would walk over for, and a capital
+// holds ten of them milling around on the same streets, so naming them at
+// range turns a market into a wall of text. And a foe is neither — walking
+// into one starts a fight, and what it turns out to be is what the fight is
+// for.
+func labelRange(k world.EntityKind) int {
+	switch k {
+	case world.EFoe, world.EBoss:
+		return 0
+	case world.ENPC:
+		return 1
+	}
+	return labelRadius
 }
 
 // Structures reuse ground swatches at a different value: a wall is cold stone
@@ -557,10 +671,8 @@ func drawEntity(g *Game, ctx *render.Ctx, e *world.Entity) {
 }
 
 func (s *localScene) drawHUD(g *Game, dst *ebiten.Image) {
-	// Naming what is directly ahead means interaction is never a guess.
-	hint := "C sheet - H help"
-	if e := g.ahead(); e != nil {
-		hint = "Z: " + e.Name
-	}
-	g.drawStatusBar(dst, g.Local.POI.Name, hint)
+	// What is ahead used to be named here, in the one corner of the screen
+	// furthest from where the player is looking. It is named on the thing
+	// itself now, so the corner goes back to the compass and the keys.
+	g.drawStatusBar(dst, g.Local.POI.Name, "C sheet - H help")
 }

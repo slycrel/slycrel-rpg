@@ -82,7 +82,8 @@ func (g *Game) AskMenu(speaker, body string, items []ui.MenuItem, onChoose func(
 
 func (m *messageScene) Update(g *Game) error {
 	if len(m.choices) == 0 {
-		if g.Accept() || Cancel() {
+		// Anything at all closes a box that is only reporting. See Keystroke.
+		if g.Dismiss() {
 			g.Pop()
 			if m.onChoose != nil {
 				m.onChoose(g, 0)
