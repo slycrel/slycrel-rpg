@@ -62,8 +62,14 @@ func main() {
 		f.Summary = "a level 11 hero at the party cap, one of them part demon"
 		// Affixed gear, so that a save carrying one is exercised: the suffix
 		// hangs off a pointer, and a pointer is what silently comes back nil.
+		// Something the hero can actually hold: this used to take the first
+		// affixable tier-four row in the file and hand it over, which since
+		// weapons have lanes is a dagger going to a Fighter — a fixture in a
+		// state the game cannot produce, which is the one thing a regression
+		// net must never be.
 		for _, w := range tables.Weapons {
-			if w.Tier == 4 && model.Affixable(w.Name) {
+			if w.Tier == 4 && model.Affixable(w.Name) && !w.TwoHanded() &&
+				model.CanWield(f.Player.Class, w) {
 				f.Player.Weapon = w
 				break
 			}
@@ -97,6 +103,13 @@ func main() {
 		f.Inside = &save.Inside{POI: settlement(tables, 1994), At: core.Point{X: 10, Y: 12}, Facing: 0}
 	}))
 
+	write(root, "caster", buildAs(tables, model.ClassMage, 77, 9, 1, "", func(f *save.File) {
+		f.Summary = "a level 9 mage and one hireling: rod, robe and talisman"
+		for i := range f.POIs {
+			f.POIs[i].Discovered = true
+		}
+	}))
+
 	fmt.Println("wrote", len(names), "fixtures")
 }
 
@@ -105,10 +118,19 @@ var names []string
 // build assembles a run: a hero of the given level, that many hirelings, and a
 // POI list matching the continent the seed generates.
 func build(t *gamedata.Tables, seed int64, level, allies int, blood model.MonsterKind, tweak func(*save.File)) *save.File {
+	return buildAs(t, model.ClassFighter, seed, level, allies, blood, tweak)
+}
+
+// buildAs is build with the hero's trade named, which exists because the whole
+// caster half of the equipment tables — the focus weapon, the robe, the
+// talisman and the three fields they added to the save format — had no fixture
+// standing on it. A regression net that only ever holds a Fighter is a net with
+// a class-shaped hole in it.
+func buildAs(t *gamedata.Tables, class model.Class, seed int64, level, allies int, blood model.MonsterKind, tweak func(*save.File)) *save.File {
 	g := core.NewRNG(seed)
 	m := world.Generate(seed, writerFor(t))
 
-	hero := rules.BuildCharacter(g, model.ClassFighter, level)
+	hero := rules.BuildCharacter(g, class, level)
 	hero.Name, hero.Epithet = "Bosk", "the Regrettable"
 	hero.Coins = 250
 	t.Equip(hero)
@@ -142,7 +164,7 @@ func build(t *gamedata.Tables, seed int64, level, allies int, blood model.Monste
 	// Something in the pack that is not a consumable, so the save format's
 	// carried-equipment list is exercised by the fixture net rather than only
 	// by whatever a playtest happens to pick up.
-	if ws, as := t.StockFor(gamedata.GearTierFor(level)); len(ws) > 0 && len(as) > 0 {
+	if ws, as := t.StockForClass(gamedata.GearTierFor(level), hero.Class); len(ws) > 0 && len(as) > 0 {
 		w, a := ws[0], as[0]
 		hero.Carry(model.Carried{Weapon: &w})
 		hero.Carry(model.Carried{Armor: &a})

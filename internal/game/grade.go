@@ -90,7 +90,20 @@ func shelfVerdict(buyer *model.Character, data any) (string, color.Color) {
 	case model.Shield:
 		// An empty arm is a rating of nothing, so the first shield reads as the
 		// upgrade it is rather than as no change.
-		if buyer.Shield.Worn() {
+		//
+		// Talismans are graded against talismans, in their own unit. A plank
+		// and a charm are not comparable — one blocks a little of every blow
+		// forever and the other stops a lot of one and is gone — and putting
+		// them on the same scale would tell a Mage that a tier-five barrier is
+		// worth six times a barrel lid, which is not a sentence about anything.
+		if v.Barrier() {
+			if buyer.Shield.Barrier() {
+				have = buyer.Shield.Absorb
+			}
+			want = v.Absorb
+			break
+		}
+		if buyer.Shield.Worn() && !buyer.Shield.Barrier() {
 			have = buyer.Shield.Defense + affixOf(buyer.Shield.Affix).Defense
 		}
 		want = v.Defense

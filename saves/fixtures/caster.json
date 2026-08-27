@@ -1,0 +1,406 @@
+{
+  "version": 3,
+  "saved": "2026-08-16T12:00:00Z",
+  "summary": "a level 9 mage and one hireling: rod, robe and talisman",
+  "seed": 77,
+  "player": {
+    "name": "Bosk",
+    "class": "Mage",
+    "epithet": "the Regrettable",
+    "level": 9,
+    "totalXP": 0,
+    "spendXP": 0,
+    "hp": 74,
+    "maxHP": 74,
+    "psyche": 27,
+    "maxPsyche": 27,
+    "strength": 10,
+    "dexterity": 14,
+    "speed": 17,
+    "fame": 8,
+    "renown": 0,
+    "honor": 0,
+    "faith": 2,
+    "shame": 0,
+    "coins": 250,
+    "weapon": {
+      "name": "Staff of the Second Opinion",
+      "kind": "focus",
+      "strike": 4,
+      "range": 0,
+      "cost": 215,
+      "quality": 74,
+      "verb": "rap",
+      "tier": 3,
+      "icon": "icon/ab/3_lightning_1",
+      "focus": 16
+    },
+    "armor": {
+      "name": "Mantle of Slight Misgiving",
+      "kind": "cloth",
+      "defense": 6,
+      "cost": 190,
+      "quality": 64,
+      "verb": "unravels around",
+      "tier": 3,
+      "icon": "icon/loot/fur_tuft",
+      "extra": {
+        "psyche": 1,
+        "ward": 6
+      }
+    },
+    "shield": {
+      "name": "Ward-Knot, Amateur",
+      "kind": "talisman",
+      "defense": 0,
+      "cost": 55,
+      "tier": 2,
+      "verb": "unravels around",
+      "icon": "icon/loot/lapis_lazuli",
+      "absorb": 14
+    },
+    "charm": {
+      "name": "Courier's Anklet",
+      "bonus": {
+        "strength": -1,
+        "speed": 2
+      },
+      "cost": 46,
+      "tier": 2,
+      "desc": "Worn by people who are paid to already be elsewhere.",
+      "icon": "icon/loot/bird_feather"
+    },
+    "bag": [
+      {
+        "name": "Small Beer",
+        "kind": "heal",
+        "power": 8,
+        "value": 6,
+        "count": 3,
+        "desc": "Warm, flat, and load-bearing. Restores a little health and a lot of resolve.",
+        "icon": "icon/loot/health_potion"
+      },
+      {
+        "name": "Smelling Salts, Militant",
+        "kind": "revive",
+        "power": 25,
+        "value": 55,
+        "count": 1,
+        "desc": "Brings a person round by making unconsciousness the worse option.",
+        "icon": "icon/loot/antidote"
+      }
+    ],
+    "carried": [
+      {
+        "weapon": {
+          "name": "Bare Hands",
+          "strike": 1,
+          "range": 0,
+          "cost": 0,
+          "quality": 0,
+          "verb": "slap",
+          "tier": 0,
+          "icon": "icon/ab/1_weapon_sword"
+        }
+      },
+      {
+        "armor": {
+          "name": "Regrettable Rags",
+          "defense": 0,
+          "cost": 0,
+          "quality": 0,
+          "verb": "flaps",
+          "tier": 0,
+          "icon": "icon/loot/fur_tuft"
+        }
+      }
+    ],
+    "sprite": "",
+    "portrait": ""
+  },
+  "allies": [
+    {
+      "name": "Hireling 1",
+      "class": "Fighter",
+      "epithet": "",
+      "level": 9,
+      "totalXP": 0,
+      "spendXP": 0,
+      "hp": 88,
+      "maxHP": 88,
+      "psyche": 11,
+      "maxPsyche": 11,
+      "strength": 21,
+      "dexterity": 10,
+      "speed": 15,
+      "fame": 8,
+      "renown": 0,
+      "honor": 0,
+      "faith": 2,
+      "shame": 0,
+      "coins": 0,
+      "weapon": {
+        "name": "Longsword of Adequate Repute",
+        "kind": "blade",
+        "strike": 13,
+        "range": 0,
+        "cost": 200,
+        "quality": 85,
+        "verb": "run through",
+        "tier": 3,
+        "icon": "icon/ab/3_weapon_sword"
+      },
+      "armor": {
+        "name": "Scale of the Overconfident",
+        "kind": "heavy",
+        "defense": 11,
+        "cost": 230,
+        "quality": 80,
+        "verb": "scatters",
+        "tier": 3,
+        "icon": "icon/loot/monster_scale"
+      },
+      "shield": {
+        "name": "Buckler, Previously Owned",
+        "defense": 2,
+        "cost": 48,
+        "tier": 2,
+        "verb": "turns",
+        "icon": "icon/loot/monster_scale"
+      },
+      "charm": {
+        "name": "Courier's Anklet",
+        "bonus": {
+          "strength": -1,
+          "speed": 2
+        },
+        "cost": 46,
+        "tier": 2,
+        "desc": "Worn by people who are paid to already be elsewhere.",
+        "icon": "icon/loot/bird_feather"
+      },
+      "bag": null,
+      "ally": true,
+      "cut": 13,
+      "sprite": "hero/druid",
+      "portrait": "portrait/female/f_08"
+    }
+  ],
+  "at": {
+    "X": 80,
+    "Y": 59
+  },
+  "facing": 0,
+  "pois": [
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    }
+  ],
+  "fog": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAADgDwAAAAAAAAAAAAAAAAAAAAAAAPg/AAAAAAAAAAAAAAAAAAAAAAAA/H8AAAAAAAAAAAAAAAAAAAAAAAD8fwAAAAAAAAAAAAAAAAAAAAAAAP7/AAAAAAAAAAAAAAAAAAAAAAAA/v8AAAAAAAAAAAAAAAAAAAAAAAD+/wAAAAAAAAAAAAAAAAAAAAAAAP//AQAAAAAAAAAAAAAAAAAAAAAA/v8AAAAAAAAAAAAAAAAAAAAAAAD+/wAAAAAAAAAAAAAAAAAAAAAAAP7/AAAAAAAAAAAAAAAAAAAAAAAA/H8AAAAAAAAAAAAAAAAAAAAAAAD8fwAAAAAAAAAAAAAAAAAAAAAAAPg/AAAAAAAAAAAAAAAAAAAAAAAA4A8AAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "sinceFight": 0,
+  "sagas": {
+    "sagas": [
+      {
+        "skeleton": "register",
+        "title": "The Register",
+        "state": "open",
+        "places": [
+          16,
+          13,
+          7,
+          25,
+          37
+        ],
+        "placeNames": [
+          "Hollow Deeps",
+          "Bone Bastion",
+          "Steading of Cold Soup",
+          "Rookshanks",
+          "Mudhurst"
+        ],
+        "roles": {
+          "{X}": "Bear With Boundaries"
+        },
+        "monsterID": "forest_bear",
+        "at": 1,
+        "have": 0
+      }
+    ]
+  },
+  "track": {
+    "on": true,
+    "poi": 0,
+    "label": "Somewhere"
+  },
+  "lastSpell": "spark",
+  "clock": {
+    "step": 1348
+  },
+  "quests": [
+    {
+      "id": "deliver-0-9631273",
+      "kind": "deliver",
+      "state": "active",
+      "title": "Parcel for Steading of Regrets",
+      "ask": "\"Take this to Steading of Regrets. Don't open it. Don't shake it. Don't listen to it.\"",
+      "nag": "\"Still carrying that? Steading of Regrets. Any day now.\"",
+      "thank": "\"It arrived. Nobody's shouting. That's the best outcome I'd planned for.\"",
+      "giver": "Person",
+      "giverPOI": 0,
+      "targetPOI": 8,
+      "targetName": "Steading of Regrets",
+      "need": 1,
+      "have": 0,
+      "rewardCoins": 37,
+      "rewardXP": 23
+    }
+  ],
+  "threads": [
+    {
+      "skeleton": "wrong-name",
+      "owner": "Hireling 1",
+      "title": "That Is Not Their Name",
+      "state": "open",
+      "roles": {
+        "{N}": "Hireling 1",
+        "{P}": "Bone Bastion"
+      },
+      "placePOI": 13,
+      "homePOI": -1,
+      "at": 0,
+      "have": 0
+    }
+  ]
+}

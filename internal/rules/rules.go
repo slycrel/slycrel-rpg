@@ -320,7 +320,7 @@ func FocusBolt(g *core.RNG, c *model.Character) int {
 // the COMBAT table rather than picked: it is the value that leaves a Mage's
 // unpaid round roughly where a Thief's swing is, which is the claim the whole
 // slot rests on.
-const focusBite = 0.85
+const focusBite = 1.15
 
 // focusStudy is what the same point of focus is worth inside a *paid*
 // technique, and it is deliberately half what the free bolt gets.
@@ -331,7 +331,25 @@ const focusBite = 0.85
 // compounds three growth terms into one build — which is exactly what the first
 // draft did, and it put a level-eleven Mage at 94% on the stretch fights the
 // Fighter was losing half of.
-const focusStudy = 0.25
+const focusStudy = 0.15
+
+// psycheStudy and levelStudy are the two terms that grow on their own, and both
+// came down when the caster's off arm opened up.
+//
+// A Mage with a talisman was winning the stretch fights at levels eleven to
+// thirteen by fifteen to twenty points over both other classes, and the cause
+// was not the barrier: it was that three of SpellPower's four terms grow with
+// level, so the magnitude curve outruns a table whose defences grow linearly.
+// Cutting the pool's coefficient rather than the pool itself was the second
+// attempt — slowing psyche growth to everybody else's rate took the level
+// thirteen Mage from too strong to dying in 43% of on-level-plus-two fights,
+// which is a class that has stopped working rather than one that has been
+// tuned. A coefficient moves the top of the curve and leaves the bottom, which
+// is the half that was already too thin.
+const (
+	psycheStudy = 0.60
+	levelStudy  = 0.60
+)
 
 // MonsterDamage rolls the damage a monster deals to a character.
 // Original: DoDamage(false).
@@ -392,8 +410,8 @@ func SpellDamage(g *core.RNG, c *model.Character, s model.Spell) int {
 // number without the dice: the AI weighing a technique against a swing, and the
 // character sheet, which cannot show a range it does not know the middle of.
 func SpellPower(c *model.Character, s model.Spell) float64 {
-	return float64(s.Power) + float64(c.MaxPsy())*0.6 +
-		float64(c.Focus())*focusStudy + float64(c.Level)*0.8
+	return float64(s.Power) + float64(c.MaxPsy())*psycheStudy +
+		float64(c.Focus())*focusStudy + float64(c.Level)*levelStudy
 }
 
 // --- the two-sided techniques ---------------------------------------------
@@ -1172,6 +1190,9 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 	var res FightResult
 	// What the fight cost in psyche, which is half of what it refunds.
 	spent := 0
+	// Whatever is on the off arm goes up before the first blow. A talisman the
+	// simulator could not see would be a slot the balance pass says is empty.
+	Raise(sim)
 	for res.Rounds = 1; res.Rounds <= maxRounds; res.Rounds++ {
 		living := livingMonsters(mons)
 		if len(living) == 0 {
@@ -1287,6 +1308,9 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 					if punished {
 						dmg = FeintPunish(dmg)
 					}
+					// The barrier eats what it can before anything reaches the
+					// body, whatever the blow was made of.
+					sim.Active, dmg, _ = Soak(sim.Active, dmg)
 					sim.HP = core.Max(0, sim.HP-dmg)
 					res.DamageTaken += dmg
 					// Some creatures leave a condition behind, which is worth
@@ -1376,8 +1400,10 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 			m.Active, _ = Advance(m.Active)
 		}
 		for _, t := range TickDamage(g, sim.Active) {
-			sim.HP = core.Max(0, sim.HP-t.Damage)
-			res.DamageTaken += t.Damage
+			d := t.Damage
+			sim.Active, d, _ = Soak(sim.Active, d)
+			sim.HP = core.Max(0, sim.HP-d)
+			res.DamageTaken += d
 		}
 		sim.Active, _ = Advance(sim.Active)
 

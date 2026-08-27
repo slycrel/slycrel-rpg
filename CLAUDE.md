@@ -103,6 +103,19 @@ which event fires which trigger, and where it is safe to put a box on screen.
   the default outcome, not the unlucky one. Use `article()` in `internal/game`,
   and do not pluralise one either — the tests in `internal/thread` assert both
   for the backstory writing.
+- **Equipment has lanes, and the gate is hard.** Five weapon kinds, three
+  armour weights, two kinds of off-arm item, and `model.CanWield` / `CanWear` /
+  `CanHoldShield` decide who may hold what. Anything that dresses a character
+  goes through `Tables.EquipAs`, which honours it; anything that reaches into a
+  table by hand does not, and that is how a Fighter ended up holding a dagger in
+  a save fixture. The empty string is the legacy kind on all three and means
+  "anyone", which is the only answer an old save can give.
+- **A caster's off arm holds a talisman, not a shield**, and what it carries is
+  `Absorb` rather than `Defense`: a pool spent once per fight against damage of
+  any kind. It is not more ward, and that was measured rather than assumed — a
+  Mage was already taking half what a Fighter takes from magic and double from
+  steel, so a bigger ward would have been an upgrade to the column they were
+  winning.
 - **Equipment is carried, not just worn.** `model.Carried` is the pack version;
   buying, finding and taking something off all go there, and `Character.Equip`
   swaps rather than replaces. Nothing should ever destroy a piece of gear.

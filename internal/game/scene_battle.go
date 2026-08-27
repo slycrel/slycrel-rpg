@@ -125,9 +125,14 @@ func newBattleScene(g *Game, mons []*model.Monster, where string) *battleScene {
 		spentPsyche: map[*model.Character]int{},
 		guarding:    map[*model.Character]bool{},
 	}
-	// Nobody carries anything in from the last fight.
+	// Nobody carries anything in from the last fight — and then whatever is on
+	// the off arm goes up, before anybody has swung at anything.
 	for _, c := range b.party {
 		c.Active = nil
+		if n := rules.Raise(c); n > 0 {
+			b.log.AddColor(render.ColMagic, "%s's %s settles into place. %d.",
+				c.Name, c.Shield.Name, n)
+		}
 	}
 	b.cam = render.Camera{}
 	b.setRootMenu(g)
@@ -192,12 +197,24 @@ func (b *battleScene) tickEffects(g *Game) {
 			continue
 		}
 		for _, t := range rules.TickDamage(g.RNG, c.Active) {
-			c.HP = core.Max(0, c.HP-t.Damage)
-			b.spentHP[c] += t.Damage
+			d, soaked := t.Damage, 0
+			c.Active, d, soaked = rules.Soak(c.Active, d)
+			if soaked > 0 {
+				// Said out loud even when it stops the whole tick. A barrier
+				// quietly eaten by poison is a pip the player watches vanish
+				// with nothing to explain it.
+				b.log.AddColor(render.ColMagic, "%s's %s takes the %s.",
+					c.Name, c.Shield.Name, t.Kind)
+			}
+			if d == 0 {
+				continue
+			}
+			c.HP = core.Max(0, c.HP-d)
+			b.spentHP[c] += d
 			b.partyHurt[c] = 10
 			fx, fy := b.memberFloat(c)
-			b.addFloater(fx, fy, fmt.Sprintf("-%d", t.Damage), render.ColBlood)
-			b.log.AddColor(render.ColBlood, "%s %s for %d.", t.Kind.Verb(), c.Name, t.Damage)
+			b.addFloater(fx, fy, fmt.Sprintf("-%d", d), render.ColBlood)
+			b.log.AddColor(render.ColBlood, "%s %s for %d.", t.Kind.Verb(), c.Name, d)
 			// Somebody carrying two conditions has both roll every round, so
 			// without stopping here the second one would tick a body that is
 			// already on the floor and announce it going down a second time.
@@ -1299,6 +1316,26 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 		b.log.Add("%s %s at %s with %s. %s %s it.",
 			m.Name, verb, tgt.Name, with, tgt.Armor.Name, tgt.Armor.Verb)
 		return
+	}
+	// The barrier takes what it can first, and says so — a number that lands
+	// somewhere other than the health bar is a number the player will read as a
+	// bug in their own arithmetic unless the transcript accounts for it.
+	var soaked int
+	tgt.Active, dmg, soaked = rules.Soak(tgt.Active, dmg)
+	if soaked > 0 {
+		fx, fy := b.memberFloat(tgt)
+		b.addFloater(fx, fy, fmt.Sprintf("-%d", soaked), render.ColMagic)
+		if rules.Power(tgt.Active, model.EffectBarrier) == 0 {
+			b.log.AddColor(render.ColMagic, "%s's %s takes %d and gives out.",
+				tgt.Name, tgt.Shield.Name, soaked)
+		} else {
+			b.log.AddColor(render.ColMagic, "%s's %s takes %d of it.",
+				tgt.Name, tgt.Shield.Name, soaked)
+		}
+		if dmg == 0 {
+			g.Sound.Play("fight/hurt")
+			return
+		}
 	}
 	tgt.HP = core.Max(0, tgt.HP-dmg)
 	b.spentHP[tgt] += dmg

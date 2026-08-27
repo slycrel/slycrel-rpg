@@ -50,17 +50,43 @@ type Affix struct {
 	Tier   int    `json:"tier"` // the gear band it starts appearing on
 }
 
+// ShieldKind is what sort of thing is on the off arm.
+//
+// The empty string is a plain shield, which is what every shield in every save
+// written before casters had one unmarshals to — and the right answer for all
+// of them.
+type ShieldKind string
+
+const (
+	ShieldBuckler  ShieldKind = ""         // wood, steel, a barrel lid
+	ShieldTalisman ShieldKind = "talisman" // the caster's version of an arm
+)
+
 // Shield is what goes on the other arm.
 type Shield struct {
-	Name    string `json:"name"`
-	Defense int    `json:"defense"`
-	Cost    int    `json:"cost"`
-	Tier    int    `json:"tier"`
-	Verb    string `json:"verb"` // "catches", "turns"
-	Icon    string `json:"icon"`
-	Affix   *Affix `json:"affix,omitempty"`
-	Extra   *Bonus `json:"extra,omitempty"` // a few shields do more than block
+	Name    string     `json:"name"`
+	Kind    ShieldKind `json:"kind,omitempty"`
+	Defense int        `json:"defense"`
+	Cost    int        `json:"cost"`
+	Tier    int        `json:"tier"`
+	Verb    string     `json:"verb"` // "catches", "turns"
+	Icon    string     `json:"icon"`
+	Affix   *Affix     `json:"affix,omitempty"`
+	Extra   *Bonus     `json:"extra,omitempty"` // a few shields do more than block
+	// Absorb is a pool of damage that lands on the talisman instead of the
+	// body, once per fight and of any kind.
+	//
+	// It is the caster's answer to the off arm, and it is deliberately not more
+	// ward. Measured at level thirteen, three levels over: a Mage was already
+	// taking twelve a hit from magic against a Fighter's twenty-two, and
+	// twenty-five a hit from steel against the Fighter's twelve. The half they
+	// were losing was the half ward does nothing about, so a bigger ward would
+	// have been an upgrade to the column that was already winning.
+	Absorb int `json:"absorb,omitempty"`
 }
+
+// Barrier reports whether this is worn for the pool rather than the block.
+func (s Shield) Barrier() bool { return s.Absorb > 0 }
 
 // Charm is anything worn that is neither weapon, armour nor shield: a pendant,
 // a knucklebone, a licence somebody forged.
@@ -132,22 +158,27 @@ var arms = map[Class]struct {
 	weapons   map[WeaponKind]bool
 	twoHanded bool
 	armors    map[ArmorKind]bool
-	shield    bool
+	shields   map[ShieldKind]bool
 }{
 	ClassFighter: {
 		weapons:   map[WeaponKind]bool{WeaponBlade: true, WeaponBlunt: true, WeaponPolearm: true},
 		twoHanded: true,
 		armors:    map[ArmorKind]bool{ArmorCloth: true, ArmorLight: true, ArmorHeavy: true},
-		shield:    true,
+		shields:   map[ShieldKind]bool{ShieldBuckler: true},
 	},
 	ClassThief: {
 		weapons: map[WeaponKind]bool{WeaponDagger: true, WeaponBlade: true, WeaponBlunt: true},
 		armors:  map[ArmorKind]bool{ArmorCloth: true, ArmorLight: true},
-		shield:  true,
+		shields: map[ShieldKind]bool{ShieldBuckler: true},
 	},
 	ClassMage: {
 		weapons: map[WeaponKind]bool{WeaponDagger: true, WeaponFocus: true},
 		armors:  map[ArmorKind]bool{ArmorCloth: true},
+		// Not a shield — a caster with a plank strapped to one arm cannot use
+		// the hand it is strapped to. What they hold instead is a talisman,
+		// which is the whole reason the off arm stopped being a slot that only
+		// two of the three classes owned.
+		shields: map[ShieldKind]bool{ShieldTalisman: true},
 	},
 }
 
@@ -172,22 +203,20 @@ func CanWear(class Class, a Armor) bool {
 	return a.Kind == ArmorAny || l.armors[a.Kind]
 }
 
-// CanHoldShield reports whether a class uses the off arm at all. It says
+// CanHoldShield reports whether a class may put this on the off arm. It says
 // nothing about what is in the other hand — see Character.CanHold, which is the
 // one a caller wants, because a two-handed weapon closes the slot for anybody.
-func CanHoldShield(class Class) bool {
+func CanHoldShield(class Class, s Shield) bool {
 	a, ok := arms[class]
 	if !ok {
 		return true
 	}
-	return a.shield
+	return a.shields[s.Kind]
 }
 
-// CanHold reports whether this character, holding what they are holding, could
-// put a shield on the other arm.
-func (c *Character) CanHold() bool {
-	return CanHoldShield(c.Class) && !c.Weapon.TwoHanded()
-}
+// CanHold reports whether this character, holding what they are holding, has an
+// arm free at all.
+func (c *Character) CanHold() bool { return !c.Weapon.TwoHanded() }
 
 // CanUse reports whether the character may equip a carried piece, and says why
 // not when they may not. The reason is for the shelf and the character sheet,
@@ -203,11 +232,11 @@ func (c *Character) CanUse(g Carried) (bool, string) {
 			return false, wornBy(*g.Armor)
 		}
 	case g.Shield != nil:
-		if !CanHoldShield(c.Class) {
-			return false, "not with a free hand"
-		}
 		if c.Weapon.TwoHanded() {
 			return false, "both hands are full"
+		}
+		if !CanHoldShield(c.Class, *g.Shield) {
+			return false, heldBy(*g.Shield)
 		}
 	}
 	return true, ""
@@ -221,6 +250,10 @@ func (c *Character) CanUse(g Carried) (bool, string) {
 func wieldedBy(w Weapon) string { return listClasses(func(c Class) bool { return CanWield(c, w) }) }
 
 func wornBy(a Armor) string { return listClasses(func(c Class) bool { return CanWear(c, a) }) }
+
+func heldBy(s Shield) string {
+	return listClasses(func(c Class) bool { return CanHoldShield(c, s) })
+}
 
 func listClasses(ok func(Class) bool) string {
 	var names []string

@@ -16,6 +16,11 @@ const (
 	EffectBless   EffectKind = "bless"   // deals more
 	EffectQuicken EffectKind = "quicken" // harder to hit past
 	EffectStun    EffectKind = "stun"    // loses its turn
+	// EffectBarrier is damage that lands on something other than the body. It
+	// is spent rather than timed: every point that comes off it is a point that
+	// does not come off hit points, and when it is gone it is gone for the rest
+	// of the fight.
+	EffectBarrier EffectKind = "barrier"
 )
 
 // Forever marks an effect that lasts the rest of the fight rather than a set
@@ -27,7 +32,7 @@ const Forever = -1
 // worth telling the player about when it lands on their own party.
 func (k EffectKind) Harmful() bool {
 	switch k {
-	case EffectBless, EffectQuicken:
+	case EffectBless, EffectQuicken, EffectBarrier:
 		return false
 	}
 	return true

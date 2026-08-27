@@ -485,21 +485,31 @@ var Archetypes = []Archetype{
 	},
 	{
 		Name: "duelist",
-		Note: "nothing on the off arm, everything else best in tier",
+		Note: "both hands on the weapon, so nothing on the off arm",
 		// Not a glass cannon, though that is what it was drafted as. A glass
-		// cannon trades defence for damage, and there is nothing in the game to
-		// trade *for*: no item outside the weapon slot adds strike, so the most
-		// offensive build the tables permit is "best weapon available", which
-		// every build already has. That absence is itself a finding and it is
-		// why this is named for what it does rather than what it was meant to.
+		// cannon trades defence for damage, and until weapons had lanes there
+		// was nothing in the tables to trade *for*: no item outside the weapon
+		// slot adds strike, so the most offensive build available was "best
+		// weapon", which every build already had. That absence was a finding,
+		// and the two-handed lane is the answer to it — this build is now the
+		// trade it was always named for.
 		//
-		// The first draft of this gave up an armour band *and* the shield to
-		// buy one charm band, which is not a trade, and it lost by twenty-two
-		// points because it was a worse character rather than a different one.
-		// See the cost column: an archetype that underspends is measuring the
-		// spec, not the content.
-		Shield: Slot{Skip: true},
-		Hands:  2,
+		// The off arm is closed by the weapon rather than by fiat, which EquipAs
+		// reads off the hand count. That matters since casters got a slot: a
+		// Mage cannot hold a two-hander, so telling them to drop the off arm as
+		// well made "duelist" mean "balanced, minus a talisman" for one class in
+		// three — not a different build, a worse one, and the report averaged it
+		// in and reported the duelist as winning nothing at all.
+		//
+		// The charm still comes a band behind, exactly as balanced's does. Best
+		// in tier there as well would make this "balanced, plus a better charm,
+		// plus a two-hander", an archetype that *overspends* — which measures
+		// the spec just as surely as one that underspends, and did: it went to
+		// winning seven levels out of seven. The trade this build exists to
+		// measure is the two-hander against the arm it closes. Nothing else may
+		// move.
+		Charm: Slot{Back: 1},
+		Hands: 2,
 	},
 }
 
@@ -553,11 +563,24 @@ func (t *Tables) EquipAs(c *model.Character, a Archetype) {
 			c.Armor = ar
 		}
 	}
-	// A shield needs a class that uses one and a hand to put it on.
+	// The off arm needs a free hand and something the class may put on it —
+	// a plank for two of them, a talisman for the third.
 	c.Shield = model.Shield{}
 	if tier := a.Shield.tierAt(base); tier >= 1 && c.CanHold() {
-		if ss, _ := t.SidearmsFor(tier); len(ss) > 0 {
-			c.Shield = ss[len(ss)-1]
+		ss, _ := t.SidearmsFor(tier)
+		for _, sh := range ss {
+			if !model.CanHoldShield(c.Class, sh) {
+				continue
+			}
+			// Ranked by the band rather than by the block, because a talisman
+			// and a buckler are not measured in the same units: one stops a
+			// fixed amount of anything once, the other shaves every blow
+			// forever. Comparing their numbers would rank two different
+			// mechanics against each other on the strength of a shared field
+			// name.
+			if sh.Tier >= c.Shield.Tier {
+				c.Shield = sh
+			}
 		}
 	}
 	c.Charm = model.Charm{}

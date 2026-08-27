@@ -818,8 +818,18 @@ func TestSidearmsAreSaneAndAffordableInOrder(t *testing.T) {
 		if s.Name == "" || s.Verb == "" {
 			t.Errorf("a shield is missing a name or a verb: %+v", s)
 		}
-		if s.Defense < 1 {
-			t.Errorf("%q blocks %d", s.Name, s.Defense)
+		// One number or the other, and never both: a plank blocks and a
+		// talisman soaks, and something doing a little of each would be a third
+		// mechanic nobody authored.
+		switch {
+		case s.Defense < 1 && s.Absorb < 1:
+			t.Errorf("%q neither blocks nor soaks, so the arm is holding nothing", s.Name)
+		case s.Defense >= 1 && s.Absorb >= 1:
+			t.Errorf("%q blocks %d *and* soaks %d; pick one", s.Name, s.Defense, s.Absorb)
+		case s.Barrier() != (s.Kind == model.ShieldTalisman):
+			t.Errorf("%q is kind %q but %v soaks; the kind is what decides who may "+
+				"hold it and it has to agree with what it does",
+				s.Name, s.Kind, map[bool]string{true: "it", false: "it does not"}[s.Barrier()])
 		}
 		if s.Tier < 1 || s.Tier > 5 || s.Cost < 1 {
 			t.Errorf("%q is tier %d at %d coins", s.Name, s.Tier, s.Cost)
@@ -1356,6 +1366,41 @@ func TestNoClassIsJustThreeKindsOfDamage(t *testing.T) {
 		if lasting < plain {
 			t.Errorf("%s has %d techniques that are a better swing and only %d that do "+
 				"something a swing cannot", class, plain, lasting)
+		}
+	}
+}
+
+// A caster has four slots like everybody else. The off arm was dead for a Mage
+// when shields were the only thing that went on it, which is a whole quarter of
+// the equipment system that two classes owned and one did not — and it is why
+// the class kept coming out of the balance report as the one that dies.
+func TestEveryClassHasSomethingForTheOffArm(t *testing.T) {
+	tables := load(t)
+	for _, class := range []model.Class{model.ClassFighter, model.ClassThief, model.ClassMage} {
+		for tier := 1; tier <= 5; tier++ {
+			ss, _ := tables.SidearmsFor(tier)
+			found := false
+			for _, s := range ss {
+				if model.CanHoldShield(class, s) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Errorf("a %s has nothing to put on the off arm at tier %d", class, tier)
+			}
+		}
+	}
+	// And they actually end up wearing one, once the band allows a sidearm at
+	// all. Level four is the first tier the balanced build buys one in.
+	for _, class := range []model.Class{model.ClassFighter, model.ClassThief, model.ClassMage} {
+		c := &model.Character{Level: 10, Class: class}
+		tables.Equip(c)
+		if !c.Shield.Worn() {
+			t.Errorf("an on-curve level ten %s has an empty off arm", class)
+		}
+		if !model.CanHoldShield(class, c.Shield) {
+			t.Errorf("an on-curve %s is holding %q, which that class cannot", class, c.Shield.Name)
 		}
 	}
 }

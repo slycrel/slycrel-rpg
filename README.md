@@ -162,6 +162,11 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
   *sap* takes the edge off everything opposite and puts it on you, and a *pact*
   hits far above its band and leaves you wearing the difference for the rest of
   the fight. The menu quotes both halves before you commit.
+- **A caster's off arm.** A mage cannot hold a shield and cast at the same time,
+  so what goes on that arm instead is a talisman: a pool of absorption that
+  every blow comes off before it reaches you, of any kind, until it is spent.
+  A shield shaves a little off every hit forever; a barrier stops a lot of one
+  and is then gone for the fight.
 - **You get your breath back.** Walk away from a fight — won or run from — and
   part of what it cost comes straight back, more of the psyche than the blood.
   A share of the spend rather than the pool, so it is a discount on the

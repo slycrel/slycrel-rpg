@@ -99,8 +99,14 @@ func (s *shopScene) refresh(g *Game) {
 			}
 			// The smith beats metal. Shields are beaten metal, and putting them
 			// here is what stops the armourer's list running twice as long as
-			// anybody else's.
+			// anybody else's. A talisman is not beaten metal and does not
+			// belong on this counter — it goes to the armourer with the other
+			// worn things, which is also the only shelf a Mage has any reason
+			// to walk up to twice.
 			for _, sh := range shields {
+				if sh.Barrier() {
+					continue
+				}
 				items = append(items, s.gearRow(g, sh.Name, sh.Icon, sh.Cost, sh))
 			}
 		case world.ShopArmorer:
@@ -111,6 +117,13 @@ func (s *shopScene) refresh(g *Game) {
 				items = append(items, s.gearRow(g, a.Name, a.Icon, a.Cost, a))
 			}
 			// Charms are worn, and the armourer is the one who fits worn things.
+			// So are talismans, which are a charm for the arm.
+			for _, sh := range shields {
+				if !sh.Barrier() {
+					continue
+				}
+				items = append(items, s.gearRow(g, sh.Name, sh.Icon, sh.Cost, sh))
+			}
 			for _, ch := range charms {
 				items = append(items, s.gearRow(g, ch.Name, ch.Icon, ch.Cost, ch))
 			}
@@ -382,6 +395,12 @@ func shopDescribe(data any) string {
 		return strings.TrimSpace(out + " " + bonusWords(v.Affix))
 	case model.Shield:
 		out := fmt.Sprintf("Guard %d on the off arm.", v.Defense)
+		if v.Barrier() {
+			// A talisman is measured in a different unit from a shield and it
+			// has to say so, or "36" next to a plank's "6" reads as six times
+			// the shield rather than a different mechanic.
+			out = fmt.Sprintf("Soaks %d damage of any kind, once a fight.", v.Absorb)
+		}
 		if v.Extra != nil {
 			out += " " + statWords(*v.Extra)
 		}

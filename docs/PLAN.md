@@ -131,7 +131,8 @@ Built and running:
   lifting shame and renown together; Honor is what seeing a companion's story
   through is worth, and it is spent on what the next hireling asks for
 - 66 monsters across nine biomes, 27 weapons in five lanes, 19 armours in three
-  weights, 6 shields, 12 charms, 10 affixes, 42 items, 35 techniques
+  weights, 6 shields and 5 caster talismans, 12 charms, 10 affixes, 42 items,
+  35 techniques
   (thirty of them party-facing, lingering, aimed at everything, two-sided, or
   gated on a hireling's ancestry),
   9 companion backstories and 4 for the people who stay put
@@ -1255,6 +1256,127 @@ one-handed weapon on curve. The Fighter's lane advantage is an *option* — the
 two-hander nobody else may hold — rather than a better default, and the ARCS
 section is where it shows up. Making the default differ would have meant one of
 them was simply behind.
+
+**The caster gets the off arm back.** *(Jeremy's, on reading the level-thirteen
+Mage's death rate: "do we have any magic mitigation that serves as something
+like a shield (but magic) for the mage? Maybe some kind of absorption from
+trinkets that only a mage benefits from.")*
+
+The instinct was right and the first shape of it would have been wrong, which is
+what measuring first was for. What was actually landing on each class at level
+thirteen, three levels over:
+
+| | guard | ward | hp | steel hits for | magic hits for |
+|---|---|---|---|---|---|
+| Fighter | 26 | 0 | 108 | 11.9 | 22.0 |
+| Thief | 23 | 0 | 117 | 14.0 | 21.8 |
+| Mage | 11 | 10 | 88 | 25.1 | 12.0 |
+
+A Mage was already taking *half* what a Fighter takes from magic — the robe's
+ward was doing its job — and more than double from steel. More ward would have
+been an upgrade to the column they were already winning. So the answer is
+absorption, which is indifferent to what the blow is made of.
+
+And there was a structural hole underneath the numbers: **a Mage had three
+equipment slots and everybody else had four.** The off arm was dead for them,
+because the only thing that went on it was a plank they cannot hold and cast at
+the same time. A quarter of the equipment system belonged to two classes out of
+three.
+
+**`ShieldTalisman`** fills it. Same slot, same shop counter, same struct; what
+differs is that it carries `Absorb` instead of `Defense` and only a caster may
+hold one. At the start of every fight it raises `EffectBarrier`, a pool that
+every point of incoming damage comes off before anything reaches the body, of
+any kind, until it is gone.
+
+Spent rather than timed, and that is the whole difference between it and a point
+of armour. Armour shaves every blow forever and is worth most in a long grind; a
+barrier stops a fixed amount and then it is over, so it is worth most against the
+opening exchange — which is the shape a Mage needs, because their pool is small
+enough that the fights they lose are the ones where the first two blows land.
+`Soak` is the one condition in the list consumed by being used, which is why it
+does not go through `Apply`: `Apply` adds power and a barrier only loses it.
+
+**Six tuning passes, and the interesting thing they found is that the Mage's
+wins and deaths move together.** A barrier converts near-deaths into wins, so
+every increase fixed the death cell and inflated the win rate by the same
+motion; every damage cut did the reverse. Cutting the psyche curve to
+compensate took the level-thirteen Mage from too strong to dying in 43% of
+on-level-plus-two fights, which is a class that has stopped working rather than
+one that has been tuned.
+
+What broke the deadlock was noticing the *shape*. A Mage at thirteen was
+bimodal: three castings of Unmaking that either finished the fight or did not,
+and between them a bolt worth about five against a ward-nineteen dragon. Win
+rate and death rate were high at the same level because the outcome was a coin
+flip, and the DANGER brief — which wants a smooth ramp — punishes bimodality
+from both ends. So the fix was to raise the *floor* and lower the *burst*:
+`focusBite` went from 0.85 to 1.15 and the top of the Mage's damage list came
+down (Unmaking 26 to 19, Scorch 14 to 11), leaving the same total output spread
+across the rounds instead of piled into three of them. Death at three levels
+over fell from 46% to 36%, which is the brief's own ceiling and the exact number
+the game had before any of this session started.
+
+Landed at Fighter −1.2, Thief +0.5, Mage +1.2 mean points against the numbers
+from the beginning of the session.
+
+Two smaller things fell out. `reportSlotValue` was reading the last row of each
+sidearm band for its shield column, which since talismans exist is a thing that
+blocks nothing — the column had gone to zeroes and one negative number. It reads
+the best *buckler* now and prints the barrier as a column of its own, with a
+paragraph saying the two are not in the same unit: a shield step is a point off
+every blow forever, a barrier step is a lump stopped once. And the barrier's pip
+in the party panel needed its own colour, because the default is weakness's
+purple and a caster would have learned that they begin every fight cursed.
+
+**And the ARCS section came back with something, which is what it is for.** Two
+corrections and one finding.
+
+The corrections. The duelist was skipping the off arm *by fiat*, and once
+casters had something to put there that made "duelist" mean "the balanced build
+minus a talisman" for one class in three — not a different build, a worse one,
+averaged in and dragging the whole column to winning nothing at all. The arm is
+closed by the weapon now, which `EquipAs` reads off the hand count, so a class
+that cannot hold a two-hander simply does not have this build rather than being
+charged for one. And giving it a best-in-tier charm on top took it straight to
+winning seven levels out of seven: an archetype that *overspends* measures the
+spec exactly as surely as one that underspends, which is the lesson this section
+has now taught twice in opposite directions. The charm comes a band behind, the
+same as balanced's, and nothing but the hands moves.
+
+Two-handed weapons are also priced at parity with the one-handed top of their
+band now. They cost thirty per cent more before, so the duelist was outspending
+the comparison by ten to fifteen per cent and the cost column said so. Same
+price, different shape, is a better shop decision anyway.
+
+**The finding: at equal cost, the two-hander beats the shield at six levels out
+of seven, by six to fourteen points.** That is not the talisman and it is not
+new — it arrived with the weapon lanes and was previously masked by the duelist
+being penalised in two of three classes. The cause is the one the WHY table has
+been printing all along: a sidearm band is worth about a quarter of a main-gear
+band, so giving up a shield costs almost nothing and picking up five points of
+strike is worth a great deal. `TestShieldsStaySecondaryToArmour` is the rule
+holding shields there, deliberately.
+
+So the next thing this section wants is the shield table revisited on purpose —
+the test allows up to half the body armour of the band, and shields currently
+sit at a third of that. Doing it here would have been scope creep on a question
+about mages; recording it is the report's job and this is the record.
+
+**And the fixtures grew a caster, because the net had a class-shaped hole in
+it.** Every fixture was a Fighter, so the focus weapon, the cloth lane, the
+talisman and the three fields they added to the save format had nothing standing
+on them. `caster.json` is a level nine Mage with a rod, a robe and a ward-knot.
+
+Writing it found a real break in the fixture generator, which is the second time
+this session that "reach into the table and take a row" has turned out to be a
+thing that stopped being safe when lanes arrived. The affixed-weapon fixture took
+the first affixable tier-four row in the file and handed it to the hero — which
+is now a dagger going to a Fighter, and a two-hander going to somebody already
+wearing a shield. `TestFixturesHoldTheRunInvariants` checks the whole set against
+the class gate now: a fixture in a state the game cannot produce is worse than no
+fixture, because it is a starting point for a playtest of a game nobody is
+playing.
 
 ## Open questions
 

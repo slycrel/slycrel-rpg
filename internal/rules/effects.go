@@ -77,6 +77,73 @@ func Remove(list model.Effects, k model.EffectKind) model.Effects {
 	return out
 }
 
+// --- the barrier ----------------------------------------------------------
+
+// Barrier is the pool a talisman puts up at the start of a fight, or nothing
+// when the off arm holds a plank or is empty.
+//
+// It is raised once per fight rather than regenerated per round, and that is
+// the whole difference between this and a point of armour. Armour shaves every
+// blow forever and is therefore worth most in a long grind; a barrier stops a
+// fixed amount of anything and then is gone, so it is worth most against the
+// opening exchange. That is the shape a Mage actually needs: their pool is
+// small enough that the fights they lose are the ones where the first two
+// blows land, not the ones that go long.
+func Barrier(c *model.Character) (model.Effect, bool) {
+	if c == nil || !c.Shield.Barrier() {
+		return model.Effect{}, false
+	}
+	n := c.Shield.Absorb
+	if c.Shield.Affix != nil {
+		// A suffix on a talisman moves the pool, since that is the only number
+		// on it anybody is buying.
+		n += c.Shield.Affix.Bonus.Ward
+	}
+	if n <= 0 {
+		return model.Effect{}, false
+	}
+	return model.Effect{Kind: model.EffectBarrier, Power: n, Rounds: model.Forever}, true
+}
+
+// Raise puts a character's barrier up, if they have one. Called once as a fight
+// begins, by the battle screen and the simulator alike.
+func Raise(c *model.Character) int {
+	e, ok := Barrier(c)
+	if !ok {
+		return 0
+	}
+	c.Active = Apply(c.Active, e)
+	return e.Power
+}
+
+// Soak runs incoming damage through whatever barrier is standing, returning
+// what is left to land on the body and how much the barrier took.
+//
+// The pool is spent rather than timed, so this decrements Power and drops the
+// effect when it runs out. It is the one condition in the list that is consumed
+// by being used, which is why it does not go through Apply on the way down:
+// Apply *adds* power, and a barrier only ever loses it.
+func Soak(list model.Effects, dmg int) (model.Effects, int, int) {
+	if dmg <= 0 {
+		return list, dmg, 0
+	}
+	taken := 0
+	out := list[:0]
+	for _, e := range list {
+		if e.Kind == model.EffectBarrier && dmg > 0 {
+			n := core.Min(e.Power, dmg)
+			e.Power -= n
+			dmg -= n
+			taken += n
+			if e.Power <= 0 {
+				continue
+			}
+		}
+		out = append(out, e)
+	}
+	return out, dmg, taken
+}
+
 // OffenseMod is what the active conditions add to or take off a blow. A
 // blessing and a weakening cancel each other out, which is the intuitive
 // reading and saves the battle screen from applying them at two separate

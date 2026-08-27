@@ -204,3 +204,81 @@ func TestRemoveClearsOneKind(t *testing.T) {
 		t.Error("removing the stun also took the poison")
 	}
 }
+
+// --- the barrier ----------------------------------------------------------
+
+// A barrier is spent, not timed, and everything it takes is damage that never
+// reaches the body. Both halves matter: a pool that decremented but still let
+// the blow through would be decoration, and one that never ran out would make
+// the class it belongs to unkillable.
+func TestABarrierIsSpentRatherThanWornOut(t *testing.T) {
+	list := rules.Apply(nil, model.Effect{
+		Kind: model.EffectBarrier, Power: 10, Rounds: model.Forever,
+	})
+
+	list, through, took := rules.Soak(list, 4)
+	if through != 0 || took != 4 {
+		t.Fatalf("a 4-point blow against a 10-point barrier: %d through, %d taken", through, took)
+	}
+	if got := rules.Power(list, model.EffectBarrier); got != 6 {
+		t.Fatalf("barrier is at %d after taking 4 of 10", got)
+	}
+
+	// The blow that empties it: the pool takes what it has and the rest lands.
+	list, through, took = rules.Soak(list, 15)
+	if through != 9 || took != 6 {
+		t.Fatalf("a 15-point blow against a 6-point barrier: %d through, %d taken", through, took)
+	}
+	if rules.Has(list, model.EffectBarrier) {
+		t.Errorf("a spent barrier is still standing; it is a pool, not a duration")
+	}
+
+	// And nothing is soaked once it is gone.
+	if _, through, took = rules.Soak(list, 20); through != 20 || took != 0 {
+		t.Errorf("a gone barrier soaked %d of 20", took)
+	}
+}
+
+// Advancing the round must not tick a barrier away. It is the one condition in
+// the list with no clock on it: it lasts until something spends it, which is
+// what makes it a shield rather than a blessing.
+func TestABarrierDoesNotExpireOnItsOwn(t *testing.T) {
+	list := rules.Apply(nil, model.Effect{
+		Kind: model.EffectBarrier, Power: 12, Rounds: model.Forever,
+	})
+	for i := 0; i < 20; i++ {
+		list, _ = rules.Advance(list)
+	}
+	if got := rules.Power(list, model.EffectBarrier); got != 12 {
+		t.Errorf("after twenty rounds the barrier is at %d, not 12", got)
+	}
+}
+
+// Only what is on the off arm raises one, and only the classes that may hold
+// one have anything to raise.
+func TestOnlyATalismanPutsUpABarrier(t *testing.T) {
+	talisman := model.Shield{Name: "Sigil", Kind: model.ShieldTalisman, Absorb: 20}
+	plank := model.Shield{Name: "Barrel Lid", Defense: 2}
+
+	mage := &model.Character{Class: model.ClassMage, Shield: talisman}
+	if n := rules.Raise(mage); n != 20 {
+		t.Errorf("a mage holding a talisman raised %d", n)
+	}
+	fighter := &model.Character{Class: model.ClassFighter, Shield: plank}
+	if n := rules.Raise(fighter); n != 0 {
+		t.Errorf("a plank raised a barrier of %d", n)
+	}
+	bare := &model.Character{Class: model.ClassMage}
+	if n := rules.Raise(bare); n != 0 {
+		t.Errorf("an empty arm raised a barrier of %d", n)
+	}
+
+	// And the gate: nobody but a caster may hold the thing in the first place.
+	if model.CanHoldShield(model.ClassFighter, talisman) ||
+		model.CanHoldShield(model.ClassThief, talisman) {
+		t.Error("a talisman is holdable by somebody who does not need one")
+	}
+	if model.CanHoldShield(model.ClassMage, plank) {
+		t.Error("a mage is holding a plank, which is the hand they cast with")
+	}
+}

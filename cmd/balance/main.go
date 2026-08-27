@@ -700,14 +700,14 @@ func reportSlotValue(out *os.File, t *gamedata.Tables) {
 	fmt.Fprintf(out, "WHY — what one band is worth in each slot\n")
 	fmt.Fprintf(out, "every archetype is a trade of bands between slots, so these are the\n")
 	fmt.Fprintf(out, "exchange rates it trades at, read off a Fighter's lane\n\n")
-	fmt.Fprintf(out, "%-6s %14s %14s %14s %14s\n",
-		"tier", "weapon step", "armour step", "shield step", "charm def step")
-	fmt.Fprintln(out, strings.Repeat("-", 66))
+	fmt.Fprintf(out, "%-6s %14s %14s %14s %14s %14s\n",
+		"tier", "weapon step", "armour step", "shield step", "charm def step", "barrier step")
+	fmt.Fprintln(out, strings.Repeat("-", 81))
 
-	best := func(tier int) (int, int, int, int) {
+	best := func(tier int) (int, int, int, int, int) {
 		ws, as := t.StockForClass(tier, model.ClassFighter)
 		ss, cs := t.SidearmsFor(tier)
-		var strike, def, shield, charm int
+		var strike, def, shield, charm, barrier int
 		for _, w := range ws {
 			if w.Strike > strike {
 				strike = w.Strike
@@ -718,34 +718,60 @@ func reportSlotValue(out *os.File, t *gamedata.Tables) {
 				def = a.Defense
 			}
 		}
-		if len(ss) > 0 {
-			shield = ss[len(ss)-1].Defense
+		// The best thing a Fighter could put on that arm, which since casters
+		// got a slot is no longer simply the last row of the band: a talisman
+		// blocks nothing, so reading the tail of the list turned the shield
+		// step column into zeroes and one negative number.
+		for _, sh := range ss {
+			if model.CanHoldShield(model.ClassFighter, sh) && sh.Defense > shield {
+				shield = sh.Defense
+			}
 		}
 		if len(cs) > 0 {
 			charm = cs[len(cs)-1].Bonus.Defense
 		}
-		return strike, def, shield, charm
+		// And the caster's arm, which is measured in a different unit: a pool
+		// spent once rather than a reduction on every blow.
+		for _, sh := range ss {
+			if sh.Absorb > barrier {
+				barrier = sh.Absorb
+			}
+		}
+		return strike, def, shield, charm, barrier
 	}
 
 	for tier := 2; tier <= 5; tier++ {
-		s0, d0, sh0, ch0 := best(tier - 1)
-		s1, d1, sh1, ch1 := best(tier)
-		fmt.Fprintf(out, "%-6d %13d+ %13d+ %13d+ %13d+\n",
-			tier, s1-s0, d1-d0, sh1-sh0, ch1-ch0)
+		s0, d0, sh0, ch0, b0 := best(tier - 1)
+		s1, d1, sh1, ch1, b1 := best(tier)
+		fmt.Fprintf(out, "%-6d %13d+ %13d+ %13d+ %13d+ %13d+\n",
+			tier, s1-s0, d1-d0, sh1-sh0, ch1-ch0, b1-b0)
 	}
-	fmt.Fprintf(out, "\nTwo things fall out of this table.\n\n"+
-		"The weapon step is uneven: +2 into tier 2, then +5, +5, +4. So \"a band\n"+
-		"behind on the weapon\" costs two and a half times as much at tier 3 as it\n"+
-		"does at tier 2, and any build paying in weapon bands lurches in and out\n"+
-		"of viability by level rather than being consistently one thing. That is\n"+
-		"the 13.5-point hole attrition falls into at level 9: it is buying a\n"+
-		"+1 shield step with a -5 weapon step.\n\n"+
-		"And a sidearm band is worth about a quarter of a main-gear band, which\n"+
-		"caps how different any two builds can be. That is not an oversight —\n"+
-		"TestShieldsStaySecondaryToArmour in internal/gamedata deliberately holds\n"+
-		"a shield under half the body armour of its own band, so the slot stays a\n"+
-		"sidearm. Widening the arcs means revisiting that rule on purpose, not\n"+
-		"quietly inflating the shield table until the test goes red.\n\n")
+	fmt.Fprint(out, `
+Three things fall out of this table.
+
+The weapon step is even now - five a band, all the way up - which is
+what "a band behind on the weapon" has to be if a build that pays in
+weapon bands is going to be consistently one thing rather than lurching
+in and out of viability by level. It ran +2, +5, +5, +4 before the lanes
+went in, and that unevenness was the 13.5-point hole attrition used to
+fall into at level 9.
+
+A sidearm band is worth about a quarter of a main-gear band, which caps
+how different any two builds can be. That is not an oversight -
+TestShieldsStaySecondaryToArmour in internal/gamedata deliberately holds
+a shield under half the body armour of its own band, so the slot stays a
+sidearm. Widening the arcs means revisiting that rule on purpose, not
+quietly inflating the shield table until the test goes red.
+
+And the barrier column is not in the same unit as the three beside it.
+A shield step is a point off every blow for the rest of the fight; a
+barrier step is a lump of damage stopped once and then gone. Ten of the
+one is not ten of the other, and the reason the caster's arm carries a
+number this much larger is that it has to cover a whole fight in a
+single payment. Read it against the fight length in COMBAT, not against
+the shield column.
+
+`)
 }
 
 // reportEndurance is the number that actually governs the overworld loop: how

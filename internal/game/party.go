@@ -432,6 +432,13 @@ func effectColour(k model.EffectKind) color.RGBA {
 		return color.RGBA{0x60, 0xC8, 0xE0, 0xFF}
 	case model.EffectStun:
 		return color.RGBA{0xF0, 0xE8, 0xC0, 0xFF}
+	case model.EffectBarrier:
+		// Its own colour rather than the default, which is weakness's purple.
+		// A pip that means "something is protecting you" reading as a pip that
+		// means "something is wrong with you" is worse than no pip: it goes up
+		// at the start of every fight a caster walks into, so the player would
+		// learn that they begin each one already cursed.
+		return color.RGBA{0x9C, 0xC8, 0xF0, 0xFF}
 	default: // weaken
 		return color.RGBA{0x90, 0x70, 0xB0, 0xFF}
 	}

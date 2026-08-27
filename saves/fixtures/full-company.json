@@ -24,15 +24,15 @@
     "shame": 0,
     "coins": 250,
     "weapon": {
-      "name": "Stiletto 'Second Thoughts'",
-      "kind": "dagger",
-      "strike": 16,
+      "name": "Sabre of Selective Memory",
+      "kind": "blade",
+      "strike": 17,
       "range": 0,
-      "cost": 340,
-      "quality": 84,
-      "verb": "puncture",
+      "cost": 420,
+      "quality": 86,
+      "verb": "draw across",
       "tier": 4,
-      "icon": "icon/ab/4_throwing_1",
+      "icon": "icon/ab/4_weapon_sword",
       "affix": {
         "suffix": "of the Last Word",
         "bonus": {
@@ -40,9 +40,6 @@
           "speed": -2
         },
         "tier": 4
-      },
-      "extra": {
-        "dexterity": 2
       }
     },
     "armor": {

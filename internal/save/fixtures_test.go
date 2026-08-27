@@ -249,6 +249,37 @@ func TestFixturesHoldTheRunInvariants(t *testing.T) {
 		if len(p.Active) != 0 {
 			t.Errorf("%s: the hero carries %d conditions out of a save", name, len(p.Active))
 		}
+
+		// Everybody in the file is wearing something their own class could put
+		// on. A fixture in a state the game cannot produce is worse than no
+		// fixture, because it is a starting point for a playtest of a game
+		// nobody is playing — and this caught a real one: the affixed-weapon
+		// fixture took the first affixable tier-four row in the table and handed
+		// it over, which since weapons have lanes is a dagger going to a Fighter
+		// and a two-hander going to somebody already holding a shield.
+		for _, c := range append([]*model.Character{p}, f.Allies...) {
+			if !model.CanWield(c.Class, c.Weapon) {
+				t.Errorf("%s: %s is a %s holding %q", name, c.Name, c.Class, c.Weapon.Name)
+			}
+			if !model.CanWear(c.Class, c.Armor) {
+				t.Errorf("%s: %s is a %s wearing %q", name, c.Name, c.Class, c.Armor.Name)
+			}
+			if c.Shield.Worn() {
+				if !model.CanHoldShield(c.Class, c.Shield) {
+					t.Errorf("%s: %s is a %s holding %q", name, c.Name, c.Class, c.Shield.Name)
+				}
+				if c.Weapon.TwoHanded() {
+					t.Errorf("%s: %s has %q on the arm %q is already using",
+						name, c.Name, c.Shield.Name, c.Weapon.Name)
+				}
+			}
+			for _, g := range c.Carried {
+				if ok, why := c.CanUse(g); !ok {
+					t.Errorf("%s: %s is carrying %q, which they can never put on (%s)",
+						name, c.Name, g.Titled(), why)
+				}
+			}
+		}
 	}
 }
 
@@ -259,6 +290,7 @@ func TestFixturesCoverTheStatesWorthCovering(t *testing.T) {
 	all := fixtures(t)
 
 	var haveOld, haveFull, haveFallen, haveInside, haveSolo, haveLineage bool
+	var haveCaster bool
 	var haveAffix, haveSidearms, haveThreadUnderway, haveCompanyNoThreads bool
 	var haveCarried, haveClock, haveSagaUnderway, haveTrack, haveLastSpell bool
 	for _, f := range all {
@@ -328,6 +360,14 @@ func TestFixturesCoverTheStatesWorthCovering(t *testing.T) {
 				haveLineage = true
 			}
 		}
+		// The caster half of the equipment tables — a focus weapon, cloth, and
+		// a talisman on the off arm — is three fields the save format grew and
+		// a whole class the net had never stood on. Every fixture was a Fighter
+		// until somebody went looking, which is the same hole this test was
+		// written to refuse in the first place.
+		if f.Player.Casting() && f.Player.Shield.Barrier() {
+			haveCaster = true
+		}
 	}
 
 	for _, c := range []struct {
@@ -349,6 +389,7 @@ func TestFixturesCoverTheStatesWorthCovering(t *testing.T) {
 		{haveSagaUnderway, "a long story partway through"},
 		{haveTrack, "a followed destination"},
 		{haveLastSpell, "a remembered technique"},
+		{haveCaster, "a caster with a rod and a talisman"},
 	} {
 		if !c.got {
 			t.Errorf("no fixture covers %s", c.want)
