@@ -250,6 +250,24 @@ func buildManifest() error {
 		}
 	}
 
+	// The oddity's residents, from the same vendor family as the monster
+	// portraits already in use and at exactly the same 256px — masked things,
+	// helmeted things, and one broad-faced fellow who will not say what he is
+	// doing here. They slot into the battle screen with no work at all, which
+	// is the whole reason they were worth going back to the bundle for.
+	//
+	// Only the A and K families. M is ordinary humans in jackets, which is a
+	// face this game already has seventy-six of.
+	sci := filepath.Join(rawRoot, "sci-ficharactersicons",
+		"Sci-Fi_Characters_Icons_png", "transparent")
+	for _, f := range pngsIn(sci) {
+		n := slug(base(f))
+		if !strings.HasPrefix(n, "a_") && !strings.HasPrefix(n, "k_") {
+			continue
+		}
+		add("mob/sci_"+strings.TrimSuffix(n, "_t"), f, 0, 0)
+	}
+
 	// The oddity's furniture.
 	//
 	// Two thirds of the bundle is sci-fi and cyberpunk that this game has no

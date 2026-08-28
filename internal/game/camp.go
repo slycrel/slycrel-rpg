@@ -74,11 +74,11 @@ func (g *Game) makeCamp(it model.Item) {
 		if g.Local != nil {
 			biome, level = g.Local.Biome, g.Local.POI.Level
 		}
-		mons := g.Data.PickMonsters(g.RNG, biome, level, g.encounterSize(1+g.RNG.Intn(2)))
-		if len(mons) == 0 {
+		enc := g.Data.PickEncounter(g.RNG, biome, level, g.encounterSize(1+g.RNG.Intn(2)))
+		if len(enc.Monsters) == 0 {
 			return
 		}
 		g.sinceFight = 0
-		g.Push(newBattleScene(g, mons, "the camp"))
+		g.Push(newBattleScene(g, enc, "the camp"))
 	})
 }

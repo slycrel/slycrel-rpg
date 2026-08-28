@@ -10,6 +10,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/slycrel/slycrel-rpg/internal/assetsys"
 	"github.com/slycrel/slycrel-rpg/internal/core"
+	"github.com/slycrel/slycrel-rpg/internal/gamedata"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/saga"
@@ -150,9 +151,9 @@ func (s *localScene) tryStep(g *Game, d core.Dir) {
 	// Interiors have their own ambush rate; towns do not.
 	if !g.Local.POI.Kind.Settlement() && g.sinceFight > 6 && g.RNG.Intn(100) < 6 {
 		g.sinceFight = 0
-		mons := g.Data.PickMonsters(g.RNG, g.Local.Biome, g.Local.POI.Level, g.encounterSize(1+g.RNG.Intn(2)))
-		if len(mons) > 0 {
-			g.Push(newBattleScene(g, mons, "dark"))
+		enc := g.Data.PickEncounter(g.RNG, g.Local.Biome, g.Local.POI.Level, g.encounterSize(1+g.RNG.Intn(2)))
+		if len(enc.Monsters) > 0 {
+			g.Push(newBattleScene(g, enc, "dark"))
 		}
 	}
 }
@@ -233,7 +234,18 @@ func (g *Game) interact(e *world.Entity) {
 			count = 1
 			level += 3
 		}
-		mons := g.Data.PickMonsters(g.RNG, g.Local.Biome, level, count)
+		// A visible foe on the floor is a fight you walked at, so it gets a
+		// shape like any other. A boss does not: it is one named thing standing
+		// in the room it is the point of, which is the brute shape written by
+		// hand before shapes existed.
+		enc := g.Data.PickEncounter(g.RNG, g.Local.Biome, level, count)
+		if e.Kind == world.EBoss {
+			enc = gamedata.Encounter{
+				Monsters: g.Data.PickMonsters(g.RNG, g.Local.Biome, level, 1),
+				Shape:    gamedata.ShapeBrute,
+			}
+		}
+		mons := enc.Monsters
 		if len(mons) == 0 {
 			return
 		}
@@ -250,7 +262,7 @@ func (g *Game) interact(e *world.Entity) {
 				g.advanceSagas(saga.Event{Kind: saga.Clear, POI: idx})
 			}
 		}
-		g.Push(newBattleScene(g, mons, g.Local.POI.Name))
+		g.Push(newBattleScene(g, enc, g.Local.POI.Name))
 	}
 }
 

@@ -702,7 +702,22 @@ func (t *Tables) BiomeMonsters(biome string, level int) []*model.MonsterDef {
 // PickMonsters chooses a plausible encounter group for a biome at a level,
 // preferring monsters near the target level and falling back to the whole
 // biome roster when nothing matches.
+//
+// It is the flat version: count creatures, all at the level asked for. The
+// controls in cmd/balance use it, because a measurement wants one variable, and
+// so does anything that needs a creature rather than a fight — a quest naming
+// something to go and kill. What the game actually throws at a player comes out
+// of PickEncounter below, which is this with a shape on it.
 func (t *Tables) PickMonsters(g *core.RNG, biome string, level, count int) []*model.Monster {
+	pool := t.poolFor(biome, level)
+	if len(pool) == 0 {
+		return nil
+	}
+	return nameGroup(drawFrom(g, pool, level, count, nil))
+}
+
+// poolFor is the roster a biome can supply at a level, capped and floored.
+func (t *Tables) poolFor(biome string, level int) []*model.MonsterDef {
 	pool := t.Monsters[biome]
 	if len(pool) == 0 {
 		pool = t.Monsters["plains"]
@@ -741,27 +756,33 @@ func (t *Tables) PickMonsters(g *core.RNG, biome string, level, count int) []*mo
 		}
 	}
 	if len(capped) > 0 {
-		pool = capped
-	} else {
-		// Asking below the bottom of a roster — a dungeon has nothing under
-		// level three, and something has to be sent. The floor of the biome is
-		// the least wrong answer; falling back to the whole roster would let a
-		// request for level one draw the deepest thing in the place.
-		floor := pool[0].Level
-		for _, d := range pool {
-			if d.Level < floor {
-				floor = d.Level
-			}
-		}
-		lowest := pool[:0:0]
-		for _, d := range pool {
-			if d.Level == floor {
-				lowest = append(lowest, d)
-			}
-		}
-		pool = lowest
+		return capped
 	}
+	// Asking below the bottom of a roster — a dungeon has nothing under
+	// level three, and something has to be sent. The floor of the biome is
+	// the least wrong answer; falling back to the whole roster would let a
+	// request for level one draw the deepest thing in the place.
+	floor := pool[0].Level
+	for _, d := range pool {
+		if d.Level < floor {
+			floor = d.Level
+		}
+	}
+	lowest := pool[:0:0]
+	for _, d := range pool {
+		if d.Level == floor {
+			lowest = append(lowest, d)
+		}
+	}
+	return lowest
+}
 
+// drawFrom spawns count creatures out of a pool, weighted towards the level
+// asked for. bias, when given, multiplies a definition's weight — which is how
+// a shape says "something with plating" or "something fast" without needing a
+// second roster.
+func drawFrom(g *core.RNG, pool []*model.MonsterDef, level, count int,
+	bias func(*model.MonsterDef) int) []*model.Monster {
 	// Weight by closeness to the target level: a level-1 rat should stop
 	// showing up once you are level 9, without ever being formally retired.
 	//
@@ -781,21 +802,29 @@ func (t *Tables) PickMonsters(g *core.RNG, biome string, level, count int) []*mo
 		if w < 1000 {
 			w = 4000 / (1 + (diff-2)*(diff-2))
 		}
+		if bias != nil {
+			w *= core.Max(1, bias(d))
+		}
 		weights[i] = core.Max(1, w)
 	}
 
 	out := make([]*model.Monster, 0, count)
-	letters := map[string]int{}
 	for i := 0; i < count; i++ {
 		idx := g.Weighted(weights)
 		if idx < 0 {
 			idx = g.Intn(len(pool))
 		}
-		m := pool[idx].Spawn(g, level)
-		letters[m.Def.ID]++
-		out = append(out, m)
+		out = append(out, pool[idx].Spawn(g, level))
 	}
-	// Disambiguate duplicates in the target list: "Gutter Troll A / B".
+	return out
+}
+
+// nameGroup disambiguates duplicates in the target list: "Gutter Troll A / B".
+func nameGroup(out []*model.Monster) []*model.Monster {
+	letters := map[string]int{}
+	for _, m := range out {
+		letters[m.Def.ID]++
+	}
 	seen := map[string]int{}
 	for _, m := range out {
 		if letters[m.Def.ID] > 1 {

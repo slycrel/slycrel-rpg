@@ -1,0 +1,316 @@
+[
+  {
+    "id": "odd_maint",
+    "name": "Maintenance Unit, Overdue",
+    "kind": "construct",
+    "level": 2,
+    "hp": 24,
+    "offense": 7,
+    "defense": 7,
+    "ward": 1,
+    "speed": 5,
+    "xp": 22,
+    "coins": 8,
+    "attackWith": [
+      "a limb that ends in a tool",
+      "a swung panel",
+      "a jet of something hot"
+    ],
+    "attackVerb": [
+      "services",
+      "clips",
+      "corrects"
+    ],
+    "defendWith": "a housing rated for worse than you",
+    "taunt": [
+      "{T} is halfway through a task and has not looked up."
+    ],
+    "death": [
+      "{T} stops. A small light on it goes out, then comes back, then goes out."
+    ],
+    "sprite": "mob/sci_k_01",
+    "loot": [
+      {
+        "item": "Salvaged Steel",
+        "chance": 55,
+        "min": 1,
+        "max": 2
+      }
+    ]
+  },
+  {
+    "id": "odd_compliance",
+    "name": "Compliance Officer",
+    "kind": "construct",
+    "level": 4,
+    "hp": 36,
+    "offense": 12,
+    "defense": 9,
+    "ward": 2,
+    "speed": 7,
+    "xp": 48,
+    "coins": 16,
+    "attackWith": [
+      "a raised palm",
+      "a citation",
+      "a device that beeps once"
+    ],
+    "attackVerb": [
+      "denies",
+      "logs",
+      "escorts"
+    ],
+    "defendWith": "being entirely within its remit",
+    "taunt": [
+      "\"You are not on the list. There is a list.\""
+    ],
+    "death": [
+      "{T} files itself, thoroughly, and stops."
+    ],
+    "sprite": "mob/sci_a_01",
+    "loot": [
+      {
+        "item": "Laminated Card",
+        "chance": 60,
+        "min": 1,
+        "max": 1
+      }
+    ]
+  },
+  {
+    "id": "odd_suit",
+    "name": "Something in a Suit",
+    "kind": "aberrant",
+    "level": 5,
+    "hp": 40,
+    "offense": 14,
+    "defense": 4,
+    "ward": 9,
+    "speed": 9,
+    "xp": 66,
+    "coins": 20,
+    "attackWith": [
+      "a gloved hand",
+      "a sleeve, moving oddly",
+      "the helmet, forwards"
+    ],
+    "attackVerb": [
+      "reaches for",
+      "presses against",
+      "interviews"
+    ],
+    "defendWith": "a seal that has held for a very long time",
+    "taunt": [
+      "{T} raises one hand. It is not clear whether that was a greeting."
+    ],
+    "death": [
+      "{T} settles. The suit stays standing for a moment and then does not."
+    ],
+    "sprite": "mob/sci_a_15",
+    "loot": [
+      {
+        "item": "Warm Cable",
+        "chance": 45,
+        "min": 1,
+        "max": 1
+      }
+    ]
+  },
+  {
+    "id": "odd_attendant",
+    "name": "The Attendant",
+    "kind": "construct",
+    "level": 7,
+    "hp": 52,
+    "offense": 18,
+    "defense": 12,
+    "ward": 3,
+    "speed": 6,
+    "xp": 108,
+    "coins": 34,
+    "attackWith": [
+      "a broom, weaponised",
+      "a hinged arm",
+      "the trolley"
+    ],
+    "attackVerb": [
+      "sweeps aside",
+      "tidies",
+      "removes"
+    ],
+    "defendWith": "plating and a very long shift",
+    "taunt": [
+      "{T} has swept these steps every day since before the village."
+    ],
+    "death": [
+      "{T} finishes the row it was on, and then stops."
+    ],
+    "sprite": "mob/sci_k_07",
+    "loot": [
+      {
+        "item": "Brass Fragment",
+        "chance": 50,
+        "min": 1,
+        "max": 2
+      }
+    ]
+  },
+  {
+    "id": "odd_announce",
+    "name": "A Courtesy Announcement",
+    "kind": "aberrant",
+    "level": 10,
+    "magic": true,
+    "hp": 62,
+    "offense": 24,
+    "defense": 4,
+    "ward": 14,
+    "speed": 13,
+    "xp": 200,
+    "coins": 70,
+    "attackWith": [
+      "a chime, then a voice",
+      "a sentence repeated",
+      "a very reasonable tone"
+    ],
+    "attackVerb": [
+      "informs",
+      "regrets",
+      "reminds"
+    ],
+    "defendWith": "not being entirely present",
+    "taunt": [
+      "\"We apologise for the delay. We apologise for the delay.\""
+    ],
+    "death": [
+      "{T} thanks you for your patience and is not there."
+    ],
+    "sprite": "mob/sci_a_08",
+    "loot": [
+      {
+        "item": "Cracked Crystal",
+        "chance": 40,
+        "min": 1,
+        "max": 1
+      }
+    ]
+  },
+  {
+    "id": "odd_warden",
+    "name": "Site Warden",
+    "kind": "construct",
+    "level": 10,
+    "hp": 74,
+    "offense": 24,
+    "defense": 16,
+    "ward": 4,
+    "speed": 8,
+    "xp": 200,
+    "coins": 90,
+    "attackWith": [
+      "a bar of light",
+      "an arm with a serial number",
+      "the whole of itself"
+    ],
+    "attackVerb": [
+      "restrains",
+      "processes",
+      "escorts"
+    ],
+    "defendWith": "armour rated for an incident nobody will describe",
+    "taunt": [
+      "\"This area is restricted.\" It does not say by whom."
+    ],
+    "death": [
+      "{T} reports the incident to nobody, at length, and falls over."
+    ],
+    "sprite": "mob/sci_a_12",
+    "loot": [
+      {
+        "item": "Warm Cable",
+        "chance": 45,
+        "min": 1,
+        "max": 2
+      }
+    ]
+  },
+  {
+    "id": "odd_passenger",
+    "name": "Unscheduled Passenger",
+    "kind": "aberrant",
+    "level": 12,
+    "magic": true,
+    "hp": 78,
+    "offense": 29,
+    "defense": 6,
+    "ward": 18,
+    "speed": 15,
+    "xp": 320,
+    "coins": 180,
+    "attackWith": [
+      "a hand through the wrong place",
+      "a sound like a door",
+      "the smell of somewhere else"
+    ],
+    "attackVerb": [
+      "arrives at",
+      "transits",
+      "disembarks into"
+    ],
+    "defendWith": "having been elsewhere for most of the blow",
+    "taunt": [
+      "{T} is waiting for something that is not coming."
+    ],
+    "death": [
+      "{T} goes down the steps. It does not come back up."
+    ],
+    "sprite": "mob/sci_a_17",
+    "loot": [
+      {
+        "item": "Laminated Card",
+        "chance": 50,
+        "min": 1,
+        "max": 2
+      }
+    ]
+  },
+  {
+    "id": "odd_nightshift",
+    "name": "The Night Shift",
+    "kind": "construct",
+    "level": 13,
+    "hp": 100,
+    "offense": 31,
+    "defense": 19,
+    "ward": 5,
+    "speed": 9,
+    "xp": 380,
+    "coins": 240,
+    "attackWith": [
+      "both arms at once",
+      "a length of the barrier",
+      "something industrial"
+    ],
+    "attackVerb": [
+      "clears",
+      "concludes",
+      "closes for"
+    ],
+    "defendWith": "plate, and a rota nobody has ever revised",
+    "taunt": [
+      "\"We're closed.\" It has been closed for four hundred years."
+    ],
+    "death": [
+      "{T} locks up behind itself and goes down."
+    ],
+    "sprite": "mob/sci_k_14",
+    "loot": [
+      {
+        "item": "Hoard Coin",
+        "chance": 40,
+        "min": 1,
+        "max": 2
+      }
+    ]
+  }
+]

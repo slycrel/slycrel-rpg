@@ -751,6 +751,13 @@ func poiBiome(k POIKind) string {
 		return "wasteland"
 	case KindTower, KindShrine:
 		return "dungeon"
+	case KindOddity:
+		// Its own roster, because a place where everything is the wrong century
+		// should not be defended by wolves. Mostly constructs, which stop steel
+		// and nothing else, with a couple that are the other way round — which
+		// makes the joke zone the one place in the game where the matchup axis
+		// is the whole encounter rather than an occasional surprise.
+		return "oddity"
 	default:
 		return "forest"
 	}

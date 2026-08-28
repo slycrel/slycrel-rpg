@@ -1188,15 +1188,25 @@ func wantsOut(c *model.Character, living []*model.Monster) bool {
 // Casting matters to the measurement, not just to realism: a mage judged on
 // swinging a stick looks broken when it is only being played wrong.
 func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, level, maxRounds int, spells []model.Spell) FightResult {
-	// The character is spent, not copied: hit points and psyche carry out of
-	// the fight so a run of encounters can be simulated on one rest. Callers
-	// wanting an isolated fight pass a copy.
-	sim := c
-
 	mons := make([]*model.Monster, 0, len(defs))
 	for _, d := range defs {
 		mons = append(mons, d.Spawn(g, level))
 	}
+	return SimulateGroup(g, c, mons, maxRounds, spells)
+}
+
+// SimulateGroup is SimulateFight against creatures that already exist.
+//
+// The split is what lets the report measure an *encounter* rather than a
+// creature. A shape is a composition — more of them and smaller, one of them
+// and enormous, one that stops steel beside one that stops magic — and none of
+// that survives being flattened into "n definitions, all at level L", which is
+// the only thing SimulateFight could ever say.
+func SimulateGroup(g *core.RNG, c *model.Character, mons []*model.Monster, maxRounds int, spells []model.Spell) FightResult {
+	// The character is spent, not copied: hit points and psyche carry out of
+	// the fight so a run of encounters can be simulated on one rest. Callers
+	// wanting an isolated fight pass a copy.
+	sim := c
 
 	var res FightResult
 	// What the fight cost in psyche, which is half of what it refunds.

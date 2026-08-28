@@ -192,10 +192,16 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
   trade, whether it beats what you are holding is a real question, and the box
   spells out what the suffix is worth before you answer. Gear whose name already
   ends in a flourish never gets a second one.
+- **Encounters have a shape.** Not every fight is an assortment: a pack is more
+  of them and quicker, a brute is one of them and enormous, an escort is
+  something magical standing behind something armoured, and a mismatch is two
+  creatures that are not the same problem. The transcript says which before you
+  choose.
 - **Oddities** — a short paved strip in the middle of nowhere with a stairway
   going down at the end of it, a lit humming box that takes a coin and gives you
   something cold, signage in a script nobody writes, and villagers who find none
-  of it remarkable. Nobody standing there is in on it.
+  of it remarkable. Nobody standing there is in on it. The things that live
+  there are bureaucrats: plated, unhurried, and entirely within their remit.
 - **Icons** — every item, weapon, suit of armour and technique carries one, in
   the bag, the shop and the battle menu. Reduced to 16px in the pipeline rather
   than scaled at draw time, because the engine samples nearest-neighbour and a

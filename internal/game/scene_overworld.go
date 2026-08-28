@@ -178,9 +178,9 @@ func (s *overworldScene) tryStep(g *Game, d core.Dir) {
 			if g.RNG.Chance(0.10) {
 				count = 3
 			}
-			mons := g.Data.PickMonsters(g.RNG, biome, level, g.encounterSize(count))
-			if len(mons) > 0 {
-				g.Push(newBattleScene(g, mons, g.World.At(next.X, next.Y).Name()))
+			enc := g.Data.PickEncounter(g.RNG, biome, level, g.encounterSize(count))
+			if len(enc.Monsters) > 0 {
+				g.Push(newBattleScene(g, enc, g.World.At(next.X, next.Y).Name()))
 			}
 		}
 	}

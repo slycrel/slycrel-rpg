@@ -2399,6 +2399,146 @@
       "file": "assets-raw/mobsavataricons_windows/mobsavataricons/robot_05.png"
     },
     {
+      "key": "mob/sci_a_01",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_01_t.png"
+    },
+    {
+      "key": "mob/sci_a_02",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_02_t.png"
+    },
+    {
+      "key": "mob/sci_a_03",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_03_t.png"
+    },
+    {
+      "key": "mob/sci_a_04",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_04_t.png"
+    },
+    {
+      "key": "mob/sci_a_05",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_05_t.png"
+    },
+    {
+      "key": "mob/sci_a_06",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_06_t.png"
+    },
+    {
+      "key": "mob/sci_a_07",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_07_t.png"
+    },
+    {
+      "key": "mob/sci_a_08",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_08_t.png"
+    },
+    {
+      "key": "mob/sci_a_09",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_09_t.png"
+    },
+    {
+      "key": "mob/sci_a_10",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_10_t.png"
+    },
+    {
+      "key": "mob/sci_a_11",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_11_t.png"
+    },
+    {
+      "key": "mob/sci_a_12",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_12_t.png"
+    },
+    {
+      "key": "mob/sci_a_13",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_13_t.png"
+    },
+    {
+      "key": "mob/sci_a_14",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_14_t.png"
+    },
+    {
+      "key": "mob/sci_a_15",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_15_t.png"
+    },
+    {
+      "key": "mob/sci_a_16",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_16_t.png"
+    },
+    {
+      "key": "mob/sci_a_17",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_17_t.png"
+    },
+    {
+      "key": "mob/sci_a_18",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/A_18_t.png"
+    },
+    {
+      "key": "mob/sci_k_01",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_01_t.png"
+    },
+    {
+      "key": "mob/sci_k_02",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_02_t.png"
+    },
+    {
+      "key": "mob/sci_k_03",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_03_t.png"
+    },
+    {
+      "key": "mob/sci_k_04",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_04_t.png"
+    },
+    {
+      "key": "mob/sci_k_05",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_05_t.png"
+    },
+    {
+      "key": "mob/sci_k_06",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_06_t.png"
+    },
+    {
+      "key": "mob/sci_k_07",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_07_t.png"
+    },
+    {
+      "key": "mob/sci_k_08",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_08_t.png"
+    },
+    {
+      "key": "mob/sci_k_09",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_09_t.png"
+    },
+    {
+      "key": "mob/sci_k_10",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_10_t.png"
+    },
+    {
+      "key": "mob/sci_k_11",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_11_t.png"
+    },
+    {
+      "key": "mob/sci_k_12",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_12_t.png"
+    },
+    {
+      "key": "mob/sci_k_13",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_13_t.png"
+    },
+    {
+      "key": "mob/sci_k_14",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_14_t.png"
+    },
+    {
+      "key": "mob/sci_k_15",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_15_t.png"
+    },
+    {
+      "key": "mob/sci_k_16",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_16_t.png"
+    },
+    {
+      "key": "mob/sci_k_17",
+      "file": "assets-raw/sci-ficharactersicons/Sci-Fi_Characters_Icons_png/transparent/K_17_t.png"
+    },
+    {
       "key": "mob/sheep_01",
       "file": "assets-raw/mobsavataricons_windows/mobsavataricons/sheep_01.png"
     },

@@ -95,6 +95,13 @@ which event fires which trigger, and where it is safe to put a box on screen.
 - **Everything that gives must take.** Lineages, affixes and charms are all
   authored trade-offs, and tests assert it. A table of pure upgrades makes "did
   I get the good one" the only question worth asking.
+- **An encounter has a shape, and `PickMonsters` is not it.** `PickEncounter` is
+  what the game throws — a composition with a name the transcript says out loud.
+  `PickMonsters` still means "n creatures at level L" and every control in
+  `cmd/balance` calls it, because a measurement wants one variable. Shapes are
+  measured in their own SHAPES section against `rules.SimulateGroup`, which
+  exists because a composition does not survive being flattened into a list of
+  definitions and a level.
 - **Flavour is data**, in `data/text/flavor.json` and the per-monster lines, so
   the writing can be revised without touching Go.
 - **Never name something that might not exist.** The quest generator only names

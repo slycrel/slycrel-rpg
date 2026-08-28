@@ -130,9 +130,9 @@ Built and running:
   rather than read. Faith goes in the plate and buys anonymity back out of it,
   lifting shame and renown together; Honor is what seeing a companion's story
   through is worth, and it is spent on what the next hireling asks for
-- 66 monsters across nine biomes, 27 weapons in five lanes, 19 armours in three
+- 74 monsters across ten biomes, in five encounter shapes, 27 weapons in five lanes, 19 armours in three
   weights, 14 shields in three lanes and 5 caster talismans, 12 charms,
-  10 affixes, 42 items,
+  10 affixes, 46 items,
   35 techniques
   (thirty of them party-facing, lingering, aimed at everything, two-sided, or
   gated on a hireling's ancestry),
@@ -1562,6 +1562,90 @@ so the audit checks every one. A vending machine that failed to resolve would be
 a magenta box standing in a field, which is a description of the joke rather
 than the joke.
 
+**Encounters have a shape now.** *(Jeremy's, off the list of things that would
+make this more enjoyable.)*
+
+The complaint the report had been making about itself for a long time without
+anybody hearing it: every build wins 96 to 100 per cent of on-level fights *by
+design*, which is why ARCS and DANGER only ever compare builds three levels
+over. The fight a player is supposed to be having is decided before it starts,
+and the only thing that varies is how much it costs.
+
+The fix is not to make on-level fights harder — that breaks the brief and turns
+the game into a coin flip. It is to make them different from each other. And
+everything needed was already built and unused: an armour axis and a ward axis
+that no encounter ever put in the same room, multi-target techniques with
+nothing to point them at, and speed and plating spread across the monster table
+that `PickMonsters` averaged flat.
+
+Five compositions, and the point of each is what it asks you to do rather than
+how hard it hits:
+
+- **mixed**, which is what the game threw before there were shapes, and stays
+  the plurality at about 45%. A texture that happens every time is the texture.
+- **pack** — more of them, each smaller and quicker. What a wide swing is for.
+- **brute** — one of them, scaled up rather than picked from above its band,
+  which keeps the promise an encounter level makes. The dungeon boss has worked
+  this way since it was written.
+- **escort** — something that attacks with magic standing behind something that
+  stops steel. Kill order is the whole fight.
+- **mismatch** — one thing that stops steel beside one that stops magic, so no
+  single answer covers the room.
+
+`PickMonsters` is untouched and still means "n creatures at level L": every
+control in the report uses it, and a measurement wants one variable. The game
+calls `PickEncounter`, which is that with a shape on it. `SimulateFight` split
+into a thin wrapper over `SimulateGroup`, because a shape does not survive being
+flattened into "n definitions all at level L" — which is the only thing the old
+signature could say — and a mechanic the simulator cannot see is one the balance
+pass is lying about.
+
+The shape is said out loud, in the line the transcript already opens with. A
+composition cannot be read off three portraits in the second before you choose,
+and "one of them, and it is enormous" is the difference between a fight and this
+kind of fight.
+
+**What the new SHAPES section found, in four passes.** The first draft was not a
+set of compositions, it was a difficulty spread: a pack won 37% against mixed's
+83% and killed you 45% of the time. Cutting bodies swung it to 93%. It landed at
++2 bodies, 55% hit points and 72% offense — the offense cut is what did the work,
+because attacks are what kill you and hit points are only what makes it take a
+while.
+
+The finding worth keeping is the mismatch, which was **backwards**. Picking the
+two most *lopsided* creatures guarantees each is soft on the other axis, so a
+fighter deletes the warded one in a round and grinds the plated one alone: the
+shape reduced the effective number of enemies and came out the easiest fight in
+the game at 99% win. It picks by *resistance* now — the best-armoured and the
+best-warded thing in the band, each of which has to beat the other on its own
+axis by three.
+
+And that produced the second finding, which is a content gap the "seen" column
+states rather than guesses at: **the mismatch is almost absent from the ordinary
+biomes.** The fantasy rosters were never written to contrast. The one place it
+appears reliably is the oddity, because that roster was authored for it — which
+means the one place in the game where the matchup axis is the whole encounter is
+the one where everything is the wrong century.
+
+The controls did not move: fighter −0.6, thief +1.1, mage +0.4, unchanged to the
+decimal, because `PickMonsters` is what they call.
+
+**And the oddity got things to fight.** *(The other half of "find a way to get
+some of those other assets in".)* Two more packs off the bundle: the sci-fi
+character icons are 256px whole images from the same vendor family as the
+monster portraits already in use, so eight new creatures slotted into the battle
+screen with no rendering work at all. Mostly constructs — plating and no ward,
+which is what stops steel and nothing else — with a couple that are the other
+way round.
+
+They are bureaucrats. A Maintenance Unit halfway through a task that has not
+looked up, a Compliance Officer that says "you are not on the list, there is a
+list", an Attendant that has swept the steps since before the village, and a
+Courtesy Announcement that apologises for the delay while it kills you. The
+magical ones sit at level ten and twelve, because the rule that nothing casts
+before the answer is on a shelf is enforced by a test and applies to the joke
+zone too.
+
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on
@@ -1599,7 +1683,7 @@ than the joke.
 ## Asset budget
 
 The bundle is 78 packs / 56,409 files / 16.7 GB, inventoried in
-[ASSET-INVENTORY.md](ASSET-INVENTORY.md). 35 packs are extracted and 687 keys
+[ASSET-INVENTORY.md](ASSET-INVENTORY.md). 37 packs are extracted and 722 keys
 are indexed. Roughly two thirds of the bundle is sci-fi, cyberpunk, futuristic
 or children's-voice content that this game has no use for — except as an
 over-the-top joke zone, which is exactly what an "oddity" location is for, and

@@ -7,6 +7,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/slycrel/slycrel-rpg/internal/core"
+	"github.com/slycrel/slycrel-rpg/internal/gamedata"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
@@ -120,7 +121,8 @@ type battleScene struct {
 	introRun bool
 }
 
-func newBattleScene(g *Game, mons []*model.Monster, where string) *battleScene {
+func newBattleScene(g *Game, enc gamedata.Encounter, where string) *battleScene {
+	mons := enc.Monsters
 	b := &battleScene{
 		under:       g.Top(),
 		mons:        mons,
@@ -145,8 +147,14 @@ func newBattleScene(g *Game, mons []*model.Monster, where string) *battleScene {
 	b.cam = render.Camera{}
 	b.setRootMenu(g)
 
+	// What kind of fight this is, said out loud. A composition cannot be read
+	// off three portraits in the second before a player chooses, and the shape
+	// is the whole of what the encounter work added — so it goes in the one
+	// line the transcript already opens with.
 	names := mons[0].Name
-	if len(mons) > 1 {
+	if line := enc.Line(); line != "" {
+		names = line
+	} else if len(mons) > 1 {
 		names = fmt.Sprintf("%d of them", len(mons))
 	}
 	g.Sound.Play("fight/start")

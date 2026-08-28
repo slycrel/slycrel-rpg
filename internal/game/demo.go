@@ -161,9 +161,13 @@ func buildDemoSteps() []demoStep {
 		// one. It also leaves a more useful save fixture behind.
 		{at: 292, do: func(g *Game) {
 			g.demoLevelParty(4)
-			mons := g.Data.PickMonsters(g.RNG, "forest", 3, 3)
-			if len(mons) > 0 {
-				g.Push(newBattleScene(g, mons, "woods"))
+			// The real roll, shape and all, rather than three creatures stood
+			// in a line. What the tour is meant to show is the fight the game
+			// throws, and since encounters have compositions that includes
+			// which composition the seed happened to produce.
+			enc := g.Data.PickEncounter(g.RNG, "forest", 3, 3)
+			if len(enc.Monsters) > 0 {
+				g.Push(newBattleScene(g, enc, "woods"))
 			}
 		}},
 		{at: 306, shot: "08-battle"},

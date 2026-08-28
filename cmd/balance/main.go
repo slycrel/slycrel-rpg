@@ -59,6 +59,8 @@ func main() {
 	reportArcs(out, core.NewRNG(*seed^0x5ACB), t, *fights/2)
 	reportDanger(out, core.NewRNG(*seed^0xD1E), t, *fights/3)
 	reportWard(out, core.NewRNG(*seed^0x3A7D), t, *fights)
+	// Its own generator too, for the same reason as ARCS above.
+	reportShapes(out, core.NewRNG(*seed^0x5411), t, *fights)
 	reportEndurance(out, g, t, *fights/4)
 	reportProgression(out, g, t, *fights/50)
 	reportEconomy(out, t)
@@ -856,6 +858,113 @@ func reportEndurance(out *os.File, g *core.RNG, t *gamedata.Tables, runs int) {
 		}
 	}
 	fmt.Fprintln(out)
+}
+
+// reportShapes measures the compositions, which is where the on-level fight
+// stopped being a foregone conclusion.
+//
+// It is a section of its own rather than a rewrite of COMBAT and DANGER, and
+// that is deliberate: those two measure one creature against one character on
+// curve, which is a controlled reading and still the right baseline for every
+// other number in this report. What they cannot say is what a *fight* is like,
+// because until shapes existed a fight was n creatures of no particular
+// arrangement.
+//
+// The claim being tested is not that the shapes are equally hard. It is that
+// they are close enough on total threat to all be on-level fights, and far
+// enough apart on how they get there to be worth telling apart. A shape that
+// wins ten points more than mixed is a shape the player should always want, and
+// a shape that wins thirty less is a death sentence wearing a description.
+func reportShapes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+	fmt.Fprintf(out, "SHAPES — what an encounter is made of\n")
+	fmt.Fprintf(out, "on-curve gear, on-level fights, the party-scaled size a solo hero rolls\n\n")
+	fmt.Fprintf(out, "%-12s %-10s %8s %8s %8s %8s %8s\n",
+		"level", "shape", "seen", "win", "died", "rounds", "hp left")
+	fmt.Fprintln(out, strings.Repeat("-", 70))
+
+	// The oddity's roster is probed by name at the end, because it is the one
+	// place in the game built for contrast — constructs that stop steel beside
+	// things that stop magic — and biomeForLevel never sends anybody there.
+	probes := []struct {
+		level int
+		biome string
+	}{{3, ""}, {7, ""}, {11, ""}, {13, ""}, {6, "oddity"}, {12, "oddity"}}
+	for _, probe := range probes {
+		level, biome := probe.level, probe.biome
+		if biome == "" {
+			biome = biomeForLevel(level)
+		}
+		type tally struct{ n, wins, deaths, rounds, hp, maxhp int }
+		by := map[gamedata.Shape]*tally{}
+		order := []gamedata.Shape{}
+
+		for i := 0; i < fights; i++ {
+			c := rules.BuildCharacter(g, model.AllClasses[i%len(model.AllClasses)], level)
+			equip(t, c)
+			enc := t.PickEncounter(g, biome, level, 1+g.Intn(2))
+			if len(enc.Monsters) == 0 {
+				continue
+			}
+			if by[enc.Shape] == nil {
+				by[enc.Shape] = &tally{}
+				order = append(order, enc.Shape)
+			}
+			a := by[enc.Shape]
+			a.n++
+			fresh := *c
+			r := rules.SimulateGroup(g, &fresh, enc.Monsters, 60, t.SpellsFor(c))
+			if r.Won {
+				a.wins++
+			}
+			if r.Died() {
+				a.deaths++
+			}
+			a.rounds += r.Rounds
+			a.hp += r.HPLeft
+			a.maxhp += fresh.MaxHP
+		}
+
+		label := fmt.Sprintf("%d", level)
+		if probe.biome != "" {
+			label = fmt.Sprintf("%d %s", level, probe.biome)
+		}
+		sort.Slice(order, func(i, j int) bool { return by[order[i]].n > by[order[j]].n })
+		for _, sh := range order {
+			a := by[sh]
+			if a.n == 0 {
+				continue
+			}
+			fmt.Fprintf(out, "%-12s %-10s %7.0f%% %7.1f%% %7.1f%% %8.1f %7.0f%%\n",
+				label, sh, 100*float64(a.n)/float64(fights),
+				100*float64(a.wins)/float64(a.n), 100*float64(a.deaths)/float64(a.n),
+				float64(a.rounds)/float64(a.n), 100*float64(a.hp)/float64(a.maxhp))
+		}
+		fmt.Fprintln(out)
+	}
+
+	fmt.Fprint(out, `A shape is a composition, not a difficulty dial. What it is allowed to
+move is how the fight is won - a pack wants the technique that hits
+everything, a brute wants the one that hits hardest, an escort wants you
+to pick a target and get to it, and a mismatch wants two answers because
+neither creature is the other one's problem. What it is not allowed to
+move much is the win rate.
+
+The "seen" column is the other half of it: a shape the roster cannot
+supply never appears rather than appearing as something else. Nothing
+attacks with magic below level ten, so nothing escorts anything below
+level ten either, and no number anywhere had to say so twice.
+
+That column is also where this section earned its keep. The mismatch is
+almost absent from the ordinary biomes and shows up reliably only in the
+oddity, because it needs one creature that beats another by three on
+armour while being beaten by three on ward, and the fantasy rosters were
+never written to contrast. The joke zone was - constructs that stop
+steel beside things that stop magic - so the one place in the game where
+the matchup axis is the whole encounter is the one where everything is
+the wrong century. That is a content gap in the other eight biomes, and
+this is it being stated rather than guessed at.
+
+`)
 }
 
 func reportProgression(out *os.File, g *core.RNG, t *gamedata.Tables, runs int) {

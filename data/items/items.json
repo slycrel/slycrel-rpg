@@ -398,5 +398,23 @@
     "count": 1,
     "desc": "Canvas, a pot, and a stake for the fire. The same night, arranged by somebody who has done it before.",
     "icon": "icon/loot/honey_comb"
+  },
+  {
+    "name": "Laminated Card",
+    "kind": "trinket",
+    "power": 0,
+    "value": 26,
+    "count": 1,
+    "desc": "A stiff rectangle with a face on it and writing nobody can read. It has a hole punched in one corner.",
+    "icon": "icon/loot/blue_average_grade_cultivation_pill"
+  },
+  {
+    "name": "Warm Cable",
+    "kind": "trinket",
+    "power": 0,
+    "value": 48,
+    "count": 1,
+    "desc": "A length of something flexible with metal at both ends. It is warmer than it ought to be.",
+    "icon": "icon/loot/bat_wings"
   }
 ]
