@@ -402,11 +402,14 @@ func shopDescribe(data any) string {
 			out = fmt.Sprintf("Soaks %d damage of any kind, once a fight.", v.Absorb)
 		}
 		if v.Extra != nil {
-			out += " " + statWords(*v.Extra)
+			out += " " + statWords(*v.Extra) + "."
+		}
+		if v.Desc != "" {
+			out += "  " + v.Desc
 		}
 		return out
 	case model.Charm:
-		out := statWords(v.Bonus)
+		out := statWords(v.Bonus) + "."
 		if v.Desc != "" {
 			out += "  " + v.Desc
 		}
@@ -483,8 +486,12 @@ func (s *shopScene) Draw(g *Game, dst *ebiten.Image) {
 	if s.note == "" {
 		if it, ok := s.menu.Selected(); ok {
 			if d := shopDescribe(it.Data); d != "" {
+				// Three lines. The numbers and the anecdote share this space,
+				// and once the off arm had fourteen entries with something to
+				// say for themselves, two lines was cutting the last clause off
+				// half the shelf with no ellipsis to say so.
 				for i, ln := range render.Wrap(d, render.ScreenW-80) {
-					if i > 1 {
+					if i > 2 {
 						break
 					}
 					render.Text(dst, ln, 34, 176+float64(i)*render.LineH, render.ColInk)

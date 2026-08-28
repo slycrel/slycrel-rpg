@@ -356,6 +356,45 @@ func betterWeapon(a, b model.Weapon, class model.Class) bool {
 	return a.Strike > b.Strike
 }
 
+// pickSidearm chooses what goes on the off arm: the lane the build asked for at
+// the best band that stocks one, and the plainest thing the class can hold when
+// the shelf has nothing in that lane.
+//
+// The fallback is the load-bearing half. A build asking for a silvered shield in
+// a band that has none has to take the wall rather than nothing, for the same
+// reason a Mage asked for a two-hander takes a rod: an archetype that arrives
+// undressed measures the spec rather than the content, which this section has
+// now got wrong twice in two different slots.
+func pickSidearm(ss []model.Shield, class model.Class, want model.SidearmLane) model.Shield {
+	pick := func(match func(model.Shield) bool) (model.Shield, bool) {
+		var best model.Shield
+		found := false
+		for _, sh := range ss {
+			if !model.CanHoldShield(class, sh) || !match(sh) {
+				continue
+			}
+			if !found || sh.Tier > best.Tier ||
+				(sh.Tier == best.Tier && betterSidearm(sh, best)) {
+				best, found = sh, true
+			}
+		}
+		return best, found
+	}
+	if s, ok := pick(func(sh model.Shield) bool { return sh.Lane() == want }); ok {
+		return s
+	}
+	s, _ := pick(func(model.Shield) bool { return true })
+	return s
+}
+
+// betterSidearm compares two off-arm items of the same band in their own unit.
+func betterSidearm(a, b model.Shield) bool {
+	if a.Barrier() {
+		return a.Absorb > b.Absorb
+	}
+	return a.Defense > b.Defense
+}
+
 func bestArmor(as []model.Armor) (model.Armor, bool) {
 	var best model.Armor
 	found := false
@@ -444,6 +483,14 @@ type Archetype struct {
 
 	Weapon, Armor, Shield, Charm Slot
 
+	// Arm is which lane of off-arm item the build reaches for. It exists
+	// because the sidearm slot stopped being a single ladder: a wall, a spiked
+	// one and a silvered one sit in every band, and an archetype that always
+	// took the wall would leave two thirds of the shelf unmeasured — which is
+	// exactly the state the report was in when it said the two-hander beats
+	// the shield everywhere. It beats *one* of the shields.
+	Arm model.SidearmLane
+
 	// Hands is how the weapon arm is spent: 1 leaves the off arm free for a
 	// shield, 2 commits both, 0 takes whatever is best in the band.
 	//
@@ -511,6 +558,23 @@ var Archetypes = []Archetype{
 		Charm: Slot{Back: 1},
 		Hands: 2,
 	},
+	{
+		Name: "warden",
+		Note: "the same spend as balanced, with the silvered shield instead of the wall",
+		// The build the shelf grew a lane for, and the one the report could not
+		// see. Two thirds of the incoming damage at the top of the table is
+		// magical, and a shield stops steel — so "give up the shield for a
+		// two-hander" was being measured against the one shield that does
+		// nothing about the half of the fight that matters.
+		//
+		// Identical to balanced in every slot and every band. The only
+		// difference is which of the three things in the sidearm band it picks
+		// up, which is the whole question.
+		Shield: Slot{Back: 1},
+		Charm:  Slot{Back: 1},
+		Hands:  1,
+		Arm:    model.ArmWard,
+	},
 }
 
 // ArchetypeNamed finds a build by name.
@@ -568,20 +632,7 @@ func (t *Tables) EquipAs(c *model.Character, a Archetype) {
 	c.Shield = model.Shield{}
 	if tier := a.Shield.tierAt(base); tier >= 1 && c.CanHold() {
 		ss, _ := t.SidearmsFor(tier)
-		for _, sh := range ss {
-			if !model.CanHoldShield(c.Class, sh) {
-				continue
-			}
-			// Ranked by the band rather than by the block, because a talisman
-			// and a buckler are not measured in the same units: one stops a
-			// fixed amount of anything once, the other shaves every blow
-			// forever. Comparing their numbers would rank two different
-			// mechanics against each other on the strength of a shared field
-			// name.
-			if sh.Tier >= c.Shield.Tier {
-				c.Shield = sh
-			}
-		}
+		c.Shield = pickSidearm(ss, c.Class, a.Arm)
 	}
 	c.Charm = model.Charm{}
 	if tier := a.Charm.tierAt(base); tier >= 1 {

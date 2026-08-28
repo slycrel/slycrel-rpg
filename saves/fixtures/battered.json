@@ -46,11 +46,12 @@
     },
     "shield": {
       "name": "Buckler, Previously Owned",
-      "defense": 2,
+      "defense": 3,
       "cost": 48,
       "tier": 2,
       "verb": "turns",
-      "icon": "icon/loot/monster_scale"
+      "icon": "icon/loot/monster_scale",
+      "desc": "Previously owned by somebody who is not using it now, for reasons the seller declines to go into."
     },
     "charm": {
       "name": "Courier's Anklet",
@@ -155,11 +156,12 @@
       },
       "shield": {
         "name": "Buckler, Previously Owned",
-        "defense": 2,
+        "defense": 3,
         "cost": 48,
         "tier": 2,
         "verb": "turns",
-        "icon": "icon/loot/monster_scale"
+        "icon": "icon/loot/monster_scale",
+        "desc": "Previously owned by somebody who is not using it now, for reasons the seller declines to go into."
       },
       "charm": {
         "name": "Courier's Anklet",
@@ -225,11 +227,12 @@
       },
       "shield": {
         "name": "Buckler, Previously Owned",
-        "defense": 2,
+        "defense": 3,
         "cost": 48,
         "tier": 2,
         "verb": "turns",
-        "icon": "icon/loot/monster_scale"
+        "icon": "icon/loot/monster_scale",
+        "desc": "Previously owned by somebody who is not using it now, for reasons the seller declines to go into."
       },
       "charm": {
         "name": "Courier's Anklet",

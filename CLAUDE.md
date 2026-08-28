@@ -110,6 +110,13 @@ which event fires which trigger, and where it is safe to put a box on screen.
   table by hand does not, and that is how a Fighter ended up holding a dagger in
   a save fixture. The empty string is the legacy kind on all three and means
   "anyone", which is the only answer an old save can give.
+- **The off arm is three lanes plus the caster's**, and `model.Shield.Lane()`
+  reads which from what the item does rather than from a tag. A wall sells
+  guard, a silvered one sells ward, a spiked one sells strike, and they are
+  graded on the shelf against their own lane's number — ranking all of them by
+  `Defense` tells somebody shopping for anti-magic that a shrine plate is worth
+  "+1". Which lane is right moves with the game: nothing casts below level ten
+  and two thirds of what lands on you by thirteen is magical.
 - **A caster's off arm holds a talisman, not a shield**, and what it carries is
   `Absorb` rather than `Defense`: a pool spent once per fight against damage of
   any kind. It is not more ward, and that was measured rather than assumed — a
@@ -161,6 +168,10 @@ which event fires which trigger, and where it is safe to put a box on screen.
   is to be old saves — v1 predates the party, v2 predates the backstories — and
   rewriting either at the current version deletes the only evidence that the
   loader still reads the earlier format. `cmd/genfixtures` skips both.
+- **A menu dispatches on what a row means, never on where it is.** The pause
+  menu learned this once and the battle menu was one change away from it: rows
+  carry a tag in `Data` and the switch reads that. The attack row's label is the
+  weapon's name, so it is not even readable as a constant any more.
 - **Never offer a choice you are about to refuse.** `g.AskMenu` takes rows
   rather than strings, so a price goes in the detail column and an option
   nobody can afford is greyed out in advance. The inn, the shrine, the hiring

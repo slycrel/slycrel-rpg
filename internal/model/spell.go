@@ -76,7 +76,7 @@ type Spell struct {
 	// default for its kind. Optional, and left empty for most: the kind is
 	// right nearly always, and a per-spell key is one more art name to keep in
 	// step with a manifest.
-	VFX  string `json:"vfx,omitempty"`
+	VFX string `json:"vfx,omitempty"`
 	// Cast is the flavour line, naming the caster as {A} — the same placeholder
 	// the rest of the writing uses.
 	//

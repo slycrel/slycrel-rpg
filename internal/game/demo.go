@@ -154,6 +154,16 @@ func buildDemoSteps() []demoStep {
 		}},
 		{at: 306, shot: "08-battle"},
 		{at: 312, do: func(g *Game) { g.demoOpenTechniques() }},
+		// With the popover open, which is one frame covering two things rather
+		// than the tour drifting: the list is still visible underneath, and
+		// the panel over it is the only place in the game that says what a
+		// technique does. A tour that skipped it would never capture the
+		// screen this whole feature exists to be.
+		{at: 320, do: func(g *Game) {
+			if b, ok := g.Top().(*battleScene); ok {
+				b.blurb = true
+			}
+		}},
 		{at: 324, shot: "08b-techniques"},
 		{at: 330, do: func(g *Game) { g.demoRootMenu() }},
 
@@ -412,7 +422,9 @@ func (g *Game) demoOfferItem() {
 	if !ok {
 		return
 	}
-	b.menu.Index = 2 // Item
+	if !b.selectCommand(cmdItem) {
+		return
+	}
 	b.chooseRoot(g)
 	if b.mode == modeItem {
 		b.menu.Index = 0
@@ -426,7 +438,9 @@ func (g *Game) demoOpenTechniques() {
 	if !ok {
 		return
 	}
-	b.menu.Index = 1 // Technique
+	if !b.selectCommand(cmdTechnique) {
+		return
+	}
 	b.chooseRoot(g)
 }
 

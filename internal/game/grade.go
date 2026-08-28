@@ -88,25 +88,24 @@ func shelfVerdict(buyer *model.Character, data any) (string, color.Color) {
 	case model.Armor:
 		have, want = buyer.Armor.Defense+affixOf(buyer.Armor.Affix).Defense, v.Defense
 	case model.Shield:
-		// An empty arm is a rating of nothing, so the first shield reads as the
-		// upgrade it is rather than as no change.
+		// Graded inside its own lane, on that lane's own number.
 		//
-		// Talismans are graded against talismans, in their own unit. A plank
-		// and a charm are not comparable — one blocks a little of every blow
-		// forever and the other stops a lot of one and is gone — and putting
-		// them on the same scale would tell a Mage that a tier-five barrier is
-		// worth six times a barrel lid, which is not a sentence about anything.
-		if v.Barrier() {
-			if buyer.Shield.Barrier() {
-				have = buyer.Shield.Absorb
-			}
-			want = v.Absorb
-			break
+		// The off arm is three shelves wearing one field name: a wall sells
+		// guard, a silvered one sells ward, a spiked one sells strike, and a
+		// talisman sells a pool. Ranking all four by Defense told a player
+		// shopping for anti-magic that a fifty-two-coin shrine plate was worth
+		// "+1" — which is true of the number it was measured on and useless
+		// about the thing they were buying.
+		//
+		// An empty arm is a rating of nothing, so the first one of any lane
+		// reads as the upgrade it is. A shield of a *different* lane counts as
+		// nothing too: swapping the wall for the silver is a change of plan,
+		// not a step up a ladder, and there is no honest single figure for it.
+		lane := v.Lane()
+		if buyer.Shield.Worn() && buyer.Shield.Lane() == lane {
+			have = laneValue(buyer.Shield)
 		}
-		if buyer.Shield.Worn() && !buyer.Shield.Barrier() {
-			have = buyer.Shield.Defense + affixOf(buyer.Shield.Affix).Defense
-		}
-		want = v.Defense
+		want = laneValue(v)
 	default:
 		return "", nil
 	}
@@ -119,6 +118,19 @@ func shelfVerdict(buyer *model.Character, data any) (string, color.Color) {
 		return fmt.Sprintf("%d", d), gradeDelta(d)
 	}
 	return "=", render.ColInkDim
+}
+
+// laneValue is the number an off-arm item is actually sold on.
+func laneValue(s model.Shield) int {
+	switch s.Lane() {
+	case model.ArmBarrier:
+		return s.Absorb
+	case model.ArmWard:
+		return s.Extra.Ward
+	case model.ArmStrike:
+		return s.Extra.Strike
+	}
+	return s.Defense + affixOf(s.Affix).Defense
 }
 
 // carriedOf boxes a shelf row as a piece of equipment, so one wielding rule

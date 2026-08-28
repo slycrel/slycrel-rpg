@@ -68,6 +68,7 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 |---|---|
 | Arrows / WASD | walk — and walking into a thing is how you use it |
 | Z, Enter, Space | confirm; any key dismisses a box that is only telling you something |
+| Left / Right | in the technique list, what the highlighted move actually does |
 | X, Esc | back out |
 | M | the map of everywhere you have been |
 | C or I | character sheet and pack; left/right pages through the company |
@@ -162,6 +163,12 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
   *sap* takes the edge off everything opposite and puts it on you, and a *pact*
   hits far above its band and leaves you wearing the difference for the rest of
   the fight. The menu quotes both halves before you commit.
+- **The off arm is a choice, not a ladder.** Every band stocks a wall, a
+  silvered shield that trades guard for anti-magic, and a spiked one you hit
+  with. Nothing with teeth casts anything below level ten and two thirds of what
+  lands on you by level thirteen is magical, so which of them is right moves as
+  the game does. The shelf grades each against its own lane rather than pretending
+  they are three grades of the same thing.
 - **A caster's off arm.** A mage cannot hold a shield and cast at the same time,
   so what goes on that arm instead is a talisman: a pool of absorption that
   every blow comes off before it reaches you, of any kind, until it is spent.

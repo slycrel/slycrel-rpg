@@ -454,6 +454,17 @@ var psycheRate = map[model.Class]float64{
 	model.ClassFighter: 1.30,
 }
 
+// PsycheRate is what a class multiplies a technique's listed cost by. Exposed
+// so the interface can say *why* a figure is what it is rather than only what
+// it is: a surcharge the game will not explain is a surcharge that reads as the
+// numbers being wrong.
+func PsycheRate(class model.Class) float64 {
+	if r, ok := psycheRate[class]; ok {
+		return r
+	}
+	return 1
+}
+
 // PsycheCost is what this character actually pays to cast this technique.
 //
 // Rounded up, and floored at one: a rate that could round a cost to nothing

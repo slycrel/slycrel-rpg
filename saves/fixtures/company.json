@@ -45,12 +45,13 @@
       "icon": "icon/loot/blackbear_pelt"
     },
     "shield": {
-      "name": "Pot Lid, Dented Twice",
+      "name": "Barrel Lid",
       "defense": 1,
-      "cost": 22,
+      "cost": 8,
       "tier": 1,
-      "verb": "clangs against",
-      "icon": "icon/loot/crab_claw"
+      "verb": "takes",
+      "icon": "icon/loot/turtle_shell",
+      "desc": "It was a barrel this morning. Nobody has asked where the rest of it went."
     },
     "charm": {
       "name": "Heavy Knucklebone",
@@ -154,12 +155,13 @@
         "icon": "icon/loot/blackbear_pelt"
       },
       "shield": {
-        "name": "Pot Lid, Dented Twice",
+        "name": "Barrel Lid",
         "defense": 1,
-        "cost": 22,
+        "cost": 8,
         "tier": 1,
-        "verb": "clangs against",
-        "icon": "icon/loot/crab_claw"
+        "verb": "takes",
+        "icon": "icon/loot/turtle_shell",
+        "desc": "It was a barrel this morning. Nobody has asked where the rest of it went."
       },
       "charm": {
         "name": "Heavy Knucklebone",

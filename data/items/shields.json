@@ -5,7 +5,8 @@
     "cost": 8,
     "tier": 1,
     "verb": "takes",
-    "icon": "icon/loot/turtle_shell"
+    "icon": "icon/loot/turtle_shell",
+    "desc": "It was a barrel this morning. Nobody has asked where the rest of it went."
   },
   {
     "name": "Pot Lid, Dented Twice",
@@ -13,7 +14,162 @@
     "cost": 22,
     "tier": 1,
     "verb": "clangs against",
-    "icon": "icon/loot/crab_claw"
+    "icon": "icon/loot/crab_claw",
+    "extra": {
+      "ward": 1,
+      "speed": -1
+    },
+    "desc": "Something was cast at it once and bounced. The cook has not stopped mentioning this."
+  },
+  {
+    "name": "Buckler, Previously Owned",
+    "defense": 3,
+    "cost": 48,
+    "tier": 2,
+    "verb": "turns",
+    "icon": "icon/loot/monster_scale",
+    "desc": "Previously owned by somebody who is not using it now, for reasons the seller declines to go into."
+  },
+  {
+    "name": "Spiked Boss, Regrettable",
+    "defense": 2,
+    "cost": 55,
+    "tier": 2,
+    "verb": "shoves",
+    "icon": "icon/loot/snake_fang",
+    "extra": {
+      "strike": 2,
+      "dexterity": -1
+    },
+    "desc": "The spikes point the wrong way for defence and exactly the right way for the other thing."
+  },
+  {
+    "name": "Saint's Doorplate",
+    "defense": 1,
+    "cost": 52,
+    "tier": 2,
+    "verb": "declines",
+    "icon": "icon/loot/moon_stone",
+    "extra": {
+      "ward": 4,
+      "speed": -1
+    },
+    "desc": "Prised off a shrine door. Still refuses things out of habit, which is most of what a saint did."
+  },
+  {
+    "name": "Kite Shield of Modest Convictions",
+    "defense": 5,
+    "cost": 110,
+    "tier": 3,
+    "verb": "catches",
+    "icon": "icon/loot/monster_scales",
+    "extra": {
+      "speed": -1
+    },
+    "desc": "Broad, dependable, and slower than the argument it is having."
+  },
+  {
+    "name": "Percussive Argument",
+    "defense": 3,
+    "cost": 120,
+    "tier": 3,
+    "verb": "answers",
+    "icon": "icon/loot/monster_claw",
+    "extra": {
+      "strike": 4,
+      "dexterity": -1
+    },
+    "desc": "Rimmed in iron and swung like a closing statement."
+  },
+  {
+    "name": "Mirror-Backed Targe",
+    "defense": 3,
+    "cost": 125,
+    "tier": 3,
+    "verb": "returns",
+    "icon": "icon/loot/smoky_quartz",
+    "extra": {
+      "ward": 7,
+      "speed": -1
+    },
+    "desc": "Whoever silvered the back of it did not explain why, and then left town rather promptly."
+  },
+  {
+    "name": "Tower Shield 'Absolutely Not'",
+    "defense": 8,
+    "cost": 260,
+    "tier": 4,
+    "verb": "refuses",
+    "icon": "icon/ab/3_weapon_hammer",
+    "extra": {
+      "speed": -2
+    },
+    "desc": "A door with opinions. You do not carry it so much as agree to go the same way."
+  },
+  {
+    "name": "Bladed Rondache",
+    "defense": 5,
+    "cost": 275,
+    "tier": 4,
+    "verb": "opens",
+    "icon": "icon/loot/monster_teeth",
+    "extra": {
+      "strike": 6,
+      "dexterity": -2
+    },
+    "desc": "Somebody put an edge on a shield. The guild has written to them about it twice."
+  },
+  {
+    "name": "Reliquary Shield, Contested",
+    "defense": 5,
+    "cost": 280,
+    "tier": 4,
+    "verb": "disputes",
+    "icon": "icon/loot/human_skull",
+    "extra": {
+      "ward": 11,
+      "speed": -1
+    },
+    "desc": "Three temples claim the finger bone inside it. All three agree the shield works."
+  },
+  {
+    "name": "Aegis, Allegedly",
+    "defense": 10,
+    "cost": 620,
+    "tier": 5,
+    "verb": "declines",
+    "icon": "icon/loot/dragon_scale",
+    "extra": {
+      "speed": -2,
+      "dexterity": 1
+    },
+    "desc": "Allegedly divine. Certainly heavy. The two claims are supported by different people."
+  },
+  {
+    "name": "The Last Word in Doors",
+    "defense": 7,
+    "cost": 640,
+    "tier": 5,
+    "verb": "concludes",
+    "icon": "icon/loot/monster_horn",
+    "extra": {
+      "strike": 8,
+      "dexterity": -2
+    },
+    "desc": "Hung on a hall for two hundred years, taken down for a fight, and never hung back up."
+  },
+  {
+    "name": "Shield of the Absent Saint",
+    "defense": 7,
+    "cost": 650,
+    "tier": 5,
+    "verb": "forgives",
+    "icon": "icon/loot/ghost_ectoplasm",
+    "extra": {
+      "ward": 15,
+      "speed": -2
+    },
+    "desc": "The saint is not in it. The saint has not been in it for some time. It has kept the habit."
   },
   {
     "name": "Charm Against Weather",
@@ -23,15 +179,8 @@
     "cost": 20,
     "tier": 1,
     "verb": "soaks up",
-    "icon": "icon/loot/clover"
-  },
-  {
-    "name": "Buckler, Previously Owned",
-    "defense": 2,
-    "cost": 48,
-    "tier": 2,
-    "verb": "turns",
-    "icon": "icon/loot/monster_scale"
+    "icon": "icon/loot/clover",
+    "desc": "Sold by a man who was extremely dry in a downpour, which is the only evidence offered."
   },
   {
     "name": "Ward-Knot, Amateur",
@@ -41,18 +190,8 @@
     "cost": 55,
     "tier": 2,
     "verb": "unravels around",
-    "icon": "icon/loot/lapis_lazuli"
-  },
-  {
-    "name": "Kite Shield of Modest Convictions",
-    "defense": 3,
-    "cost": 110,
-    "tier": 3,
-    "verb": "catches",
-    "icon": "icon/loot/monster_scales",
-    "extra": {
-      "speed": -1
-    }
+    "icon": "icon/loot/lapis_lazuli",
+    "desc": "Tied by somebody working from a diagram. It holds, and it is not the knot in the diagram."
   },
   {
     "name": "Sigil of Deferred Impact",
@@ -65,18 +204,8 @@
     "icon": "icon/loot/aquamarine",
     "extra": {
       "psyche": -1
-    }
-  },
-  {
-    "name": "Tower Shield 'Absolutely Not'",
-    "defense": 5,
-    "cost": 260,
-    "tier": 4,
-    "verb": "refuses",
-    "icon": "icon/ab/3_weapon_hammer",
-    "extra": {
-      "speed": -2
-    }
+    },
+    "desc": "The blow still happens. It happens to the sigil, later, and quietly."
   },
   {
     "name": "Aegis Fetish, Secondhand",
@@ -86,22 +215,11 @@
     "cost": 300,
     "tier": 4,
     "verb": "declines",
-    "icon": "icon/loot/ghost_ectoplasm",
+    "icon": "icon/loot/monster_core",
     "extra": {
       "psyche": -2
-    }
-  },
-  {
-    "name": "Aegis, Allegedly",
-    "defense": 6,
-    "cost": 620,
-    "tier": 5,
-    "verb": "declines",
-    "icon": "icon/loot/dragon_scale",
-    "extra": {
-      "speed": -2,
-      "dexterity": 1
-    }
+    },
+    "desc": "Wound round with somebody else's hair. It works better than it should and nobody will say why."
   },
   {
     "name": "The Standing Refusal",
@@ -111,9 +229,10 @@
     "cost": 680,
     "tier": 5,
     "verb": "does not accept",
-    "icon": "icon/loot/monster_core",
+    "icon": "icon/loot/thunder_topaz",
     "extra": {
       "psyche": -4
-    }
+    },
+    "desc": "A legal instrument, technically. It refuses harm on procedural grounds and has never lost."
   }
 ]

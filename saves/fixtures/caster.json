@@ -30,7 +30,7 @@
       "range": 0,
       "cost": 215,
       "quality": 74,
-      "verb": "rap",
+      "verb": "overrule",
       "tier": 3,
       "icon": "icon/ab/3_lightning_1",
       "focus": 16
@@ -57,6 +57,7 @@
       "tier": 2,
       "verb": "unravels around",
       "icon": "icon/loot/lapis_lazuli",
+      "desc": "Tied by somebody working from a diagram. It holds, and it is not the knot in the diagram.",
       "absorb": 14
     },
     "charm": {
@@ -162,11 +163,12 @@
       },
       "shield": {
         "name": "Buckler, Previously Owned",
-        "defense": 2,
+        "defense": 3,
         "cost": 48,
         "tier": 2,
         "verb": "turns",
-        "icon": "icon/loot/monster_scale"
+        "icon": "icon/loot/monster_scale",
+        "desc": "Previously owned by somebody who is not using it now, for reasons the seller declines to go into."
       },
       "charm": {
         "name": "Courier's Anklet",

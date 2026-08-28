@@ -837,6 +837,52 @@ func TestSidearmsAreSaneAndAffordableInOrder(t *testing.T) {
 		if !keys[s.Icon] {
 			t.Errorf("%q wants icon %q, which the manifest does not provide", s.Name, s.Icon)
 		}
+		// An anecdote apiece, the same as a charm's. The off arm is the slot a
+		// player spends least time thinking about, so it is the one that most
+		// needs a reason to be read.
+		if s.Desc == "" {
+			t.Errorf("%q has nothing to say for itself", s.Name)
+		}
+		// And a trade: anything that hands out a bonus takes something back,
+		// which is the rule the affixes, the charms and the lineages all keep.
+		// The plain wall of each band is exempt — its whole offer is guard, and
+		// what it costs is the band it is bought in.
+		if s.Extra != nil {
+			var gives, takes bool
+			for _, n := range []int{s.Extra.Strike, s.Extra.Defense, s.Extra.Strength,
+				s.Extra.Dexterity, s.Extra.Speed, s.Extra.Psyche, s.Extra.Ward} {
+				if n > 0 {
+					gives = true
+				}
+				if n < 0 {
+					takes = true
+				}
+			}
+			if gives && !takes {
+				t.Errorf("%q hands out %+v and asks nothing back", s.Name, *s.Extra)
+			}
+		}
+	}
+
+	// Three lanes and a caster's, in every band a shop stocks. A band missing a
+	// lane is a level at which one way of playing quietly stops having anything
+	// to buy — which reads from play as the build going soft around level nine
+	// rather than as the content gap it is.
+	for tier := 1; tier <= 5; tier++ {
+		have := map[model.SidearmLane]bool{}
+		for _, s := range tables.Shields {
+			if s.Tier == tier {
+				have[s.Lane()] = true
+			}
+		}
+		for lane, name := range map[model.SidearmLane]string{
+			model.ArmBlock: "a wall", model.ArmWard: "a silvered one",
+			model.ArmBarrier: "a talisman",
+		} {
+			if !have[lane] {
+				t.Errorf("tier %d has no %s on the off-arm shelf", tier, name)
+			}
+		}
 	}
 
 	for _, c := range tables.Charms {

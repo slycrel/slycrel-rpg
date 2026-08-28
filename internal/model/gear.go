@@ -73,6 +73,10 @@ type Shield struct {
 	Icon    string     `json:"icon"`
 	Affix   *Affix     `json:"affix,omitempty"`
 	Extra   *Bonus     `json:"extra,omitempty"` // a few shields do more than block
+	// Desc is the anecdote, the same as a charm's. The off arm is the slot a
+	// player spends the least time thinking about, so it is the one that most
+	// needs a reason to be read.
+	Desc string `json:"desc,omitempty"`
 	// Absorb is a pool of damage that lands on the talisman instead of the
 	// body, once per fight and of any kind.
 	//
@@ -87,6 +91,34 @@ type Shield struct {
 
 // Barrier reports whether this is worn for the pool rather than the block.
 func (s Shield) Barrier() bool { return s.Absorb > 0 }
+
+// SidearmLane is what an off-arm item is *for*, which is a different question
+// from how good it is. There are three shields to a band now and they are not
+// three grades of the same thing.
+type SidearmLane int
+
+const (
+	ArmBlock   SidearmLane = iota // the wall: most guard in the band
+	ArmStrike                     // spiked, bladed, swung: guard traded for reach
+	ArmWard                       // silvered, saintly: guard traded for anti-magic
+	ArmBarrier                    // a caster's talisman
+)
+
+// Lane reads what an off-arm item is for out of what it does, rather than out
+// of a field beside it. A tag in the data would be a second thing to keep in
+// step with the numbers, and the first shield whose bonus was retuned without
+// its tag would be filed under a lane it no longer belongs to.
+func (s Shield) Lane() SidearmLane {
+	switch {
+	case s.Barrier():
+		return ArmBarrier
+	case s.Extra != nil && s.Extra.Ward > 0:
+		return ArmWard
+	case s.Extra != nil && s.Extra.Strike > 0:
+		return ArmStrike
+	}
+	return ArmBlock
+}
 
 // Charm is anything worn that is neither weapon, armour nor shield: a pendant,
 // a knucklebone, a licence somebody forged.

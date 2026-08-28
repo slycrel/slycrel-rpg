@@ -60,6 +60,14 @@ type battleScene struct {
 	// back is the mode to return to when targeting is cancelled.
 	back battleMode
 
+	// blurb is the technique popover: what the highlighted move actually does,
+	// toggled with left or right. The command panel is fifty-eight pixels and
+	// holds three rows, so there has never been anywhere to put this — and a
+	// technique that charges psyche and will not say what for is the failure
+	// this project keeps finding. It opens over the transcript, which is the
+	// one panel nobody is reading while they choose.
+	blurb bool
+
 	target      int
 	pendingCast model.Spell
 	pendingItem int
@@ -306,15 +314,34 @@ func (b *battleScene) livingParty() []*model.Character {
 }
 
 func (b *battleScene) setRootMenu(g *Game) {
+	// Backing out of the technique list closes what was open over it.
+	b.blurb = false
 	// The root menu is text-only; icons return when a list of things appears.
 	b.menu.Icons = nil
 	spells := g.Data.SpellsFor(g.Player)
+	// The attack row names the weapon rather than the word "Attack".
+	//
+	// It said "Attack" with the weapon in the detail column, which is the wrong
+	// way round twice over: the player knows the first row is the attack, and
+	// what they actually want off it is which of the two things in their pack
+	// they are currently holding. It also could not survive the detail column
+	// being measured first — a thirty-four-character weapon name would have
+	// squeezed the label out entirely.
+	//
+	// A rod keeps a word in the detail, because a row reading "Ashen Rod of
+	// Mild Threat" and nothing else does not say that swinging it is a spell.
+	attack := ui.MenuItem{Label: g.Player.Weapon.Titled(), Data: cmdAttack}
+	if g.Player.Casting() {
+		attack.Detail = "bolt"
+	}
 	items := []ui.MenuItem{
-		{Label: "Attack", Detail: g.Player.Weapon.Name},
-		{Label: "Technique", Detail: fmt.Sprintf("%d SP", g.Player.Psyche), Disabled: len(spells) == 0},
-		{Label: "Item", Detail: fmt.Sprintf("%d", len(g.Player.Bag)), Disabled: len(g.Player.Bag) == 0},
-		{Label: "Defend", Detail: "brace"},
-		{Label: "Flee", Detail: "sensible"},
+		attack,
+		{Label: "Technique", Detail: fmt.Sprintf("%d SP", g.Player.Psyche),
+			Disabled: len(spells) == 0, Data: cmdTechnique},
+		{Label: "Item", Detail: fmt.Sprintf("%d", len(g.Player.Bag)),
+			Disabled: len(g.Player.Bag) == 0, Data: cmdItem},
+		{Label: "Defend", Detail: "brace", Data: cmdDefend},
+		{Label: "Flee", Detail: "sensible", Data: cmdFlee},
 	}
 	// The thief's way out of a retreat paying nothing. It sits under Flee
 	// because that is what it pretends to be, and it only appears for somebody
@@ -324,6 +351,7 @@ func (b *battleScene) setRootMenu(g *Game) {
 		items = append(items, ui.MenuItem{
 			Label: "False retreat", Detail: fmt.Sprintf("%.0f%%",
 				rules.FeintChance(g.Player, b.fastestFoe())*100),
+			Data: cmdFeint,
 		})
 	}
 	b.menu.SetItems(items)
@@ -476,6 +504,14 @@ func (b *battleScene) updateMenus(g *Game) {
 			case core.DirUp:
 				b.menu.Move(-1)
 				g.Sound.Play("ui/move")
+			case core.DirLeft, core.DirRight:
+				// Only the technique list has anything to explain. Left and
+				// right do nothing in the other menus and this is the one
+				// place they were free to mean something.
+				if b.mode == modeSpell {
+					b.blurb = !b.blurb
+					g.Sound.Play("ui/page")
+				}
 			}
 		}
 	}
@@ -511,11 +547,51 @@ func (b *battleScene) updateMenus(g *Game) {
 	}
 }
 
+// command tags the top-level rows, so what a row *does* travels with the row
+// rather than with its position.
+//
+// It dispatched on the index, which is the bug the pause menu has already had
+// once: the labels moved and the switch did not, and Save silently became Load.
+// This menu was one row away from the same failure — the attack row's label is
+// the weapon's name now, so it is no longer even readable as a constant, and
+// False retreat already appears and disappears under everything else.
+type command int
+
+const (
+	cmdAttack command = iota
+	cmdTechnique
+	cmdItem
+	cmdDefend
+	cmdFlee
+	cmdFeint
+)
+
+// selectCommand puts the cursor on a top-level row by what it does. The tour
+// drives this menu and used to do it by index, which is the same fragility the
+// dispatch below just stopped relying on.
+func (b *battleScene) selectCommand(cmd command) bool {
+	for i, it := range b.menu.Items {
+		if c, ok := it.Data.(command); ok && c == cmd {
+			b.menu.Index = i
+			return true
+		}
+	}
+	return false
+}
+
 func (b *battleScene) chooseRoot(g *Game) {
-	switch b.menu.Index {
-	case 0: // Attack
+	it, ok := b.menu.Selected()
+	if !ok {
+		return
+	}
+	cmd, ok := it.Data.(command)
+	if !ok {
+		return
+	}
+	switch cmd {
+	case cmdAttack:
 		b.beginTargeting(modeRoot)
-	case 1: // Technique
+	case cmdTechnique:
 		spells := g.Data.SpellsFor(g.Player)
 		fallen := b.anyoneDown()
 		items := make([]ui.MenuItem, 0, len(spells)+1)
@@ -570,7 +646,7 @@ func (b *battleScene) chooseRoot(g *Game) {
 			}
 		}
 		b.mode = modeSpell
-	case 2: // Item
+	case cmdItem:
 		fallen := b.anyoneDown()
 		b.menu.Index = 0
 		items := make([]ui.MenuItem, 0, len(g.Player.Bag))
@@ -589,14 +665,14 @@ func (b *battleScene) chooseRoot(g *Game) {
 		b.menu.SetItems(items)
 		b.menu.Visible = 3
 		b.mode = modeItem
-	case 3: // Defend
+	case cmdDefend:
 		b.runRound(g, func(g *Game) {
 			b.guarding[g.Player] = true
 			b.log.Add("%s sets their feet and waits for it.", g.Player.Name)
 		})
-	case 4: // Flee
+	case cmdFlee:
 		b.runRound(g, func(g *Game) { b.attemptFlee(g) })
-	case 5: // False retreat
+	case cmdFeint:
 		b.runRound(g, func(g *Game) { b.attemptFeint(g) })
 	}
 }
@@ -1034,6 +1110,37 @@ func (b *battleScene) castOnParty(g *Game, c cast) {
 // the rest of the writing uses, and no format verbs anywhere near it.
 func castLine(s model.Spell, caster string) string {
 	return strings.ReplaceAll(s.Cast, "{A}", caster)
+}
+
+// drawBlurb puts what the highlighted technique does over the transcript.
+//
+// Over the transcript rather than beside the list, because the command panel is
+// 58 pixels holding three rows and every other pixel on this screen already
+// belongs to something. The transcript is the one panel a player is not reading
+// while they are choosing what to do.
+func (b *battleScene) drawBlurb(g *Game, dst *ebiten.Image) {
+	it, ok := b.menu.Selected()
+	if !ok {
+		return
+	}
+	s, ok := it.Data.(model.Spell)
+	if !ok {
+		return
+	}
+	// A solid ground first. ui.Panel is deliberately a little translucent, which
+	// is right for a box over the world and wrong for one over the transcript:
+	// three lines of combat log reading through three lines of explanation is
+	// two things and neither of them legible.
+	render.Rect(dst, 8, 136, render.ScreenW-16, 64, color.RGBA{0x14, 0x10, 0x1C, 0xFF})
+	ui.TitledPanel(dst, render.Trunc(s.Name, render.ScreenW-64), 8, 136, render.ScreenW-16, 64)
+	y := 145.0
+	for _, ln := range techniqueBlurb(g.Player, s) {
+		if y > 190 {
+			break
+		}
+		render.Text(dst, ln, 20, y, render.ColInk)
+		y += render.LineH
+	}
 }
 
 // damageOn phrases whose injuries are being closed, so a self-heal reads as
@@ -1867,11 +1974,22 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 	// where they are.
 	b.drawBursts(g, dst, true)
 
-	// Command panel.
+	// The technique popover, over the transcript. Drawn before the command
+	// panel so the list it belongs to stays on top of it.
+	if b.mode == modeSpell && b.blurb {
+		b.drawBlurb(g, dst)
+	}
+
+	// Command panel. The technique list advertises the popover in its own
+	// heading, because there is nowhere else on this screen to put a hint and
+	// a feature nobody is told about is a feature nobody has.
 	title := map[battleMode]string{
-		modeRoot: "", modeSpell: "technique", modeItem: "pack",
+		modeRoot: "", modeSpell: "technique - left/right explains", modeItem: "pack",
 		modeTarget: "target", modeAllyPick: "on whom", modeBusy: "", modeDone: "",
 	}[b.mode]
+	if b.mode == modeSpell && b.blurb {
+		title = "technique - left/right closes it"
+	}
 	ui.TitledPanel(dst, title, 204, 206, render.ScreenW-212, 58)
 	switch b.mode {
 	case modeRoot, modeSpell, modeItem:

@@ -131,7 +131,8 @@ Built and running:
   lifting shame and renown together; Honor is what seeing a companion's story
   through is worth, and it is spent on what the next hireling asks for
 - 66 monsters across nine biomes, 27 weapons in five lanes, 19 armours in three
-  weights, 6 shields and 5 caster talismans, 12 charms, 10 affixes, 42 items,
+  weights, 14 shields in three lanes and 5 caster talismans, 12 charms,
+  10 affixes, 42 items,
   35 techniques
   (thirty of them party-facing, lingering, aimed at everything, two-sided, or
   gated on a hireling's ancestry),
@@ -1401,6 +1402,89 @@ logging a hard-coded "bolt" while every rod in the table carried an authored ver
 nothing ever printed; they are "spark at", "object to", "overrule", "threaten"
 and "sentence" now, alongside the mace's "clobber", because flavour is data and
 a verb written into the battle screen is a verb the content files cannot revise.
+
+**A technique says what it does now.** *(Jeremy's: "for the technique, maybe
+left/right could show a popover or tooltip for a description.")*
+
+Left or right in the technique list opens a panel over the transcript — the one
+panel nobody is reading while they choose — naming the move and what it does.
+The command panel is fifty-eight pixels holding three rows and every other pixel
+on that screen belongs to something, which is why this had been open ever since
+the two-sided techniques went in.
+
+The text is **derived from the rules, not authored beside each row**. A `desc`
+field on thirty-five techniques would be thirty-five numbers to keep in step with
+a balance pass, and the first one that drifted would be a lie the player has no
+way to catch. It quotes a real magnitude off `rules.SpellPower` for the character
+holding it, so a better rod and a level-up both move the number on screen — and
+it says the class surcharge out loud, because a Fighter reading "6 psyche" beside
+a Mage's "4" for a similar-looking move is owed the reason.
+
+`-demo` captures the screen with the popover open. That is one frame covering
+two things rather than the tour drifting: the list is still visible underneath,
+and a tour that skipped it would never capture the screen this feature exists to
+be.
+
+**The attack row names the weapon.** *(Also Jeremy's, mid-session.)* It said
+"Attack" with the weapon in the detail column, which is the wrong way round
+twice: the player knows the first row is the attack, and what they want off it
+is which of the two things in the pack they are holding. It also could not have
+survived the detail column being measured first — a thirty-four-character weapon
+name would have squeezed the label out entirely.
+
+Which turned up that `chooseRoot` dispatched on `b.menu.Index`. That is the bug
+the pause menu already had once, and this menu was one row away from it: the
+attack row's label is no longer a constant, and False retreat already appears
+and disappears under everything else. The rows carry a `command` tag now, and
+`-demo` drives the menu by that rather than by position.
+
+**The off arm is three shelves.** *(Jeremy's: "let's balance the shield/sidearm
+for both competitive scaling and possibly different playstyles via bonus effects
+or humorous anecdotes.")*
+
+Scaling first: the block ladder went from 1/2/3/5/6 to 1/3/5/8/10, which is the
+ceiling `TestShieldsStaySecondaryToArmour` allows — half the body armour of the
+band. Shields had been sitting at a third of what the rule permits.
+
+Then lanes. Every band from tier one stocks a **wall** (most guard, costs
+speed), a **silvered** one (guard traded for ward), a **spiked** one (guard
+traded for strike) and a **talisman**, and each has an anecdote. The lane is
+read out of what the item does rather than tagged beside it, for the same reason
+`PactCost` is derived: the first shield whose bonus was retuned without its tag
+would be filed under a lane it no longer belongs to.
+
+**And that produced the finding the ARCS section exists for.** Raising the
+shields barely moved the duelist's dominance — the two-hander still won six
+levels of seven. The reason was in the WARD table all along: *nothing that
+attacks with magic exists below level ten, and by thirteen two thirds of the
+blows landing on you are magical.* A shield stops steel. So "give up the shield
+for a two-hander" was being measured against the one shield that does nothing
+about the half of the fight that matters.
+
+`Archetype` grew an `Arm`, and a fourth build — **warden**, identical to balanced
+in every slot and every band, differing only in which of the three things in the
+sidearm band it picks up. At twelve thousand fights a point the order is:
+
+    duelist  attrition  duelist  duelist  warden  warden  warden
+
+Levels one to seven belong to the two-hander and nine to thirteen to the
+silvered shield, which is the monster table's own shift from steel to magic read
+back as a build. That is three arcs that are each right somewhere, which is what
+this section has been asking for since it was written.
+
+Balanced now wins nothing, and that is not a fault to fix. It is the
+straightforward build, it is what `Equip` means, and every other number in the
+report is measured against it — a middle option that is never best and never
+worst is what a baseline is. The report says so in as many words.
+
+Two interface corrections fell out. The shelf was grading all four lanes on
+`Defense`, so a fifty-two-coin shrine plate read as "+1" — true of the number it
+was measured on and useless about the thing being bought; it grades inside the
+lane on that lane's own figure now, and a shield of a *different* lane counts as
+nothing, because swapping the wall for the silver is a change of plan rather
+than a step up a ladder. And the shop's description area went from two lines to
+three, because fourteen off-arm entries with something to say for themselves was
+cutting the last clause off half the shelf with no ellipsis to say so.
 
 ## Open questions
 

@@ -685,6 +685,39 @@ func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 		fmt.Fprintf(out, "VERDICT: each build wins somewhere, but the gap is wide enough that\n"+
 			"picking wrong for the level is a real mistake.\n")
 	}
+
+	// Which build wins *when* is the thing this table is actually for, and a
+	// count of levels won hides it. The order below is the whole finding: the
+	// off arm changes hands partway up the game, because what is swinging at
+	// you changes with it.
+	if len(levels) > 1 {
+		fmt.Fprintf(out, "\nwho wins, in order of level: ")
+		for _, l := range levels {
+			rows := stretch[l]
+			best := rows[0]
+			for _, r := range rows[1:] {
+				if r.over > best.over {
+					best = r
+				}
+			}
+			fmt.Fprintf(out, "%s ", best.build)
+		}
+		fmt.Fprintln(out)
+		fmt.Fprint(out, `
+Read that against the WARD table below rather than as a list. Nothing that
+attacks with magic exists under level ten, and by thirteen two thirds of the
+blows landing on you are magical — so a shield, which stops steel and nothing
+else, is worth most exactly where there is least magic about, and the silvered
+one is worth most where the plain one has stopped mattering. The two-hander
+sits in between: it buys damage, which works on everything, at the cost of an
+arm that is worth a great deal early and very little late.
+
+balanced winning nothing is not a fault to fix. It is the straightforward
+build, it is what Equip means, and every other number in this report is
+measured against it — a middle option that is never best and never worst is
+what a baseline is.
+`)
+	}
 	fmt.Fprintln(out)
 	reportSlotValue(out, t)
 }

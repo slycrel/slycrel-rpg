@@ -57,14 +57,15 @@
     },
     "shield": {
       "name": "Kite Shield of Modest Convictions",
-      "defense": 3,
+      "defense": 5,
       "cost": 110,
       "tier": 3,
       "verb": "catches",
       "icon": "icon/loot/monster_scales",
       "extra": {
         "speed": -1
-      }
+      },
+      "desc": "Broad, dependable, and slower than the argument it is having."
     },
     "charm": {
       "name": "The Quiet Stone",
@@ -172,14 +173,15 @@
       },
       "shield": {
         "name": "Kite Shield of Modest Convictions",
-        "defense": 3,
+        "defense": 5,
         "cost": 110,
         "tier": 3,
         "verb": "catches",
         "icon": "icon/loot/monster_scales",
         "extra": {
           "speed": -1
-        }
+        },
+        "desc": "Broad, dependable, and slower than the argument it is having."
       },
       "charm": {
         "name": "The Quiet Stone",
@@ -245,14 +247,15 @@
       },
       "shield": {
         "name": "Kite Shield of Modest Convictions",
-        "defense": 3,
+        "defense": 5,
         "cost": 110,
         "tier": 3,
         "verb": "catches",
         "icon": "icon/loot/monster_scales",
         "extra": {
           "speed": -1
-        }
+        },
+        "desc": "Broad, dependable, and slower than the argument it is having."
       },
       "charm": {
         "name": "The Quiet Stone",
