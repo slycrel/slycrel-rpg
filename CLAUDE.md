@@ -87,7 +87,10 @@ which event fires which trigger, and where it is safe to put a box on screen.
 
 ## Content conventions
 
-- **The game never comments on its own joke.** Bawdy, absurd, delivered
+- **The game never comments on its own joke.** This is why an oddity imports
+  cyberpunk *furniture* and not cyberpunk *people*: a villager treating a
+  vending machine as a wall with a slot in it is the joke, and somebody in the
+  frame dressed for the machine would be somebody on screen who is in on it. Bawdy, absurd, delivered
   completely straight, in the same flat voice as the damage numbers.
 - **Everything that gives must take.** Lineages, affixes and charms are all
   authored trade-offs, and tests assert it. A table of pure upgrades makes "did

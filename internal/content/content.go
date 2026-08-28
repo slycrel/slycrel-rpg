@@ -79,6 +79,20 @@ func (w *Writer) Rumor(g *core.RNG, kind string) string {
 	return core.Pick(g, w.t.NpcLine)
 }
 
+// Oddity returns the joke zone's voice for whatever is speaking: "sign",
+// "person", "machine" or "trash".
+//
+// One method with a subject rather than four, because the Namer interface is
+// implemented by every stub in the test suite and each new method is a line in
+// four files that says nothing. Falls back to ordinary signage, so a bank that
+// has not been written yet reads as dull rather than as an empty string.
+func (w *Writer) Oddity(g *core.RNG, what string) string {
+	if lines := w.t.OddityVoice[what]; len(lines) > 0 {
+		return core.Pick(g, lines)
+	}
+	return core.Pick(g, w.t.SignText)
+}
+
 // PersonName invents a name for a townsperson.
 func (w *Writer) PersonName(g *core.RNG) string {
 	return core.Pick(g, w.t.GivenNames)

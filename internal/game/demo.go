@@ -107,7 +107,21 @@ func buildDemoSteps() []demoStep {
 		{at: 135, do: func(g *Game) { g.Pop() }},
 
 		// A settlement interior, and the shop inside it.
-		{at: 145, do: func(g *Game) { g.demoEnter(func(p *world.POI) bool { return p.Kind.Settlement() }) }},
+		// The joke zone, which is a location kind the tour had never been to.
+		// Worth its own frame for the same reason the dungeon has one: it is a
+		// different sort of place rather than a different label on the same
+		// one, and it is the only screen in the game with a vending machine on
+		// it. Walked up the strip first, because the far end is where the
+		// stairway is and the near end is just a road stopping.
+		{at: 139, do: func(g *Game) { g.demoEnter(func(p *world.POI) bool { return p.Kind == world.KindOddity }) }},
+		{at: 141, do: func(g *Game) {
+			g.LocalWalk.Place(core.Point{X: g.Local.W / 2, Y: 7})
+			g.localFollow.Place(g.LocalWalk.Tile)
+		}},
+		{at: 144, shot: "05c-oddity"},
+		{at: 146, do: func(g *Game) { g.Local = nil; g.Pop() }},
+
+		{at: 149, do: func(g *Game) { g.demoEnter(func(p *world.POI) bool { return p.Kind.Settlement() }) }},
 		{at: 175, shot: "06-town"},
 		{at: 180, do: func(g *Game) { g.demoOpenShop() }},
 		{at: 195, shot: "07-shop"},

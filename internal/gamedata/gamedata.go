@@ -91,6 +91,13 @@ type Text struct {
 	// NpcLine, because having no reputation is not a reaction.
 	StandingLine map[string][]string `json:"standingLine"`
 
+	// OddityVoice is the joke zone's own register, keyed by what is speaking:
+	// a sign, a resident, a machine, a bin. It is a separate bank rather than
+	// more SignText because the whole point of an oddity is that it does not
+	// sound like the rest of the continent — and because nothing there may ever
+	// be in on it, which is a rule about tone that a shared bank cannot hold.
+	OddityVoice map[string][]string `json:"oddityVoice"`
+
 	// Quest lines, keyed by quest kind then by part (ask / nag / thank).
 	Quest map[string]map[string][]string `json:"quest"`
 }

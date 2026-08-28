@@ -1486,6 +1486,82 @@ than a step up a ladder. And the shop's description area went from two lines to
 three, because fourteen off-arm entries with something to say for themselves was
 cutting the last clause off half the shelf with no ellipsis to say so.
 
+**Camping, and the number that produced it.** *(Jeremy asked what would make
+this more enjoyable. The answer was a division nobody had done.)*
+
+ENDURANCE says how many fights one rest buys. PROGRESSION says how many fights a
+level costs. The quotient is how many round trips to an inn a level takes, and
+nothing was watching it because no single section could see it:
+
+    level  2   0.2 trips        level  9   2.5 trips
+    level  4   1.5             level 12   4.9
+    level  5   0.4             level 13   7.7
+    level  7   2.1             level 14   7.8
+
+A fortyfold climb, and eleven and a half at the far end of the finer probe. The
+same walk, eleven times, for one level. Two things fall out. Most of the growth
+is endurance collapsing — eighteen fights a rest down to two and a half —
+rather than the XP curve, so the lever is the *trip* and not the fights. And the
+column sawtooths on the gear-band boundary: 1.5 trips at level four and 0.4 at
+level five, because the shop tier turns over. You are weakest at the end of each
+band and strongest at the start, and nothing says so.
+
+PROGRESSION prints the column now. That is the first half of the fix and the
+half that lasts longest — a mechanic the report cannot see is a mechanic the
+balance pass is lying about, and this is the first *pacing* one it has measured
+at all.
+
+**The second half is a camp kit.** Half of both pools back for the whole
+company, where you stand. It deliberately does none of the other three things an
+inn does: it does not fill the pools, it does not wake you at dawn, and it does
+not write a checkpoint. Those are what a bed sells and they are why one is still
+worth paying for at level fourteen. A camp buys the walk, not the safety.
+
+Where and when you lie down is the decision. `rules.CampChance` reads the sky's
+own prowl multiplier — the same one the encounter roll reads, so a clear night
+is the dangerous one here for exactly the reason it is dangerous on the road —
+how rough the country is, and whether you are indoors, which doubles it: a
+dungeon is somewhere with things already living in it. Being found costs the
+fight and most of the rest but not all of it, because a roll that took the whole
+night as well would read as a punishment for having tried.
+
+Two kits on the shelf, and the only difference between them is the odds. What
+three times the money buys is not a better night, it is a smaller chance of it
+going wrong.
+
+**And the oddity finally is one.** *(Jeremy: "lean into the oddity part of
+things too.")*
+
+The asset budget has said since it was first counted that two thirds of the
+bundle is sci-fi and cyberpunk "which this game has no use for — except as an
+over-the-top joke zone, which is exactly what an oddity location is for". That
+was a promise for the whole life of the project, and an oddity was a ruin with a
+different tagline: the same blob of ground, the same lurking shapes.
+
+It is a short paved strip now with the wrong furniture on it. The shape is half
+the joke — whatever this was, somebody laid it out expecting traffic, and the
+forest has come back up to the kerb on both sides. At the far end is a stairway
+going down into the ground under a roof, with no building attached. There is a
+lit humming box that takes a coin and gives you something cold, which the shop
+code understands perfectly well as an apothecary. There is signage in a script
+nobody in the realm writes, paint on walls that are not there, road barriers,
+and bins that are bins rather than chests.
+
+**Only the furniture was imported, and that is the joke working rather than a
+limit.** The pack ships cyberpunk characters too and they are deliberately left
+out: the people standing in an oddity are ordinary villagers with ordinary
+sprites who treat a lit box as a wall with a slot in it. Somebody in the frame
+dressed for the machine would be somebody on screen who is in on it, and the
+rule this game's writing has followed since the first commit is that nobody ever
+is. `oddityVoice` is a bank of its own for the same reason: the place has to not
+sound like the rest of the continent, and a shared bank cannot hold a rule about
+tone.
+
+`world.OddityArt` is enumerated from the same slices the generator picks from,
+so the audit checks every one. A vending machine that failed to resolve would be
+a magenta box standing in a field, which is a description of the joke rather
+than the joke.
+
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on
@@ -1523,8 +1599,9 @@ cutting the last clause off half the shelf with no ellipsis to say so.
 ## Asset budget
 
 The bundle is 78 packs / 56,409 files / 16.7 GB, inventoried in
-[ASSET-INVENTORY.md](ASSET-INVENTORY.md). 33 packs (2.8 GB) are extracted and
-384 keys are indexed. Roughly two thirds of the bundle is sci-fi, cyberpunk,
-futuristic or children's-voice content that this game has no use for — except
-as an over-the-top joke zone, which is exactly what an "oddity" location is
-for.
+[ASSET-INVENTORY.md](ASSET-INVENTORY.md). 35 packs are extracted and 687 keys
+are indexed. Roughly two thirds of the bundle is sci-fi, cyberpunk, futuristic
+or children's-voice content that this game has no use for — except as an
+over-the-top joke zone, which is exactly what an "oddity" location is for, and
+that is cashed now rather than promised: two cyberpunk packs are extracted for
+the furniture alone.

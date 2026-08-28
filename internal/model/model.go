@@ -242,6 +242,10 @@ const (
 	ItemCure    ItemKind = "cure"    // strips the conditions somebody picked up
 	ItemTrinket ItemKind = "trinket" // sellable junk, mostly a joke delivery system
 	ItemKey     ItemKind = "key"
+	// ItemCamp is a night in the field: half of both pools back, for the whole
+	// company, without walking anywhere. It is the answer to a level at the top
+	// of the game costing eleven round trips to an inn.
+	ItemCamp ItemKind = "camp"
 )
 
 // UsedOnSomeone reports whether the item is applied to a person, and therefore

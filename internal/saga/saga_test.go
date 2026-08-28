@@ -32,6 +32,7 @@ func (stubNamer) PersonName(*core.RNG) string           { return "Somebody" }
 func (stubNamer) NPCLine(*core.RNG) string              { return "..." }
 func (stubNamer) SignText(*core.RNG) string             { return "..." }
 func (stubNamer) RecruitPitch(*core.RNG, string) string { return "..." }
+func (stubNamer) Oddity(*core.RNG, string) string       { return "..." }
 
 // TestSpinesPointOutward is the pacing mechanism, and the whole reason a saga
 // needs no level gate anywhere in it.

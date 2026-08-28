@@ -62,8 +62,8 @@ var helpNotes = []string{
 	"Hand an errand back to whoever asked. J says who.",
 	"Z in the journal aims the arrow in the corner.",
 	"C heals: potions and techniques, one list.",
-	"After dark things hit harder. An inn buys the morning.",
-	"Sleeping at an inn saves the run. Dying goes back to it.",
+	"After dark things hit harder. A bed buys back the morning.",
+	"An inn saves the run; a camp kit only patches you up.",
 }
 
 func (s *helpScene) Draw(g *Game, dst *ebiten.Image) {

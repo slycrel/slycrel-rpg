@@ -380,5 +380,23 @@
     "count": 1,
     "desc": "For when a member of the party is on fire, or full of something.",
     "icon": "icon/loot/water_lilly"
+  },
+  {
+    "name": "Bedroll and Some Firewood",
+    "kind": "camp",
+    "power": 0,
+    "value": 22,
+    "count": 1,
+    "desc": "A night in the open. Half of everything back, no roof, and whatever finds you finds all of you.",
+    "icon": "icon/loot/bird_nest"
+  },
+  {
+    "name": "Proper Camp Kit",
+    "kind": "camp",
+    "power": 45,
+    "value": 58,
+    "count": 1,
+    "desc": "Canvas, a pot, and a stake for the fire. The same night, arranged by somebody who has done it before.",
+    "icon": "icon/loot/honey_comb"
   }
 ]

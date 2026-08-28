@@ -2585,6 +2585,94 @@
       "frameH": 64
     },
     {
+      "key": "odd/barrier1",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/barrier 01.png"
+    },
+    {
+      "key": "odd/barrier2",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/barrier 02.png"
+    },
+    {
+      "key": "odd/bin1",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/trash 01.png"
+    },
+    {
+      "key": "odd/bin2",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/trash 02.png"
+    },
+    {
+      "key": "odd/bin3",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/trash 03.png"
+    },
+    {
+      "key": "odd/bin4",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/trash 04.png"
+    },
+    {
+      "key": "odd/car",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/car01.png"
+    },
+    {
+      "key": "odd/daub1",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/graffiti 01.png"
+    },
+    {
+      "key": "odd/daub2",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/graffiti 02.png"
+    },
+    {
+      "key": "odd/daub3",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/graffiti 03.png"
+    },
+    {
+      "key": "odd/daub4",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/graffiti 04.png"
+    },
+    {
+      "key": "odd/lanterns",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/lanterns.png"
+    },
+    {
+      "key": "odd/metro",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/metro entrance 01.png"
+    },
+    {
+      "key": "odd/sign1",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/sign 01.png"
+    },
+    {
+      "key": "odd/sign2",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/sign 09.png"
+    },
+    {
+      "key": "odd/sign3",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/sign 11.png"
+    },
+    {
+      "key": "odd/sign4",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/sign 15.png"
+    },
+    {
+      "key": "odd/sign5",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/sign 16.png"
+    },
+    {
+      "key": "odd/vending1",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/vending machine 01.png"
+    },
+    {
+      "key": "odd/vending2",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/vending machine 02.png"
+    },
+    {
+      "key": "odd/vending3",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/vending machine 03.png"
+    },
+    {
+      "key": "odd/vending4",
+      "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/vending machine 04.png"
+    },
+    {
       "key": "portrait/female/05",
       "file": "assets-raw/characteravataricons_windows/characteravataricons/female/05.PNG"
     },

@@ -201,6 +201,8 @@ type Namer interface {
 	NPCLine(g *core.RNG) string
 	SignText(g *core.RNG) string
 	RecruitPitch(g *core.RNG, blood string) string
+	// Oddity is the joke zone's own voice, keyed by what is speaking.
+	Oddity(g *core.RNG, what string) string
 }
 
 // Generate builds a continent from a seed.

@@ -170,7 +170,10 @@
     "oddity": [
       "There is no good word for what is going on here.",
       "A door standing in a field, hinged to nothing, firmly shut.",
-      "The grass grows in a perfect circle and the birds route around it."
+      "The grass grows in a perfect circle and the birds route around it.",
+      "Lit, at night, by nothing anybody will admit to.",
+      "The locals have built a fence around it and a shrine facing away from it.",
+      "Everything here is the wrong century and none of it will discuss that."
     ]
   },
   "poiRumor": {
@@ -453,6 +456,38 @@
       "\"We've heard. We've all heard. Buy something or move along.\"",
       "\"My cousin says you're not welcome here. My cousin says a lot of things.\"",
       "\"Not looking for trouble. Just noting where the door is.\""
+    ]
+  },
+  "oddityVoice": {
+    "sign": [
+      "OPEN 24 HOURS. It has been shut since before anyone here was born.",
+      "NO LOITERING. Six people are loitering under it.",
+      "LEVEL 3 PARKING. There are no levels and no parking.",
+      "YOUR CALL IS IMPORTANT TO US.",
+      "THIS UNIT IS MONITORED. Nobody has ever found out by whom.",
+      "PLEASE MIND THE GAP. There is no gap. There is a field.",
+      "NOW HIRING. The application box is full of rainwater and frogs.",
+      "EXIT. It points at a hedge."
+    ],
+    "person": [
+      "The light comes on at dusk. We do not know who pays for it.",
+      "My grandfather hung his washing on it. Nobody minded.",
+      "You are not from here. You are looking at it.",
+      "It hums. You get used to the humming.",
+      "The priest blessed it twice and it made no difference either way.",
+      "We had a cow go under the barrier once. She was fine. Different, but fine.",
+      "Do not put your hand in the slot. That is all I will say about the slot.",
+      "It was here before the village. The village came to it."
+    ],
+    "machine": [
+      "A tall box with a lit window and a slot. Things are visible inside it.",
+      "The box takes a coin, thinks about it, and gives you something cold.",
+      "There is a picture on the front of a person enjoying themselves enormously.",
+      "It says PLEASE MAKE A SELECTION in a script nobody in the realm writes."
+    ],
+    "trash": [
+      "A metal drum with a hinged lid. Somebody has been through it already.",
+      "A bin. Not a chest, a bin. There is a difference and it is mostly smell."
     ]
   }
 }

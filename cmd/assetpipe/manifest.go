@@ -250,6 +250,51 @@ func buildManifest() error {
 		}
 	}
 
+	// The oddity's furniture.
+	//
+	// Two thirds of the bundle is sci-fi and cyberpunk that this game has no
+	// use for — except as an over-the-top joke zone, which is exactly what an
+	// oddity location is for. That has been written in the plan since the
+	// asset budget was first counted and never cashed.
+	//
+	// Only the *furniture* is taken, and that is the joke working rather than a
+	// limit: the people standing next to a vending machine are ordinary
+	// villagers who treat it as a wall with a slot in it. Importing cyberpunk
+	// characters as well would have somebody in the frame who is in on it, and
+	// the rule this game's writing follows is that nobody ever is.
+	//
+	// Whole images rather than sheets, so footPadding anchors each one on its
+	// own base and a sign four tiles tall stands on the ground instead of
+	// hovering over it.
+	odd := filepath.Join(rawRoot, "pixelartcyberpunkcity",
+		"Pixel Art Cyberpunk City - The Game Assets Mine -", "PNG")
+	for key, file := range map[string]string{
+		"odd/vending1": "vending machine 01.png",
+		"odd/vending2": "vending machine 02.png",
+		"odd/vending3": "vending machine 03.png",
+		"odd/vending4": "vending machine 04.png",
+		"odd/sign1":    "sign 01.png",
+		"odd/sign2":    "sign 09.png",
+		"odd/sign3":    "sign 11.png",
+		"odd/sign4":    "sign 15.png",
+		"odd/sign5":    "sign 16.png",
+		"odd/daub1":    "graffiti 01.png",
+		"odd/daub2":    "graffiti 02.png",
+		"odd/daub3":    "graffiti 03.png",
+		"odd/daub4":    "graffiti 04.png",
+		"odd/bin1":     "trash 01.png",
+		"odd/bin2":     "trash 02.png",
+		"odd/bin3":     "trash 03.png",
+		"odd/bin4":     "trash 04.png",
+		"odd/barrier1": "barrier 01.png",
+		"odd/barrier2": "barrier 02.png",
+		"odd/lanterns": "lanterns.png",
+		"odd/car":      "car01.png",
+		"odd/metro":    "metro entrance 01.png",
+	} {
+		add(key, filepath.Join(odd, file), 0, 0)
+	}
+
 	// Townspeople.
 	npcRoot := filepath.Join(rawRoot, "pixelartrpgnpc", "Pixel Art Top-Down RPG NPC - AfGameAssets - V1")
 	for _, f := range pngsIn(npcRoot) {

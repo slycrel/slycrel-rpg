@@ -227,6 +227,8 @@ func BuildLocal(poi *POI, w Namer) *LocalMap {
 		l = buildSettlement(g, poi, w)
 	case KindDungeon, KindCave:
 		l = buildDungeon(g, poi, w)
+	case KindOddity:
+		l = buildOddity(g, poi, w)
 	default:
 		l = buildSite(g, poi, w)
 	}
@@ -415,6 +417,137 @@ func buildSettlement(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 		Kind: ESign, Pos: signAt,
 		Name: "a weathered sign", Line: wr.SignText(g),
 	})
+	return l
+}
+
+// oddFurniture is the joke zone's kit, and the whole of what makes an oddity a
+// place rather than a ruin with a different label.
+//
+// Everything here is the wrong century and none of it will discuss that. The
+// rule the writing follows everywhere else is the load-bearing one: nobody
+// standing in an oddity is in on it. The residents are ordinary villagers with
+// ordinary sprites who treat a lit humming box as a wall with a slot in it,
+// because a game that put a cyberpunk character in the frame would have somebody
+// on screen who knows it is funny.
+var (
+	oddVending = []string{"odd/vending1", "odd/vending2", "odd/vending3", "odd/vending4"}
+	oddSigns   = []string{"odd/sign1", "odd/sign2", "odd/sign3", "odd/sign4", "odd/sign5"}
+	oddDaubs   = []string{"odd/daub1", "odd/daub2", "odd/daub3", "odd/daub4"}
+	oddBins    = []string{"odd/bin1", "odd/bin2", "odd/bin3", "odd/bin4"}
+	oddClutter = []string{"odd/barrier1", "odd/barrier2", "odd/lanterns", "odd/car"}
+)
+
+// OddityArt is every sprite the joke zone can put on the ground, for the audit.
+// Read off the same slices the generator picks from, so the two cannot drift.
+func OddityArt() [][]string {
+	return [][]string{oddVending, oddSigns, oddDaubs, oddBins, oddClutter, {"odd/metro"}}
+}
+
+// buildOddity lays out a short paved strip with the wrong furniture on it.
+//
+// A street rather than the blob every other small site gets, because the shape
+// is half the joke: whatever this was, it was laid out by somebody who expected
+// traffic, and the forest has come back up to the kerb on both sides.
+func buildOddity(g *core.RNG, poi *POI, wr Namer) *LocalMap {
+	l := newLocal(poi, 34, 26, LGrass)
+	l.Biome = poiBiome(poi.Kind)
+
+	// The strip: paving down the middle, grass either side, and the ragged
+	// edges where it stops for no reason.
+	midX := l.W / 2
+	l.rect(midX-3, 2, 7, l.H-4, LCobble)
+	for i := 0; i < 30; i++ {
+		x, y := g.Between(midX-4, midX+4), g.Between(2, l.H-3)
+		if g.Chance(0.5) {
+			l.set(x, y, LGrass)
+		} else {
+			l.set(x, y, LCobble)
+		}
+	}
+
+	l.Entry = core.Point{X: midX, Y: l.H - 3}
+	l.Entities = append(l.Entities, &Entity{
+		Kind: EExit, Pos: l.Entry, Name: "the road back", Line: "Leave. Slowly.",
+	})
+
+	// The thing at the far end, which is what the place is about. It is a
+	// staircase down into the ground with a roof over it and no building
+	// attached, and the game never explains it because nobody in the game can.
+	l.Entities = append(l.Entities, &Entity{
+		Kind: ESign, Pos: core.Point{X: midX, Y: 3},
+		Name: "a stairway going down", Sprite: "odd/metro",
+		Line: "Steps, under a roof, going down into the ground. They are swept. " +
+			"Somebody sweeps them.",
+	})
+
+	// A machine that takes money and gives you something cold. It is an
+	// apothecary as far as the shop code is concerned, which is the correct
+	// amount of explanation.
+	if p, ok := openNear(g, l, core.Point{X: midX, Y: l.H / 2}, 1, 6); ok {
+		l.Entities = append(l.Entities, &Entity{
+			Kind: EShop, Pos: p, Name: "a lit humming box", Shop: ShopApothecary,
+			Sprite: core.Pick(g, oddVending), Line: wr.Oddity(g, "machine"),
+		})
+	}
+
+	// Signage nobody can act on, in a script nobody writes.
+	for i := 0; i < g.Between(2, 4); i++ {
+		if p, ok := findOpen(g, l, 120); ok {
+			l.Entities = append(l.Entities, &Entity{
+				Kind: ESign, Pos: p, Name: "a lit sign",
+				Sprite: core.Pick(g, oddSigns), Line: wr.Oddity(g, "sign"),
+			})
+		}
+	}
+	for i := 0; i < g.Between(1, 3); i++ {
+		if p, ok := findOpen(g, l, 120); ok {
+			l.Entities = append(l.Entities, &Entity{
+				Kind: ESign, Pos: p, Name: "paint on a wall",
+				Sprite: core.Pick(g, oddDaubs), Line: wr.Oddity(g, "sign"),
+			})
+		}
+	}
+
+	// Bins. Not chests — bins. Somebody has usually been through them.
+	for i := 0; i < g.Between(1, 3); i++ {
+		if p, ok := findOpen(g, l, 120); ok {
+			l.Entities = append(l.Entities, &Entity{
+				Kind: EChest, Pos: p, Name: "a metal drum",
+				Sprite: core.Pick(g, oddBins), Line: wr.Oddity(g, "trash"),
+			})
+		}
+	}
+
+	// Furniture with no opinion, purely to stand about being wrong.
+	for i := 0; i < g.Between(1, 3); i++ {
+		if p, ok := findOpen(g, l, 120); ok {
+			l.Entities = append(l.Entities, &Entity{
+				Kind: ESign, Pos: p, Name: "something left here",
+				Sprite: core.Pick(g, oddClutter), Line: wr.Oddity(g, "sign"),
+			})
+		}
+	}
+
+	// People, who live here, and for whom none of the above is remarkable.
+	for i := 0; i < g.Between(2, 4); i++ {
+		if p, ok := findOpen(g, l, 120); ok {
+			l.Entities = append(l.Entities, &Entity{
+				Kind: ENPC, Pos: p, Name: wr.PersonName(g),
+				Line: wr.Oddity(g, "person"), Sprite: core.Pick(g, folkSprites),
+			})
+		}
+	}
+
+	// And something with teeth, because it is still a place on the map with a
+	// level band attached to it.
+	for i := 0; i < g.Between(1, 3); i++ {
+		if p, ok := findOpen(g, l, 120); ok {
+			l.Entities = append(l.Entities, &Entity{
+				Kind: EFoe, Pos: p, Name: "a lurking shape",
+				Sprite: core.Pick(g, foeSprites), Wander: true,
+			})
+		}
+	}
 	return l
 }
 

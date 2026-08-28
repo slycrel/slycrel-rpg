@@ -333,6 +333,8 @@ func itemPurpose(it model.Item) string {
 		return "worth something to a shopkeeper"
 	case model.ItemKey:
 		return "opens something, somewhere"
+	case model.ItemCamp:
+		return "sleep rough: half your pools back, no bed"
 	}
 	return ""
 }

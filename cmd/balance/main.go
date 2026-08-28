@@ -60,7 +60,7 @@ func main() {
 	reportDanger(out, core.NewRNG(*seed^0xD1E), t, *fights/3)
 	reportWard(out, core.NewRNG(*seed^0x3A7D), t, *fights)
 	reportEndurance(out, g, t, *fights/4)
-	reportProgression(out, g, t)
+	reportProgression(out, g, t, *fights/50)
 	reportEconomy(out, t)
 	reportSaga(out, t)
 	reportSky(out)
@@ -858,10 +858,12 @@ func reportEndurance(out *os.File, g *core.RNG, t *gamedata.Tables, runs int) {
 	fmt.Fprintln(out)
 }
 
-func reportProgression(out *os.File, g *core.RNG, t *gamedata.Tables) {
-	fmt.Fprintf(out, "PROGRESSION — experience needed against experience offered\n\n")
-	fmt.Fprintf(out, "%-5s %10s %10s %10s %8s\n", "level", "xp total", "xp step", "xp/fight", "fights")
-	fmt.Fprintln(out, strings.Repeat("-", 50))
+func reportProgression(out *os.File, g *core.RNG, t *gamedata.Tables, runs int) {
+	fmt.Fprintf(out, "PROGRESSION — experience needed against experience offered,\n")
+	fmt.Fprintf(out, "and what that costs in trips back to an inn\n\n")
+	fmt.Fprintf(out, "%-5s %10s %10s %10s %8s %8s %8s\n",
+		"level", "xp total", "xp step", "xp/fight", "fights", "per rest", "trips")
+	fmt.Fprintln(out, strings.Repeat("-", 70))
 
 	for level := 1; level < maxLevel; level++ {
 		step := rules.XPForLevel(level+1) - rules.XPForLevel(level)
@@ -882,10 +884,55 @@ func reportProgression(out *os.File, g *core.RNG, t *gamedata.Tables) {
 			continue
 		}
 		per := float64(total) / float64(n)
-		fmt.Fprintf(out, "%-5d %10d %10d %10.1f %8.1f\n",
-			level+1, rules.XPForLevel(level+1), step, per, float64(step)/per)
+		fights := float64(step) / per
+		// The number this section was missing, and the reason it was missing
+		// it: how far one rest gets you lives in ENDURANCE and how far a level
+		// is lives here, and the quotient — how many times you walk back to an
+		// inn for one level — was in neither. It runs from a tenth of a trip at
+		// level one to eleven and a half at fourteen, which is the same walk
+		// eleven times, and no single table could see it.
+		endur := enduranceAt(g, t, level, runs)
+		trips := "-"
+		if endur > 0 {
+			trips = fmt.Sprintf("%.1f", fights/endur)
+		}
+		fmt.Fprintf(out, "%-5d %10d %10d %10.1f %8.1f %8.1f %8s\n",
+			level+1, rules.XPForLevel(level+1), step, per, fights, endur, trips)
 	}
-	fmt.Fprintln(out)
+	fmt.Fprint(out, `
+A trip is a round walk to a bed and back, and the column is what one level
+costs in them. Camping is the answer to it: a kit is half of both pools back
+without the walk, at the price of the kit and a roll on whether anything
+finds you. It does not fill the pools, wake you at dawn or write a
+checkpoint, which is what an inn still sells.
+
+`)
+}
+
+// enduranceAt is ENDURANCE's number for one level, so PROGRESSION can divide by
+// it. Measured rather than passed in: the two sections run independently and a
+// figure copied between them is a figure that drifts.
+func enduranceAt(g *core.RNG, t *gamedata.Tables, level, runs int) float64 {
+	total := 0
+	for i := 0; i < runs; i++ {
+		sim := rules.BuildCharacter(g, model.ClassFighter, level)
+		equip(t, sim)
+		spells := t.SpellsFor(sim)
+		survived := 0
+		for survived < 60 {
+			mons := t.PickMonsters(g, biomeForLevel(level), level, 1)
+			if len(mons) == 0 {
+				break
+			}
+			r := rules.SimulateFight(g, sim, []*model.MonsterDef{mons[0].Def}, level, 60, spells)
+			if !r.Won || sim.HP <= 0 {
+				break
+			}
+			survived++
+		}
+		total += survived
+	}
+	return float64(total) / float64(runs)
 }
 
 func reportEconomy(out *os.File, t *gamedata.Tables) {
@@ -915,6 +962,7 @@ var shopStock = []string{
 	"Bottled Nap", "Philosopher's Espresso", "Bitter Root", "Suspicious Pollen",
 	"Smelling Salts, Militant", "Still-Warm Heart",
 	"Damp Compress", "Broad Antidote",
+	"Bedroll and Some Firewood", "Proper Camp Kit",
 }
 
 // reportSupplies is what staying upright costs at a counter, and it exists

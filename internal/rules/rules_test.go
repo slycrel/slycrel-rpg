@@ -625,3 +625,80 @@ func TestACasterOutOfPsycheStillHasSomethingToThrow(t *testing.T) {
 			"is the mage's whole shopping list and it has to buy something", hi, lo)
 	}
 }
+
+// --- camping --------------------------------------------------------------
+
+// A camp is less than a rest, and it can never be more. Half of both pools,
+// capped at what is missing: an inn fills you up, buys the morning and writes
+// the checkpoint, and if a bedroll could do any of that there would be no
+// reason left to pay for a bed.
+func TestACampIsLessThanARest(t *testing.T) {
+	g := core.NewRNG(41)
+	for i := 0; i < 300; i++ {
+		c := rules.BuildCharacter(g, model.ClassFighter, 1+g.Intn(14))
+		c.HP = g.Between(1, c.MaxHP)
+		c.Psyche = g.Between(0, c.MaxPsyche)
+		before := c.HP
+		hp, ps := rules.MakeCamp(c, 1)
+		if c.HP > c.MaxHP || c.Psyche > c.MaxPsyche {
+			t.Fatalf("a camp overfilled: %d/%d hp, %d/%d psyche",
+				c.HP, c.MaxHP, c.Psyche, c.MaxPsyche)
+		}
+		if hp < 0 || ps < 0 {
+			t.Fatalf("a camp took %d hp and %d psyche away", -hp, -ps)
+		}
+		if c.HP != before+hp {
+			t.Fatalf("a camp reported %d and moved %d", hp, c.HP-before)
+		}
+		// Never a full heal from anywhere below half.
+		if before*2 < c.MaxHP && c.HP == c.MaxHP {
+			t.Fatalf("a camp took %d/%d to full", before, c.MaxHP)
+		}
+	}
+}
+
+// Nobody is patched up off the floor by a night outdoors. The company picks
+// each other up when a fight ends and the revive items exist for the rest; a
+// bedroll that raised the fallen would quietly retire both.
+func TestACampDoesNothingForTheFallen(t *testing.T) {
+	g := core.NewRNG(42)
+	c := rules.BuildCharacter(g, model.ClassMage, 8)
+	c.HP = 0
+	if hp, ps := rules.MakeCamp(c, 1); hp != 0 || ps != 0 {
+		t.Fatalf("somebody on the floor got %d hp and %d psyche out of a bedroll", hp, ps)
+	}
+}
+
+// Where and when you lie down is the decision the item is for, so the odds have
+// to actually move with both — and stay inside a band at either end. A camp
+// that fails half the time is a camp nobody packs; one that never fails is an
+// inn you carry.
+func TestWhereYouCampIsTheDecision(t *testing.T) {
+	quiet := rules.CampChance(1.0, 1, false, 0)   // a field at noon
+	night := rules.CampChance(1.35, 1, false, 0)  // the same field, clear night
+	deep := rules.CampChance(1.0, 12, false, 0)   // far out, at noon
+	inside := rules.CampChance(1.0, 12, true, 0)  // in something's home
+	kitted := rules.CampChance(1.0, 12, true, 45) // ... with the good kit
+
+	if !(quiet < night) {
+		t.Errorf("a clear night (%.2f) is no worse than noon (%.2f); the sky is "+
+			"supposed to be read here for the same reason it is read on the road",
+			night, quiet)
+	}
+	if !(quiet < deep) {
+		t.Errorf("rough country (%.2f) is no worse than home (%.2f)", deep, quiet)
+	}
+	if !(deep < inside) {
+		t.Errorf("lying down in a dungeon (%.2f) is no worse than outside it (%.2f)",
+			inside, deep)
+	}
+	if !(kitted < inside) {
+		t.Errorf("the expensive kit (%.2f) buys nothing over the cheap one (%.2f), "+
+			"which is the only difference between them", kitted, inside)
+	}
+	for _, n := range []float64{quiet, night, deep, inside, kitted} {
+		if n < 0.02 || n > 0.45 {
+			t.Errorf("camp odds of %.2f are outside the band", n)
+		}
+	}
+}

@@ -174,6 +174,11 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
   every blow comes off before it reaches you, of any kind, until it is spent.
   A shield shaves a little off every hit forever; a barrier stops a lot of one
   and is then gone for the fight.
+- **Camping.** A level at the top of the game costs seven round trips to an inn;
+  a camp kit is half of both pools back where you stand. It does not fill you
+  up, wake you at dawn or save the run — those are what a bed is for — and
+  something may well walk into the camp, which is likelier on a clear night, far
+  from home, and indoors.
 - **You get your breath back.** Walk away from a fight — won or run from — and
   part of what it cost comes straight back, more of the psyche than the blood.
   A share of the spend rather than the pool, so it is a discount on the
@@ -187,6 +192,10 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
   trade, whether it beats what you are holding is a real question, and the box
   spells out what the suffix is worth before you answer. Gear whose name already
   ends in a flourish never gets a second one.
+- **Oddities** — a short paved strip in the middle of nowhere with a stairway
+  going down at the end of it, a lit humming box that takes a coin and gives you
+  something cold, signage in a script nobody writes, and villagers who find none
+  of it remarkable. Nobody standing there is in on it.
 - **Icons** — every item, weapon, suit of armour and technique carries one, in
   the bag, the shop and the battle menu. Reduced to 16px in the pipeline rather
   than scaled at draw time, because the engine samples nearest-neighbour and a

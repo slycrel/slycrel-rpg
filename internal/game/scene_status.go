@@ -451,6 +451,14 @@ func (s *statusScene) useOutOfCombat(g *Game, idx int) {
 		c.HP = rules.ReviveAmount(c, it.Power)
 		g.Sound.Play("fight/heal")
 		g.Log.AddColor(render.ColHeal, "%s", g.Write.Revived(g.RNG, c.Name))
+	case model.ItemCamp:
+		// The sheet closes first: what happens next is a night, possibly with
+		// something walking into it, and both of those belong out in the world
+		// rather than over an inventory panel.
+		it, _ := g.Player.TakeItem(idx)
+		g.Pop()
+		g.makeCamp(it)
+		return
 	default:
 		g.Sound.Play("ui/deny")
 		g.Log.AddColor(render.ColInkDim, "%s is for selling, not for drinking.", g.Player.Bag[idx].Name)

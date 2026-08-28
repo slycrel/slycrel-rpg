@@ -115,6 +115,7 @@ func (stubNamer) PersonName(*core.RNG) string           { return "Person" }
 func (stubNamer) NPCLine(*core.RNG) string              { return "line" }
 func (stubNamer) SignText(*core.RNG) string             { return "sign" }
 func (stubNamer) RecruitPitch(*core.RNG, string) string { return "pitch" }
+func (stubNamer) Oddity(*core.RNG, string) string       { return "pitch" }
 
 // TestWorldGenerationIsHabitable runs a spread of seeds because the failure
 // this guards against — an island so small or so waterlogged that the capital
@@ -1477,5 +1478,29 @@ func TestTechniqueFlavourNamesTheCasterAndNothingElse(t *testing.T) {
 		if i := strings.Index(s.Cast, "{"); i >= 0 && !strings.HasPrefix(s.Cast[i:], "{A}") {
 			t.Errorf("%s's flavour line has a placeholder nothing fills: %q", s.ID, s.Cast)
 		}
+	}
+}
+
+// The answer to the walk back has to be on a shelf somebody walks past. A camp
+// kit that only dropped from chests would be a pacing fix the player meets by
+// accident, four levels after they needed it.
+func TestSomewhereSellsAWayToSleepRough(t *testing.T) {
+	tables := load(t)
+	kits := 0
+	for _, it := range tables.Items {
+		if it.Kind != model.ItemCamp {
+			continue
+		}
+		kits++
+		if it.Value < 1 {
+			t.Errorf("%q is free, so there is nothing to weigh against the inn", it.Name)
+		}
+		if it.Desc == "" {
+			t.Errorf("%q does not say what it is for", it.Name)
+		}
+	}
+	if kits < 2 {
+		t.Errorf("the shelf holds %d camp kits; the cheap one and the safe one are "+
+			"the whole of the choice", kits)
 	}
 }

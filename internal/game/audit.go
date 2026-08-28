@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"sort"
+
+	"github.com/slycrel/slycrel-rpg/internal/world"
 )
 
 // Audit cross-checks the content tables against the asset manifest without
@@ -60,6 +62,17 @@ func (g *Game) Audit(w io.Writer) error {
 	// and the fallback silently breaks — which is the one combination that
 	// would put a magenta box on a screen with nothing to explain it.
 	check(defaultPortrait, "fallback portrait")
+
+	// The oddity's furniture. Enumerated from the same slices the generator
+	// picks from, so a key can never be in one and not the other — and worth
+	// checking loudly, because a vending machine that failed to resolve would
+	// be a magenta box standing in a field, which is a description of the joke
+	// rather than the joke.
+	for _, keys := range world.OddityArt() {
+		for _, k := range keys {
+			check(k, "oddity")
+		}
+	}
 
 	total := 0
 	for _, defs := range g.Data.Monsters {
