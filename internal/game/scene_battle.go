@@ -909,12 +909,13 @@ func (b *battleScene) playerAttack(g *Game, p *model.Character, idx int) {
 	// damageMonster because that is also where a spell's damage goes, and a
 	// fireball should not come with a sword slash behind it.
 	//
-	// A rod's free attack is a bolt, so it gets the bolt's burst and the bolt's
-	// verb. It costs no psyche and is not on the technique list, which means
-	// the transcript is the only place the game can say that this class's
-	// ordinary round is magic — and if it says "clobbers" while a wand is in
-	// their hand, the player has been told they are a bad fighter rather than a
-	// caster with a free hand.
+	// A rod's free attack is a bolt, so it gets the bolt's burst. It costs no
+	// psyche and is not on the technique list, which means the transcript and
+	// this burst are the only places the game can say that this class's
+	// ordinary round is magic. The wording is the weapon's own verb, as it is
+	// for everybody else — a focus is authored with "spark at" and "overrule"
+	// where a mace is authored with "clobber", because flavour is data and a
+	// verb hard-coded here is a verb the content files cannot revise.
 	if sw.Magic {
 		b.playOnMonster(g, idx, "vfx/bolt")
 	} else {
@@ -926,11 +927,7 @@ func (b *battleScene) playerAttack(g *Game, p *model.Character, idx int) {
 	} else {
 		g.Sound.Play("fight/hit")
 	}
-	verb := p.Weapon.Verb
-	if sw.Magic {
-		verb = "bolt"
-	}
-	b.log.Add("%s", g.Write.Hit(g.RNG, p.Name, verb, m.Name, dmg, crit))
+	b.log.Add("%s", g.Write.Hit(g.RNG, p.Name, p.Weapon.Verb, m.Name, dmg, crit))
 }
 
 // buffsFor returns what the conditions riding on a member are worth to a blow.
@@ -965,7 +962,7 @@ func (b *battleScene) castSpell(g *Game, c cast) {
 		g.Sound.Play("fight/spell")
 	}
 	if s.Cast != "" {
-		b.log.AddColor(render.ColMagic, "%s", fmt.Sprintf(s.Cast, p.Name))
+		b.log.AddColor(render.ColMagic, "%s", castLine(s, p.Name))
 	}
 
 	if s.Kind.Side() == model.SideParty {
@@ -1031,6 +1028,12 @@ func (b *battleScene) castOnParty(g *Game, c cast) {
 			b.addFloater(fx, fy, fmt.Sprintf("+%d", t.HP), render.ColHeal)
 		}
 	}
+}
+
+// castLine fills a technique's flavour line in. One placeholder, the same one
+// the rest of the writing uses, and no format verbs anywhere near it.
+func castLine(s model.Spell, caster string) string {
+	return strings.ReplaceAll(s.Cast, "{A}", caster)
 }
 
 // damageOn phrases whose injuries are being closed, so a self-heal reads as

@@ -1404,3 +1404,32 @@ func TestEveryClassHasSomethingForTheOffArm(t *testing.T) {
 		}
 	}
 }
+
+// A technique's flavour line names the caster with {A} and contains no format
+// verbs, because it is filled in by substitution rather than by fmt.
+//
+// It was the other way round for the whole life of the project: the field was
+// documented as taking a "%s" and passed through fmt.Sprintf, and not one line
+// in the table has ever contained one. Every cast printed its raw "{A}" and a
+// trailing "%!(EXTRA string=Bosk)" into the combat log, where nothing but a
+// person looking at a captured frame would ever read it.
+func TestTechniqueFlavourNamesTheCasterAndNothingElse(t *testing.T) {
+	for _, s := range load(t).Spells {
+		if s.Cast == "" {
+			t.Errorf("%s has no flavour line", s.ID)
+			continue
+		}
+		if !strings.Contains(s.Cast, "{A}") {
+			t.Errorf("%s's flavour line never names who cast it: %q", s.ID, s.Cast)
+		}
+		if strings.Contains(s.Cast, "%") {
+			t.Errorf("%s's flavour line contains a format verb: %q — it is filled in "+
+				"by substitution, so a %% reaches the screen as itself or worse", s.ID, s.Cast)
+		}
+		// And nothing else: an unfilled placeholder is the failure the thread
+		// tests already scan for, and it reads identically here.
+		if i := strings.Index(s.Cast, "{"); i >= 0 && !strings.HasPrefix(s.Cast[i:], "{A}") {
+			t.Errorf("%s's flavour line has a placeholder nothing fills: %q", s.ID, s.Cast)
+		}
+	}
+}

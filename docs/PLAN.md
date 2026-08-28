@@ -1378,6 +1378,30 @@ the class gate now: a fixture in a state the game cannot produce is worse than n
 fixture, because it is a starting point for a playtest of a game nobody is
 playing.
 
+**And a bug the frame found that had been there since the first commit.**
+Staging a caster's fight to look at the barrier turned up this in the transcript:
+
+    {A} is suddenly behind them, which is rude and effective.%!(EXTRA string=Nolwenn Ash)
+
+`model.Spell.Cast` was documented as taking a `"%s"` and passed through
+`fmt.Sprintf`, and not one line in the table has ever contained one — they all
+name the caster as `{A}`, the same placeholder the rest of the writing uses. So
+*every technique cast in the history of the project* printed its raw placeholder
+and a trailing format error into the combat log.
+
+Nothing caught it because nothing reads the combat log except a person looking
+at a captured frame, which is the failure mode this project keeps rediscovering
+and the whole reason `-demo` exists. It is substitution now, and
+`TestTechniqueFlavourNamesTheCasterAndNothingElse` refuses a line that has no
+`{A}`, a stray `%`, or a placeholder nothing fills — the same scan
+`internal/thread` already runs over the backstories.
+
+The focus weapons' verbs went back into the data at the same time. The bolt was
+logging a hard-coded "bolt" while every rod in the table carried an authored verb
+nothing ever printed; they are "spark at", "object to", "overrule", "threaten"
+and "sentence" now, alongside the mace's "clobber", because flavour is data and
+a verb written into the battle screen is a verb the content files cannot revise.
+
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on

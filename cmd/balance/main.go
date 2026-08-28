@@ -280,7 +280,7 @@ func reportOpening(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 		fmt.Fprintf(out, " %s %d", strings.ToLower(string(class)),
 			onCurve.Weapon.Cost+onCurve.Armor.Cost)
 	}
-	fmt.Fprintln(out, "\n")
+	fmt.Fprint(out, "\n\n")
 }
 
 // openingBiomes are what turned up within twelve tiles of the start across a

@@ -77,7 +77,16 @@ type Spell struct {
 	// right nearly always, and a per-spell key is one more art name to keep in
 	// step with a manifest.
 	VFX  string `json:"vfx,omitempty"`
-	Cast string `json:"cast"` // flavor line, "%s" takes the caster name
+	// Cast is the flavour line, naming the caster as {A} — the same placeholder
+	// the rest of the writing uses.
+	//
+	// It was documented as taking a "%s" and passed through fmt.Sprintf, which
+	// no line in the table has ever contained: every technique cast since the
+	// foundation commit printed its raw "{A}" followed by "%!(EXTRA string=Bosk)"
+	// into the transcript. Nothing caught it because nothing reads the combat
+	// log except a person looking at a frame, which is the failure mode this
+	// project keeps finding and the reason -demo exists.
+	Cast string `json:"cast"`
 }
 
 // Known reports whether c has access to this spell.

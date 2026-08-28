@@ -43,7 +43,7 @@
     "range": 0,
     "cost": 6,
     "quality": 15,
-    "verb": "wave",
+    "verb": "zap",
     "tier": 1,
     "icon": "icon/ab/1_lightning_1"
   },
@@ -55,7 +55,7 @@
     "range": 0,
     "cost": 34,
     "quality": 40,
-    "verb": "prod",
+    "verb": "spark at",
     "tier": 1,
     "icon": "icon/ab/1_lightning_1"
   },
@@ -119,7 +119,7 @@
     "range": 0,
     "cost": 88,
     "quality": 66,
-    "verb": "jab",
+    "verb": "object to",
     "tier": 2,
     "icon": "icon/ab/2_lightning_1"
   },
@@ -183,7 +183,7 @@
     "range": 0,
     "cost": 215,
     "quality": 74,
-    "verb": "rap",
+    "verb": "overrule",
     "tier": 3,
     "icon": "icon/ab/3_lightning_1"
   },
@@ -252,7 +252,7 @@
     "range": 0,
     "cost": 480,
     "quality": 82,
-    "verb": "poke",
+    "verb": "threaten",
     "tier": 4,
     "icon": "icon/ab/4_lightning_1"
   },
@@ -321,7 +321,7 @@
     "range": 0,
     "cost": 820,
     "quality": 90,
-    "verb": "indicate",
+    "verb": "sentence",
     "tier": 5,
     "icon": "icon/ab/4_lightning_1"
   },
