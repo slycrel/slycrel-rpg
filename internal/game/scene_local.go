@@ -546,6 +546,7 @@ func (s *localScene) drawLabels(g *Game, dst *ebiten.Image) {
 	px, py := g.LocalWalk.Pixel()
 	hx, hy := px+ox, py+oy
 	here := g.LocalWalk.Tile
+	poiIdx := g.currentPOIIndex()
 	focus := g.ahead()
 	if focus == nil {
 		focus = g.Local.EntityAt(here.X, here.Y)
@@ -562,9 +563,27 @@ func (s *localScene) drawLabels(g *Game, dst *ebiten.Image) {
 		if r == 0 || core.Abs(e.Pos.X-here.X) > r || core.Abs(e.Pos.Y-here.Y) > r {
 			continue
 		}
-		lines, col := []string{e.Name}, render.ColInkDim
+		// Gold is about how close it is, not about whether the text happens to
+		// be a name: a shop keeps its name at any distance, and a shop across
+		// the square is still across the square.
+		//
+		// The one exception is somebody holding something that is already
+		// yours — a finished errand, an installment they have been carrying
+		// since you left. That is worth saying out loud from across a street,
+		// and it is the same gold the star over their head is using.
+		d := labelDist(e.Pos, here)
+		text, _, show := g.labelFor(e, d, poiIdx)
+		if !show {
+			continue
+		}
+		col := render.ColInkDim
+		if d <= nameRadius || g.attention(e, poiIdx) == attentionOwed {
+			col = render.ColGold
+		}
+		lines := []string{text}
 		if e == focus {
 			col = render.ColGold
+			lines = []string{e.Name}
 			// A sign has nothing to it *but* what it says, so standing at one
 			// is the whole interaction. Reading it should not cost a keypress
 			// and a box over the town it is standing in.
@@ -623,10 +642,58 @@ func labelRange(k world.EntityKind) int {
 	switch k {
 	case world.EFoe, world.EBoss:
 		return 0
-	case world.ENPC:
-		return 1
 	}
 	return labelRadius
+}
+
+// nameRadius is how close you have to be before a label says who somebody is.
+//
+// Inside it a label is gold and gives the name; outside it, anything with a
+// placeholder gives that instead. Two rather than one, because one meant only
+// the single thing you were facing was ever gold — you had to be pointed
+// directly at a shop door to be told which shop it was, which is the state the
+// labels were added to get rid of.
+const nameRadius = 2
+
+// labelFor returns what a thing's tag says at this distance, whether that is
+// its actual name, and whether it gets a tag at all.
+//
+// Three bands, and the middle one is the point. Up close you are told what
+// something is. Further off, a person becomes "someone" — which says there is
+// somebody there worth the walk without spending the introduction before you
+// have made it. A name handed to you for free from six tiles away is a name you
+// never quite met anybody to learn.
+//
+// Only the kinds with a placeholder written for them do this. A shop's name is
+// how you find the armourer rather than a reward for arriving at one, and
+// turning it into "a building" at range would put back exactly the problem the
+// labels were added to fix.
+//
+// And only people who have something. "Someone" over every villager in a
+// capital is not a hint, it is wallpaper — ten of them, two of which overlap
+// each other into "someonesomeone" — and it teaches the player that the word
+// means nothing. Over the one who has an errand, it means go and look, which is
+// the entire reason to draw it.
+func (g *Game) labelFor(e *world.Entity, dist, poiIdx int) (text string, named, show bool) {
+	if dist <= nameRadius {
+		return e.Name, true, true
+	}
+	ph := g.Data.Text.LabelPlaceholder[string(e.Kind)]
+	if ph == "" {
+		return e.Name, true, true
+	}
+	switch g.attention(e, poiIdx) {
+	case attentionOwed:
+		return ph, false, true
+	case attentionOffer:
+		return ph, false, true
+	}
+	return "", false, false
+}
+
+// labelDist is how far something is, in the square measure the label bands use.
+func labelDist(a, b core.Point) int {
+	return core.Max(core.Abs(a.X-b.X), core.Abs(a.Y-b.Y))
 }
 
 // Structures reuse ground swatches at a different value: a wall is cold stone

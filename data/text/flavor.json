@@ -516,5 +516,9 @@
       "Monster parts sell. Not for much. But they sell.",
       "You could shift what you're carrying. Somebody always wants it. Nobody knows why."
     ]
+  },
+  "labelPlaceholder": {
+    "npc": "someone",
+    "recruit": "someone idle"
   }
 }

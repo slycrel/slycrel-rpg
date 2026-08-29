@@ -6,7 +6,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/slycrel/slycrel-rpg/internal/assetsys"
-	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/world"
@@ -142,23 +141,27 @@ var starBob = []float64{0, -1, -2, -1}
 
 // drawAttention paints the mark over somebody's head.
 //
-// Not while their own label is up. A tag sits in exactly this space — a
-// one-line plate occupies the sixteen pixels above the tile, which is where a
+// Not while their own label is naming them. A tag sits in exactly this space —
+// a one-line plate occupies the sixteen pixels above the tile, which is where a
 // mark over somebody's head has to go — and the two drawn together is the star
 // buried under the name.
 //
 // Which is the right way round rather than a compromise. The mark exists to be
-// read from across a street; the label appears when you are close enough to
-// read a name. So the rule is simply that the star is what you get *until* the
-// label can tell you more, and the handover happens at whatever distance that
-// kind of person starts saying who they are.
+// read from across a street; the name appears when you are close enough to be
+// told it. So the star is what you get *until* the label can tell you more.
+//
+// Any tag, not only a naming one. Beyond the naming radius a person's tag reads
+// "someone" — but it is only drawn at all for somebody who has something, so it
+// is already saying what the star says, in words, in the same space. Two marks
+// for one fact is one mark too many, and the words are the more legible of the
+// two. The star's job is the distance past which there is no tag.
 func (g *Game) drawAttention(ctx *render.Ctx, e *world.Entity, kind attentionKind) {
 	if kind == attentionNone {
 		return
 	}
 	if r := labelRange(e.Kind); r > 0 {
-		here := g.LocalWalk.Tile
-		if core.Abs(e.Pos.X-here.X) <= r && core.Abs(e.Pos.Y-here.Y) <= r {
+		d := labelDist(e.Pos, g.LocalWalk.Tile)
+		if d <= r {
 			return
 		}
 	}

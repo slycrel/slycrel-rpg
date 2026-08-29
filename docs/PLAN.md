@@ -1858,6 +1858,27 @@ The other half of the roster is not written that way at all: "Owl That Knows",
 test asserts the split is lossless rather than clever, and the name wraps to two
 lines whenever the field is a single row — which is what rescues those.
 
+**Labels grew a third band.** Gold used to mean the one thing you were pointed
+directly at and grey meant everything else in range, which made being told which
+shop is which a matter of facing its door. Gold is a radius now.
+
+Beyond it, a person becomes "someone" rather than giving their name — a name
+handed over from six tiles away is a name you never quite met anybody to learn —
+and the first draft of that put "someone" over every villager in the capital,
+where two of them standing together overlapped into "someonesomeone". Which is
+the whole argument against it: ten of them is wallpaper, and wallpaper teaches
+the player the word means nothing. It is drawn only over somebody who actually
+has something now, which is what makes it mean go and look.
+
+Shops, inns and signs keep their names at every distance. Their name is not a
+reward for arriving, it is how you find the armourer without trying every door,
+and that was the problem the labels were added to fix in the first place. A test
+asserts the line between the two.
+
+The star and the stand-in hand over at the edge of tag range rather than
+doubling up: they say the same thing, the words are the more legible of the two,
+and they occupy the same sixteen pixels above a head.
+
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on

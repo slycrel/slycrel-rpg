@@ -67,8 +67,14 @@ type Text struct {
 	IdleFlavor  []string `json:"idleFlavor"`
 	NpcLine     []string `json:"npcLine"`
 	// Advice is keyed by what is true about the run — see Game.adviceKey.
-	Advice   map[string][]string `json:"advice"`
-	SignText []string            `json:"signText"`
+	Advice map[string][]string `json:"advice"`
+	// LabelPlaceholder is what a kind of thing calls itself before you are
+	// near enough to be told its name, keyed by world.EntityKind. A kind with
+	// no entry shows its real name at any distance, which is what shops and
+	// signs want: their name is how you navigate to them rather than a reward
+	// for arriving.
+	LabelPlaceholder map[string]string `json:"labelPlaceholder"`
+	SignText         []string          `json:"signText"`
 
 	// Hirelings: the sales pitch, the handshake, the parting, and what happens
 	// when one of them stops being upright.

@@ -737,3 +737,92 @@ func TestSplittingANameNeverLosesPartOfIt(t *testing.T) {
 		}
 	}
 }
+
+// A shop keeps its name at every distance; a person earns theirs by arriving.
+//
+// The placeholder exists so a name is something you are told rather than
+// something you are handed from six tiles away. But a shop's name is not a
+// reward, it is navigation — the labels were added in the first place because
+// finding the armourer meant trying every door — so turning that into "a
+// building" at range would put the original problem straight back.
+func TestOnlyPeopleHideTheirNames(t *testing.T) {
+	g := storyGame(t)
+	idx := -1
+	for i, p := range g.World.POIs {
+		if p.Kind.Settlement() {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		t.Skip("this continent generated no settlements")
+	}
+	g.Local = world.BuildLocal(g.World.POIs[idx], g.Write)
+	g.LocalWalk.Place(g.Local.Entry)
+	defer func() { g.Local = nil }()
+
+	seen := map[world.EntityKind]bool{}
+	for _, e := range g.Local.Entities {
+		seen[e.Kind] = true
+		far := nameRadius + 1
+		text, named, show := g.labelFor(e, far, idx)
+
+		switch e.Kind {
+		case world.ENPC, world.ERecruit:
+			if show && named {
+				t.Errorf("a %s gives its name %q from %d tiles away", e.Kind, text, far)
+			}
+		default:
+			if !show || !named || text != e.Name {
+				t.Errorf("a %s says %q (named=%v show=%v) from %d tiles; it should say %q",
+					e.Kind, text, named, show, far, e.Name)
+			}
+		}
+
+		// And everything says who it is once you are close.
+		if text, named, show := g.labelFor(e, nameRadius, idx); !show || !named || text != e.Name {
+			t.Errorf("a %s says %q (named=%v show=%v) at %d tiles; it should say %q",
+				e.Kind, text, named, show, nameRadius, e.Name)
+		}
+	}
+	if !seen[world.EShop] {
+		t.Skip("this town generated no shop to check")
+	}
+}
+
+// A stand-in is only drawn over somebody who has something.
+//
+// "Someone" over every villager in a capital is not a hint, it is wallpaper —
+// and two of them standing together overlap into "someonesomeone", which is
+// how this was found. The word has to mean go and look, or it teaches the
+// player that it means nothing.
+func TestAStandInOnlyMarksSomebodyWorthVisiting(t *testing.T) {
+	g := storyGame(t)
+	towns := 0
+	for idx, p := range g.World.POIs {
+		if !p.Kind.Settlement() {
+			continue
+		}
+		g.Local = world.BuildLocal(p, g.Write)
+		g.LocalWalk.Place(g.Local.Entry)
+
+		for _, e := range g.Local.Entities {
+			if e.Kind != world.ENPC {
+				continue
+			}
+			_, _, show := g.labelFor(e, nameRadius+1, idx)
+			if show != (g.attention(e, idx) != attentionNone) {
+				t.Errorf("%s: a villager with attention=%v is shown=%v at range",
+					p.Name, g.attention(e, idx), show)
+			}
+		}
+		towns++
+		if towns >= 6 {
+			break
+		}
+	}
+	g.Local = nil
+	if towns == 0 {
+		t.Skip("this continent generated no settlements")
+	}
+}
