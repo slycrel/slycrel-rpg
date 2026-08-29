@@ -75,6 +75,26 @@ mkdir -p "$STAGE/assets"
 cp -R data "$STAGE/data" || die "could not copy data/"
 cp assets/manifest.json assets/audio.json "$STAGE/assets/" || die "could not copy the manifests"
 
+# The paperwork, which is an obligation rather than a courtesy.
+#
+# Ebitengine is Apache-2.0, and section 4 requires anyone redistributing the
+# work — a compiled binary counts — to hand the recipient a copy of the licence
+# and the contents of any NOTICE file. The three golang.org/x modules say the
+# same thing in the second clause of BSD-3-Clause. NOTICE has claimed this was
+# handled since the day it was written, and it was: by scripts/dist.sh, which is
+# not the script that builds releases. This one shipped two of them without a
+# line of licence text in either.
+[ -d licenses ] || ./scripts/licenses.sh >/dev/null 2>&1
+for f in licenses LICENSE NOTICE CREDITS.md docs/ASSET-LICENSING.md; do
+	[ -e "$f" ] || die "$f is missing, and a build may not go out without it"
+done
+cp -R licenses "$STAGE/licenses" || die "could not copy licenses/"
+cp LICENSE NOTICE CREDITS.md "$STAGE/" || die "could not copy the licence files"
+# The asset audit travels with the build too. It is the document that says which
+# of the art may be done what with, and it is no use to anybody sitting in a
+# repository the person holding the zip has never seen.
+cp docs/ASSET-LICENSING.md "$STAGE/ASSET-LICENSING.md" || die "could not copy the asset audit"
+
 # The file lists come out of the manifests themselves rather than a second copy
 # kept here, so a pack added to one cannot be forgotten by the other.
 python3 - "$STAGE" <<'PY' || die "staging the assets failed"

@@ -174,7 +174,29 @@ itch.io (now under the Pixogen name) with a downloadable "License of
 AFGameAssets" file. **That file is not in the Humble zips**, and therefore not on
 disk. Three of these four packs are in the shipping manifest.
 
-This is the one live unknown in the current build.
+**Narrowed, 2026-08-29.** Written up in full at
+[`licenses/assets/afgameassets-pixogen.md`](../licenses/assets/afgameassets-pixogen.md),
+which ships in every build. The short version:
+
+`pixelartrpgvfx` turns out to carry a `ReadMe.txt` — the only text file in any of
+the four, and missed by the original sweep. It says "Please rate this product on
+the Unity Asset Store if you like it" and gives import instructions that are
+Unity's and nobody else's. These are **Unity Asset Store packs**, sold under the
+**Standard Unity Asset Store EULA** as Extension Assets on a Single Entity
+licence, publisher Pixogen. Unity's own EULA FAQ permits commercial use embedded
+in a product, forbids letting end users extract the assets, and requires no
+attribution — which is the same shape as every other family here and permits
+exactly what this project does.
+
+That is evidence of the creator's terms, not a grant anybody holds: these
+arrived in a Humble bundle, not from Unity and not from itch.io, so the
+operative document is still the bundle's. The itch.io licence file remains
+purchase-gated and unobtained, and by the same reasoning applied to the Beowulf
+RTF above, it would not have governed this copy anyway.
+
+So this is no longer the one live unknown. It has collapsed into
+[gap 1](#gaps-to-close) — the Humble bundle's own grant — along with everything
+else.
 
 ### Tier D — Well-documented public licence
 
@@ -353,9 +375,13 @@ the build is never broken, plus `assetpipe` for contributors who own the bundle.
    The `.webarchive` saved beside the bundle is **not** evidence. It captured
    only Humble's page chrome; it contains zero occurrences of "asset", "RPG
    Creator", or any creator name.
-2. **Obtain "License of AFGameAssets"** from the itch.io product pages for the
-   three packs currently in the manifest. This is the only unverified licence
-   affecting the build as it stands.
+2. ~~**Obtain "License of AFGameAssets"**~~ *Closed as far as it can be from
+   outside the account — see [Tier C](#tier-c--licence-exists-but-was-not-shipped)
+   and `licenses/assets/afgameassets-pixogen.md`.* The file is purchase-gated on
+   itch.io and would not govern a Humble copy in any case. What remains is
+   either gap 1 above, or a one-line mail to afgameassets@gmail.com asking which
+   licence covers a bundle copy — the address is in the creator's own readme,
+   and a dated reply outranks every inference in this document.
 3. **Resolve The Sound Guild terms** before any audio is wired in.
 4. **Surface `CREDITS.md` in-game.** The file now exists and ships in every
    build, but a credits screen would be better. Attribution for roughly nine
