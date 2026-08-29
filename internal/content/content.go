@@ -111,6 +111,20 @@ func (w *Writer) Epithet(g *core.RNG) string {
 // NPCLine returns something for a townsperson to say.
 func (w *Writer) NPCLine(g *core.RNG) string { return core.Pick(g, w.t.NpcLine) }
 
+// Advice returns something a townsperson can say about the state the run is
+// actually in, and the empty string when there is nothing written for it.
+//
+// Empty rather than a fallback, because the caller's job is to fall back to the
+// person's own line. A key with no lines behind it should make a villager
+// ordinary, not silent.
+func (w *Writer) Advice(g *core.RNG, key string) string {
+	lines := w.t.Advice[key]
+	if len(lines) == 0 {
+		return ""
+	}
+	return core.Pick(g, lines)
+}
+
 // StandingLine returns what somebody opens with for a player of this standing,
 // or empty when the standing has nothing written for it.
 //

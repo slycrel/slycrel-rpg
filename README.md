@@ -146,7 +146,10 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 - **62 monsters** across nine biomes, each with its own attack verbs, defensive
   flavour, taunts, death lines, drop table, and — for a minority of them —
   something they leave in you.
-- **Shops, inns, chests, altars and townsfolk** who all have opinions.
+- **Shops, inns, chests, altars and townsfolk** who all have opinions — about
+  your reputation, and sometimes about the state you are visibly in. Anybody
+  holding something for you wears a star: pale for something on offer, gold
+  for something already yours to collect.
 - **Quests** — generated from the world rather than written against it. Someone
   in a town wants four pelts, or a cave cleared, or a parcel carried two days
   east. The generator only ever names things it has checked exist, so an errand

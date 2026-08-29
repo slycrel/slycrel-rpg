@@ -489,5 +489,32 @@
       "A metal drum with a hinged lid. Somebody has been through it already.",
       "A bin. Not a chest, a bin. There is a difference and it is mostly smell."
     ]
+  },
+  "advice": {
+    "alone": [
+      "Travelling on your own. That's a choice. There's usually somebody outside the inn who'd rather not be.",
+      "No one with you? The ones waiting outside the inn take a cut. They also take a hit meant for you.",
+      "You want somebody at your back. Ask outside the inn. They're not proud.",
+      "Alone, is it. The ones who come back mostly didn't start that way."
+    ],
+    "hurt": [
+      "You're leaking. There's a bed here and the landlord has seen worse walk in.",
+      "Sleep it off. The beds are bad. They are still beds.",
+      "You've the look of the last three who didn't stop at the inn."
+    ],
+    "flush": [
+      "That purse is making a noise. The shop's right there and it does not judge.",
+      "Coin's no use to you dead, and there's a counter in this town happy to prove it.",
+      "Spend it. Whatever's out there won't be impressed by your savings."
+    ],
+    "idle": [
+      "Half this town needs something doing. The other half is the something.",
+      "People here have problems. Ask around. Nobody's shy about it.",
+      "You look unoccupied. That's a condition somebody here will cure for you."
+    ],
+    "broke": [
+      "Monster parts sell. Not for much. But they sell.",
+      "You could shift what you're carrying. Somebody always wants it. Nobody knows why."
+    ]
   }
 }

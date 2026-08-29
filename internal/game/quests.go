@@ -3,6 +3,8 @@ package game
 import (
 	"fmt"
 
+	"github.com/slycrel/slycrel-rpg/internal/core"
+	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
@@ -68,12 +70,94 @@ func (g *Game) talkTo(e *world.Entity) {
 // every single person comments on you is a town that has stopped being a place
 // and started being a mirror.
 func (g *Game) townLine(e *world.Entity) string {
+	// Something true about the run comes first, when there is something true
+	// and the roll allows it. See adviceKey for what counts.
+	if g.RNG.Chance(adviceChance) {
+		if s := g.Write.Advice(g.RNG, g.adviceKey()); s != "" {
+			return s
+		}
+	}
 	if g.RNG.Chance(0.45) {
 		if s := g.Write.StandingLine(g.RNG, rules.Read(g.Player).Key()); s != "" {
 			return s
 		}
 	}
 	return e.Line
+}
+
+// adviceChance is how often a villager with something useful to say says it.
+//
+// A third, for the same reason the standing lines are not every time: a town
+// where everybody tells you what to do next has stopped being a place and
+// started being a tutorial with legs. Two in three conversations are still the
+// person's own line, which is the whole reason they were written one each.
+const adviceChance = 0.33
+
+// adviceKey names the most pressing thing about the run, or the empty string
+// when nothing stands out.
+//
+// Ordered, and the order is the point: whichever comes back is the only one
+// anybody will mention, so the first match has to be the thing actually worth
+// saying. Money problems come before anything that costs money, because a
+// stranger telling a broke player to go and buy a bed is the same failure as
+// the shop offering a sword nobody can afford — the game holding out something
+// it is about to take away. "Never offer a choice you are about to refuse"
+// applies to advice as much as to menus.
+func (g *Game) adviceKey() string {
+	if g.Player == nil {
+		return ""
+	}
+	party := g.Party()
+	bed := innCost(g.Player.Level, len(party))
+	hire := rules.HireCost(core.Max(1, g.Player.Level), "", rules.Read(g.Player))
+
+	switch {
+	case g.Player.Coins < bed:
+		return "broke"
+	case partyFrac(party) < hurtBelow:
+		return "hurt"
+	// Only when it is a thing they could actually do. Somebody who cannot
+	// afford company does not need to be told company exists; they need the
+	// line above, and they already got it.
+	case len(g.Allies) == 0 && g.Player.Coins >= hire:
+		return "alone"
+	case g.Player.Coins >= hire*flushMultiple:
+		return "flush"
+	case g.Quests.CountActive() == 0:
+		return "idle"
+	}
+	return ""
+}
+
+const (
+	// hurtBelow is the share of the party's hit points under which somebody
+	// will mention the inn. Not a sliver: a party at two thirds is a party
+	// mid-adventure, and being told to go to bed is not advice, it is nagging.
+	hurtBelow = 0.45
+	// flushMultiple is how many hirelings' worth of unspent coin counts as
+	// walking around rich enough for a stranger to notice.
+	flushMultiple = 3
+)
+
+// innCost is what a night costs, mirrored from the inn so the advice cannot
+// quote a threshold the landlord disagrees with.
+func innCost(level, beds int) int64 {
+	return int64((10 + level*4) * core.Max(1, beds))
+}
+
+// partyFrac is the party's hit points as a share of what they would be at full.
+// Everybody together rather than the hero alone, because a companion at a
+// tenth is exactly the state somebody should be told to sleep off.
+func partyFrac(party []*model.Character) float64 {
+	var have, max int
+	for _, c := range party {
+		have += core.Max(0, c.HP)
+		max += c.MaxHP
+	}
+	if max <= 0 {
+		return 1
+	}
+	return float64(have) / float64(max)
 }
 
 // wantsToAsk decides, stably, whether this particular person has an errand.

@@ -349,6 +349,7 @@ func buildSettlement(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 		shops = shops[:2]
 	}
 	inn := core.Point{X: -1}
+	var innAt building
 	for i, s := range shops {
 		if i >= len(built) {
 			break
@@ -358,7 +359,7 @@ func buildSettlement(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 		kind := EShop
 		if s.kind == ShopInn {
 			kind = EInn
-			inn = door
+			inn, innAt = door, b
 		}
 		l.Entities = append(l.Entities, &Entity{
 			Kind: kind, Pos: door, Name: s.name, Shop: s.kind,
@@ -371,7 +372,11 @@ func buildSettlement(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 	// big enough to have an inn get one, which gives a village a reason to be
 	// somewhere you pass through and a town a reason to be somewhere you stop.
 	if inn.X >= 0 {
-		if p, ok := openNear(g, l, inn, 2, 5); ok {
+		// Outside the building, always. See openNearWhere.
+		if p, ok := openNearWhere(g, l, inn, 2, 5, func(p core.Point) bool {
+			return p.X < innAt.x || p.X >= innAt.x+innAt.w ||
+				p.Y < innAt.y || p.Y >= innAt.y+innAt.h
+		}); ok {
 			class := core.Pick(g, recruitClasses)
 			look := core.Pick(g, recruitLooks[class])
 			// Roughly one hireling in three is not entirely a person. They are
@@ -809,6 +814,20 @@ func findOpen(g *core.RNG, l *LocalMap, tries int) (core.Point, bool) {
 // drawn almost entirely over the innkeeper, and the hireling loitering outside
 // the inn was doing exactly that in a third of all towns.
 func openNear(g *core.RNG, l *LocalMap, at core.Point, min, radius int) (core.Point, bool) {
+	return openNearWhere(g, l, at, min, radius, nil)
+}
+
+// openNearWhere is openNear with a veto: ok may refuse a tile that is free and
+// walkable but wrong for other reasons.
+//
+// It exists because "beside the inn door" and "inside the inn" are the same
+// search. A building's interior is walkable floor and its door sits one tile in
+// from the bottom wall, so a five-tile ring around that door covers most of the
+// room behind it — and the hireling loitering outside the inn was regularly
+// loitering in the middle of it, which reads as a man who lives there rather
+// than one waiting to be asked.
+func openNearWhere(g *core.RNG, l *LocalMap, at core.Point, min, radius int,
+	ok func(core.Point) bool) (core.Point, bool) {
 	if min < 1 {
 		min = 1
 	}
@@ -822,6 +841,9 @@ func openNear(g *core.RNG, l *LocalMap, at core.Point, min, radius int) (core.Po
 				}
 				p := core.Point{X: at.X + dx, Y: at.Y + dy}
 				if p.X < 1 || p.Y < 1 || p.X >= l.W-1 || p.Y >= l.H-1 {
+					continue
+				}
+				if ok != nil && !ok(p) {
 					continue
 				}
 				if l.At(p.X, p.Y).Info().Passable && l.EntityAt(p.X, p.Y) == nil {

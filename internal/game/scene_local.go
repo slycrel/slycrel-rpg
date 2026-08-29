@@ -517,8 +517,11 @@ func (s *localScene) Draw(g *Game, dst *ebiten.Image) {
 	// town at midnight whether or not anything is falling on it.
 	g.drawSky(dst, g.weatherHere(), !g.Local.POI.Kind.Settlement())
 
-	// Labels go over the tint, because a name that dims at dusk is a name
-	// nobody can read at the hour they most need it.
+	// Marks and labels go over the tint, because a name that dims at dusk is a
+	// name nobody can read at the hour they most need it — and a star that dims
+	// in the rain is worse, since the whole job of one is being spotted without
+	// being looked for.
+	s.drawMarks(g, ctx)
 	s.drawLabels(g, dst)
 
 	s.drawHUD(g, dst)
@@ -697,4 +700,21 @@ func (s *localScene) drawHUD(g *Game, dst *ebiten.Image) {
 	// furthest from where the player is looking. It is named on the thing
 	// itself now, so the corner goes back to the compass and the keys.
 	g.drawStatusBar(dst, g.Local.POI.Name, "C sheet - H help")
+}
+
+// drawMarks stars everybody in the interior who has something for the player.
+//
+// Its own pass rather than a line inside the entity loop, and after the sky.
+// The first version drew each mark straight after its owner's sprite, which put
+// it under the weather tint and under the night tint — invisible in the rain,
+// which is exactly the sort of bug that survives a test suite and dies in one
+// frame.
+func (s *localScene) drawMarks(g *Game, ctx *render.Ctx) {
+	poiIdx := g.currentPOIIndex()
+	for _, e := range g.Local.Entities {
+		if e.Used || g.abed(e) {
+			continue
+		}
+		g.drawAttention(ctx, e, g.attention(e, poiIdx))
+	}
 }

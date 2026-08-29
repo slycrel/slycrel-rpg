@@ -59,6 +59,12 @@ type Sprite struct {
 	// standing on. Every hero in the game was drawing a full tile high, which
 	// read in play as the walls of a building having their hit box off by one.
 	Foot int
+	// Head is the mirror of Foot: how many transparent rows sit above the
+	// artwork. Anything that wants to put something over a character's head —
+	// a mark, a bubble — has to know where the head actually is, and in a
+	// 64-pixel box holding a 30-pixel villager that is nowhere near the top of
+	// the frame.
+	Head int
 }
 
 // Frame returns frame i, wrapping so animation callers never index out of
@@ -250,6 +256,7 @@ func (r *Registry) load(key string) *Sprite {
 		return nil
 	}
 	sp.Foot = footPadding(src, fw, fh)
+	sp.Head = headPadding(src, fw, fh)
 	return sp
 }
 
@@ -277,6 +284,29 @@ func footPadding(src image.Image, w, h int) int {
 		for x := 0; x < w; x++ {
 			if _, _, _, a := src.At(b.Min.X+x, b.Min.Y+y).RGBA(); a > 4096 {
 				return h - 1 - y
+			}
+		}
+	}
+	return 0
+}
+
+// headPadding counts the empty rows above the artwork, the same way
+// footPadding counts the ones below.
+func headPadding(src image.Image, w, h int) int {
+	if src == nil || w <= 0 || h <= 0 {
+		return 0
+	}
+	b := src.Bounds()
+	if w > b.Dx() {
+		w = b.Dx()
+	}
+	if h > b.Dy() {
+		h = b.Dy()
+	}
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			if _, _, _, a := src.At(b.Min.X+x, b.Min.Y+y).RGBA(); a > 4096 {
+				return y
 			}
 		}
 	}

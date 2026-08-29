@@ -194,6 +194,19 @@ which event fires which trigger, and where it is safe to put a box on screen.
   recomputed in `Update`, not baked in when the rows are built. The times are
   already parsed and in hand, so re-ageing costs nothing; re-running `refresh`
   would re-read every save file on disk sixty times a second.
+- **Interface goes over the sky tint.** `drawSky` runs after the entity pass, so
+  anything drawn with the sprites gets the weather and the night painted over
+  it. The labels already sit in a later pass for this reason; the attention
+  stars had to move there too, having been invisible in rain — which is the
+  weather you most want to be told things in. If it is meant to be read rather
+  than inhabited, draw it after the sky.
+- **`Sprite.Head` is where the art starts, and it is not the top of the frame.**
+  Character art is anchored on its feet inside a generous box, so how far a
+  head is above its tile depends entirely on the sheet: townsfolk are about a
+  tile, winged hirelings better than two. Anything floating over a character —
+  a mark, a bubble — has to measure with `sp.H - sp.Head`, exactly as `Foot`
+  answers the same question at the other end. A fixed offset lands on the tall
+  ones' faces.
 - **A sub-image draws from its own bounds origin.** `canvas.SubImage(rect)` then
   `GeoM.Translate(x, y)` puts the slice at x,y — exactly as a sprite sheet's
   frame does. Subtracting the sub-rectangle's own position, which looks like the

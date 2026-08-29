@@ -66,7 +66,9 @@ type Text struct {
 	LevelFlavor []string `json:"levelFlavor"`
 	IdleFlavor  []string `json:"idleFlavor"`
 	NpcLine     []string `json:"npcLine"`
-	SignText    []string `json:"signText"`
+	// Advice is keyed by what is true about the run — see Game.adviceKey.
+	Advice   map[string][]string `json:"advice"`
+	SignText []string            `json:"signText"`
 
 	// Hirelings: the sales pitch, the handshake, the parting, and what happens
 	// when one of them stops being upright.

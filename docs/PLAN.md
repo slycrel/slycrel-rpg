@@ -1707,6 +1707,60 @@ own bounds origin, so subtracting the window position from the translate — whi
 looks like the obvious correction — drew the slice up and left of its own
 border, reading as a second panel bleeding off the corner of the screen.
 
+**"Do the random messages from townsfolk mean anything?"** Half of them already
+did, which was worth finding out before writing any: `townLine` has always had a
+one-in-two chance of answering with a reaction to your reputation instead of the
+villager's own line. What was missing was the other axis. A stranger could tell
+you what they thought of you and never once notice the state you were visibly
+in — walking around alone, or at a third health, or carrying four hirelings'
+worth of unspent coin.
+
+There is an `advice` block in `flavor.json` now, keyed on what is true about the
+run, and a third of the time somebody says it. A third, because a town where
+everybody tells you what to do next has stopped being a place.
+
+The ordering in `adviceKey` is the part that matters. Money problems come before
+every suggestion that costs money, so a broke player is never told to go and buy
+a bed — that is the same failure as a shop row you cannot afford taking your
+keypress and saying no, and it is the rule the counter and the hiring board
+already follow by greying things out. A test walks the whole cross of purse and
+health and asserts nobody is ever pointed at something they cannot do.
+
+**And a star over anybody holding something.** A settlement draws eight or ten
+identical villagers, exactly one of whom has the errand, and which one is a hash
+of where they are standing — stable, and completely invisible. Since walking
+into things became how you use them, the way to find that person was to bump
+every human in town.
+
+A star rather than the exclamation point, which does the same job without
+reading as somebody else's icon. Pale for something on offer, gold for something
+already yours: a finished errand to hand in, or an installment somebody has been
+holding since you left.
+
+The mark is capped the way the systems behind it are capped — one errand and one
+story per settlement — so a town shows at most three. Marking every villager
+whose hash said yes would have starred five people in a town that can produce
+one, which is not a hint but a lie with a shape, and the player finds out by
+bumping all five. A test pins the ceiling and fails at 5-of-7 without the
+gating. A job already taken is deliberately unmarked: it is the one villager in
+town whose news you have heard.
+
+Three things about it were only findable in a frame. The mark drew *under* the
+weather, because it went in with the sprites and `drawSky` runs after them —
+invisible in rain, which is the weather you most want to be told things in. It
+drew on the tall hirelings' faces, because character art is anchored on its feet
+inside a generous box and a fixed offset assumes every head is the same height
+above its tile; `Sprite.Head` is the mirror of the `Foot` that already existed
+for the same reason at the other end. And its first colour was the exact tan of
+a villager's hair.
+
+**The hireling now waits outside the inn rather than in it.** A building's
+interior is walkable floor and its door sits one tile inside the bottom wall, so
+the five-tile ring `openNear` searched around that door covered most of the room
+behind it. About a third of the time the person loitering outside the inn was
+loitering in the middle of it, which reads as a man who lives there rather than
+one waiting to be asked.
+
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on

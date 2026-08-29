@@ -8,6 +8,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/gamedata"
 	"github.com/slycrel/slycrel-rpg/internal/model"
+	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
@@ -252,5 +253,185 @@ func creationGame(t *testing.T, seed int64) *Game {
 	return &Game{
 		Root: t.TempDir(), Data: tables, Write: content.New(&tables.Text),
 		RNG: core.NewRNG(seed), Seed: seed, Log: ui.NewLog(4),
+	}
+}
+
+// A town may never show more marks than it can actually honour.
+//
+// The hashes behind "this person has an errand" and "this person has a story"
+// are per-villager and fire for roughly half of them, but the code that grants
+// either caps it at one per settlement. Marking everybody whose hash says yes
+// would put three or four stars over a town that can produce exactly one
+// errand and one story — which is not a hint, it is a lie with a shape, and the
+// player finds out by walking into all of them, which is the problem the mark
+// was added to solve.
+func TestATownNeverPromisesMoreThanItCanGive(t *testing.T) {
+	g := storyGame(t)
+
+	towns := 0
+	for idx, p := range g.World.POIs {
+		if !p.Kind.Settlement() {
+			continue
+		}
+		g.Local = world.BuildLocal(p, g.Write)
+		g.LocalWalk.Place(g.Local.Entry)
+
+		offers, people := 0, 0
+		for _, e := range g.Local.Entities {
+			if e.Kind == world.ENPC {
+				people++
+			}
+			if g.attention(e, idx) == attentionOffer {
+				offers++
+			}
+		}
+		// One errand, one story, and at most one person waiting outside the
+		// inn: three is the ceiling, and only a settlement with an inn reaches
+		// it. Anything above that is the mark counting hashes rather than
+		// counting what the town can hand over.
+		if offers > 3 {
+			t.Errorf("%s marks %d people with something on offer, out of %d; the cap is 3",
+				p.Name, offers, people)
+		}
+		towns++
+		if towns >= 8 {
+			break
+		}
+	}
+	g.Local = nil
+	if towns == 0 {
+		t.Skip("this continent generated no settlements")
+	}
+}
+
+// An errand you are already carrying is not news.
+//
+// The mark is for finding what you have not seen. Putting one over the person
+// whose job you are in the middle of would star the one villager in town whose
+// news you have already heard — and, worse, it would look exactly like the mark
+// that means "come and collect", which is the one that has to stay meaningful.
+func TestAJobInProgressIsNotStarred(t *testing.T) {
+	g := storyGame(t)
+	idx := -1
+	for i, p := range g.World.POIs {
+		if p.Kind.Settlement() {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		t.Skip("this continent generated no settlements")
+	}
+	g.Local = world.BuildLocal(g.World.POIs[idx], g.Write)
+	g.LocalWalk.Place(g.Local.Entry)
+	defer func() { g.Local = nil }()
+
+	var giver *world.Entity
+	for _, e := range g.Local.Entities {
+		if e.Kind == world.ENPC {
+			giver = e
+			break
+		}
+	}
+	if giver == nil {
+		t.Skip("this town generated nobody to ask")
+	}
+
+	q, ok := quest.Generate(g.RNG, g.World, g.Data, g.Write, idx, giver.Name)
+	if !ok {
+		t.Skip("no errand could be generated for this town")
+	}
+	g.Quests.Add(q)
+
+	if got := g.attention(giver, idx); got != attentionNone {
+		t.Errorf("a job already taken is marked %v, want no mark at all", got)
+	}
+}
+
+// Advice must never point at something the player cannot do.
+//
+// "Never offer a choice you are about to refuse" is the rule the shop counter
+// and the hiring board already follow by greying out what you cannot afford,
+// and it applies just as much to a stranger in the street. Being told to go and
+// buy a bed by somebody who can see your purse is the same failure as a menu
+// row that takes your keypress and says no — worse, because there is nothing
+// greyed out to explain it.
+//
+// So the ordering in adviceKey is load-bearing, not cosmetic: money problems
+// have to come before every suggestion that costs money.
+func TestNobodyAdvisesSomethingYouCannotAfford(t *testing.T) {
+	g := storyGame(t)
+
+	for _, coins := range []int64{0, 1, 30, 60, 75, 120, 400, 5000, 100000} {
+		for _, frac := range []float64{1.0, 0.5, 0.2} {
+			g.Player.Coins = coins
+			g.Player.HP = int(float64(g.Player.MaxHP) * frac)
+			g.Quests = quest.Log{}
+			g.Allies = nil
+
+			key := g.adviceKey()
+			bed := innCost(g.Player.Level, len(g.Party()))
+			hire := rules.HireCost(core.Max(1, g.Player.Level), "", rules.Read(g.Player))
+
+			switch key {
+			case "hurt":
+				if coins < bed {
+					t.Errorf("%d coins, %.0f%% health: told to sleep, but a bed is %d",
+						coins, frac*100, bed)
+				}
+			case "alone":
+				if coins < hire {
+					t.Errorf("%d coins: told to hire, but the going rate is %d", coins, hire)
+				}
+			case "flush":
+				if coins < hire {
+					t.Errorf("%d coins: called rich, but cannot afford a single hireling at %d",
+						coins, hire)
+				}
+			}
+			// And a broke player must always be told the one thing that costs
+			// nothing, whatever else is wrong with the run.
+			if coins < bed && key != "broke" {
+				t.Errorf("%d coins is under the %d a bed costs, but the advice was %q",
+					coins, bed, key)
+			}
+		}
+	}
+}
+
+// Every advice key the game can produce has to have something written for it.
+//
+// The two halves live in different files — the conditions in Go, the lines in
+// flavor.json — which is the arrangement that lets the writing be revised
+// without touching code, and also the arrangement where a renamed key fails
+// silently. A villager who has been selected to say something useful and then
+// says nothing falls back to their own line, so nothing looks broken and the
+// feature simply never fires.
+func TestEveryAdviceKeyHasLinesBehindIt(t *testing.T) {
+	g := storyGame(t)
+	keys := map[string]bool{}
+	for _, coins := range []int64{0, 60, 200, 900, 100000} {
+		for _, frac := range []float64{1.0, 0.3} {
+			for _, allies := range []int{0, 1} {
+				g.Player.Coins = coins
+				g.Player.HP = int(float64(g.Player.MaxHP) * frac)
+				g.Allies = nil
+				if allies > 0 {
+					g.Allies = []*model.Character{rules.NewCharacter(g.RNG, "Someone", model.ClassThief)}
+				}
+				g.Quests = quest.Log{}
+				if k := g.adviceKey(); k != "" {
+					keys[k] = true
+				}
+			}
+		}
+	}
+	if len(keys) == 0 {
+		t.Fatal("no advice key fired for any state, so none of this is reachable")
+	}
+	for k := range keys {
+		if len(g.Data.Text.Advice[k]) == 0 {
+			t.Errorf("adviceKey can return %q, but flavor.json has no lines for it", k)
+		}
 	}
 }
