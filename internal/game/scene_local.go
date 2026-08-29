@@ -642,9 +642,42 @@ func labelRange(k world.EntityKind) int {
 	switch k {
 	case world.EFoe, world.EBoss:
 		return 0
+	case world.EShop, world.EInn:
+		// Always. A shop's sign is the one label that is pure navigation — it
+		// is how you cross a town towards the armourer instead of walking into
+		// buildings until one of them is the armourer — and a sign you have to
+		// be within four tiles to read is a sign you find by the method it
+		// exists to replace. Four buildings in a settlement, so this is four
+		// plates on screen at worst.
+		return alwaysLabelled
 	}
 	return labelRadius
 }
+
+// alwaysLabelled is a range larger than any interior, for the things whose
+// label is directions rather than description.
+const alwaysLabelled = 1 << 20
+
+// labelShowing reports whether this thing currently has a tag over it.
+//
+// Used by the attention star, which has to know where the top of that tag is so
+// it can sit above it rather than inside it.
+func (g *Game) labelShowing(e *world.Entity, poiIdx int) bool {
+	if e.Used || g.abed(e) {
+		return false
+	}
+	r := labelRange(e.Kind)
+	d := labelDist(e.Pos, g.LocalWalk.Tile)
+	if r == 0 || d > r {
+		return false
+	}
+	_, _, show := g.labelFor(e, d, poiIdx)
+	return show
+}
+
+// tagPlateH is how tall a one-line floating tag is, measured the way ui.Tag
+// builds it: the ink, plus the padding above and below the plate.
+const tagPlateH = float64(render.TextInkH) + 5
 
 // nameRadius is how close you have to be before a label says who somebody is.
 //
@@ -782,6 +815,6 @@ func (s *localScene) drawMarks(g *Game, ctx *render.Ctx) {
 		if e.Used || g.abed(e) {
 			continue
 		}
-		g.drawAttention(ctx, e, g.attention(e, poiIdx))
+		g.drawAttention(ctx, e, g.attention(e, poiIdx), poiIdx)
 	}
 }

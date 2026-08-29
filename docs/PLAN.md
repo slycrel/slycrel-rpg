@@ -1875,9 +1875,20 @@ reward for arriving, it is how you find the armourer without trying every door,
 and that was the problem the labels were added to fix in the first place. A test
 asserts the line between the two.
 
-The star and the stand-in hand over at the edge of tag range rather than
-doubling up: they say the same thing, the words are the more legible of the two,
-and they occupy the same sixteen pixels above a head.
+The star does not hand over to the tag; it moves out of its way. Standing down
+was the first answer, on the grounds that two marks for one fact is one too
+many — which is true of the fact and wrong about the mark. A star is what the
+eye catches while crossing a street, and having it wink out at four tiles means
+the thing you were walking towards stops being marked at the moment you commit
+to walking towards it. A name answers a different question from a star. So when
+a tag is up the star is lifted clear of the plate, which is what the geometry
+was asking for all along.
+
+And shops and inns are labelled from anywhere in the town they are in. Four
+tiles was the range, and a town is fifty-odd tiles across, so the sign that
+exists to point you at the armourer could only be read once you were close
+enough to have already found the armourer. Directions are useless at the
+destination.
 
 ## Open questions
 

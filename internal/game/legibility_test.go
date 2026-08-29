@@ -826,3 +826,44 @@ func TestAStandInOnlyMarksSomebodyWorthVisiting(t *testing.T) {
 		t.Skip("this continent generated no settlements")
 	}
 }
+
+// A shop is labelled from anywhere in the town it is in.
+//
+// Four tiles was the old range, and a town is fifty-odd tiles across — so the
+// sign that exists to point you at the armourer could only be read once you
+// were close enough to have found the armourer. The label is directions and
+// directions are useless at the destination.
+func TestAShopIsLabelledFromAnywhereInTown(t *testing.T) {
+	g := storyGame(t)
+	towns := 0
+	for idx, p := range g.World.POIs {
+		if !p.Kind.Settlement() {
+			continue
+		}
+		g.Local = world.BuildLocal(p, g.Write)
+		// The furthest corner from every shop in turn.
+		for _, e := range g.Local.Entities {
+			if e.Kind != world.EShop && e.Kind != world.EInn {
+				continue
+			}
+			for _, corner := range []core.Point{
+				{X: 1, Y: 1}, {X: g.Local.W - 2, Y: 1},
+				{X: 1, Y: g.Local.H - 2}, {X: g.Local.W - 2, Y: g.Local.H - 2},
+			} {
+				g.LocalWalk.Place(corner)
+				if !g.labelShowing(e, idx) {
+					t.Errorf("%s: %s at %v is unlabelled from %v, %d tiles away",
+						p.Name, e.Name, e.Pos, corner, labelDist(e.Pos, corner))
+				}
+			}
+		}
+		towns++
+		if towns >= 4 {
+			break
+		}
+	}
+	g.Local = nil
+	if towns == 0 {
+		t.Skip("this continent generated no settlements")
+	}
+}

@@ -149,9 +149,9 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
   something they leave in you.
 - **Shops, inns, chests, altars and townsfolk** who all have opinions — about
   your reputation, and sometimes about the state you are visibly in. Anybody
-  holding something for you is marked: a star across the street, "someone" as
-  you get closer, and their actual name once you are near enough to have met
-  them. A shop keeps its name at any distance, because that one is directions.
+  holding something for you wears a star, and reads as "someone" until you are
+  near enough to be told a name. Shops and inns are signposted from anywhere in
+  the town, because that one is directions rather than description.
 - **Quests** — generated from the world rather than written against it. Someone
   in a town wants four pelts, or a cave cleared, or a parcel carried two days
   east. The generator only ever names things it has checked exist, so an errand

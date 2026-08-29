@@ -6,6 +6,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 
 	"github.com/slycrel/slycrel-rpg/internal/assetsys"
+	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/world"
@@ -150,20 +151,21 @@ var starBob = []float64{0, -1, -2, -1}
 // read from across a street; the name appears when you are close enough to be
 // told it. So the star is what you get *until* the label can tell you more.
 //
-// Any tag, not only a naming one. Beyond the naming radius a person's tag reads
-// "someone" — but it is only drawn at all for somebody who has something, so it
-// is already saying what the star says, in words, in the same space. Two marks
-// for one fact is one mark too many, and the words are the more legible of the
-// two. The star's job is the distance past which there is no tag.
-func (g *Game) drawAttention(ctx *render.Ctx, e *world.Entity, kind attentionKind) {
+// It stands its ground when a label is up, and moves out of the way instead.
+//
+// The first version stood down, on the grounds that a tag occupies exactly the
+// sixteen pixels above a head and two marks for one fact is one mark too many.
+// That is true of the *fact* and wrong about the mark: a star is what the eye
+// catches while crossing a street, and having it wink out at four tiles means
+// the thing you were walking towards stops being marked the moment you commit
+// to walking towards it. The name is not a replacement for the star, it is the
+// answer to a different question.
+//
+// So when a tag is up the star is lifted clear of the plate rather than
+// suppressed by it, which is what the geometry was really asking for.
+func (g *Game) drawAttention(ctx *render.Ctx, e *world.Entity, kind attentionKind, poiIdx int) {
 	if kind == attentionNone {
 		return
-	}
-	if r := labelRange(e.Kind); r > 0 {
-		d := labelDist(e.Pos, g.LocalWalk.Tile)
-		if d <= r {
-			return
-		}
 	}
 	// Gold, both of them, because gold is the one colour on this palette that
 	// nothing in the world is.
@@ -197,7 +199,17 @@ func (g *Game) drawAttention(ctx *render.Ctx, e *world.Entity, kind attentionKin
 		top -= ts
 	}
 	x := float64(e.Pos.X*ts) + ox + (ts-7)/2
-	y := top + oy - 5 + starBob[(g.Tick()/8)%len(starBob)]
+	y := top + oy - 5
+
+	// Clear of the tag, when there is one. A plate hangs off the top of the
+	// tile rather than off the top of the artwork, so a short sprite's star sits
+	// squarely inside it and a tall one's is already well above — which is why
+	// this is a ceiling rather than an offset.
+	if g.labelShowing(e, poiIdx) {
+		plateTop := float64(e.Pos.Y*ts) + oy - tagPlateH
+		y = core.MinF(y, plateTop-9)
+	}
+	y += starBob[(g.Tick()/8)%len(starBob)]
 
 	// A hard shadow down and to the right, then the star over it.
 	//
