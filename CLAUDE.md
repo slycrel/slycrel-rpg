@@ -194,6 +194,20 @@ which event fires which trigger, and where it is safe to put a box on screen.
   recomputed in `Update`, not baked in when the rows are built. The times are
   already parsed and in hand, so re-ageing costs nothing; re-running `refresh`
   would re-read every save file on disk sixty times a second.
+- **A note that outlives the cursor is a screen that has stopped answering.**
+  The shop's description strip and its "you bought a thing" line share one
+  space, and the note wins while it is set — so a note never cleared on
+  movement meant one purchase permanently disabled the only line that said what
+  anything was. Anything written in reaction to an action has to be cleared by
+  the next navigation, not by the next action.
+- **`S` is the down key, and so are `J`, `A`, `D`, `H`, `K`, `L`.** WASD and vi
+  keys between them claim most of the alphabet's convenient letters, so a new
+  hotkey has to be checked against `upKeys`/`downKeys`/`leftKeys`/`rightKeys`
+  before it is bound. Bulk-selling was one commit from living on `S`, which is
+  the key that scrolls the list it would have emptied. When a bulk action needs
+  a home, a row is nearly always better than a key: it costs no binding, it
+  quotes its price in the detail column like every other row, and it can grey
+  itself out — which is the rule the inn and the hiring board already follow.
 - **Interface goes over the sky tint.** `drawSky` runs after the entity pass, so
   anything drawn with the sprites gets the weather and the night painted over
   it. The labels already sit in a later pass for this reason; the attention

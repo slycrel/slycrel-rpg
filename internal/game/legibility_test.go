@@ -1,6 +1,7 @@
 package game
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -434,4 +435,155 @@ func TestEveryAdviceKeyHasLinesBehindIt(t *testing.T) {
 			t.Errorf("adviceKey can return %q, but flavor.json has no lines for it", k)
 		}
 	}
+}
+
+// Bulk selling must never touch something an errand is counting.
+//
+// A fetch quest names an item and SyncFetch recounts the bag afterwards, so a
+// key that swept the pack would silently undo a job in progress: the log would
+// go on claiming a number the pack no longer backs up, and the only clue would
+// be a counter that had gone backwards for no stated reason. The single-row
+// sell is still allowed to do it, because that is somebody deliberately selling
+// a named thing they are looking at.
+func TestSellingTheJunkKeepsWhatAnErrandWants(t *testing.T) {
+	g := storyGame(t)
+	s := &shopScene{e: &world.Entity{Name: "Blacksmith"}, tab: tabSell}
+
+	junk := trinkets(t, g, 3)
+	for _, it := range junk {
+		it.Count = 4
+		g.Player.AddItem(it)
+	}
+	// One of them is what somebody asked for.
+	g.Quests.Add(&quest.Quest{
+		ID: "test", Kind: quest.Fetch, State: quest.Active,
+		Title: "Bring me four", Item: junk[1].Name, Need: 4,
+	})
+	g.Quests.SyncFetch(g.Player.Bag)
+
+	before := g.Player.Coins
+	s.sellJunk(g)
+
+	left := map[string]int{}
+	for _, it := range g.Player.Bag {
+		left[it.Name] = it.Count
+	}
+	if left[junk[1].Name] != 4 {
+		t.Errorf("the errand wanted 4 %s and the sweep left %d",
+			junk[1].Name, left[junk[1].Name])
+	}
+	for _, n := range []string{junk[0].Name, junk[2].Name} {
+		if left[n] != 0 {
+			t.Errorf("%s is junk nobody asked for, and %d survived the sweep", n, left[n])
+		}
+	}
+	if g.Player.Coins <= before {
+		t.Errorf("the sweep sold two stacks and paid %d", g.Player.Coins-before)
+	}
+	// And the errand's counter still matches the pack it is counting.
+	if q := g.Quests.Active()[0]; q.Have != 4 {
+		t.Errorf("the errand reads %d/%d after the sweep, want 4", q.Have, q.Need)
+	}
+}
+
+// Selling a row sells the pile, not one off the top of it.
+func TestSellingARowSellsTheWholeStack(t *testing.T) {
+	g := storyGame(t)
+	s := &shopScene{e: &world.Entity{Name: "Blacksmith"}, tab: tabSell}
+
+	it := trinkets(t, g, 1)[0]
+	it.Count = 7
+	g.Player.AddItem(it)
+	g.Player.Coins = 0
+
+	s.refresh(g)
+	var row ui.MenuItem
+	for _, mi := range s.menu.Items {
+		if r, ok := mi.Data.(sellRow); ok && !r.gear && g.Player.Bag[r.idx].Name == it.Name {
+			row = mi
+		}
+	}
+	// What the row quotes is what the keypress has to pay.
+	want := int64(sellPrice(it.Value) * 7)
+	if row.Detail != fmt.Sprintf("%d", want) {
+		t.Errorf("the row quotes %q for seven, want %d", row.Detail, want)
+	}
+
+	s.sell(g, row)
+	for _, b := range g.Player.Bag {
+		if b.Name == it.Name {
+			t.Errorf("%d %s left in the pack after selling the stack", b.Count, it.Name)
+		}
+	}
+	if g.Player.Coins != want {
+		t.Errorf("paid %d for seven, want %d", g.Player.Coins, want)
+	}
+}
+
+// trinkets pulls n distinct sellable-junk items out of the tables.
+func trinkets(t *testing.T, g *Game, n int) []model.Item {
+	t.Helper()
+	var out []model.Item
+	for _, it := range g.Data.Items {
+		if it.Kind == model.ItemTrinket && it.Value > 1 {
+			out = append(out, it)
+		}
+		if len(out) == n {
+			return out
+		}
+	}
+	t.Skipf("only %d sellable trinkets in the tables, need %d", len(out), n)
+	return nil
+}
+
+// The sweep is a row, and it must not be reachable by a movement key.
+//
+// It was very nearly bound to S, which is the down key on WASD — so scrolling
+// the sell list would have emptied the pack, and the player would have had no
+// idea which press did it. This pins the row's existence and, by having no
+// hotkey to test, the absence of the binding.
+func TestTheSweepIsARowAndQuotesItsPrice(t *testing.T) {
+	g := storyGame(t)
+	s := &shopScene{e: &world.Entity{Name: "Blacksmith"}, tab: tabSell}
+
+	// Nothing to sweep: the row must not be offered at all, rather than offered
+	// and refused.
+	s.refresh(g)
+	if findSweep(s) != nil {
+		t.Error("an empty pack still offers to sell everything in it")
+	}
+
+	junk := trinkets(t, g, 2)
+	for _, it := range junk {
+		it.Count = 5
+		g.Player.AddItem(it)
+	}
+	s.refresh(g)
+
+	row := findSweep(s)
+	if row == nil {
+		t.Fatal("a pack full of junk does not offer to sell it")
+	}
+	worth, pieces := s.junkWorth(g)
+	if pieces != 10 {
+		t.Errorf("the sweep covers %d pieces, want 10", pieces)
+	}
+	if row.Detail != fmt.Sprintf("%d", worth) {
+		t.Errorf("the row quotes %q, and the sweep pays %d", row.Detail, worth)
+	}
+
+	before := g.Player.Coins
+	s.sell(g, *row)
+	if got := g.Player.Coins - before; got != int64(worth) {
+		t.Errorf("the row quoted %d and paid %d", worth, got)
+	}
+}
+
+func findSweep(s *shopScene) *ui.MenuItem {
+	for i, mi := range s.menu.Items {
+		if _, ok := mi.Data.(sellAll); ok {
+			return &s.menu.Items[i]
+		}
+	}
+	return nil
 }

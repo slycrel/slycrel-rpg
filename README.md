@@ -85,6 +85,7 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 | G / T | on a companion's sheet, give them the selected item or take it all back |
 | R | on a companion's sheet, let them go |
 | Tab | at a shop counter, change who you are buying for |
+| Z at a counter | sells the whole stack; the first row clears out the junk in one go |
 | J | the errands you agreed to; Z on one follows it, and the compass points at it |
 | Esc | pause: sound, save, load, abandon the run |
 | `\` or F12 | screenshot to `shots/` (F12 needs standard function keys on macOS) |

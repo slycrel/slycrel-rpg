@@ -74,6 +74,30 @@ func shelfVerdict(buyer *model.Character, data any) (string, color.Color) {
 		return why, render.ColInkFaint
 	}
 
+	d, ok := shelfDelta(buyer, data)
+	if !ok {
+		return "", nil
+	}
+	switch {
+	case d > 0:
+		return fmt.Sprintf("+%d", d), gradeDelta(d)
+	case d < 0:
+		return fmt.Sprintf("%d", d), gradeDelta(d)
+	}
+	return "=", render.ColInkDim
+}
+
+// shelfDelta is how much better a piece of gear is than the one already worn,
+// on whichever number the slot is actually sold on, and whether the question
+// even applies.
+//
+// Split out of shelfVerdict so the counter and the shelf answer it the same
+// way. A second comparison written for the buy confirmation would be a second
+// opinion about which of a rod's numbers matters, and the two would drift.
+func shelfDelta(buyer *model.Character, data any) (int, bool) {
+	if buyer == nil {
+		return 0, false
+	}
 	var have, want int
 	switch v := data.(type) {
 	case model.Weapon:
@@ -107,17 +131,11 @@ func shelfVerdict(buyer *model.Character, data any) (string, color.Color) {
 		}
 		want = laneValue(v)
 	default:
-		return "", nil
+		// Charms deliberately have no answer: every one gives with one hand and
+		// takes with the other, so there is no better one to point at.
+		return 0, false
 	}
-
-	d := want - have
-	switch {
-	case d > 0:
-		return fmt.Sprintf("+%d", d), gradeDelta(d)
-	case d < 0:
-		return fmt.Sprintf("%d", d), gradeDelta(d)
-	}
-	return "=", render.ColInkDim
+	return want - have, true
 }
 
 // laneValue is the number an off-arm item is actually sold on.

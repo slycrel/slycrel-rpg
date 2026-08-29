@@ -162,13 +162,18 @@ func (g *Game) drawAttention(ctx *render.Ctx, e *world.Entity, kind attentionKin
 			return
 		}
 	}
-	// Pale blue-white rather than the warm off-white it started as, which was
-	// the exact tan of a villager's hair and a linen smock: a mark the colour
-	// of the person under it is a mark nobody sees. Gold stays for the things
-	// already owed to you, because gold is what this game means by "yours".
-	col := color.RGBA{0xB8, 0xD8, 0xF0, 0xFF}
-	if kind == attentionOwed {
-		col = render.ColGold
+	// Gold, both of them, because gold is the one colour on this palette that
+	// nothing in the world is.
+	//
+	// It went pale blue first on the grounds that gold already meant "yours"
+	// and the two states wanted telling apart — and pale blue on grass is a
+	// mark you find by looking for it, which is the one thing a mark must not
+	// be. The states are told apart by brightness and by movement instead: what
+	// is merely on offer sits still in plain gold, and what is waiting on you
+	// pulses to something near white.
+	col := color.RGBA{0xE0, 0xB0, 0x4C, 0xFF}
+	if kind == attentionOwed && (g.Tick()/20)%2 == 0 {
+		col = color.RGBA{0xFF, 0xF0, 0xC0, 0xFF}
 	}
 
 	const ts = assetsys.TileSize
@@ -191,7 +196,15 @@ func (g *Game) drawAttention(ctx *render.Ctx, e *world.Entity, kind attentionKin
 	x := float64(e.Pos.X*ts) + ox + (ts-7)/2
 	y := top + oy - 5 + starBob[(g.Tick()/8)%len(starBob)]
 
-	drawGlyph(ctx.Dst, starGlyph, x, y+1, color.RGBA{0x10, 0x0C, 0x14, 0xC0})
+	// A hard shadow down and to the right, then the star over it.
+	//
+	// Offset rather than a ring, and offset both ways rather than straight
+	// down: a one-pixel outline all round a seven-pixel glyph eats the glyph,
+	// and a shadow directly underneath reads as a thicker star rather than as
+	// depth. Two pixels of dark along the bottom-right is what lifts it off
+	// whatever it happens to be floating over, which at this size is usually a
+	// hedge.
+	drawGlyph(ctx.Dst, starGlyph, x+2, y+2, color.RGBA{0x10, 0x0C, 0x14, 0xD8})
 	drawGlyph(ctx.Dst, starGlyph, x, y, col)
 }
 

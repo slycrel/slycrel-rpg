@@ -1761,6 +1761,41 @@ behind it. About a third of the time the person loitering outside the inn was
 loitering in the middle of it, which reads as a man who lives there rather than
 one waiting to be asked.
 
+**Four things off a screenshot.** The star was too subtle — pale blue on grass
+is a mark you find by looking for it, which is the one thing a mark must not be.
+Both states are gold now, which is the one colour on this palette that nothing
+in the world is, with a hard shadow two pixels down and right; they are told
+apart by movement instead, the owed one pulsing to near-white.
+
+**Selling was one keypress per object**, and a trip home from a dungeon is
+twenty or thirty trinkets — a player holding a key down to convert a known
+quantity of junk into a known quantity of coin, which is a chore with a menu in
+front of it. A row now sells its whole stack, and the first row on the sell tab
+clears out everything nothing is waiting on.
+
+That sweep was one commit from being bound to `S`, which is the down key on
+WASD: scrolling the sell list would have emptied the pack. As a row it needs no
+binding, quotes its price in the same column as everything else, and is absent
+rather than greyed when there is nothing to sweep. It also refuses to touch
+anything an active fetch quest is counting — the single-row sell still can,
+because that is somebody deliberately selling a named thing they are looking at.
+
+**Buying still does not equip**, and that rule stays: equipping on purchase used
+to destroy whatever came off, which is how a 240-coin glaive silently ate a
+96-coin spear. But the rule was written to stop gear being thrown away, not to
+make putting on a sword a trip to another screen. A strictly better piece now
+asks on the spot, reusing the shelf's own comparison rather than a second
+opinion about which of a rod's numbers matters. Only strictly better: a worse or
+equal piece is a real decision, and a charm has no better at all by
+construction.
+
+**And the reported bug.** The shop's description strip and its purchase note
+share one line, and the note wins while it is set — but nothing ever cleared it.
+So a single purchase permanently disabled the one line that said what anything
+was, and the shop went on describing the thing you had already bought. It is
+cleared on cursor movement now: whatever the last deal was, it stopped being the
+answer the moment you looked at something else.
+
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on

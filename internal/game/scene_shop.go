@@ -157,11 +157,31 @@ func (s *shopScene) refresh(g *Game) {
 			}
 		}
 	} else {
+		// Everything the merchant will take that nothing is waiting on, as the
+		// first row rather than as a hotkey.
+		//
+		// It was very nearly bound to S, which is the down key on WASD — so
+		// scrolling this exact list would have emptied the pack. A row costs no
+		// keybinding at all, quotes its price in the same column as every other
+		// row, and greys itself out when there is nothing to do, which is the
+		// rule the inn and the hiring board already follow. It is also the only
+		// version of this that is discoverable without a footer telling you.
+		if worth, pieces := s.junkWorth(g); pieces > 0 {
+			items = append(items, ui.MenuItem{
+				Label:  fmt.Sprintf("Everything you are not going to want (%d)", pieces),
+				Detail: fmt.Sprintf("%d", worth),
+				Data:   sellAll{},
+			})
+		}
 		for i, it := range g.Player.Bag {
+			// The price of the whole stack, because the whole stack is what
+			// the keypress sells. Quoting the unit price beside an "x9" and
+			// then handing over nine times it is the counter misquoting itself.
 			items = append(items, ui.MenuItem{
 				Label:  fmt.Sprintf("%s x%d", it.Name, it.Count),
-				Detail: fmt.Sprintf("%d", sellPrice(it.Value)), Icon: it.Icon,
-				Data: sellRow{idx: i},
+				Detail: fmt.Sprintf("%d", sellPrice(it.Value)*core.Max(1, it.Count)),
+				Icon:   it.Icon,
+				Data:   sellRow{idx: i},
 			})
 		}
 		// Equipment you are not wearing is worth money like anything else. It
@@ -207,6 +227,16 @@ func (s *shopScene) Update(g *Game) error {
 		return nil
 	}
 	if d, ok := MenuDir(); ok {
+		// Whatever the last deal was, it stopped being the answer the moment
+		// the cursor moved.
+		//
+		// The note and the description share one strip of screen, and the note
+		// wins while it is set — so a note that was never cleared meant that
+		// after a single purchase the shop stopped saying what anything was,
+		// permanently, and went on describing the thing you had already bought.
+		// The one line that told you what you were looking at was disabled by
+		// looking at something.
+		s.note = ""
 		switch d {
 		case core.DirDown:
 			s.menu.Move(1)
@@ -253,23 +283,24 @@ func (s *shopScene) buy(g *Game, it ui.MenuItem) {
 	// Equipment is a thing you own now, so buying it is buying it and wearing
 	// it is a separate decision made on the character sheet, the same as every
 	// other thing you can carry.
-	carry := func(gear model.Carried, cost int) {
+	carry := func(gear model.Carried, cost int, data any) {
 		pay(cost)
 		p.Carry(gear)
 		s.note = fmt.Sprintf("%s, into the pack. Put it on from the character sheet.",
 			upper(gear.Titled()))
 		g.Sound.Play("world/equip")
+		s.offerToWear(g, p, gear, data)
 	}
 
 	switch v := it.Data.(type) {
 	case model.Weapon:
-		carry(model.Carried{Weapon: &v}, v.Cost)
+		carry(model.Carried{Weapon: &v}, v.Cost, v)
 	case model.Armor:
-		carry(model.Carried{Armor: &v}, v.Cost)
+		carry(model.Carried{Armor: &v}, v.Cost, v)
 	case model.Shield:
-		carry(model.Carried{Shield: &v}, v.Cost)
+		carry(model.Carried{Shield: &v}, v.Cost, v)
 	case model.Charm:
-		carry(model.Carried{Charm: &v}, v.Cost)
+		carry(model.Carried{Charm: &v}, v.Cost, v)
 	case model.Item:
 		// A thief pays for one restorative and leaves with two. Said out loud
 		// rather than left as a quiet extra in the pack, because a perk the
@@ -292,6 +323,65 @@ func (s *shopScene) buy(g *Game, it ui.MenuItem) {
 		}
 		g.Sound.Play("world/buy")
 	}
+}
+
+// offerToWear asks, on the spot, about a piece that is plainly better than the
+// one being worn.
+//
+// Buying does not equip — that rule stays, and it is there because equipping on
+// purchase used to destroy whatever came off, which is how a 240-coin glaive
+// silently ate a 96-coin spear. But the rule was written to stop gear being
+// thrown away, not to make putting on a sword a trip to another screen: the
+// honest reading of somebody buying a strictly better weapon is that they
+// intend to hold it.
+//
+// So it is offered rather than done, and only when there is nothing to weigh
+// up. A worse or equal piece is a real decision — matchups, weight, an affix
+// you might be keeping for a reason — and a charm has no better at all by
+// construction, so neither gets asked about. Whatever comes off goes into the
+// pack the way it always did.
+func (s *shopScene) offerToWear(g *Game, p *model.Character, gear model.Carried, data any) {
+	if ok, _ := p.CanUse(gear); !ok {
+		return
+	}
+	d, ok := shelfDelta(p, data)
+	if !ok || d <= 0 {
+		return
+	}
+	idx := len(p.Carried) - 1
+	if idx < 0 {
+		return
+	}
+	g.AskMenu(s.e.Name, fmt.Sprintf("%s, and it is %+d on what %s is holding. Wear it now?",
+		upper(gear.Titled()), d, p.Name),
+		[]ui.MenuItem{
+			{Label: "Put it on", Detail: fmt.Sprintf("%+d", d)},
+			{Label: "Just bag it"},
+		},
+		func(g *Game, choice int) {
+			if choice != 0 {
+				return
+			}
+			// Re-found by name rather than trusted by index: the box is modal,
+			// but nothing here promises the pack has not been reordered by the
+			// time somebody answers.
+			if i := carriedIndex(p, gear); i >= 0 && p.Equip(i) {
+				g.Sound.Play("world/equip")
+				s.note = fmt.Sprintf("%s, on. What came off is in the pack.",
+					upper(gear.Titled()))
+			}
+			s.refresh(g)
+		})
+}
+
+// carriedIndex finds a piece in somebody's pack by what it is called.
+func carriedIndex(p *model.Character, gear model.Carried) int {
+	for i, c := range p.Carried {
+		if c.Titled() == gear.Titled() {
+			return i
+		}
+	}
+	return -1
 }
 
 // askingPrice is what this particular customer is charged for something worth
@@ -317,6 +407,35 @@ type sellRow struct {
 	gear bool
 }
 
+// sellAll tags the row that clears the junk out in one go.
+type sellAll struct{}
+
+// junkWorth is what the sweep would fetch, and how many objects it covers.
+// Quoted on the row before it is pressed, because a row that does not say what
+// it pays is a row nobody presses twice.
+func (s *shopScene) junkWorth(g *Game) (worth int, pieces int) {
+	wanted := questItems(g)
+	for _, it := range g.Player.Bag {
+		if it.Kind != model.ItemTrinket || wanted[it.Name] {
+			continue
+		}
+		worth += sellPrice(it.Value) * core.Max(1, it.Count)
+		pieces += core.Max(1, it.Count)
+	}
+	return worth, pieces
+}
+
+// questItems names everything an active errand is counting.
+func questItems(g *Game) map[string]bool {
+	out := map[string]bool{}
+	for _, q := range g.Quests.Active() {
+		if q.Item != "" {
+			out[q.Item] = true
+		}
+	}
+	return out
+}
+
 // sellPrice is what a merchant will hand over for something worth n new.
 func sellPrice(n int) int {
 	if p := int(float64(n) * sellRate); p > 1 {
@@ -326,6 +445,10 @@ func sellPrice(n int) int {
 }
 
 func (s *shopScene) sell(g *Game, mi ui.MenuItem) {
+	if _, all := mi.Data.(sellAll); all {
+		s.sellJunk(g)
+		return
+	}
 	row, ok := mi.Data.(sellRow)
 	if !ok {
 		return
@@ -339,15 +462,64 @@ func (s *shopScene) sell(g *Game, mi ui.MenuItem) {
 		}
 		name, price = gear.Titled(), sellPrice(gear.Cost())
 	} else {
-		it, taken := g.Player.TakeItem(row.idx)
+		// The whole stack, not one off the top of it.
+		//
+		// A row that says "Owl Pellet x24" and hands over one owl pellet is a
+		// row that has to be pressed twenty-four times, and there is no
+		// decision anywhere in the other twenty-three. Anything worth keeping
+		// some of is worth keeping all of.
+		it, taken := g.Player.TakeStack(row.idx)
 		if !taken {
 			return
 		}
-		name, price = it.Name, sellPrice(it.Value)
+		name, price = it.Name, sellPrice(it.Value)*it.Count
+		if it.Count > 1 {
+			name = fmt.Sprintf("%s x%d", it.Name, it.Count)
+		}
 	}
 	g.Player.Coins += int64(price)
 	g.Sound.Play("world/coins")
 	s.note = fmt.Sprintf("%s, for %d. The shopkeeper does not meet your eye.", name, price)
+}
+
+// sellJunk empties the pack of everything that is only worth money.
+//
+// Trinkets only. The kind is documented as sellable junk and that is exactly
+// what it is used for, so it is the one category where "all of it" is a safe
+// thing for a key to mean — a bulk action that could reach a restorative is a
+// bulk action nobody will risk pressing.
+//
+// And never something an errand is counting. A fetch quest names an item and
+// SyncFetch recounts the bag afterwards, so selling the lot would silently
+// undo a job in progress and leave the log claiming a number the pack no longer
+// backs up. The single-row sell can still do it, because that one is somebody
+// deliberately selling a named thing.
+func (s *shopScene) sellJunk(g *Game) {
+	wanted := questItems(g)
+
+	var kept []model.Item
+	var coins int64
+	pieces, stacks := 0, 0
+	for _, it := range g.Player.Bag {
+		if it.Kind != model.ItemTrinket || wanted[it.Name] {
+			kept = append(kept, it)
+			continue
+		}
+		coins += int64(sellPrice(it.Value) * it.Count)
+		pieces += it.Count
+		stacks++
+	}
+	if stacks == 0 {
+		s.note = "Nothing in there but things you are going to want."
+		g.Sound.Play("ui/deny")
+		return
+	}
+	g.Player.Bag = kept
+	g.Player.Coins += coins
+	g.Quests.SyncFetch(g.Player.Bag)
+	g.Sound.Play("world/coins")
+	s.note = fmt.Sprintf("%d pieces of it, off your hands, for %d. Nobody counts them.",
+		pieces, coins)
 }
 
 // carriedDescribe says what a carried piece of equipment is worth wearing for,
@@ -509,8 +681,14 @@ func (s *shopScene) Draw(g *Game, dst *ebiten.Image) {
 			render.Text(dst, ln, 34, 176+float64(i)*render.LineH, render.ColInkDim)
 		}
 	}
+	// The footer says what this tab can do, not what the screen can do. Selling
+	// has a key buying does not, and a buyer told about it has been given
+	// something to forget before they can use it.
 	hint := "left/right switch - Z to deal - X to leave"
-	if len(g.Party()) > 1 {
+	switch {
+	case s.tab == tabSell:
+		hint = "left/right switch - Z sells the whole stack - X to leave"
+	case len(g.Party()) > 1:
 		hint = "left/right switch - Tab: who for - Z to deal - X to leave"
 	}
 	render.TextCenter(dst, hint, render.ScreenW/2, 226, render.ColInkFaint)

@@ -157,6 +157,23 @@ func (c *Character) TakeItem(i int) (Item, bool) {
 	return it, true
 }
 
+// TakeStack removes an entire stack from the bag and returns it with its count
+// intact, where TakeItem peels one off the top.
+//
+// Both exist because both are wanted: using a potion is one potion, and selling
+// a pile of owl pellets is the pile.
+func (c *Character) TakeStack(i int) (Item, bool) {
+	if i < 0 || i >= len(c.Bag) {
+		return Item{}, false
+	}
+	it := c.Bag[i]
+	c.Bag = append(c.Bag[:i], c.Bag[i+1:]...)
+	if it.Count < 1 {
+		it.Count = 1
+	}
+	return it, true
+}
+
 // WeaponKind is what sort of implement something is, which is the whole of who
 // is allowed to carry it.
 //
