@@ -87,7 +87,7 @@ func (s *questScene) refresh(g *Game) {
 		items = append(items, ui.MenuItem{Label: "the company", Header: true})
 		for _, t := range company {
 			items = append(items, ui.MenuItem{
-				Label: t.Title, Detail: t.Progress(&g.Data.Threads), Data: t,
+				Label: t.Title, Detail: g.threadDetail(t), Data: t,
 			})
 		}
 	}
@@ -288,4 +288,41 @@ func (g *Game) poiName(idx int) string {
 		return "somewhere"
 	}
 	return g.World.POIs[idx].Name
+}
+
+// threadDetail is the journal's right-hand column for a companion's story.
+//
+// Thread.Progress deliberately answers only for the counted triggers — a fight
+// tally is worth showing and a step count is not — which left every other beat
+// with a blank column and a player looking at a title with nothing beside it.
+// The two most common are the ones that most need saying: a story waiting for
+// you to walk somewhere reads as a story that has stalled, when in fact it is
+// the only kind with a specific answer.
+//
+// Distance rather than the place name, in tiles, for the same reason the
+// tracker uses it: the name is already on the row you get by selecting this
+// one, the compass is already pointing at it, and a name long enough to be
+// interesting is long enough to eat the title it sits beside.
+func (g *Game) threadDetail(t *thread.Thread) string {
+	if p := t.Progress(&g.Data.Threads); p != "" {
+		return p
+	}
+	switch t.Awaiting(&g.Data.Threads) {
+	case thread.Reach:
+		// Only for Reach. A beat that fires on walking into any town may still
+		// have a {P} cast in its text, and answering it with a distance would
+		// point confidently at somewhere the story is not asking you to go.
+		if g.World != nil && t.PlacePOI >= 0 && t.PlacePOI < len(g.World.POIs) {
+			d := g.World.POIs[t.PlacePOI].Pos.Manhattan(g.Walk.Tile)
+			if d == 0 {
+				return "here"
+			}
+			return fmt.Sprintf("%d away", d)
+		}
+	case thread.Town:
+		return "any town"
+	case thread.Travel:
+		return "on the road"
+	}
+	return ""
 }

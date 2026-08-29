@@ -24,6 +24,9 @@ type overworldScene struct {
 	// idleTimer occasionally drops an ambient line into the log so standing
 	// still is not silent.
 	idleTimer int
+	// mini is the corner map. Held on the scene rather than on the Game so its
+	// texture goes away with the screen that shows it.
+	mini minimap
 }
 
 func newOverworldScene(g *Game) *overworldScene {
@@ -309,6 +312,11 @@ func (s *overworldScene) Draw(g *Game, dst *ebiten.Image) {
 
 	// Names over the tint, so a place is still readable after dark.
 	s.drawLabels(g, dst, x0, y0, x1, y1)
+
+	// The corner map over the weather and under the status strip, which is the
+	// order they mean: it is interface, and the strip is the interface it
+	// belongs to.
+	s.mini.draw(g, dst)
 
 	s.drawHUD(g, dst)
 }

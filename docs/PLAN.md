@@ -1646,6 +1646,67 @@ magical ones sit at level ten and twelve, because the rule that nothing casts
 before the answer is on a shelf is enforced by a test and applies to the joke
 zone too.
 
+**Then it went out to people, and the next five things came back from playing
+it.** *(v0.1.0 is the first tagged build: two zips on the Releases page, macOS
+universal and Windows, art and audio inside. The repository went public at the
+same time — which the asset audit had already assumed it was, and which the
+licences have always allowed: shipping the art inside a game is the use they
+are written for.)*
+
+Four of the five were Phase 0 again, and one of them exactly so.
+
+**The companion errands.** Reported as "a little buggy — when they start it is
+difficult to understand what you should do". Nothing was buggy. The tracker, the
+compass, the journal, the map pin and `destinationOf` all already handled a
+companion's backstory; `showThreadDestination` simply never called
+`trackIfIdle`, where `showSagaDestination` two files away does, with a comment
+explaining exactly why. And it opened with `if p.Discovered { return }`, so a
+companion sending you somewhere you had already walked past produced *nothing at
+all* — no pin, no compass, no line in the log, which is indistinguishable from
+the story being broken. Revealing is a one-time thing and following is not. Two
+lines, and a test that fails without them.
+
+The journal had the matching gap: `Thread.Progress` answers only for the counted
+triggers, so "walk to the ruin" showed a title with an empty column beside it.
+It now says how far, in tiles, and only for the beats that are actually asking
+you to go somewhere.
+
+**The save timestamp** was reported as wrong-but-right-after-you-re-save, which
+named the cause precisely: the age string was written into the menu row at
+refresh time, so it was true for the instant the screen opened and drifted from
+then on — and saving is the only action that refreshes. Written times on disk
+were correct to the second in every file. Both halves, one cause, recomputed in
+`Update` now. Also on the title screen, which is built at launch and then sits
+there: `Continue — just now` stayed "just now" for as long as nobody pressed
+anything.
+
+**The seed was a number the game showed you and would not take back.** It was on
+the title screen and on the pause menu and it is the thing the entire continent
+is a function of, and the only way to set it was a command-line flag. There is a
+World row at the top of the character screen now: type it, or left/right for a
+fresh one. It rerolls the person as well as the world, deliberately — everything
+on that screen is forked off the seed, so applying it to half of them would make
+the same number mean two different runs depending on the order the keys were
+pressed. A test compares a typed 1994 against a launched one, down to each
+class's throw.
+
+**The corner map** is the one thing here that did not already exist. The full
+map answered "where am I" by taking over the screen, which means the question
+could only be asked standing still and the answer had to be memorised before it
+went away. This is the same information at a tenth the size: a sixty-four-tile
+window of the continent, one pixel to the tile, with the followed destination
+ringed on it — or, when it is off the window, the same arrowhead the status bar
+uses, pinned to the border. The bearing was already there. What it could not say
+was *where*, and the difference between a bearing and a position is the
+difference between walking north-east and walking around a bay.
+
+It paints the whole world into a texture and shows a slice, so walking east
+moves the window and repaints nothing. The one bug in it was invisible to both
+tests and reading, and obvious in the first frame: a sub-image draws from its
+own bounds origin, so subtracting the window position from the translate — which
+looks like the obvious correction — drew the slice up and left of its own
+border, reading as a second panel bleeding off the corner of the screen.
+
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on

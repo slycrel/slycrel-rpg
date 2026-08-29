@@ -31,9 +31,15 @@ tone-setting rule is that nobody in the world ever acknowledges the joke.
 
 ## Running it
 
-Double-click **`play.command`**. It builds this checkout and launches it, so
-there is never a stale binary to wonder about — the title and pause screens
-show which commit is running.
+**Just want to play it?** [Grab a build from
+Releases](https://github.com/slycrel/slycrel-rpg/releases/latest) — macOS
+universal or Windows, art and audio included, nothing to install. Neither is
+code-signed, so the first launch needs right-click → Open on a Mac, or "More
+info" → "Run anyway" on Windows.
+
+To run it from source, double-click **`play.command`**. It builds this checkout
+and launches it, so there is never a stale binary to wonder about — the title
+and pause screens show which commit is running.
 
 From a terminal, the same flags work either way:
 
@@ -43,9 +49,13 @@ go run ./cmd/slycrel               # a new continent every launch
 go run ./cmd/slycrel -seed 1994    # the same continent every time
 go run ./cmd/slycrel -scale 4      # bigger window (integer scales only)
 go run ./cmd/slycrel -audit        # check content against the art manifest, then exit
-go run ./cmd/slycrel -load saves/demo.json   # start from a save
+go run ./cmd/slycrel -load saves/fixtures/battered.json   # start from a save
 go run ./cmd/slycrel -mute        # run silent
 ```
+
+The seed is also typeable on the character screen — the World row at the top
+takes a number, and left/right rolls a fresh continent — so a seed somebody
+tells you about does not have to come in through the command line.
 
 `-load` takes any save file, which makes saves useful as test fixtures. The
 `-demo` tour leaves one at `saves/demo.json`, and `saves/fixtures/` holds a
@@ -70,12 +80,12 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 | Z, Enter, Space | confirm; any key dismisses a box that is only telling you something |
 | Left / Right | in the technique list, what the highlighted move actually does |
 | X, Esc | back out |
-| M | the map of everywhere you have been |
+| M | the full map; a corner of it is always on screen, marked with whatever you are following |
 | C or I | character sheet and pack; left/right pages through the company |
 | G / T | on a companion's sheet, give them the selected item or take it all back |
 | R | on a companion's sheet, let them go |
 | Tab | at a shop counter, change who you are buying for |
-| J | the errands you agreed to |
+| J | the errands you agreed to; Z on one follows it, and the compass points at it |
 | Esc | pause: sound, save, load, abandon the run |
 | `\` or F12 | screenshot to `shots/` (F12 needs standard function keys on macOS) |
 
@@ -283,14 +293,21 @@ parsed.
 ## Shipping a build
 
 ```bash
-./scripts/dist.sh                 # host platform
-./scripts/dist.sh windows amd64   # cross-compiles from macOS or Linux, no cgo
+./make-dist.command               # both platforms, into dist/ (double-clickable)
+./make-dist.command mac           # just one
+./scripts/dist.sh windows amd64   # single platform, no universal binary
 ./scripts/licenses.sh             # refresh licenses/ after a dependency change
 ```
 
-Produces `dist/slycrel-<os>-<arch>/` and a zip beside it: the binary, `data/`,
-and only the ~92 MB of art and audio the manifests actually reference — not the
-16.7 GB bundle. An 81 MB zip that runs standalone.
+`make-dist.command` is the one that produces a release. It runs the content
+audit first and refuses to package if a single art key would render as a
+placeholder, then stages only the files the two manifests name — 99 MB of the
+16.7 GB bundle — and zips one folder per platform. The macOS build is a
+universal binary, so a friend does not have to know which machine they have.
+Around 86 MB a side, and it runs standalone.
+
+`scripts/dist.sh` is the older single-target script, kept because it is the one
+that cross-compiles to an arbitrary GOOS/GOARCH pair.
 
 Ebitengine reaches DirectX and Win32 through purego, so **Windows
 cross-compiles cleanly with nothing but Go**. macOS and Linux need cgo and must

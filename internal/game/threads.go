@@ -87,7 +87,26 @@ func (g *Game) showThreadDestination(t *thread.Thread) {
 		return
 	}
 	p := g.World.POIs[t.PlacePOI]
+	// Followed first, and whether or not the map already knew the place.
+	//
+	// This is the lesson showSagaDestination learned and this function never
+	// did, and it had two teeth. Revealing is a one-time thing where following
+	// is not, so a companion sending you somewhere you had already walked past
+	// fell straight through the Discovered check below and did *nothing*: no
+	// pin, no compass, no line in the log. And even on a fresh ruin it only
+	// ever revealed, so the destination never reached the one part of the
+	// interface that answers "which way" — the tracker every other kind of
+	// errand in the game is wired into.
+	//
+	// trackIfIdle rather than trackPOI: a companion's story is the least
+	// urgent thing a player can be holding, and it must never quietly replace a
+	// destination somebody chose in the journal on purpose.
+	g.trackIfIdle(t.PlacePOI, p.Name)
 	if p.Discovered {
+		// Still worth saying. The place is on the map and now followed, and a
+		// player who is told nothing has no reason to look at either.
+		g.Log.AddColor(render.ColGold, "%s is waiting on %s. It is on your map.",
+			t.Owner, p.Name)
 		return
 	}
 	p.Discovered = true

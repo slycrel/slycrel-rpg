@@ -187,6 +187,19 @@ which event fires which trigger, and where it is safe to put a box on screen.
   nobody can afford is greyed out in advance. The inn, the shrine, the hiring
   board and the backstory endings all quote what you are holding next to what
   the thing costs; anything new that charges for something should do the same.
+- **A detail column is a fact about the moment it was rendered.** The load
+  menu's "4m ago" was written into the row at refresh time, so it froze the
+  instant the screen opened and only ever corrected itself on a save — which is
+  the one action that refreshes. Anything derived from the wall clock has to be
+  recomputed in `Update`, not baked in when the rows are built. The times are
+  already parsed and in hand, so re-ageing costs nothing; re-running `refresh`
+  would re-read every save file on disk sixty times a second.
+- **A sub-image draws from its own bounds origin.** `canvas.SubImage(rect)` then
+  `GeoM.Translate(x, y)` puts the slice at x,y — exactly as a sprite sheet's
+  frame does. Subtracting the sub-rectangle's own position, which looks like the
+  obvious correction, offsets it by that much and drew the corner map up and
+  left of its own border, reading as a second panel bleeding off the screen.
+  Nothing catches this but a frame.
 - **`render.Text` does not put ink where you think.** Text drawn at `y` inks
   `y+2` through `y+12`, which is why `render.TextInkTop` and `TextInkH` exist —
   measured off a render rather than derived from the font. Anything drawing a

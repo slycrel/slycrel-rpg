@@ -3,8 +3,11 @@ package game
 import (
 	"fmt"
 	"image/color"
+	"strconv"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/slycrel/slycrel-rpg/internal/assetsys"
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
@@ -25,6 +28,14 @@ type titleScene struct {
 	cam render.Camera
 	// drift is where the pan has got to, in pixels along the coast.
 	drift float64
+	// newest is when the most recent save was written, for the Continue row.
+	//
+	// Held as a time rather than as the rendered string, because this scene is
+	// built once at launch and then sits there for as long as nobody presses
+	// anything. Baking "just now" into the row at construction meant it still
+	// said "just now" twenty minutes later, which is the one screen where that
+	// is most likely to be read and most likely to be wrong.
+	newest time.Time
 }
 
 func newTitleScene(g *Game) *titleScene {
@@ -32,7 +43,8 @@ func newTitleScene(g *Game) *titleScene {
 	saves := save.List(g.Root)
 	cont := ui.MenuItem{Label: "Continue", Detail: "no saves", Disabled: true}
 	if len(saves) > 0 {
-		cont = ui.MenuItem{Label: "Continue", Detail: humanAge(saves[0].Saved)}
+		t.newest = saves[0].Saved
+		cont = ui.MenuItem{Label: "Continue", Detail: humanAge(t.newest)}
 	}
 	t.menu.SetItems([]ui.MenuItem{
 		{Label: "Begin", Detail: "a new mistake"},
@@ -65,6 +77,20 @@ func newTitleScene(g *Game) *titleScene {
 
 func (t *titleScene) Update(g *Game) error {
 	g.Sound.Ambience("")
+	// Re-age the Continue row against the clock rather than against whenever
+	// this screen happened to be built. See the field.
+	//
+	// Found by label, not by row number. This menu has three rows and has had
+	// three rows forever, which is exactly the argument that was being made
+	// about the pause menu right up until somebody inserted a fourth.
+	if !t.newest.IsZero() {
+		for i := range t.menu.Items {
+			if t.menu.Items[i].Label == "Continue" {
+				t.menu.Items[i].Detail = humanAge(t.newest)
+				break
+			}
+		}
+	}
 	// A slow drift east, so the screen is never still and never arrives
 	// anywhere.
 	t.drift += 0.25
@@ -182,18 +208,38 @@ type createScene struct {
 	// cursor moves onto a row that is not a class, so nothing blanks out.
 	shown model.Class
 
+	// seedText is the world seed as the player is editing it.
+	//
+	// A string rather than the int64 it parses to, because a half-typed number
+	// is a real state the screen has to be able to show: deleting the last
+	// digit of "1994" has to leave "199" on screen and not silently snap the
+	// continent to 199. Empty means the player has cleared the field, which
+	// shows as a dash and commits nothing.
+	seedText string
+
 	nameRNG *core.RNG
 	statRNG *core.RNG
 }
 
 // Rows on the first screen. Indexed by these rather than by number, because
-// three of them do something on left/right and the fourth does not.
+// all of them but the last do something on left/right, one of them also takes
+// typing, and which is which has already moved once.
 const (
-	rowName = iota
+	// The world comes first because it is the only choice here that is not
+	// about the person. Changing it rerolls everything below it — see
+	// setSeed — so a list that read Name, Face, Look, World would spend three
+	// rows on decisions the fourth one throws away.
+	rowWorld = iota
+	rowName
 	rowFace
 	rowLook
 	rowOnward
 )
+
+// seedDigits caps the field. Seeds are taken modulo 1<<40, so thirteen digits
+// covers every value the game can actually hold and a fourteenth would be a
+// number the run quietly would not be.
+const seedDigits = 13
 
 func newCreateScene(g *Game) *createScene {
 	c := &createScene{
@@ -214,7 +260,9 @@ func newCreateScene(g *Game) *createScene {
 	c.faceIdx = g.RNG.Fork("face", g.Seed).Intn(len(c.faces))
 	c.lookIdx = g.RNG.Fork("look", g.Seed).Intn(len(heroLooks))
 
+	c.seedText = strconv.FormatInt(g.Seed, 10)
 	c.who.SetItems([]ui.MenuItem{
+		{Label: "World"},
 		{Label: "Name"},
 		{Label: "Face"},
 		{Label: "Look"},
@@ -246,6 +294,15 @@ func (c *createScene) refreshWho() {
 	// has no index to report, only a new one.
 	c.who.Items[rowFace].Detail = fmt.Sprintf("%d of %d", c.faceIdx+1, len(c.faces))
 	c.who.Items[rowLook].Detail = heroLooks[c.lookIdx].Name
+	// The seed reads as itself. It was already printed at the bottom of the
+	// title screen and on the pause menu, where it was a number the game showed
+	// you and would not take back — the one piece of state the whole continent
+	// is a function of, and the only one that could not be set.
+	seed := c.seedText
+	if seed == "" {
+		seed = "-"
+	}
+	c.who.Items[rowWorld].Detail = seed
 }
 
 // face is the portrait key currently chosen.
@@ -273,6 +330,80 @@ func (c *createScene) rerollStats() {
 	}
 }
 
+// setSeed adopts a new continent, and rerolls the person to match.
+//
+// Rerolling the person is the part worth arguing about, and it is deliberate.
+// Everything on this screen is forked off the seed — the opening name, the
+// opening face, the throw behind each class — so a seed applied to the world
+// but not to the person would make "seed 1994" mean two different runs
+// depending on whether it was typed before or after the arrow keys. The title
+// screen already promises otherwise, and `-seed 1994` on the command line has
+// always rerolled all of it, because the seed is set before any of this exists.
+// The World row sits at the top of the list so this reads as the order it is.
+//
+// The world itself is dropped rather than regenerated. Nothing on this screen
+// draws it, the title screen behind rebuilds any world it finds missing, and
+// startRun generates one unconditionally — so regenerating a continent on every
+// keystroke would be thirteen continents nobody looks at.
+func (c *createScene) setSeed(g *Game, seed int64) {
+	g.Seed = seed
+	g.RNG = core.NewRNG(seed)
+	g.World = nil
+
+	c.nameRNG = g.RNG.Fork("names", g.Seed)
+	c.statRNG = g.RNG.Fork("stats", g.Seed)
+	c.rerollStats()
+	c.rerollName(g)
+	c.faceIdx = g.RNG.Fork("face", g.Seed).Intn(len(c.faces))
+	c.lookIdx = g.RNG.Fork("look", g.Seed).Intn(len(heroLooks))
+	c.refreshWho()
+}
+
+// commitSeed parses the edited field and adopts it, if it says anything.
+//
+// A cleared or unparseable field is left alone rather than treated as zero.
+// Zero is the sentinel the -seed flag uses for "pick one from the clock", so
+// committing it here would hand the player a continent they did not ask for at
+// the exact moment they were most specifically asking.
+func (c *createScene) commitSeed(g *Game) {
+	n, err := strconv.ParseInt(c.seedText, 10, 64)
+	if err != nil || n <= 0 {
+		c.refreshWho()
+		return
+	}
+	if n != g.Seed {
+		c.setSeed(g, n)
+		return
+	}
+	c.refreshWho()
+}
+
+// typeSeed handles digits and backspace while the cursor is on the World row.
+//
+// Typed rather than cycled with the arrows, because a seed is thirteen digits
+// and nobody is going to press right four hundred billion times. This is the
+// only text entry in the game and it is deliberately the narrowest possible
+// one: ten keys and a rubout, on one row, with the arrows still doing what they
+// do everywhere else on this screen.
+func (c *createScene) typeSeed(g *Game) bool {
+	changed := false
+	for _, r := range ebiten.AppendInputChars(nil) {
+		if r >= '0' && r <= '9' && len(c.seedText) < seedDigits {
+			c.seedText += string(r)
+			changed = true
+		}
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyBackspace) && c.seedText != "" {
+		c.seedText = c.seedText[:len(c.seedText)-1]
+		changed = true
+	}
+	if changed {
+		g.Sound.Play("ui/move")
+		c.commitSeed(g)
+	}
+	return changed
+}
+
 func (c *createScene) rerollName(g *Game) {
 	c.name = g.Write.HeroName(c.nameRNG)
 	c.epithet = g.Write.Epithet(c.nameRNG)
@@ -289,6 +420,13 @@ func (c *createScene) Update(g *Game) error {
 // change the one you are on. Every row that can change says what it currently
 // holds, so there is nothing to explain about which arrow does what.
 func (c *createScene) updateWho(g *Game) error {
+	// Typing comes before anything else reads the keyboard, and only on the row
+	// that wants it. Otherwise a digit would fall through to whatever else is
+	// listening, and — more to the point — backspace has to reach the field
+	// rather than being swallowed as a cancel.
+	if c.who.Index == rowWorld && c.typeSeed(g) {
+		return nil
+	}
 	if g.Back() {
 		g.Replace(newTitleScene(g))
 		return nil
@@ -305,6 +443,13 @@ func (c *createScene) updateWho(g *Game) error {
 				step = -1
 			}
 			switch c.who.Index {
+			case rowWorld:
+				// A whole new continent, from the clock rather than from the
+				// game's own RNG. Drawing it from g.RNG would make the "random"
+				// seed a pure function of the seed it is replacing, so the same
+				// starting seed would offer the same next one every time.
+				c.seedText = strconv.FormatInt(time.Now().UnixNano()%(1<<40), 10)
+				c.commitSeed(g)
 			case rowName:
 				c.rerollName(g)
 			case rowFace:
@@ -436,8 +581,15 @@ func (c *createScene) drawWho(g *Game, dst *ebiten.Image) {
 	ui.TitledPanel(dst, "and so", 300, 42, 168, 160)
 	c.who.Draw(dst, 312, 54, 144)
 
-	render.TextCenter(dst, "up/down pick a thing  -  left/right change it",
-		render.ScreenW/2, 234, render.ColInkFaint)
+	// The World row is the only one with a control the others do not have, so
+	// it is the only one that gets a line of its own. A footer that listed
+	// every key on every row would be the keyboard-shortcut list this screen
+	// was split in two to get rid of.
+	hint := "up/down pick a thing  -  left/right change it"
+	if c.who.Index == rowWorld {
+		hint = "type a seed  -  left/right for a new world"
+	}
+	render.TextCenter(dst, hint, render.ScreenW/2, 234, render.ColInkFaint)
 	render.TextCenter(dst, "Z to go on  -  X to go back", render.ScreenW/2, 246, render.ColInkFaint)
 }
 

@@ -30,6 +30,15 @@ type slotScene struct {
 	mode  slotMode
 	menu  ui.Menu
 	note  string
+	// when is the write time behind each row, parallel to menu.Items.
+	//
+	// Kept because "4m ago" is a fact about the moment it was rendered, not
+	// about the save. Baking it into the row at refresh time meant the column
+	// froze the instant the screen opened and then quietly drifted out of date
+	// for as long as the player looked at it — and saving, which refreshes,
+	// was the only thing that ever corrected it. A zero time means the row has
+	// no age to report (an empty slot), and re-ages to nothing.
+	when []time.Time
 }
 
 func newSlotScene(g *Game, mode slotMode) *slotScene {
@@ -45,6 +54,7 @@ func (s *slotScene) refresh(g *Game) {
 	}
 
 	items := make([]ui.MenuItem, 0, len(slotNames)+1)
+	s.when = s.when[:0]
 	// The cursor opens on the most recently written slot, which is the one the
 	// player means in both directions: loading, it is the run they were in;
 	// saving, it is the slot they have been using. Landing on slot one every
@@ -67,6 +77,7 @@ func (s *slotScene) refresh(g *Game) {
 			Disabled: s.mode == slotLoad && !ok,
 			Data:     name,
 		})
+		s.when = append(s.when, sl.Saved)
 	}
 	// The autosave, on the load side only.
 	//
@@ -86,6 +97,7 @@ func (s *slotScene) refresh(g *Game) {
 				Detail: humanAge(sl.Saved),
 				Data:   AutosaveSlot,
 			})
+			s.when = append(s.when, sl.Saved)
 		}
 	}
 
@@ -119,7 +131,23 @@ func humanAge(t time.Time) string {
 	}
 }
 
+// reage rewrites the age column against the current clock.
+//
+// Called every frame, and it costs nothing worth counting: the write times are
+// already parsed and in hand, so this is a handful of subtractions and no disk
+// at all. Re-running refresh instead would re-read and re-parse every save file
+// on disk sixty times a second to answer a question that changes once a minute.
+func (s *slotScene) reage() {
+	for i, t := range s.when {
+		if i >= len(s.menu.Items) || t.IsZero() {
+			continue
+		}
+		s.menu.Items[i].Detail = humanAge(t)
+	}
+}
+
 func (s *slotScene) Update(g *Game) error {
+	s.reage()
 	if g.Back() {
 		g.Pop()
 		return nil
