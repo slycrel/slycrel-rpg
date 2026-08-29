@@ -552,6 +552,17 @@ func (l *Log) DrawWrapped(dst *ebiten.Image, x, y, w float64, rows int) {
 			c = render.ColInkDim
 		}
 		wrapped := render.Wrap(l.lines[i].text, w)
+		// An entry goes in whole or not at all.
+		//
+		// Filling the last row with the tail of a sentence whose beginning did
+		// not fit produces a line like "Weather settles into place. 8." at the
+		// top of the panel — which is not a shorter version of what happened,
+		// it is a different and wrong sentence, and nothing on screen says it
+		// has been cut. Better to show three things that happened than three
+		// and a half.
+		if len(out)+len(wrapped) > rows && len(out) > 0 {
+			break
+		}
 		for j := len(wrapped) - 1; j >= 0 && len(out) < rows; j-- {
 			out = append(out, line{wrapped[j], c})
 		}

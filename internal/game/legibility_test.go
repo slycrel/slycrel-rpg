@@ -625,11 +625,25 @@ func TestTheFoeFieldHoldsEverybodyWithoutOverlap(t *testing.T) {
 	}
 }
 
-// The command list and the transcript must not overrun each other or the frame.
+// The bottom bar and the panel that overdraws it both have to fit the frame.
+//
+// The command panel deliberately sits *on* the transcript rather than beside
+// it, so the thing to check is not that they miss each other but that the
+// overlay stays inside the bar it is covering and leaves usable room beside it
+// — a negative remainder there would wrap the transcript to nothing and print
+// one character per line.
 func TestTheBottomStripFits(t *testing.T) {
-	if cmdPanelX+cmdPanelW > logPanelX {
-		t.Errorf("the command panel ends at %.0f and the transcript starts at %.0f",
-			cmdPanelX+cmdPanelW, logPanelX)
+	if cmdPanelX < logPanelX || cmdPanelX+cmdPanelW > logPanelX+logPanelW {
+		t.Errorf("the command panel runs %.0f..%.0f, outside the bar at %.0f..%.0f",
+			cmdPanelX, cmdPanelX+cmdPanelW, logPanelX, logPanelX+logPanelW)
+	}
+	if barSideX+barSideW > logPanelX+logPanelW {
+		t.Errorf("the space beside the command panel ends at %.0f, past the bar at %.0f",
+			barSideX+barSideW, logPanelX+logPanelW)
+	}
+	// Enough to wrap a sentence into rather than a column of single letters.
+	if barSideW < 120 {
+		t.Errorf("only %.0f pixels beside the command panel; a transcript needs more", barSideW)
 	}
 	if logPanelX+logPanelW > render.ScreenW {
 		t.Errorf("the transcript ends at %.0f, past a %d-pixel screen",

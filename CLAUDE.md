@@ -202,6 +202,11 @@ which event fires which trigger, and where it is safe to put a box on screen.
   to what is left, and decide *which* thing gives way by which thing moves: a
   hero's name is fixed for a run, a place name changes every time you walk
   through a gate.
+- **A wrapped log fills its last row with a sentence's tail.** Taking the newest
+  N *rendered* rows out of a log means the oldest visible entry can lose its
+  beginning — "Weather settles into place. 8." is not a shorter version of what
+  happened, it is a different sentence, and nothing on screen says it was cut.
+  `Log.DrawWrapped` takes an entry whole or not at all.
 - **A panel does not clip what you draw in it.** `ui.TitledPanel` now truncates
   its own title, but `Log.Draw`, `render.Text` and a pre-wrapped blurb will all
   happily run out of the box they were meant for and across whatever is beside

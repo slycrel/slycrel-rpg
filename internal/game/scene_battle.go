@@ -1151,14 +1151,14 @@ func (b *battleScene) drawBlurb(g *Game, dst *ebiten.Image) {
 	// is right for a box over the world and wrong for one over the transcript:
 	// three lines of combat log reading through three lines of explanation is
 	// two things and neither of them legible.
-	render.Rect(dst, logPanelX, battleBarY, logPanelW, battleBarH, color.RGBA{0x14, 0x10, 0x1C, 0xFF})
-	ui.TitledPanel(dst, render.Trunc(s.Name, logPanelW-24), logPanelX, battleBarY, logPanelW, battleBarH)
+	render.Rect(dst, barSideX, battleBarY, barSideW, battleBarH, color.RGBA{0x14, 0x10, 0x1C, 0xFF})
+	ui.TitledPanel(dst, render.Trunc(s.Name, barSideW-24), barSideX, battleBarY, barSideW, battleBarH)
 	y := battleBarY + 9
-	for _, ln := range techniqueBlurb(g.Player, s, logPanelW-22) {
+	for _, ln := range techniqueBlurb(g.Player, s, barSideW-22) {
 		if y > battleBarY+battleBarH-12 {
 			break
 		}
-		render.Text(dst, ln, logPanelX+10, y, render.ColInk)
+		render.Text(dst, ln, barSideX+10, y, render.ColInk)
 		y += render.LineH
 	}
 }
@@ -1875,14 +1875,40 @@ const (
 	foeFieldW = render.ScreenW - foeFieldX - 6
 	foeFieldH = 176.0
 
-	// The bottom strip: what you are about to do, and what just happened.
+	// The bottom strip: what just happened, all the way across.
 	battleBarY = 186.0
 	battleBarH = render.ScreenH - battleBarY - 6
-	cmdPanelX  = 6.0
-	cmdPanelW  = 210.0
-	logPanelX  = cmdPanelX + cmdPanelW + 6
-	logPanelW  = render.ScreenW - logPanelX - 6
+	logPanelX  = 6.0
+	logPanelW  = render.ScreenW - 12.0
+
+	// The command panel overdraws the left end of it rather than sitting
+	// beside it.
+	//
+	// Two boxes down there meant the transcript was permanently two thirds of
+	// a screen wide, including while it was being written to — which is the one
+	// moment anybody reads it. As an overlay it only takes the room while there
+	// is a command to give: when the round is resolving there is nothing to
+	// press, so there is no panel, and the transcript has the whole bar.
+	cmdPanelX = 6.0
+	cmdPanelW = 210.0
+	// What is left of the bar beside the command panel, for the transcript to
+	// indent into and for the technique popover to open in.
+	barSideX = cmdPanelX + cmdPanelW + 4
+	barSideW = render.ScreenW - 6 - barSideX
 )
+
+// commandsUp reports whether the command panel is covering the left of the bar.
+//
+// Only the modes that have something to press. Busy and done have "..." and
+// "Press Z" respectively, and neither is worth a box over the transcript at the
+// exact moment the transcript is saying what happened.
+func (b *battleScene) commandsUp() bool {
+	switch b.mode {
+	case modeRoot, modeSpell, modeItem, modeTarget, modeAllyPick:
+		return true
+	}
+	return false
+}
 
 // monSlot is the cell one creature occupies in the right-hand field: the centre
 // to hang it on, and how much room it has.
@@ -2155,17 +2181,23 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		b.drawAllyCursor(g, dst)
 	}
 
-	// The transcript, along the bottom beside the command list.
+	// The transcript, across the whole bottom.
 	//
-	// Its heading carries the popover's hint. The command panel used to, and
-	// no longer has the width — but this is the better home for it anyway: the
-	// panel being advertised is this one, since the explanation appears here.
+	// Its heading carries the popover's hint, because the panel being
+	// advertised is the space the explanation opens in.
 	logTitle := ""
 	if b.mode == modeSpell && !b.blurb {
 		logTitle = "left/right explains one"
 	}
 	ui.TitledPanel(dst, logTitle, logPanelX, battleBarY, logPanelW, battleBarH)
-	b.log.DrawWrapped(dst, logPanelX+8, battleBarY+6, logPanelW-18, 5)
+	// Indented past the command panel while there is one, so the lines are
+	// whole sentences starting where you can see them rather than the tails of
+	// sentences beginning underneath a box.
+	lx, lw := logPanelX+8, logPanelW-18
+	if b.commandsUp() {
+		lx, lw = barSideX+8, barSideW-14
+	}
+	b.log.DrawWrapped(dst, lx, battleBarY+6, lw, 5)
 
 	// The effects that land on the party panel, which has just been drawn over
 	// where they are.
@@ -2182,6 +2214,22 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		modeRoot: "", modeSpell: "technique", modeItem: "pack",
 		modeTarget: "target", modeAllyPick: "on whom", modeBusy: "", modeDone: "",
 	}[b.mode]
+	if !b.commandsUp() {
+		// Nothing to press. Say so at the end of the bar rather than in a box
+		// over it — a panel here would cover the line it is reacting to.
+		if b.mode == modeDone && b.fade == 0 {
+			render.TextRight(dst, "Press Z", render.ScreenW-14,
+				battleBarY+battleBarH-14, render.ColGold)
+		}
+		b.drawFloaters(dst)
+		b.drawFade(dst)
+		return
+	}
+
+	// A solid ground under it first. ui.Panel is a little translucent, which is
+	// right over the world and wrong over four lines of transcript: the two
+	// read through each other and neither is legible.
+	render.Rect(dst, cmdPanelX, battleBarY, cmdPanelW, battleBarH, color.RGBA{0x14, 0x10, 0x1C, 0xFF})
 	ui.TitledPanel(dst, title, cmdPanelX, battleBarY, cmdPanelW, battleBarH)
 	const tx = cmdPanelX + 10
 	switch b.mode {
@@ -2208,29 +2256,33 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 	case modeAllyPick:
 		render.Text(dst, "Up / Down to choose.", tx, battleBarY+16, render.ColInk)
 		render.Text(dst, "Z commits. X reconsiders.", tx, battleBarY+30, render.ColInkDim)
-	case modeBusy:
-		render.Text(dst, "...", tx, battleBarY+26, render.ColInkDim)
-	case modeDone:
-		// Nothing to press while the screen is going out.
-		if b.fade == 0 {
-			render.Text(dst, "Press Z.", tx, battleBarY+26, render.ColGold)
-		}
 	}
 
+	b.drawFloaters(dst)
+	b.drawFade(dst)
+}
+
+// drawFloaters paints the damage and healing numbers rising off whoever earned
+// them. Split out of Draw so the mode with no command panel can end early and
+// still finish the frame the same way.
+func (b *battleScene) drawFloaters(dst *ebiten.Image) {
 	for _, f := range b.floaters {
 		alpha := uint8(core.Clamp(f.life*6, 0, 255))
 		c := f.col
 		c.A = alpha
 		render.TextCenter(dst, f.text, f.x, f.y, c)
 	}
+}
 
-	// And then the lights, over everything including the interface.
-	if b.fade > 0 {
-		// Linear, after a cubic ease turned out to spend the first second doing
-		// nothing visible and then slam shut — which is not a fade over two
-		// seconds, it is a delay followed by a cut.
-		f := core.ClampF(float64(b.fade)/deathFade, 0, 1)
-		render.Rect(dst, 0, 0, render.ScreenW, render.ScreenH,
-			color.RGBA{0, 0, 0, uint8(f * 255)})
+// drawFade is the lights going out, over everything including the interface.
+func (b *battleScene) drawFade(dst *ebiten.Image) {
+	if b.fade <= 0 {
+		return
 	}
+	// Linear, after a cubic ease turned out to spend the first second doing
+	// nothing visible and then slam shut — which is not a fade over two
+	// seconds, it is a delay followed by a cut.
+	f := core.ClampF(float64(b.fade)/deathFade, 0, 1)
+	render.Rect(dst, 0, 0, render.ScreenW, render.ScreenH,
+		color.RGBA{0, 0, 0, uint8(f * 255)})
 }

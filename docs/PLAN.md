@@ -1823,6 +1823,20 @@ rather than three-and-one, because four is the most an ordinary encounter sends
 and a square reads as a group where a row with a straggler under it reads as a
 mistake. The two things that are words rather than pictures share the bottom.
 
+The command panel overdraws the left end of the bar rather than sitting beside
+it, so the transcript runs the whole width and only gives up room while there is
+something to press. When the round is resolving there is no panel at all —
+which is the one moment anybody reads a combat log — and the victory summary,
+experience and coins and what fell out, gets the bar to itself with "Press Z"
+tucked in the corner.
+
+That change immediately produced a line reading "Weather settles into place. 8."
+at the top of the panel: the wrapped log filled its last row with the tail of a
+sentence whose beginning did not fit. Not a shorter version of what happened, a
+different and wrong one, with nothing on screen to say it had been cut. An entry
+goes in whole or not at all now — three things that happened beats three and a
+half.
+
 Up and down now step the target cursor by a row. They did nothing at all when
 the foes were a single line, which was honest then and would read as a broken
 key in front of a two-by-two.
