@@ -72,16 +72,22 @@ func (g *Game) atTracked() bool {
 // The distance is in tiles and deliberately not in anything friendlier. A
 // player who has walked anywhere at all knows what forty tiles feels like, and
 // "a long way" would be the game declining to answer the question.
-func (g *Game) trackLine() (string, bool) {
+// maxW is how much room the caller has for it. The label is truncated to fit
+// inside that *after* the distance has been measured, because the distance is
+// the half that stops being useful when it is cut — "Seat of the Third, 3" is a
+// worse answer than "Seat of the T. 31", and a fixed truncation cannot know
+// which of those it is about to produce.
+func (g *Game) trackLine(maxW float64) (string, bool) {
 	if !g.Track.On || g.World == nil || g.Track.POI < 0 || g.Track.POI >= len(g.World.POIs) {
 		return "", false
 	}
 	p := g.World.POIs[g.Track.POI]
-	if p.Pos == g.Walk.Tile {
-		return render.Trunc(g.Track.Label, 150) + " - here", true
+	tail := " - here"
+	if p.Pos != g.Walk.Tile {
+		tail = fmt.Sprintf(" %d", p.Pos.Manhattan(g.Walk.Tile))
 	}
-	return fmt.Sprintf("%s %d", render.Trunc(g.Track.Label, 130),
-		p.Pos.Manhattan(g.Walk.Tile)), true
+	label := render.Trunc(g.Track.Label, core.MaxF(24, maxW-render.TextW(tail)))
+	return label + tail, true
 }
 
 // trackBearing is which of eight ways the tracked place lies, as an index into

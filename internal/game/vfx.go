@@ -118,20 +118,21 @@ func (b *battleScene) playOnMonster(g *Game, idx int, key string) {
 		return
 	}
 	ox, oy := b.cam.Offset()
-	b.play(g, key, monSlotX(idx, len(b.mons))+ox, 60+oy, 72, false)
+	cx, cy, _, _ := monSlot(idx, len(b.mons))
+	b.play(g, key, cx+ox, cy+oy, 72, false)
 }
 
 // playOnAlly centres a burst on a party member's row in the panel.
 //
-// Smaller than a monster's, because the row is sixteen pixels tall and a
-// seventy-pixel explosion over it would cover the three meters the player is
-// actually reading. Thirty is enough to see and small enough to see past.
+// Smaller than a monster's, because a row is a portrait and three meters and a
+// seventy-pixel explosion over it would cover the numbers the player is
+// actually reading. Forty is enough to see and small enough to see past.
 func (b *battleScene) playOnAlly(g *Game, c *model.Character, key string) {
 	for i, m := range b.party {
 		if m != c {
 			continue
 		}
-		b.play(g, key, partyPanelX+16, partyPanelY+14+float64(i)*partyRowH, 30, true)
+		b.play(g, key, partyPanelX+24, partyRowY(i, len(b.party))+20, 40, true)
 		return
 	}
 }

@@ -23,10 +23,14 @@ import (
 // so a rod in the hand and a level-up both move the number on the screen. That
 // is the whole reason this exists: the shop tells a caster what a wand is worth
 // and the battle screen used to tell them nothing at all.
-func techniqueBlurb(c *model.Character, s model.Spell) []string {
+// w is the width it has to wrap into. Passed in rather than assumed, because
+// the popover moved from a panel the width of the screen to one sharing the
+// bottom with the command list, and a blurb wrapped to the old width simply ran
+// out of the new panel and was cut off mid-word by the frame.
+func techniqueBlurb(c *model.Character, s model.Spell, w float64) []string {
 	var out []string
 	add := func(format string, args ...any) {
-		out = append(out, render.Wrap(fmt.Sprintf(format, args...), render.ScreenW-40)...)
+		out = append(out, render.Wrap(fmt.Sprintf(format, args...), w)...)
 	}
 
 	// The magnitude, in the unit the kind actually uses. Damage and healing go

@@ -488,6 +488,17 @@ func (b *battleScene) updateMenus(g *Game) {
 				case core.DirRight:
 					b.target = nextIn(l, b.target)
 					g.Sound.Play("ui/move")
+				case core.DirUp, core.DirDown:
+					// A row at a time, now that the field is a grid rather than
+					// a line. Up and down did nothing at all when the monsters
+					// were a single row across the top, which was honest then
+					// and reads as a broken key in front of a two-by-two.
+					step := monCols(len(b.mons))
+					if d == core.DirUp {
+						step = -step
+					}
+					b.target = b.nearestLiving(b.target + step)
+					g.Sound.Play("ui/move")
 				}
 			}
 		case modeAllyPick:
@@ -1123,9 +1134,10 @@ func castLine(s model.Spell, caster string) string {
 // drawBlurb puts what the highlighted technique does over the transcript.
 //
 // Over the transcript rather than beside the list, because the command panel is
-// 58 pixels holding three rows and every other pixel on this screen already
-// belongs to something. The transcript is the one panel a player is not reading
-// while they are choosing what to do.
+// holding the list itself and every other pixel on this screen already belongs
+// to something. The transcript is the one panel a player is not reading while
+// they are choosing what to do — and now that the two sit side by side along
+// the bottom, the explanation appears directly beside the row it explains.
 func (b *battleScene) drawBlurb(g *Game, dst *ebiten.Image) {
 	it, ok := b.menu.Selected()
 	if !ok {
@@ -1139,14 +1151,14 @@ func (b *battleScene) drawBlurb(g *Game, dst *ebiten.Image) {
 	// is right for a box over the world and wrong for one over the transcript:
 	// three lines of combat log reading through three lines of explanation is
 	// two things and neither of them legible.
-	render.Rect(dst, 8, 136, render.ScreenW-16, 64, color.RGBA{0x14, 0x10, 0x1C, 0xFF})
-	ui.TitledPanel(dst, render.Trunc(s.Name, render.ScreenW-64), 8, 136, render.ScreenW-16, 64)
-	y := 145.0
-	for _, ln := range techniqueBlurb(g.Player, s) {
-		if y > 190 {
+	render.Rect(dst, logPanelX, battleBarY, logPanelW, battleBarH, color.RGBA{0x14, 0x10, 0x1C, 0xFF})
+	ui.TitledPanel(dst, render.Trunc(s.Name, logPanelW-24), logPanelX, battleBarY, logPanelW, battleBarH)
+	y := battleBarY + 9
+	for _, ln := range techniqueBlurb(g.Player, s, logPanelW-22) {
+		if y > battleBarY+battleBarH-12 {
 			break
 		}
-		render.Text(dst, ln, 20, y, render.ColInk)
+		render.Text(dst, ln, logPanelX+10, y, render.ColInk)
 		y += render.LineH
 	}
 }
@@ -1491,7 +1503,8 @@ func (b *battleScene) damageMonster(g *Game, idx, dmg int) {
 	m := b.mons[idx]
 	m.HP = core.Max(0, m.HP-dmg)
 	b.hurt[idx] = 12
-	b.addFloater(monSlotX(idx, len(b.mons)), 88, fmt.Sprintf("-%d", dmg), render.ColGold)
+	b.addFloater(monSlotX(idx, len(b.mons)), monSlotY(idx, len(b.mons)),
+		fmt.Sprintf("-%d", dmg), render.ColGold)
 	if m.HP == 0 && !m.Dead {
 		m.Dead = true
 		g.Sound.Play("fight/die")
@@ -1837,20 +1850,166 @@ func (g *Game) offerRewind() {
 
 // --- layout helpers -------------------------------------------------------
 
-func monSlotX(i, n int) float64 {
-	if n <= 0 {
+// The battle screen, in one place.
+//
+// It used to be monsters in a row across the top, a transcript across the
+// middle, and the company and the command list sharing the bottom — which put
+// the two things you compare, your people and their people, at opposite ends of
+// the screen with a wall of text between them. Deciding who to hit meant
+// looking up, and deciding whether you could afford to meant looking down.
+//
+// So: your side down the left, theirs on the right, and the two things that are
+// words rather than pictures along the bottom. It is the arrangement every
+// console RPG of a certain age arrived at, and for the reason they arrived at
+// it — a fight is a comparison, and a comparison wants both halves side by side.
+const (
+	// The left column: the company, one above another.
+	partyPanelX = 6.0
+	partyPanelY = 6.0
+	partyPanelW = 140.0
+	partyPanelH = 176.0
+
+	// The right field: whatever is in front of you.
+	foeFieldX = 152.0
+	foeFieldY = 6.0
+	foeFieldW = render.ScreenW - foeFieldX - 6
+	foeFieldH = 176.0
+
+	// The bottom strip: what you are about to do, and what just happened.
+	battleBarY = 186.0
+	battleBarH = render.ScreenH - battleBarY - 6
+	cmdPanelX  = 6.0
+	cmdPanelW  = 210.0
+	logPanelX  = cmdPanelX + cmdPanelW + 6
+	logPanelW  = render.ScreenW - logPanelX - 6
+)
+
+// monSlot is the cell one creature occupies in the right-hand field: the centre
+// to hang it on, and how much room it has.
+//
+// Up to three across and as many rows as that needs. Four is the most an
+// encounter is meant to send (party.MaxFoes) and a pack can push it to six, so
+// the grid has to hold six without any of them overlapping — which a single row
+// of six at this width cannot.
+func monSlot(i, n int) (cx, cy, w, h float64) {
+	if n < 1 {
 		n = 1
 	}
-	return render.ScreenW / float64(n+1) * float64(i+1)
+	// Three across is the widest row, but four goes two-and-two rather than
+	// three-and-one: four is the most an ordinary encounter sends, and a square
+	// of them reads as a group where a row with one straggler under it reads as
+	// a mistake.
+	cols := monCols(n)
+	rows := (n + cols - 1) / cols
+	w = foeFieldW / float64(cols)
+	h = foeFieldH / float64(rows)
+	// The last row is centred on what is left rather than left-aligned, so five
+	// creatures read as a group and not as a full shelf with a gap in it.
+	inRow := core.Min(cols, n-(i/cols)*cols)
+	col := i % cols
+	rowW := w * float64(inRow)
+	cx = foeFieldX + (foeFieldW-rowW)/2 + w*(float64(col)+0.5)
+	cy = foeFieldY + h*(float64(i/cols)+0.5)
+	return cx, cy, w, h
 }
 
-// Where the party panel sits, and what one member's row looks like inside it.
-const (
-	partyPanelX = 8.0
-	partyPanelY = 206.0
-	partyPanelW = 188.0
-	partyPanelH = 58.0
-)
+// monCols is how many creatures stand across one row of the field.
+//
+// Three across is the widest row, but four goes two-and-two rather than
+// three-and-one: four is the most an ordinary encounter sends, and a square of
+// them reads as a group where a row with one straggler under it reads as a
+// mistake.
+func monCols(n int) int {
+	if n == 4 {
+		return 2
+	}
+	return core.Max(1, core.Min(n, 3))
+}
+
+// monSlotX is the horizontal centre alone, for the callers that only want to
+// know where to put a number.
+func monSlotX(i, n int) float64 {
+	cx, _, _, _ := monSlot(i, n)
+	return cx
+}
+
+// monSlotY is the vertical centre alone.
+func monSlotY(i, n int) float64 {
+	_, cy, _, _ := monSlot(i, n)
+	return cy
+}
+
+// monNameLines is how many lines a creature's name may take under its portrait.
+//
+// Two when the field is a single row, one when it is stacked. Half the roster is
+// not written "Species, Epithet" at all — "Goblin Middle Manager", "Bear With
+// Boundaries", "Something That Was A Diver" are whole phrases and the joke is
+// the whole phrase — so splitting on the comma cannot rescue those, and a
+// single line cut them to "Goblin Middle Manag.". A second line does, whenever
+// there is a second line to spare.
+func monNameLines(n int) int {
+	if (n+monCols(n)-1)/monCols(n) == 1 {
+		return 2
+	}
+	return 1
+}
+
+// monBelow is the height of everything under the portrait: the health meter,
+// the condition pips, and the name.
+func monBelow(n int) float64 { return 14 + render.LineH*float64(monNameLines(n)) }
+
+// monBox is the portrait rectangle inside a cell, and the baseline the name and
+// meter hang off.
+func monBox(i, n int) (x, top, w, h float64) {
+	cx, cy, cw, ch := monSlot(i, n)
+	below := monBelow(n)
+	w = core.ClampF(cw-16, 40, 104)
+	h = core.ClampF(ch-4-below, 36, 96)
+	// The portrait and everything under it are centred as one block, so a lone
+	// creature sits in the middle of the field rather than hanging from the top
+	// of it.
+	top = cy - (h+below)/2
+	return cx - w/2, top, w, h
+}
+
+// partyRowY is the top of one member's row in the left column.
+//
+// Centred on the panel rather than stacked from the top: a solo hero in a
+// column built for three should be in the middle of it, not floating at the
+// ceiling with two rows of nothing underneath.
+func partyRowY(i, n int) float64 {
+	if n < 1 {
+		n = 1
+	}
+	block := float64(n) * partyRowH
+	return partyPanelY + (partyPanelH-block)/2 + float64(i)*partyRowH
+}
+
+// monsterName splits a creature's name into what it is and what sort of one.
+//
+// Every name in the tables is written "Crab, Territorial" — a species and a
+// characterisation, and the characterisation is the joke. Printing both under
+// a portrait meant every label was too long for the slot it was in, so the
+// tables' funniest column was the half that got truncated away: "Goblin Middle
+// Manag." says neither thing.
+//
+// So the field shows what it is, and the epithet is kept for the moment it is
+// worth reading — the target cursor landing on one — where there is a whole
+// panel to say it in.
+//
+// The group letter stays with the head. Two crabs are "Crab A" and "Crab B",
+// and a head that dropped it would label them identically at the exact moment
+// the player is choosing between them.
+func monsterName(full string) (head, tail string) {
+	letter := ""
+	if n := len(full); n > 2 && full[n-2] == ' ' && full[n-1] >= 'A' && full[n-1] <= 'Z' {
+		letter, full = " "+full[n-1:], full[:n-2]
+	}
+	if i := strings.Index(full, ", "); i >= 0 {
+		return full[:i] + letter, full[i+2:]
+	}
+	return full + letter, ""
+}
 
 // drawAllyCursor frames the party row the cursor is on. It borrows the gold
 // frame the monster cursor uses, so "this is the thing you are about to act on"
@@ -1859,12 +2018,10 @@ func (b *battleScene) drawAllyCursor(g *Game, dst *ebiten.Image) {
 	if b.allyPick < 0 || b.allyPick >= len(b.party) {
 		return
 	}
-	// A solo hero never opens this cursor, so the row geometry is the one the
-	// party panel uses rather than the large single-portrait layout.
-	ry := partyPanelY + 4 + float64(b.allyPick)*partyRowH
-	render.Frame(dst, partyPanelX+2, ry-1, partyPanelW-4, partyRowH, render.ColGold)
+	ry := partyRowY(b.allyPick, len(b.party))
+	render.Frame(dst, partyPanelX+2, ry, partyPanelW-4, partyRowH-4, render.ColGold)
 	if (g.Tick()/12)%2 == 0 {
-		render.Text(dst, ">", partyPanelX-4, ry+1, render.ColGold)
+		render.Text(dst, ">", partyPanelX-3, ry+14, render.ColGold)
 	}
 }
 
@@ -1872,15 +2029,29 @@ func (b *battleScene) drawAllyCursor(g *Game, dst *ebiten.Image) {
 // their own row, so with three of them on screen it is never a guess who just
 // took the hit. A solo hero keeps the original spot beside their portrait.
 func (b *battleScene) memberFloat(c *model.Character) (float64, float64) {
-	if len(b.party) <= 1 {
-		return 66, 200
-	}
 	for i, m := range b.party {
 		if m == c {
-			return partyPanelX + 118, partyPanelY + 4 + float64(i)*partyRowH
+			return partyPanelX + partyPanelW/2, partyRowY(i, len(b.party)) + 8
 		}
 	}
-	return 66, 200
+	return partyPanelX + partyPanelW/2, partyPanelY + partyPanelH/2
+}
+
+// nearestLiving snaps a raw slot index to the closest creature still standing,
+// so a row-step onto a corpse or off the end of the grid still lands somewhere
+// the player can hit.
+func (b *battleScene) nearestLiving(want int) int {
+	l := b.living()
+	if len(l) == 0 {
+		return b.target
+	}
+	best, bestD := l[0], 1<<30
+	for _, i := range l {
+		if d := core.Abs(i - want); d < bestD {
+			best, bestD = i, d
+		}
+	}
+	return best
 }
 
 func nextIn(list []int, cur int) int {
@@ -1912,12 +2083,12 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 
 	ox, oy := b.cam.Offset()
 
-	// Monsters across the top.
-	slotW := render.ScreenW / float64(len(b.mons)+1)
+	// Them, down the right.
 	for i, m := range b.mons {
-		cx := monSlotX(i, len(b.mons)) + ox
-		top := 18.0 + oy
-		boxW := core.ClampF(slotW-20, 56, 108)
+		bx, top, boxW, boxH := monBox(i, len(b.mons))
+		_, _, slotW, _ := monSlot(i, len(b.mons))
+		cx := bx + boxW/2 + ox
+		top += oy
 
 		tint := color.RGBA{0xFF, 0xFF, 0xFF, 0xFF}
 		switch {
@@ -1938,10 +2109,10 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		case b.hurt[i] > 0:
 			edge = render.ColBlood
 		}
-		ui.Slot(dst, cx-boxW/2-2, top-2, boxW+4, 86, edge)
+		ui.Slot(dst, cx-boxW/2-2, top-2, boxW+4, boxH+4, edge)
 
 		sprite := g.Assets.Get(m.Def.Sprite)
-		render.ScreenFit(dst, sprite, 0, cx-boxW/2, top, boxW, 82, tint)
+		render.ScreenFit(dst, sprite, 0, cx-boxW/2, top, boxW, boxH, tint)
 
 		// Name plate and health.
 		nameCol := render.ColInk
@@ -1951,32 +2122,50 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		if b.mode == modeTarget && b.target == i && !m.Dead {
 			// Redrawn in gold over the resting frame rather than instead of
 			// it, so the slot never changes size when it is picked.
-			render.Frame(dst, cx-boxW/2-2, top-2, boxW+4, 86, render.ColGold)
+			render.Frame(dst, cx-boxW/2-2, top-2, boxW+4, boxH+4, render.ColGold)
 			if (g.Tick()/12)%2 == 0 {
 				render.TextCenter(dst, "v", cx, top-13, render.ColGold)
 			}
+			nameCol = render.ColGold
 		}
 		if !m.Dead {
-			ui.Bar(dst, cx-boxW/2, top+84, boxW, 5, m.HPFrac(), render.ColBlood)
-			drawEffectPips(dst, cx-boxW/2, top+90, m.Active)
+			ui.Bar(dst, cx-boxW/2, top+boxH+2, boxW, 4, m.HPFrac(), render.ColBlood)
+			drawEffectPips(dst, cx-boxW/2, top+boxH+8, m.Active)
 		}
-		// Names run long and slots are only a third of the screen, so the
-		// plate is truncated rather than allowed to collide with its neighbour.
-		render.TextCenter(dst, render.Trunc(m.Name, slotW-6), cx, top+94, nameCol)
+		// What it is, not what sort of one. The epithet is the half worth
+		// reading and the half that will not fit, so it waits for the target
+		// cursor and a panel with room in it. See monsterName.
+		head, _ := monsterName(m.Name)
+		lines := render.Wrap(head, slotW-8)
+		for j, ln := range lines {
+			if j >= monNameLines(len(b.mons)) {
+				break
+			}
+			render.TextCenter(dst, render.Trunc(ln, slotW-6), cx,
+				top+boxH+12+float64(j)*render.LineH, nameCol)
+		}
 	}
 
 	// Effects over the portraits, under everything with a number on it.
 	b.drawBursts(g, dst, false)
 
-	// Transcript.
-	ui.TitledPanel(dst, "", 8, 136, render.ScreenW-16, 64)
-	b.log.Draw(dst, 16, 142, 4)
-
-	// The company.
+	// Us, down the left.
 	g.drawPartyPanel(dst, partyPanelX, partyPanelY, partyPanelW, partyPanelH, b.partyHurt)
 	if b.mode == modeAllyPick {
 		b.drawAllyCursor(g, dst)
 	}
+
+	// The transcript, along the bottom beside the command list.
+	//
+	// Its heading carries the popover's hint. The command panel used to, and
+	// no longer has the width — but this is the better home for it anyway: the
+	// panel being advertised is this one, since the explanation appears here.
+	logTitle := ""
+	if b.mode == modeSpell && !b.blurb {
+		logTitle = "left/right explains one"
+	}
+	ui.TitledPanel(dst, logTitle, logPanelX, battleBarY, logPanelW, battleBarH)
+	b.log.DrawWrapped(dst, logPanelX+8, battleBarY+6, logPanelW-18, 5)
 
 	// The effects that land on the party panel, which has just been drawn over
 	// where they are.
@@ -1988,32 +2177,43 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		b.drawBlurb(g, dst)
 	}
 
-	// Command panel. The technique list advertises the popover in its own
-	// heading, because there is nowhere else on this screen to put a hint and
-	// a feature nobody is told about is a feature nobody has.
+	// Command panel.
 	title := map[battleMode]string{
-		modeRoot: "", modeSpell: "technique - left/right explains", modeItem: "pack",
+		modeRoot: "", modeSpell: "technique", modeItem: "pack",
 		modeTarget: "target", modeAllyPick: "on whom", modeBusy: "", modeDone: "",
 	}[b.mode]
-	if b.mode == modeSpell && b.blurb {
-		title = "technique - left/right closes it"
-	}
-	ui.TitledPanel(dst, title, 204, 206, render.ScreenW-212, 58)
+	ui.TitledPanel(dst, title, cmdPanelX, battleBarY, cmdPanelW, battleBarH)
+	const tx = cmdPanelX + 10
 	switch b.mode {
 	case modeRoot, modeSpell, modeItem:
-		b.menu.Draw(dst, 218, 212, render.ScreenW-238)
+		b.menu.Draw(dst, cmdPanelX+12, battleBarY+6, cmdPanelW-24)
 	case modeTarget:
-		render.Text(dst, "Left / Right to choose.", 214, 218, render.ColInk)
-		render.Text(dst, "Z commits. X reconsiders.", 214, 232, render.ColInkDim)
+		// The epithet, here, where there is room for it. This is the moment it
+		// is worth reading: the player is looking at four portraits deciding
+		// which one to hit, and "Territorial" is the entire answer to what sort
+		// of crab this is.
+		if b.target >= 0 && b.target < len(b.mons) {
+			head, tail := monsterName(b.mons[b.target].Name)
+			render.Text(dst, render.Trunc(head, cmdPanelW-24), tx, battleBarY+8, render.ColGold)
+			if tail != "" {
+				for i, ln := range render.Wrap(tail, cmdPanelW-24) {
+					if i > 1 {
+						break
+					}
+					render.Text(dst, ln, tx, battleBarY+22+float64(i)*render.LineH, render.ColInk)
+				}
+			}
+		}
+		render.Text(dst, "Arrows choose - Z commits", tx, battleBarY+52, render.ColInkFaint)
 	case modeAllyPick:
-		render.Text(dst, "Up / Down to choose.", 214, 218, render.ColInk)
-		render.Text(dst, "Z commits. X reconsiders.", 214, 232, render.ColInkDim)
+		render.Text(dst, "Up / Down to choose.", tx, battleBarY+16, render.ColInk)
+		render.Text(dst, "Z commits. X reconsiders.", tx, battleBarY+30, render.ColInkDim)
 	case modeBusy:
-		render.Text(dst, "...", 214, 224, render.ColInkDim)
+		render.Text(dst, "...", tx, battleBarY+26, render.ColInkDim)
 	case modeDone:
 		// Nothing to press while the screen is going out.
 		if b.fade == 0 {
-			render.Text(dst, "Press Z.", 214, 224, render.ColGold)
+			render.Text(dst, "Press Z.", tx, battleBarY+26, render.ColGold)
 		}
 	}
 

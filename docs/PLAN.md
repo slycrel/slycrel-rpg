@@ -1796,6 +1796,54 @@ was, and the shop went on describing the thing you had already bought. It is
 cleared on cursor movement now: whatever the last deal was, it stopped being the
 answer the moment you looked at something else.
 
+**The status bar was overlapping itself**, and the cause was a column of fixed x
+offsets that had never met a long name. "Sister Agatha Blunt Two Drinks In"
+printed straight through the weather; 1225 coins printed straight through the
+tracker. Both rows are laid out from an anchor now, with the variable parts
+fitted to what is left.
+
+Which thing gives way is decided by which thing *moves*. A hero's name is fixed
+for a whole run, so the clock is laid out after it and sits in the same place
+every frame; anchoring on the place instead would slide the clock about every
+time you walked from a wood into a town. And the place is the one of the three
+repeated elsewhere — floating over the location, and on both maps — so it is the
+one that costs least to cut.
+
+**The battle screen is side-on now.** Monsters used to be a row across the top
+with the transcript across the middle and the company sharing the bottom with
+the command list, which put the two things you are comparing — your people and
+their people — at opposite ends of the screen with a wall of text between them.
+Deciding who to hit meant looking up; deciding whether you could afford to meant
+looking down.
+
+So: the company down the left, one above another, with faces big enough to be
+faces and hit points as a number rather than only a bar. Whatever is in front of
+you on the right, in a grid — three across at most, and four goes two-and-two
+rather than three-and-one, because four is the most an ordinary encounter sends
+and a square reads as a group where a row with a straggler under it reads as a
+mistake. The two things that are words rather than pictures share the bottom.
+
+Up and down now step the target cursor by a row. They did nothing at all when
+the foes were a single line, which was honest then and would read as a broken
+key in front of a two-by-two.
+
+**And the names came apart.** Half the roster is written "Crab, Territorial" — a
+species and a characterisation, where the characterisation is the joke — so
+printing both under a portrait meant the funniest column in the tables was the
+half that got truncated away. "Goblin Middle Manag." says neither thing.
+
+The field shows what it is; the epithet waits for the target cursor, where there
+is a whole panel to say it in and where it is finally worth reading — the player
+is looking at four portraits deciding which to hit, and "Territorial" is the
+entire answer to what sort of crab this is. The group letter stays with the
+head, or two crabs would label identically at the exact moment you are choosing
+between them.
+
+The other half of the roster is not written that way at all: "Owl That Knows",
+"Something That Was A Diver" are whole phrases and the phrase is the joke. A
+test asserts the split is lossless rather than clever, and the name wraps to two
+lines whenever the field is a single row — which is what rescues those.
+
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on

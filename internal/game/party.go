@@ -381,39 +381,46 @@ func (g *Game) drawFollowers(ctx *render.Ctx, line party.Line) {
 // --- the party panel ------------------------------------------------------
 
 // partyRowH is the height of one member's row in the battle panel.
-const partyRowH = 16
+const partyRowH = 52
 
 // drawPartyPanel paints the company's meters into the battle screen's left
 // panel. A solo hero keeps the original portrait-and-bars layout, because
 // shrinking a one-person party into a list of one would be a downgrade for the
 // majority of runs; the rows only appear once there is a party to list.
 func (g *Game) drawPartyPanel(dst *ebiten.Image, x, y, w, h float64, hurt map[*model.Character]int) {
+	// One layout whatever the headcount. There used to be a second, larger
+	// arrangement for a solo hero, which meant every cursor and every burst
+	// position had to ask which of the two it was looking at — and the answer
+	// changed the moment somebody was hired.
 	party := g.Party()
-	if len(party) == 1 {
-		g.drawSoloPanel(dst, x, y, w, h, hurt)
-		return
-	}
 
 	ui.TitledPanel(dst, "", x, y, w, h)
 	for i, c := range party {
-		ry := y + 6 + float64(i)*partyRowH
+		ry := partyRowY(i, len(party))
 		tint := memberTint(c, hurt[c])
 
-		render.ScreenFit(dst, g.Assets.Get(portraitOf(c)), 0, x+4, ry, 14, 14, tint)
+		// A face big enough to be a face. The old row was sixteen pixels tall
+		// with a fourteen-pixel portrait in it, which at this scale is a smudge
+		// with a hat — and the column has the height to do better now that it
+		// is a column.
+		ui.Slot(dst, x+5, ry+2, 36, 36, nil)
+		render.ScreenFit(dst, g.Assets.Get(portraitOf(c)), 0, x+7, ry+4, 32, 32, tint)
 
 		name := render.ColInk
 		if !c.Alive() {
 			name = render.ColInkFaint
 		}
-		render.Text(dst, render.Trunc(c.Name, 80), x+22, ry+1, name)
+		tx := x + 46
+		tw := w - 52
+		render.Text(dst, render.Trunc(c.Name, tw), tx, ry+2, name)
 
-		ui.Bar(dst, x+106, ry+4, 46, 5, c.HPFrac(), render.ColBlood)
-		ui.Bar(dst, x+156, ry+4, 26, 5, c.PsycheFrac(), render.ColMagic)
-		// Under the meters rather than beside the name: a row is sixteen pixels
-		// and the bars only use six of them, so this is the one place in the
-		// panel that was not already spoken for. Squeezing the name instead
-		// turned "Ilsabet Dun" into "Ilsabet.".
-		drawEffectPips(dst, x+106, ry+10, c.Active)
+		// Numbers as well as meters. A bar says roughly how bad it is and the
+		// whole question in a fight is whether one more hit lands, which is a
+		// number rather than a proportion.
+		render.Text(dst, fmt.Sprintf("%d/%d", c.HP, c.MaxHP), tx, ry+16, render.ColInkDim)
+		ui.Bar(dst, tx, ry+29, tw, 5, c.HPFrac(), render.ColBlood)
+		ui.Bar(dst, tx, ry+36, tw*2/3, 4, c.PsycheFrac(), render.ColMagic)
+		drawEffectPips(dst, tx, ry+43, c.Active)
 	}
 }
 
@@ -461,16 +468,6 @@ func drawEffectPips(dst *ebiten.Image, x, y float64, list model.Effects) {
 		render.Rect(dst, px, y, 3, 3, effectColour(e.Kind))
 		render.Frame(dst, px, y, 3, 3, color.RGBA{0, 0, 0, 0x80})
 	}
-}
-
-// drawSoloPanel is the original one-hero layout: a large portrait and labelled
-// meters, which reads better than a single row in a list.
-func (g *Game) drawSoloPanel(dst *ebiten.Image, x, y, w, h float64, hurt map[*model.Character]int) {
-	p := g.Player
-	ui.TitledPanel(dst, render.Trunc(p.Name, w-68), x, y, w, h)
-	render.ScreenFit(dst, g.Assets.Get(portraitOf(p)), 0, x+4, y+4, 46, 46, memberTint(p, hurt[p]))
-	ui.StatBars(dst, x+56, y+6, w-66, p.HP, p.MaxHP, p.Psyche, p.MaxPsyche)
-	drawEffectPips(dst, x+56, y+h-10, p.Active)
 }
 
 // memberTint flashes a member red on the frames just after they were hit, and

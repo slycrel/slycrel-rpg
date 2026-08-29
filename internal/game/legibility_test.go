@@ -2,6 +2,7 @@ package game
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -9,7 +10,9 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/gamedata"
 	"github.com/slycrel/slycrel-rpg/internal/model"
+	"github.com/slycrel/slycrel-rpg/internal/party"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
+	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
@@ -586,4 +589,137 @@ func findSweep(s *shopScene) *ui.MenuItem {
 		}
 	}
 	return nil
+}
+
+// Nobody in the foe field overlaps anybody else, and nobody hangs off it.
+//
+// Every mark on a creature is positioned from its slot — the portrait, the
+// frame, the health meter, the condition pips, the damage number, the burst —
+// so a grid that overlapped would not merely look crowded, it would attach the
+// wrong number to the wrong monster at the exact moment the player is deciding
+// which one to hit. Six is the ceiling: four is the most an ordinary encounter
+// sends (party.MaxFoes) and a pack adds two on top of that.
+func TestTheFoeFieldHoldsEverybodyWithoutOverlap(t *testing.T) {
+	for n := 1; n <= party.MaxFoes+2; n++ {
+		type box struct{ x, y, w, h float64 }
+		var boxes []box
+		for i := 0; i < n; i++ {
+			x, top, w, h := monBox(i, n)
+			// The block is the portrait plus the meter, pips and name under it.
+			b := box{x, top, w, h + monBelow(n)}
+			if b.x < foeFieldX-1 || b.x+b.w > foeFieldX+foeFieldW+1 {
+				t.Errorf("%d foes: slot %d runs from x %.0f to %.0f, field is %.0f..%.0f",
+					n, i, b.x, b.x+b.w, foeFieldX, foeFieldX+foeFieldW)
+			}
+			if b.y < foeFieldY-1 || b.y+b.h > foeFieldY+foeFieldH+1 {
+				t.Errorf("%d foes: slot %d runs from y %.0f to %.0f, field is %.0f..%.0f",
+					n, i, b.y, b.y+b.h, foeFieldY, foeFieldY+foeFieldH)
+			}
+			for j, o := range boxes {
+				if b.x < o.x+o.w && o.x < b.x+b.w && b.y < o.y+o.h && o.y < b.y+b.h {
+					t.Errorf("%d foes: slot %d overlaps slot %d", n, i, j)
+				}
+			}
+			boxes = append(boxes, b)
+		}
+	}
+}
+
+// The command list and the transcript must not overrun each other or the frame.
+func TestTheBottomStripFits(t *testing.T) {
+	if cmdPanelX+cmdPanelW > logPanelX {
+		t.Errorf("the command panel ends at %.0f and the transcript starts at %.0f",
+			cmdPanelX+cmdPanelW, logPanelX)
+	}
+	if logPanelX+logPanelW > render.ScreenW {
+		t.Errorf("the transcript ends at %.0f, past a %d-pixel screen",
+			logPanelX+logPanelW, render.ScreenW)
+	}
+	if battleBarY+battleBarH > render.ScreenH {
+		t.Errorf("the bottom strip ends at %.0f, past a %d-pixel screen",
+			battleBarY+battleBarH, render.ScreenH)
+	}
+	// And the field above it must not reach into it.
+	if partyPanelY+partyPanelH > battleBarY || foeFieldY+foeFieldH > battleBarY {
+		t.Error("the field overlaps the bottom strip")
+	}
+	if partyPanelX+partyPanelW > foeFieldX {
+		t.Error("the company column overlaps the foe field")
+	}
+}
+
+// The whole company fits in its column.
+func TestTheCompanyColumnHoldsAFullParty(t *testing.T) {
+	n := party.MaxSize
+	for i := 0; i < n; i++ {
+		ry := partyRowY(i, n)
+		if ry < partyPanelY-1 || ry+partyRowH > partyPanelY+partyPanelH+1 {
+			t.Errorf("member %d of %d sits at y %.0f..%.0f, panel is %.0f..%.0f",
+				i, n, ry, ry+partyRowH, partyPanelY, partyPanelY+partyPanelH)
+		}
+	}
+}
+
+// A creature's name splits into what it is and what sort of one.
+func TestAMonstersNameSplitsIntoSpeciesAndEpithet(t *testing.T) {
+	for _, c := range []struct{ full, head, tail string }{
+		{"Crab, Territorial", "Crab", "Territorial"},
+		{"Mummy, Poorly Wrapped", "Mummy", "Poorly Wrapped"},
+		// The group letter belongs to the head, or two of them label
+		// identically at the moment the player is choosing between them.
+		{"Crab, Territorial A", "Crab A", "Territorial"},
+		{"Crab, Territorial B", "Crab B", "Territorial"},
+		// A brute keeps its prefix, which is the part that says it is a brute.
+		{"A Very Large Goblin, Middle Manager", "A Very Large Goblin", "Middle Manager"},
+		// Names with no epithet are all head.
+		{"Something That Was A Diver", "Something That Was A Diver", ""},
+	} {
+		head, tail := monsterName(c.full)
+		if head != c.head || tail != c.tail {
+			t.Errorf("%q split to (%q, %q), want (%q, %q)", c.full, head, tail, c.head, c.tail)
+		}
+	}
+}
+
+// Splitting a name never loses part of it.
+//
+// Half the roster is not written "Species, Epithet" — "Owl That Knows" and
+// "Something That Was A Diver" are whole phrases and the phrase is the joke —
+// so the split has to be lossless rather than clever: whatever it does not put
+// in the head must come back in the tail, because between them they are what
+// the target panel shows and that is the one place the player reads a
+// creature's whole name.
+func TestSplittingANameNeverLosesPartOfIt(t *testing.T) {
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Skipf("no data directory to load: %v", err)
+	}
+	tables, err := gamedata.Load(root)
+	if err != nil {
+		t.Fatalf("loading content: %v", err)
+	}
+	seen := map[string]bool{}
+	for _, defs := range tables.Monsters {
+		for _, m := range defs {
+			if seen[m.ID] {
+				continue
+			}
+			seen[m.ID] = true
+			for _, full := range []string{m.Name, m.Name + " A"} {
+				head, tail := monsterName(full)
+				rejoined := head
+				if tail != "" {
+					rejoined += " " + tail
+				}
+				// Compared without the comma, which is the separator being
+				// consumed rather than a word being lost.
+				for _, word := range strings.Fields(strings.ReplaceAll(full, ",", "")) {
+					if !strings.Contains(rejoined, word) {
+						t.Errorf("%q split to (%q, %q), which drops %q",
+							full, head, tail, word)
+					}
+				}
+			}
+		}
+	}
 }

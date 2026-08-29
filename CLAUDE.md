@@ -194,6 +194,20 @@ which event fires which trigger, and where it is safe to put a box on screen.
   recomputed in `Update`, not baked in when the rows are built. The times are
   already parsed and in hand, so re-ageing costs nothing; re-running `refresh`
   would re-read every save file on disk sixty times a second.
+- **Nothing on a strip is positioned by a constant that assumes another thing's
+  width.** The status bar was a column of fixed x offsets, which held until the
+  generator produced "Sister Agatha Blunt Two Drinks In" or a purse reached four
+  figures — then the name printed through the weather and the coins printed
+  through the tracker. Lay a row out from its anchor and fit the variable parts
+  to what is left, and decide *which* thing gives way by which thing moves: a
+  hero's name is fixed for a run, a place name changes every time you walk
+  through a gate.
+- **A panel does not clip what you draw in it.** `ui.TitledPanel` now truncates
+  its own title, but `Log.Draw`, `render.Text` and a pre-wrapped blurb will all
+  happily run out of the box they were meant for and across whatever is beside
+  it. Anything drawn into a panel narrower than the screen needs the width
+  passed in — `Log.DrawWrapped` and `techniqueBlurb` both take one for exactly
+  this reason.
 - **A note that outlives the cursor is a screen that has stopped answering.**
   The shop's description strip and its "you bought a thing" line share one
   space, and the note wins while it is set — so a note never cleared on

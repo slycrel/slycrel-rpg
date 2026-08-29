@@ -290,39 +290,88 @@ func (g *Game) drawStatusBar(dst *ebiten.Image, place, hint string) {
 	ui.Panel(dst, 0, y, render.ScreenW, hudH)
 	p := g.Player
 
-	render.Text(dst, fmt.Sprintf("%s  L%d", p.Name, p.Level), 8, y+5, render.ColInk)
-	// What it is like outside, between the name and the place. The clock is
-	// only worth having if the player can read it: night raises what turns up
-	// by a level and rain keeps things indoors, and neither is discoverable
-	// from a tint alone. Three words is the whole interface for it.
-	render.Text(dst, g.skyLine(), 128, y+5, render.ColInkDim)
-	render.TextRight(dst, render.Trunc(place, 268), render.ScreenW-8, y+5, render.ColGold)
+	// Both rows are laid out right to left, and everything variable is measured
+	// against what is already spoken for.
+	//
+	// They used to be a column of fixed x positions, which is fine until the
+	// generator hands out a name like "Sister Agatha Blunt Two Drinks In" or a
+	// purse reaches four figures. Then the name printed straight through the
+	// weather and the purse printed straight through the tracker, and the strip
+	// that exists to tell you three facts told you none of them. Nothing here
+	// may be positioned by a constant that assumes the width of something else.
+	const pad = 8.0
+	// nameCap is the most of the top row a hero's name and level may take.
+	// Generated names run to "Sister Agatha Blunt Two Drinks In", and without a
+	// ceiling one of those would leave the weather and the place with nothing.
+	const nameCap = 170.0
 
-	ui.Bar(dst, 8, y+18, 88, 6, p.HPFrac(), render.ColBlood)
+	// Row one: the name anchors, the weather follows it, the place takes what is
+	// left.
+	//
+	// Which thing gives way is decided by which thing moves. A hero's name is
+	// fixed for the whole run, so laying the clock out after it puts the clock
+	// in the same place every frame; laying it out against the *place* instead
+	// would slide it about every time you walked from a wood into a town. And
+	// the place is the one of the three that is repeated elsewhere — floating
+	// over the location itself, and on both maps — so it is also the one that
+	// costs least to cut.
+	//
+	// The level always survives. It is three characters and it is the half of
+	// this line anybody actually checks.
+	level := fmt.Sprintf("  L%d", p.Level)
+	name := render.Trunc(p.Name, nameCap-render.TextW(level))
+	render.Text(dst, name+level, pad, y+5, render.ColInk)
+
+	sky := g.skyLine()
+	skyX := pad + render.TextW(name+level) + 12
+	render.Text(dst, sky, skyX, y+5, render.ColInkDim)
+
+	placeW := core.MaxF(24, render.ScreenW-pad-(skyX+render.TextW(sky)+10))
+	render.TextRight(dst, render.Trunc(place, placeW), render.ScreenW-pad, y+5, render.ColGold)
+
+	// Row two: the meters are fixed because they are fixed width, and
+	// everything after them is fitted to what is left.
+	ui.Bar(dst, pad, y+18, 88, 6, p.HPFrac(), render.ColBlood)
 	render.Text(dst, fmt.Sprintf("%d/%d", p.HP, p.MaxHP), 100, y+17, render.ColInkDim)
 	ui.Bar(dst, 152, y+18, 56, 6, p.PsycheFrac(), render.ColMagic)
 	render.Text(dst, fmt.Sprintf("%d SP", p.Psyche), 212, y+17, render.ColInkDim)
 	coins := fmt.Sprintf("%d coins", p.Coins)
 	render.Text(dst, coins, 262, y+17, render.ColGold)
+
 	// What you are following, where the tutorial hint used to be. That line
 	// said "M map - H help" forever, which stops being news after five minutes
 	// and is what the help screen is for; this is the same corner earning its
 	// keep for the rest of the run.
+	//
+	// Its budget is whatever the purse and the company have not taken, so a
+	// long destination shortens itself rather than reversing into the coins.
+	spent := 262 + render.TextW(coins) + 10
+	allies := 0
+	for range g.Allies {
+		if spent+float64(allies+1)*28 > render.ScreenW-pad-60 {
+			break
+		}
+		allies++
+	}
+	budget := render.ScreenW - pad - (spent + float64(allies)*28) - 12
+
 	hintCol := render.ColInkFaint
-	if line, ok := g.trackLine(); ok {
+	if line, ok := g.trackLine(budget); ok {
 		hint, hintCol = line, render.ColGold
 		if dir, ok := g.trackBearing(); ok {
-			drawCompass(dst, dir, render.ScreenW-8-render.TextW(hint)-11, y+16, render.ColGold)
+			drawCompass(dst, dir, render.ScreenW-pad-render.TextW(hint)-11, y+16, render.ColGold)
 		}
+	} else {
+		hint = render.Trunc(hint, budget)
 	}
-	render.TextRight(dst, hint, render.ScreenW-8, y+17, hintCol)
+	render.TextRight(dst, hint, render.ScreenW-pad, y+17, hintCol)
 
 	// The company's health, as bare meters after the purse. No names: at this
 	// size they would not fit, and what you need off the walking-around screen
 	// is whether anyone is about to fall over, not which of them it is.
-	ax := 262 + render.TextW(coins) + 10
-	for _, a := range g.Allies {
-		if ax+24 > render.ScreenW-8-render.TextW(hint)-20 {
+	ax := spent
+	for i, a := range g.Allies {
+		if i >= allies {
 			break
 		}
 		ui.Bar(dst, ax, y+18, 24, 6, a.HPFrac(), render.ColBlood)

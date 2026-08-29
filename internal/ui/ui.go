@@ -43,6 +43,11 @@ func TitledPanel(dst *ebiten.Image, title string, x, y, w, h float64) {
 	if title == "" {
 		return
 	}
+	// Cut to the panel it labels. A title is a caption for a box and cannot be
+	// wider than the box: an over-long one used to run out of its own frame and
+	// across whatever sat beside it, which on the battle screen meant the
+	// command panel's heading printing through the technique popover's.
+	title = render.Trunc(title, w-20)
 	tw := render.TextW(title)
 	render.Rect(dst, x+6, y, tw+8, 1, render.ColPanel)
 	render.Text(dst, title, x+10, y-4, render.ColGold)
@@ -516,6 +521,44 @@ func (l *Log) Draw(dst *ebiten.Image, x, y float64, n int) {
 			c = render.ColInkDim
 		}
 		render.Text(dst, ln.text, x, y+float64(i)*render.LineH, c)
+	}
+}
+
+// DrawWrapped is Draw for a panel narrower than the sentences going into it.
+//
+// The plain Draw paints each entry as one unbroken line, which was fine while
+// the transcript ran the width of the screen and stopped being fine the moment
+// it had to share the bottom with a command list: "Ilsabet Dun's Charm Against
+// Weather" simply ran off the end and was cut mid-word by the panel edge, with
+// nothing to say it had been.
+//
+// rows is a budget of *rendered* lines rather than of entries, and it is filled
+// from the newest backwards — so one long sentence pushes two short ones out
+// rather than being truncated itself. The most recent thing that happened is
+// the thing worth keeping whole.
+func (l *Log) DrawWrapped(dst *ebiten.Image, x, y, w float64, rows int) {
+	if rows < 1 {
+		return
+	}
+	type line struct {
+		text string
+		col  color.Color
+	}
+	var out []line
+	for i := len(l.lines) - 1; i >= 0 && len(out) < rows; i-- {
+		c := l.lines[i].col
+		// Fade everything but the two most recent entries, as Draw does.
+		if i < len(l.lines)-2 {
+			c = render.ColInkDim
+		}
+		wrapped := render.Wrap(l.lines[i].text, w)
+		for j := len(wrapped) - 1; j >= 0 && len(out) < rows; j-- {
+			out = append(out, line{wrapped[j], c})
+		}
+	}
+	for i, ln := range out {
+		// out is newest-first; the panel reads oldest at the top.
+		render.Text(dst, ln.text, x, y+float64(len(out)-1-i)*render.LineH, ln.col)
 	}
 }
 
