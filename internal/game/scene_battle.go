@@ -33,7 +33,12 @@ const (
 // stepTicks is how long each queued action's message stays up before the next
 // one plays. Long enough to read, short enough that a three-monster round does
 // not become a coffee break.
-const stepTicks = 30
+//
+// It was 30 and fixed, and 30 turned out to be the fast end of the range
+// rather than the middle of it: the attacks read as a little bit fast. The old
+// value is still there, as the setting called fast; the default is the rung
+// below it. See paceTicks.
+var stepTicks = paceSteady
 
 // floater is a damage number rising off a combatant.
 type floater struct {

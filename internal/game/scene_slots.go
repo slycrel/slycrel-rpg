@@ -218,6 +218,17 @@ func newPauseScene(g *Game) *pauseScene {
 	return p
 }
 
+// settingsLabel is what the pause menu's Settings row says in its detail
+// column.
+//
+// The volume, because that is the setting somebody opens this menu looking
+// for, and because a row that reads "Settings ..." tells a player nothing
+// about whether they need to go in. It quotes the thing most likely to be
+// wrong at the moment they are asking.
+func settingsLabel(g *Game) string {
+	return "sound " + soundLabel(g)
+}
+
 // refresh rebuilds the rows so the sound line reflects the current setting.
 func (p *pauseScene) refresh(g *Game) {
 	idx := p.menu.Index
@@ -229,23 +240,27 @@ func (p *pauseScene) refresh(g *Game) {
 		{Label: "Resume"},
 		{Label: "Save"},
 		{Label: "Load"},
-		{Label: "Sound", Detail: soundLabel(g)},
+		{Label: "Settings", Detail: settingsLabel(g)},
 		{Label: "Abandon run", Detail: "to the title"},
 	})
 	p.menu.Index = idx
 }
 
+// soundLabel is the state of the sound in two or three words.
+//
+// Four states, not two, and they were three-into-one until a tour frame showed
+// the settings screen calling a deliberately muted run "unavailable" — which
+// tells somebody who typed -mute that their installation is broken. Quiet
+// somebody asked for, quiet the game arrived at, and quiet because the volume
+// is at the bottom are different sentences.
 func soundLabel(g *Game) string {
-	// A build with no audio device has no Bank at all, and the pause menu is
-	// not the place to find that out.
-	if g.Sound == nil {
-		return "unavailable"
-	}
 	switch {
-	case !g.Sound.Enabled() && g.Sound.Muted():
-		return "off"
-	case !g.Sound.Enabled():
+	case g.Sound == nil || !g.Sound.Available():
 		return "unavailable"
+	case g.Sound.Silenced():
+		return "silenced this run"
+	case g.Sound.Muted() || g.Sound.Volume() <= 0:
+		return "off"
 	default:
 		return fmt.Sprintf("%d%%", int(g.Sound.Volume()*100+0.5))
 	}
@@ -271,9 +286,8 @@ func (p *pauseScene) Update(g *Game) error {
 	switch p.selected() {
 	case "Resume":
 		g.Pop()
-	case "Sound":
-		g.cycleSound()
-		p.refresh(g)
+	case "Settings":
+		g.Push(newSettingsScene(g))
 	case "Save":
 		g.Push(newSlotScene(g, slotSave))
 	case "Load":
@@ -300,25 +314,6 @@ func (p *pauseScene) selected() string {
 		return ""
 	}
 	return it.Label
-}
-
-// cycleSound steps the master volume down in quarters and round to full,
-// passing through silence. One row, one key, no submenu — it is a setting
-// somebody adjusts once and then forgets.
-func (g *Game) cycleSound() {
-	if g.Sound == nil {
-		return
-	}
-	v := g.Sound.Volume() - 0.25
-	if g.Sound.Muted() {
-		v = 1
-	}
-	if v <= 0.001 {
-		g.Sound.SetMuted(true)
-		return
-	}
-	g.Sound.SetMuted(false)
-	g.Sound.SetVolume(v)
 }
 
 func (p *pauseScene) Draw(g *Game, dst *ebiten.Image) {

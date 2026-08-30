@@ -1,0 +1,45 @@
+#!/bin/bash
+# The test suite, on a machine with no screen. Double-clickable.
+#
+# Why this exists: Ebitengine will not initialise without a monitor, and on
+# macOS "no monitor" includes a display that has gone to sleep. The whole of
+# internal/game fails at package init when that happens — importing the package
+# is enough, so even `go test -run XXX` crashes — and the failure is a segfault
+# in Ebitengine's own darwin code rather than anything this project can catch.
+# There is no headless mode and no environment variable for one.
+#
+# Linux has Xvfb, an X server that draws into memory and that nobody has to be
+# looking at. macOS has no equivalent, which is why this is a container.
+#
+#   ./scripts/test-headless.command                 # go test ./internal/...
+#   ./scripts/test-headless.command go vet ./...    # or anything else
+#
+# The first run builds the image and compiles Ebitengine's cgo, which takes a
+# few minutes; the build cache and the module cache live in named volumes, so
+# every run after that is as quick as the host.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+if ! docker info >/dev/null 2>&1; then
+    echo "test-headless: Docker is not running. Start Docker Desktop, or run"
+    echo "               go test ./internal/... with the screen awake."
+    exit 1
+fi
+
+if [ -z "$(docker images -q slycrel-headless 2>/dev/null)" ]; then
+    echo "Building the headless image (once; a few minutes)..."
+    docker build -q -f scripts/headless.Dockerfile -t slycrel-headless . >/dev/null
+fi
+
+run() {
+    exec docker run --rm \
+        -v "$PWD":/src \
+        -v slycrel-gocache:/root/.cache/go-build \
+        -v slycrel-gomod:/go/pkg/mod \
+        slycrel-headless "$@"
+}
+
+if [ $# -eq 0 ]; then
+    run go test ./internal/...
+fi
+run "$@"

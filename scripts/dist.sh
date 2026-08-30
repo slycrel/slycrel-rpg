@@ -105,7 +105,7 @@ Controls
   X / Esc          back out
   M                the map of everywhere you have been
   C or I           character sheet and pack
-  Esc              pause: sound, save, load, abandon the run
+  Esc              pause: save, load, settings, abandon the run
   \                screenshot, into shots/
 
 Saves land in saves/.
@@ -134,7 +134,7 @@ Controls
   X / Esc          back out
   M                the map of everywhere you have been
   C or I           character sheet and pack
-  Esc              pause: sound, save, load, abandon the run
+  Esc              pause: save, load, settings, abandon the run
   \                screenshot, into shots/
 
 Saves land in saves/.

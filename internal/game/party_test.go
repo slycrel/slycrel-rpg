@@ -294,7 +294,7 @@ func TestEveryPauseRowHasSomethingBehindIt(t *testing.T) {
 
 	// Every row the menu offers must be a label the dispatch knows.
 	handled := map[string]bool{
-		"Resume": true, "Sound": true, "Save": true, "Load": true, "Abandon run": true,
+		"Resume": true, "Settings": true, "Save": true, "Load": true, "Abandon run": true,
 	}
 	if len(p.menu.Items) != len(handled) {
 		t.Errorf("the pause menu shows %d rows and the dispatch knows %d",

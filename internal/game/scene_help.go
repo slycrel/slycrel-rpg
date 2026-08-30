@@ -43,7 +43,7 @@ var helpKeys = []helpRow{
 	{"C or I", "character sheet, pack, techniques"},
 	{"J", "journal: errands, stories, who to see"},
 	{"M", "map"},
-	{"Esc", "pause: save, load, sound"},
+	{"Esc", "pause: save, load, settings"},
 	{"\\", "save a screenshot"},
 }
 

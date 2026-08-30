@@ -87,7 +87,7 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
 | Tab | at a shop counter, change who you are buying for |
 | Z at a counter | sells the whole stack; the first row clears out the junk in one go |
 | J | the errands you agreed to; Z on one follows it, and the compass points at it |
-| Esc | pause: sound, save, load, abandon the run |
+| Esc | pause: save, load, settings, abandon the run |
 | `\` or F12 | screenshot to `shots/` (F12 needs standard function keys on macOS) |
 
 ## What is in the box

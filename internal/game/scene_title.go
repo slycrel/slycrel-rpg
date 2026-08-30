@@ -49,6 +49,7 @@ func newTitleScene(g *Game) *titleScene {
 	t.menu.SetItems([]ui.MenuItem{
 		{Label: "Begin", Detail: "a new mistake"},
 		cont,
+		{Label: "Settings", Detail: "keys, sound, pace"},
 		{Label: "Quit", Detail: "coward"},
 	})
 	// The world behind the menu is this seed's actual continent.
@@ -96,12 +97,24 @@ func (t *titleScene) Update(g *Game) error {
 	t.drift += 0.25
 	g.MenuNav(&t.menu)
 	if g.Accept() {
-		switch t.menu.Index {
-		case 0:
+		// On the label, not the index. This switch was on the row number, with
+		// a comment four lines above it observing that the pause menu had had
+		// exactly that bug — and this screen has three rows and has had three
+		// rows forever, right up until it got a fourth. Settings goes third
+		// because it belongs beside Continue rather than under Quit, which
+		// would have shifted Quit's number and broken the game's exit.
+		it, ok := t.menu.Selected()
+		if !ok {
+			return nil
+		}
+		switch it.Label {
+		case "Begin":
 			g.Replace(newCreateScene(g))
-		case 1:
+		case "Continue":
 			g.Push(newSlotScene(g, slotLoad))
-		case 2:
+		case "Settings":
+			g.Push(newSettingsScene(g))
+		case "Quit":
 			g.Quit()
 		}
 	}

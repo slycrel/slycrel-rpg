@@ -82,8 +82,17 @@ type Bank struct {
 	ambKey    string
 
 	settings Settings
-	// off disables everything: no manifest, or the caller asked for silence.
+	// save writes a changed volume or mute back where it came from. Nil is a
+	// bank whose settings last as long as the process does.
+	save func(muted bool, volume float64)
+	// off means there is nothing to play: no manifest, or one that would not
+	// parse. It is a fact about the installation.
 	off bool
+	// hushed means somebody asked for quiet — -mute, or the demo tour. It is a
+	// fact about this run, and it is separate from off because the two read
+	// completely differently on a settings screen: "unavailable" in front of
+	// somebody who typed -mute is the game telling them their sound is broken.
+	hushed bool
 }
 
 // New opens a bank rooted at the repository root, reading assets/audio.json.
@@ -96,7 +105,6 @@ func New(root string, seed int64) *Bank {
 		rng:      core.NewRNG(seed).Fork("audio", seed),
 		settings: Settings{Volume: 0.7},
 	}
-	b.loadSettings()
 
 	data, err := os.ReadFile(filepath.Join(root, "assets", "audio.json"))
 	if err != nil {
@@ -179,9 +187,29 @@ func (b *Bank) Silence() {
 	if b == nil {
 		return
 	}
-	b.off = true
+	b.hushed = true
 	b.Ambience("")
 }
+
+// Silenced reports quiet that was asked for rather than quiet that was
+// arrived at. Only the settings screen cares, and it cares a lot: the two
+// have the same sound and completely different explanations.
+func (b *Bank) Silenced() bool { return b != nil && b.hushed }
+
+// Unsilence lifts a silence somebody asked for, for the one caller that has
+// grounds to: a player turning the volume up on the settings screen has said
+// what they want more recently than the command line did. It cannot conjure a
+// manifest, so a bank that is off stays off.
+func (b *Bank) Unsilence() {
+	if b != nil {
+		b.hushed = false
+	}
+}
+
+// Available reports whether there is anything to play at all — a manifest that
+// loaded, backed by files. Silence, mute and a volume of nothing are all
+// settings; this is the installation.
+func (b *Bank) Available() bool { return b != nil && !b.off }
 
 // Enabled reports whether anything will actually be heard.
 //
@@ -191,7 +219,7 @@ func (b *Bank) Silence() {
 // a nil check at several hundred call sites or a panic the first time a scene
 // makes a noise.
 func (b *Bank) Enabled() bool {
-	return b != nil && !b.off && !b.settings.Muted && b.settings.Volume > 0
+	return b != nil && !b.off && !b.hushed && !b.settings.Muted && b.settings.Volume > 0
 }
 
 // Muted reports the user's mute preference.
@@ -211,7 +239,7 @@ func (b *Bank) SetMuted(m bool) {
 		b.ambKey = ""
 		b.Ambience(key)
 	}
-	b.saveSettings()
+	b.persist()
 }
 
 // SetVolume sets master volume in [0,1] and persists it.
@@ -220,7 +248,7 @@ func (b *Bank) SetVolume(v float64) {
 	if b.ambPlayer != nil {
 		b.ambPlayer.SetVolume(b.settings.Volume * ambienceMix)
 	}
-	b.saveSettings()
+	b.persist()
 }
 
 // ambienceMix keeps beds well under the one-shots; ambience that competes with
@@ -360,35 +388,27 @@ func (b *Bank) Close() {
 	b.live = nil
 }
 
-// settingsPath is where the audio preference lives. It sits beside the saves
-// rather than in them, because it describes the player's speakers, not their
-// character.
-func (b *Bank) settingsPath() string {
-	return filepath.Join(b.root, "saves", "settings.json")
+// Bind hands the bank the player's audio preference and the way to write a
+// change back.
+//
+// The bank used to read and write saves/settings.json itself, which meant a
+// sound library knowing where the save directory is and owning a file that was
+// about to describe two other things as well. It is told now, and internal/prefs
+// owns the file — see the note at the top of that package.
+//
+// save may be nil, which is a bank whose settings do not outlive the run: the
+// demo tour and anything headless.
+func (b *Bank) Bind(muted bool, volume float64, save func(muted bool, volume float64)) {
+	if b == nil {
+		return
+	}
+	b.settings = Settings{Muted: muted, Volume: core.ClampF(volume, 0, 1)}
+	b.save = save
 }
 
-func (b *Bank) loadSettings() {
-	data, err := os.ReadFile(b.settingsPath())
-	if err != nil {
-		return
+// persist writes the current preference back through whatever Bind was given.
+func (b *Bank) persist() {
+	if b.save != nil {
+		b.save(b.settings.Muted, b.settings.Volume)
 	}
-	var s Settings
-	if err := json.Unmarshal(data, &s); err != nil {
-		return
-	}
-	if s.Volume <= 0 || s.Volume > 1 {
-		s.Volume = 0.7
-	}
-	b.settings = s
-}
-
-func (b *Bank) saveSettings() {
-	if err := os.MkdirAll(filepath.Dir(b.settingsPath()), 0o755); err != nil {
-		return
-	}
-	data, err := json.MarshalIndent(b.settings, "", "  ")
-	if err != nil {
-		return
-	}
-	_ = os.WriteFile(b.settingsPath(), data, 0o644)
 }

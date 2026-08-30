@@ -9,6 +9,7 @@ assuming anything about the state of the project.
 
 ```bash
 ./play.command                       # build this checkout and play it (double-clickable)
+./scripts/test-headless.command      # the whole sweep in a container, no screen needed
 ./make-dist.command                  # shareable zips for macOS and Windows into dist/
 go run ./cmd/slycrel                 # play
 go run ./cmd/slycrel -seed 1994      # the same continent every time
@@ -185,6 +186,13 @@ which event fires which trigger, and where it is safe to put a box on screen.
   is to be old saves — v1 predates the party, v2 predates the backstories — and
   rewriting either at the current version deletes the only evidence that the
   loader still reads the earlier format. `cmd/genfixtures` skips both.
+- **Preferences live in `internal/prefs`, and nothing else owns that file.**
+  `saves/settings.json` holds volume, combat pace and key bindings; the audio
+  bank is *told* its settings and writes back through a callback rather than
+  reading the file itself. Every field's zero value means "never set it" —
+  which is why an unset pace is the middle rung and not a combat step of no
+  ticks. Key bindings are stored as `ebiten.Key.String()` names, and the
+  name table is built by walking `0..KeyMax` rather than typed out.
 - **A menu dispatches on what a row means, never on where it is.** The pause
   menu learned this once and the battle menu was one change away from it: rows
   carry a tag in `Data` and the switch reads that. The attack row's label is the
@@ -275,8 +283,13 @@ which event fires which trigger, and where it is safe to put a box on screen.
   re-run this survey; the packs have not changed.
 - **Screen capture is blocked on this machine.** Use `-demo`, or `\` in game to
   dump the framebuffer. `sips` crops a shot for a closer look.
-- **The display session drops occasionally.** See the project memory; it is
-  environmental, it recovers, and most of the suite runs without it.
+- **The display session drops when the screen sleeps**, and Ebitengine cannot
+  init without a monitor — `internal/game` then fails at *package init*, even
+  with `-run XXX`. `./scripts/test-headless.command` runs the whole sweep in a
+  container against Xvfb and does not care: no arguments runs
+  `go test ./internal/...`, or pass any command (`./scripts/test-headless.command
+  go run ./cmd/slycrel -demo`). First run is minutes, the rest are seconds.
+  The host path is still faster when the screen is awake.
 
 ## Scope discipline
 

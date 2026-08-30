@@ -831,8 +831,9 @@ than a system.
    a headless Game can run `startRun` without a panic the first time something
    makes a noise.
 
-   **Third pass, and it has a shape rather than a list: a settings screen.**
-   *(Jeremy's, and it arrived as three things that turn out to be one.)*
+   ~~**Third pass, and it has a shape rather than a list: a settings screen.**~~
+   *(Built.)* *(Jeremy's, and it arrived as three things that turn out to be
+   one.)*
 
    - **Combat timing is a notch too fast.** His framing is the useful part:
      what is currently "fast" should sit a couple of notches down as "slow",
@@ -852,7 +853,51 @@ than a system.
    settings scattered across three menus is three places to look, and the
    fourth one will land somewhere else again.
 
-   Held until the current arc lands, which is Jeremy's own sequencing.
+   All three are on `internal/game/scene_settings.go`, reachable from the
+   pause menu and from the title. What building it turned up:
+
+   - **The pace ladder is 30, 45, 60 ticks and the default is the middle.**
+     The 30 that shipped for months is still there as *fast*, deliberately:
+     the complaint was never that it was wrong, it was that it was the only
+     one, and somebody who liked it should get it exactly rather than a new
+     number that is nearly the same. A round of three against four queues
+     seven messages, so the ends of the range are three seconds of waiting
+     against seven.
+   - **`internal/prefs` exists because there were about to be three of these.**
+     The audio bank had been quietly owning `saves/settings.json` since sound
+     landed — reading it, writing it, knowing where the saves directory is,
+     none of which is anything to do with playing a sound. Pace and bindings
+     beside it meant either a second file describing the same thing or a
+     second writer on the same one, and two writers on one file is one of them
+     losing. The bank is *told* its volume now and writes changes back through
+     a callback. Every field's zero value is "never touched it", which is the
+     only answer a file written before that field existed can give.
+   - **The key-name table is derived, not typed.** `Key.String()` returns ""
+     for the undefined ones, so walking `0..KeyMax` is both the table and its
+     own filter — a hand-written list of a hundred and forty key names is a
+     hundred and forty chances to name one that does not exist. Bindings store
+     names rather than numbers, which is the only form that survives a version
+     bump of the engine and the only form a person can read.
+   - **A rebind replaces the whole list rather than joining it**, because
+     somebody rebinding Down is doing it *because* something else wants `S`,
+     and an "add" would have left the collision in place. Refusals are
+     up front: a key already on another action names that action, and the
+     screenshot key cannot be taken at all — a player who bound Cancel to
+     backslash would have quietly disabled the only camera this project has.
+     "Restore the original keys" is a row rather than a buried command,
+     because it is the way out of a keyboard somebody has made unusable and a
+     way out you have to already know about is not one.
+   - **The title screen dispatched on row number**, with a comment four lines
+     above it observing that the pause menu had had exactly that bug. Three
+     rows forever, right up until it got a fourth. Fixed to dispatch on the
+     label before Settings was inserted.
+   - **A tour frame caught the sound row calling a `-mute` run "unavailable".**
+     Silence somebody asked for and silence the game arrived at had been one
+     flag; they are `hushed` and `off` now, because telling a player who typed
+     `-mute` that their installation is broken is a different sentence
+     entirely. Turning the volume up on the settings screen lifts a `-mute`,
+     since that is a more recent statement of what they want than the command
+     line was.
 
    Add to this as things turn up; do not fix them in ones. What is left is the
    art pass below, which is a different kind of job.
@@ -2006,6 +2051,57 @@ tiles was the range, and a town is fifty-odd tiles across, so the sign that
 exists to point you at the armourer could only be read once you were close
 enough to have already found the armourer. Directions are useless at the
 destination.
+
+## Testing without a screen
+
+*(Jeremy's: "would be interested in figuring out testing in an offscreen view
+rather than needing my laptop screen to be on and available.")*
+
+**The diagnosis first, because it is not what it looks like.** Ebitengine's
+`internal/ui` runs `newUserInterface()` at *package init*, so importing
+`ebiten/v2` — which `internal/game` does, directly and through `assetsys` — is
+enough to trigger it. That enumerates monitors, and with none it dies. On
+darwin it dies badly: `currentMouseLocation` dereferences the nil that
+`primaryMonitor` is documented to return, which is a segfault rather than an
+error, and it happens with `-run XXX` and no tests selected at all.
+
+Two things worth knowing about it. The nil deref is an upstream bug and not the
+real obstacle — `initializeGLFW` twenty lines further on checks for exactly
+that case and returns a clean `"ui: no monitor was found"`, so fixing the
+darwin path only turns a segfault into a legible panic. Ebitengine has no
+headless mode and no environment variable for one; `EBITENGINE_GRAPHICS_LIBRARY`
+picks between Metal and OpenGL, not between having a screen and not. And
+v2.10's alphas have not fixed the deref either, so there is nothing to upgrade
+to.
+
+**And "no monitor" includes a display that has gone to sleep.** That is the
+whole of the intermittency: the suite passes, the laptop idles out, the next
+run segfaults, and twenty minutes later it passes again.
+
+So the answer is not to go without a display, it is to use one nobody is
+looking at. Linux has Xvfb; macOS has no equivalent, which is why
+`scripts/test-headless.command` is a container rather than a script. It runs
+the whole sweep — `go test ./internal/...`, `vet`, `-audit`, `-demo`,
+`cmd/balance` — against an X server drawing into memory, with Mesa's llvmpipe
+supplying the GL. First run compiles Ebitengine's cgo and takes a few minutes;
+the build and module caches are named volumes, so every run after is about a
+second.
+
+Two things it cost to get right, both of which look like hangs:
+
+- **`xvfb-run` never ran the command.** The X server came up, `go version`
+  never executed, and the container sat at nought per cent with an empty log
+  for fifteen minutes. Whatever its wait-for-ready loop wants is not present in
+  a container with no session. Starting Xvfb directly and watching for its own
+  socket is four lines and cannot hang for a reason nobody can see.
+- **There is no sound card, and the game exits over it.** `oto` opens ALSA's
+  `default` device when a real bank is built, which `-demo` and `-audit` both
+  do, and the game quit on an audio error before drawing anything. A null PCM
+  in `/etc/asound.conf` is the honest fix: the tour runs silent by design and
+  the audit is checking that files decode, not that they can be heard.
+
+The host path still works and is still the fast one when the screen is awake.
+This is the fallback that does not care.
 
 ## Open questions
 

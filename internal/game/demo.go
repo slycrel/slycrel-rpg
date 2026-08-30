@@ -232,18 +232,30 @@ func buildDemoSteps() []demoStep {
 
 		{at: 1187, do: func(g *Game) { g.Push(newPauseScene(g)) }},
 		{at: 1199, shot: "11-pause"},
-		{at: 1204, do: func(g *Game) { g.Push(newSlotScene(g, slotSave)) }},
-		{at: 1216, shot: "12-save"},
-		{at: 1222, do: func(g *Game) { g.dropOverlays() }},
+		// The settings screen, which is the one place in the game where the
+		// keyboard is the subject rather than the instrument. Captured with the
+		// cursor down on a key row, because the interesting half of the screen
+		// is the half a frame of the top of a menu would not show.
+		{at: 1203, do: func(g *Game) {
+			g.Push(newSettingsScene(g))
+			if st, ok := g.Top().(*settingsScene); ok {
+				st.menu.Select(6)
+			}
+		}},
+		{at: 1213, shot: "11b-settings"},
+		{at: 1217, do: func(g *Game) { g.Pop() }},
+		{at: 1222, do: func(g *Game) { g.Push(newSlotScene(g, slotSave)) }},
+		{at: 1234, shot: "12-save"},
+		{at: 1240, do: func(g *Game) { g.dropOverlays() }},
 
 		// Leave the fixture behind.
-		{at: 1226, do: func(g *Game) {
+		{at: 1244, do: func(g *Game) {
 			if err := g.SaveTo("demo"); err != nil {
 				logf("could not write the demo save: %v", err)
 			}
 		}},
 
-		{at: 1236, do: func(g *Game) { g.Quit() }},
+		{at: 1250, do: func(g *Game) { g.Quit() }},
 	}
 }
 

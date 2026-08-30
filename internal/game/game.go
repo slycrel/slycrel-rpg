@@ -21,6 +21,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/gamedata"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/party"
+	"github.com/slycrel/slycrel-rpg/internal/prefs"
 	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/saga"
@@ -42,10 +43,13 @@ type Game struct {
 	Root   string
 	Assets *assetsys.Registry
 	Sound  *audiosys.Bank
-	Data   *gamedata.Tables
-	Write  *content.Writer
-	RNG    *core.RNG
-	Log    *ui.Log
+	// Prefs is what the player set: volume, combat pace, key bindings. Nil in
+	// a headless Game, which is why savePrefs checks.
+	Prefs *prefs.Prefs
+	Data  *gamedata.Tables
+	Write *content.Writer
+	RNG   *core.RNG
+	Log   *ui.Log
 
 	// Run state, populated once a character exists.
 	Player *model.Character
@@ -152,8 +156,29 @@ func New(root string, seed int64) (*Game, error) {
 		Log:    ui.NewLog(200),
 	}
 	g.Sound = audiosys.New(root, seed)
+
+	// What the player set last time, applied before anything can make a noise
+	// or read a key. The bank is told its volume rather than fetching it, and
+	// writes changes back through here, so there is one owner of the file.
+	g.Prefs = prefs.Load(root)
+	g.Sound.Bind(g.Prefs.Muted, g.Prefs.Volume, func(muted bool, volume float64) {
+		g.Prefs.Muted, g.Prefs.Volume = muted, volume
+		g.Prefs.Save(root)
+	})
+	applyPace(g.Prefs.Pace)
+	applyBindings(g.Prefs.Keys)
+
 	g.Push(newTitleScene(g))
 	return g, nil
+}
+
+// savePrefs writes the preferences back. Every setting goes through here so
+// that a screen changing one never has to know where the file is.
+func (g *Game) savePrefs() {
+	if g.Prefs == nil {
+		return
+	}
+	g.Prefs.Save(g.Root)
 }
 
 // Push puts a scene on top of the stack.
