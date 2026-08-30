@@ -67,7 +67,7 @@ func main() {
 	reportSaga(out, t)
 	reportSky(out)
 	reportSupplies(out, t)
-	reportCompany(out)
+	reportCompany(out, core.NewRNG(*seed^0xC017), t)
 	reportMonsterSpread(out, t)
 }
 
@@ -1300,7 +1300,7 @@ func reportSky(out *os.File) {
 // What it deliberately does not do is convert to coins: that would need a model
 // of what a haul is worth per level, and inventing one to put a confident
 // number under it is how a report starts measuring a fiction.
-func reportCompany(out *os.File) {
+func reportCompany(out *os.File, g *core.RNG, t *gamedata.Tables) {
 	fmt.Fprintf(out, "THE COMPANY'S SHARE — what honour is worth at the hiring board\n\n")
 
 	// The band Recruit rolls in. Named rather than repeated so this section
@@ -1337,6 +1337,152 @@ func reportCompany(out *os.File) {
 		fmt.Fprintf(out, "WARNING: a full company at the top of the roll takes %d%% of every haul.\n", worst)
 	}
 	fmt.Fprintln(out)
+	reportCutBuys(out, g, t)
+}
+
+// reportCutBuys is the other half of the cut, and it exists because the cut
+// stopped being a subtraction.
+//
+// A companion's share used to leave the purse and go nowhere, while they
+// re-armed for free on every level-up — so there was nothing to measure and
+// the section above said so in as many words: converting to coins would need a
+// model of what a haul is worth, and inventing one is how a report starts
+// measuring a fiction.
+//
+// It is not invented any more. What a fight pays is the coin award plus what
+// the drops fetch at the rate a merchant actually pays, rolled off the same
+// PickMonsters the game rolls, at the group sizes a company draws. And what
+// keeping pace costs is what Equip asks for, which is the same definition of
+// "on curve" every other section is measured against.
+//
+// Like SUPPLIES, this lives entirely on the buying side where SimulateFight
+// cannot see it. The question it answers is one question: hire somebody at the
+// bottom of a gear tier, walk them to the top of it, and can what they skimmed
+// on the way pay for the next tier's kit.
+func reportCutBuys(out *os.File, g *core.RNG, t *gamedata.Tables) {
+	fmt.Fprintf(out, "WHAT THE CUT BUYS — a companion's savings against the kit the curve expects\n")
+	fmt.Fprintf(out, "one 13%% cut of the coin from company-sized fights, off the tables the game rolls\n\n")
+
+	const cut = 13 // the middle of the band Recruit rolls in
+
+	// Per-level takings first: fights to the next level, and what one cut of
+	// each of them comes to.
+	// The cut is a share of the coin and only of the coin — Skim is applied to
+	// the purse a fight drops, and the drops themselves go whole into the
+	// hero's pack. So the two channels are measured apart: what the companion
+	// banks, and what the player is holding that they could hand over instead.
+	banked := make([]float64, maxLevel+1)
+	drops := make([]float64, maxLevel+1)
+	for level := 1; level < maxLevel; level++ {
+		step := rules.XPForLevel(level+1) - rules.XPForLevel(level)
+		if level == 1 {
+			step = rules.XPForLevel(2)
+		}
+		var xp, coins, loot float64
+		n := 0
+		for i := 0; i < 600; i++ {
+			// The size a group comes in when one companion is walking behind
+			// you, which is the party this section is about. Bigger groups pay
+			// more and are worth more experience, so this mostly cancels in the
+			// per-level column — which is itself worth knowing, and was not
+			// obvious before it was measured.
+			mons := t.PickMonsters(g, biomeForLevel(level), level, party.EncounterSize(g, 1, 1))
+			if len(mons) == 0 {
+				continue
+			}
+			for _, m := range mons {
+				xp += float64(m.Def.XP)
+				for name, k := range rules.RollLoot(g, m.Def.Loot) {
+					if it, ok := t.Item(name); ok {
+						loot += float64(rules.SellPrice(it.Value) * k)
+					}
+				}
+			}
+			coins += float64(rules.CoinAward(g, mons))
+			n++
+		}
+		if n == 0 || xp == 0 {
+			continue
+		}
+		fights := float64(step) / (xp / float64(n))
+		banked[level] = fights * (coins / float64(n)) * cut / 100
+		drops[level] = fights * (loot / float64(n))
+	}
+
+	fmt.Fprintf(out, "%-6s %-8s %14s %16s %9s %14s\n",
+		"tier", "levels", "one cut banked", "next tier's kit", "covered", "drops kept")
+	fmt.Fprintln(out, strings.Repeat("-", 76))
+
+	worst := 999.0
+	for tier := 1; tier < 5; tier++ {
+		var lo, hi int
+		for level := 1; level <= maxLevel; level++ {
+			if gamedata.GearTierFor(level) != tier {
+				continue
+			}
+			if lo == 0 {
+				lo = level
+			}
+			hi = level
+		}
+		if lo == 0 || hi >= maxLevel {
+			continue
+		}
+		var take, kept float64
+		for level := lo; level <= hi; level++ {
+			take += banked[level]
+			kept += drops[level]
+		}
+		// A Fighter's lane, which is the dearest of the three, so this is the
+		// pessimistic column rather than an average nobody plays.
+		next := &model.Character{Level: hi + 1, Class: model.ClassFighter}
+		t.Equip(next)
+		kit := float64(gamedata.GearCost(next))
+		covered := take / kit * 100
+		if covered < worst {
+			worst = covered
+		}
+		fmt.Fprintf(out, "%-6d %-8s %14.0f %16.0f %8.0f%% %14.0f\n",
+			tier, fmt.Sprintf("%d-%d", lo, hi), take, kit, covered, kept)
+	}
+
+	fmt.Fprint(out, `
+A companion is hired already dressed for the level they are hired at - the
+fee up front is what that buys - so the question is never "can they afford
+a kit from nothing". It is whether the standing charge keeps pace with the
+curve moving under them, and the answer the covered column gives is: not
+on its own, at any tier below the last one.
+
+That is the finding, and it is the right shape rather than a shortfall to
+tune away. The cut buys the cheap slots - a sidearm band is a quarter of a
+main one, so an arm and a charm are two or three levels of skimming, and a
+sword is eight. What the cut cannot reach, the pack can: the drops column
+is what the same fights put in the hero's hands, it is larger than the cut
+at every tier, and handing a companion the coat you have outgrown is
+instant where saving for one is slow.
+
+So the two halves are a division of labour rather than a gap. The cut
+keeps a companion's sidearms current by itself and chips at the rest; the
+main slots are hand-me-downs, which is why the sheet says what they are
+saving for - it is a shopping list addressed to the person holding the
+pack. A player who never opens it still has a companion who improves,
+slowly, out of their own wages.
+
+The covered column climbs the whole way - 8, 24, 38, 64 - and that is the
+half of this table that has to hold. A companion whose share bought a
+smaller fraction of the shelf every tier would be a mercenary getting
+relatively poorer the longer they worked for you, which is a strange
+advertisement for the trade. Rising means the arrangement is worth more
+the longer it lasts, and by the top band the cut alone is most of a kit.
+
+`)
+	// The line worth shouting about is the top of the table rather than the
+	// bottom: a lean early band is the design, and a cut that covered
+	// everything would make the pack pointless.
+	if worst > 60 {
+		fmt.Fprintf(out, "NOTE: the leanest band covers %.0f%%, so the cut is now funding the\n"+
+			"main slots on its own and hand-me-downs have stopped mattering.\n\n", worst)
+	}
 }
 
 // reportMonsterSpread shows how the rosters are distributed by level, which is

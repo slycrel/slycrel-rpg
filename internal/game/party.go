@@ -7,6 +7,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/slycrel/slycrel-rpg/internal/core"
+	"github.com/slycrel/slycrel-rpg/internal/gamedata"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/party"
 	"github.com/slycrel/slycrel-rpg/internal/render"
@@ -72,7 +73,12 @@ func (g *Game) offerRecruit(e *world.Entity) {
 	if l, ok := model.LineageOf(blood); ok {
 		trade = fmt.Sprintf("%s, and %s", trade, l.Tag)
 	}
-	body := fmt.Sprintf("%s\n\nA %s. %d coins up front, and a cut of everything after.",
+	// "The coin" rather than "everything", because the coin is what Skim
+	// actually takes — the drops go whole into the hero's pack. It was a
+	// mercenary's sales pitch overstating itself while the cut vanished into
+	// nothing; now that the same percentage visibly turns into a sword three
+	// towns later, the pitch is a rule the player can check.
+	body := fmt.Sprintf("%s\n\nA %s. %d coins up front, and a cut of the coin after.",
 		e.Line, trade, cost)
 
 	switch {
@@ -223,6 +229,119 @@ func allyPortrait(g *core.RNG) string {
 		"portrait/female/f_17", "portrait/female/f_24",
 	}
 	return core.Pick(g, pool)
+}
+
+// --- what the cut buys ----------------------------------------------------
+
+// companyShops is the other half of the standing charge on every haul: the
+// companions spend what they have skimmed, in the place that has somebody to
+// spend it at.
+//
+// On the way in rather than on the way out, so that what they came back with
+// is on the screen while the player is still standing somewhere they can do
+// something about it — hand them the sword out of the pack instead, or sell
+// the one that just came off.
+func (g *Game) companyShops() {
+	if g.Local == nil || !g.Local.POI.Kind.Settlement() {
+		return
+	}
+	open := countersHere(g.Local)
+
+	// Everybody shops first, and the transcript is written afterwards, because
+	// the walking-around screen shows exactly one line of it — the newest —
+	// and the news is what somebody bought rather than the housekeeping note
+	// about where their old coat went. Written in the order it happened, that
+	// note is the line that survives.
+	type trip struct {
+		who    *model.Character
+		spent  int
+		slots  []string
+		handed bool
+	}
+	var trips []trip
+	for _, c := range g.Allies {
+		bought, off := g.Data.Shop(c, open)
+		if len(bought) == 0 {
+			continue
+		}
+		t := trip{who: c, handed: len(off) > 0}
+		for _, gear := range bought {
+			t.spent += gear.Cost()
+			t.slots = append(t.slots, slotWords(gear))
+		}
+		// Their old kit is the employer's, which is both the honest answer to
+		// who paid for the replacement and the thing that stops an upgrade
+		// being a cost with nothing at all coming back the other way.
+		for _, gear := range off {
+			g.Player.Carry(gear)
+		}
+		trips = append(trips, t)
+	}
+	if len(trips) == 0 {
+		return
+	}
+
+	g.Sound.Play("world/coins")
+	for _, t := range trips {
+		if t.handed {
+			g.Log.AddColor(render.ColInkDim, "What came off %s goes in your pack.", t.who.Name)
+		}
+		// Slots rather than names, and it is the transcript's shape that
+		// decides that rather than taste. One rendered row is about sixty
+		// characters, so "Nessa spends 430 on Blade of Escalating Poor
+		// Decisions and a Kite Shield" would appear on screen as the second
+		// half of itself. Four slots and a figure always fit, and the sheet
+		// names what they actually bought — which is where somebody goes to
+		// look at it anyway.
+		g.Log.AddColor(render.ColGold, "%s spends %d on %s.",
+			t.who.Name, t.spent, listing(t.slots))
+	}
+}
+
+// slotWords names the kind of thing a piece of equipment is, for the two
+// places that talk about a companion's shopping in slots rather than in
+// names. Armour is the one that takes no article, which is the sort of fact
+// that only ever shows up on a screen.
+func slotWords(gear model.Carried) string {
+	if slot := gear.Slot(); slot != "armour" {
+		return article(slot)
+	}
+	return "armour"
+}
+
+// listing reads a handful of names out as a sentence rather than as a list
+// with "and" between every pair of them.
+func listing(names []string) string {
+	switch len(names) {
+	case 0:
+		return "nothing"
+	case 1:
+		return names[0]
+	case 2:
+		return names[0] + " and " + names[1]
+	default:
+		return strings.Join(names[:len(names)-1], ", ") + " and " + names[len(names)-1]
+	}
+}
+
+// countersHere reports which shops a place actually runs to, read off the map
+// that was just built rather than off the kind of settlement it is. A village
+// has a smith and an apothecary and no armourer, and a companion who walked
+// out of one holding a breastplate would be the game naming something that was
+// not there.
+func countersHere(l *world.LocalMap) func(gamedata.Counter) bool {
+	has := map[world.ShopKind]bool{}
+	for _, e := range l.Entities {
+		if e.Kind == world.EShop {
+			has[e.Shop] = true
+		}
+	}
+	return func(ct gamedata.Counter) bool {
+		if ct == gamedata.CounterSmith {
+			return has[world.ShopSmith]
+		}
+		return has[world.ShopArmorer]
+	}
 }
 
 // --- getting back up -------------------------------------------------------

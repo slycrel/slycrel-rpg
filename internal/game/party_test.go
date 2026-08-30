@@ -821,3 +821,85 @@ func TestTheShelfComparesAgainstWhatIsWorn(t *testing.T) {
 		t.Errorf("a nil buyer got the verdict %q", got)
 	}
 }
+
+// TestTheCompanyShopsWhereThereIsACounter covers the wiring between a
+// companion's savings and the town they are standing in — the half of the
+// feature that lives in this package, where the domain half in
+// gamedata.Shop cannot see what sort of place this is.
+//
+// Three things have to hold and all three are one-line mistakes: a village
+// with no armourer cannot sell armour, a dungeon cannot sell anything, and
+// what comes off a companion has to land in the hero's pack rather than
+// nowhere.
+func TestTheCompanyShopsWhereThereIsACounter(t *testing.T) {
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Skipf("no data directory to load: %v", err)
+	}
+	tables, err := gamedata.Load(root)
+	if err != nil {
+		t.Fatalf("loading content: %v", err)
+	}
+	write := content.New(&tables.Text)
+
+	// A companion dressed for level one and walked to twelve without ever
+	// standing in front of a counter: behind in every slot, and holding the
+	// cut they have been taking all the way.
+	behind := func() *model.Character {
+		c := &model.Character{Name: "Nessa", Class: model.ClassFighter, Level: 1, Ally: true}
+		tables.Equip(c)
+		c.Level, c.Coins = 12, 100000
+		return c
+	}
+
+	place := func(kind world.POIKind) *world.LocalMap {
+		return world.BuildLocal(&world.POI{
+			Name: "Somewhere", Kind: kind, Pos: core.Point{X: 40, Y: 40}, Seed: 7,
+		}, write)
+	}
+
+	for _, tc := range []struct {
+		kind    world.POIKind
+		armour  bool
+		anyGear bool
+	}{
+		{world.KindCapital, true, true},
+		{world.KindTown, true, true},
+		{world.KindVillage, false, true},
+		{world.KindDungeon, false, false},
+	} {
+		mate := behind()
+		was := mate.Armor.Name
+		g := &Game{
+			Player: &model.Character{Name: "Bosk"}, Allies: []*model.Character{mate},
+			Data: tables, Write: write, RNG: core.NewRNG(3), Log: ui.NewLog(6),
+			Local: place(tc.kind),
+		}
+		g.companyShops()
+
+		bought := mate.Weapon.Cost > 0 && mate.Weapon.Name != ""
+		if got := mate.Armor.Name != was; got != tc.armour {
+			t.Errorf("%s: armour changed = %v, want %v (now %q)", tc.kind, got, tc.armour, mate.Armor.Name)
+		}
+		if !tc.anyGear {
+			if mate.Coins != 100000 {
+				t.Errorf("%s: a companion spent %d coins in a place with no shops",
+					tc.kind, 100000-mate.Coins)
+			}
+			continue
+		}
+		if !bought || mate.Coins == 100000 {
+			t.Errorf("%s: a companion twelve levels behind bought nothing", tc.kind)
+		}
+		if len(g.Player.Carried) == 0 {
+			t.Errorf("%s: nothing came back to the hero's pack", tc.kind)
+		}
+		// Everything handed over has to be a real piece rather than an empty
+		// slot: Character.Equip only returns what was actually displaced.
+		for _, gear := range g.Player.Carried {
+			if gear.Empty() || gear.Titled() == "" {
+				t.Errorf("%s: an empty piece of gear landed in the pack", tc.kind)
+			}
+		}
+	}
+}

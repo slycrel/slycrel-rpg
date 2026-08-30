@@ -108,7 +108,7 @@ Controls
   Esc              pause: sound, save, load, abandon the run
   \                screenshot, into shots/
 
-Saves land in saves/. It is 18+ and means it.
+Saves land in saves/.
 
 The art and audio belong to their creators and are licensed separately from the
 game's own MIT-licensed code. See CREDITS.md and NOTICE.
@@ -137,7 +137,7 @@ Controls
   Esc              pause: sound, save, load, abandon the run
   \                screenshot, into shots/
 
-Saves land in saves/. It is 18+ and means it.
+Saves land in saves/.
 
 The art and audio belong to their creators and are licensed separately from the
 game's own MIT-licensed code. See CREDITS.md and NOTICE.

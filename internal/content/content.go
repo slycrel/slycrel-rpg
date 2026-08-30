@@ -182,6 +182,27 @@ func (w *Writer) AllyDown(g *core.RNG, name string) string {
 	return strings.ReplaceAll(core.Pick(g, w.t.AllyDown), "{N}", name)
 }
 
+// Gift is what a companion says about a piece of equipment handed to them.
+//
+// Three banks rather than one, because the interesting fact is not that they
+// were given something, it is whether it was the thing they had been putting
+// money aside for. A companion saving for a sword is the one piece of
+// information the player needs to spend the pack usefully, and the moment they
+// stop saving is the moment to say so.
+func (w *Writer) Gift(g *core.RNG, name string, wanted, better bool) string {
+	bank := w.t.GiftPlain
+	switch {
+	case wanted && len(w.t.GiftWanted) > 0:
+		bank = w.t.GiftWanted
+	case better && len(w.t.GiftBetter) > 0:
+		bank = w.t.GiftBetter
+	}
+	if len(bank) == 0 {
+		return ""
+	}
+	return strings.ReplaceAll(core.Pick(g, bank), "{N}", name)
+}
+
 // AllyUp narrates a companion getting back up once the fighting stops.
 func (w *Writer) AllyUp(g *core.RNG, name string) string {
 	return strings.ReplaceAll(core.Pick(g, w.t.AllyUp), "{N}", name)

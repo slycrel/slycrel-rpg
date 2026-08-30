@@ -83,6 +83,12 @@ type Text struct {
 	RecruitLeave []string `json:"recruitLeave"`
 	AllyDown     []string `json:"allyDown"`
 	AllyUp       []string `json:"allyUp"`
+	// What a companion says about equipment handed to them, in three banks
+	// because there are three things it can be: the thing they were saving
+	// for, something better than they had, and something that is neither.
+	GiftWanted []string `json:"giftWanted"`
+	GiftBetter []string `json:"giftBetter"`
+	GiftPlain  []string `json:"giftPlain"`
 	// BloodPitch is what a hireling who is visibly not entirely human opens
 	// with, keyed by the model.MonsterKind string of their ancestry.
 	BloodPitch map[string][]string `json:"bloodPitch"`

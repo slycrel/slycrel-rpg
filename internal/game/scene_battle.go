@@ -1616,6 +1616,13 @@ func (b *battleScene) awardSpoils(g *Game) {
 	// The party is paid for out of the purse instead: each companion skims a
 	// standing cut of every haul, which is a cost you feel at the shop counter
 	// rather than one that slows down levelling.
+	//
+	// The cut goes into their own purse rather than out of the game. It used to
+	// simply leave, and what it bought was a companion who re-armed for free
+	// every time they levelled — the same arrangement with the arithmetic
+	// hidden, and no way for a player to tell whether the standing charge on
+	// everything they found was expensive. They spend it themselves now, in
+	// towns, on one piece at a time. See Tables.Shop.
 	var skimmed int64
 	for _, c := range b.party {
 		c.TotalXP += xp
@@ -1623,7 +1630,9 @@ func (b *battleScene) awardSpoils(g *Game) {
 			c.SpendXP += xp
 			continue
 		}
-		skimmed += rules.Skim(coins, c.Cut)
+		take := rules.Skim(coins, c.Cut)
+		c.Coins += take
+		skimmed += take
 	}
 
 	p.Coins += coins - skimmed
@@ -1679,18 +1688,17 @@ func (b *battleScene) awardSpoils(g *Game) {
 		for rules.PendingLevels(c) > 0 {
 			rules.LevelUp(g.RNG, c)
 		}
-		// They re-arm themselves out of the cut they have been taking, which is
-		// what the cut is for. Without this a companion taken on early would
-		// still be swinging a table leg twenty levels later, and the standing
-		// charge on every haul would buy the player nothing at all.
-		was := c.Weapon.Name
-		g.Data.Equip(c)
-		if c.Weapon.Name != was {
-			b.log.AddColor(render.ColHeal, "%s is now level %d, and has spent their cut on a %s.",
-				c.Name, c.Level, c.Weapon.Name)
-			continue
-		}
+		// No free re-arm. This used to hand a companion the whole on-curve kit
+		// for their new level on the spot, out of nowhere, while the cut they
+		// had been taking went nowhere at all — two halves of one idea that
+		// never met. What levelling does now is move the bar: the curve asks
+		// for better gear, so they want better gear, and the next town is
+		// where the money they have been skimming answers that.
 		b.log.AddColor(render.ColHeal, "%s is now level %d, and mentions it.", c.Name, c.Level)
+		if w, ok := g.Data.Wants(c); ok {
+			b.log.AddColor(render.ColInkDim, "%s has started saving for %s.",
+				c.Name, w.Gear.Titled())
+		}
 	}
 	g.Quests.SyncFetch(p.Bag)
 }

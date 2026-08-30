@@ -7,6 +7,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/slycrel/slycrel-rpg/internal/core"
+	"github.com/slycrel/slycrel-rpg/internal/gamedata"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
@@ -27,12 +28,30 @@ type statusScene struct {
 	// on show — companions do not have pockets of their own — but a potion is
 	// spent on the member you are looking at.
 	who int
+	// What the shown companion is putting money aside for. Worked out when it
+	// can change rather than sixty times a second: asking the tables every
+	// frame for an answer that only moves on a keypress is the same mistake
+	// the load menu made with the save directory.
+	//
+	// Two things invalidate it and both are covered. Their gear changing ends
+	// in refresh, and the subject changing is caught by wantFor — which is
+	// belt and braces on purpose, because `who` is a plain field and the demo
+	// tour already sets it directly without going through the paging keys.
+	want    gamedata.Want
+	saving  bool
+	wantFor *model.Character
 }
 
 func newStatusScene(g *Game) *statusScene {
 	s := &statusScene{under: g.Top()}
 	s.refresh(g)
 	return s
+}
+
+// noteWant caches what the shown member is saving for.
+func (s *statusScene) noteWant(g *Game, p *model.Character) {
+	s.wantFor = p
+	s.want, s.saving = g.Data.Wants(p)
 }
 
 // subject is the member whose sheet is on screen.
@@ -46,6 +65,8 @@ func (s *statusScene) subject(g *Game) *model.Character {
 }
 
 func (s *statusScene) refresh(g *Game) {
+	s.noteWant(g, s.subject(g))
+
 	// The panel is always the hero's pack, because that is the pack the player
 	// manages. What a companion is carrying shows as a line on their own sheet:
 	// two item lists on one screen would mean every key needing to say which
@@ -270,6 +291,12 @@ func (s *statusScene) equipCarried(g *Game, i int) {
 		return
 	}
 
+	// Both asked before the gear lands, because both are questions about the
+	// state it is about to replace: what they were putting money aside for,
+	// and what they had in that slot already.
+	want, saving := g.Data.Wants(c)
+	dearer := gear.Cost() > wornCost(c, gear)
+
 	// The hero's pack is the shared one, so equipping onto a companion moves
 	// the item out of it and whatever they were wearing back into it.
 	if c != g.Player {
@@ -291,7 +318,50 @@ func (s *statusScene) equipCarried(g *Game, i int) {
 
 	g.Sound.Play("world/equip")
 	g.Log.AddColor(render.ColGold, "%s puts on %s.", c.Name, gear.Titled())
+	if c != g.Player {
+		s.opinion(g, c, gear, want, saving, dearer)
+	}
 	s.refresh(g)
+}
+
+// wornCost is what a character already has in the slot a piece would go into.
+// Read before the swap rather than off whatever comes back out of it: what
+// comes off lands in a pack that may already have things in it, and the piece
+// at the front of that pack is not necessarily the one just displaced.
+func wornCost(c *model.Character, gear model.Carried) int {
+	switch {
+	case gear.Weapon != nil:
+		return c.Weapon.Cost
+	case gear.Armor != nil:
+		return c.Armor.Cost
+	case gear.Shield != nil:
+		return c.Shield.Cost
+	case gear.Charm != nil:
+		return c.Charm.Cost
+	}
+	return 0
+}
+
+// opinion is what a companion has to say about equipment handed to them, and
+// where their money is going now that it has landed.
+//
+// The second half is the useful one. A gift is the one way the player can steer
+// a companion's spending, so the line that matters is not "thank you" — it is
+// which slot the cut is now aimed at, said the moment the previous answer
+// stopped being true.
+func (s *statusScene) opinion(g *Game, c *model.Character, gear model.Carried, want gamedata.Want, saving, dearer bool) {
+	wanted := saving && want.Gear.Slot() == gear.Slot() && gear.Cost() >= want.Cost
+	if said := g.Write.Gift(g.RNG, c.Name, wanted, dearer); said != "" {
+		g.Log.AddColor(render.ColInkDim, "%s", said)
+	}
+
+	next, ok := g.Data.Wants(c)
+	switch {
+	case !ok && saving:
+		g.Log.AddColor(render.ColInkDim, "%s has nothing left to save for.", c.Name)
+	case ok && (!saving || next.Gear.Titled() != want.Gear.Titled()):
+		g.Log.AddColor(render.ColInkDim, "The cut goes toward %s now.", next.Gear.Titled())
+	}
 }
 
 // askSubject asks the shown companion where their own business stands.
@@ -346,7 +416,13 @@ func (s *statusScene) releaseSubject(g *Game) {
 	if c == g.Player {
 		return
 	}
-	g.Ask("", fmt.Sprintf("Let %s go? The hiring fee does not come back, and neither do they.", c.Name),
+	// What walks off with them is said here rather than discovered afterwards.
+	// It was always true — dismiss returns the pack and never the body — and it
+	// was a footnote while everything a companion wore was issued to them for
+	// free. It stopped being one the moment handing somebody your old sword
+	// became the fast way to equip them.
+	g.Ask("", fmt.Sprintf("Let %s go? The hiring fee does not come back, and neither do they. "+
+		"What is in their pack you get back; what they are standing in walks out with them.", c.Name),
 		[]string{"Let them go", "Keep them"}, func(g *Game, choice int) {
 			if choice != 0 {
 				return
@@ -481,22 +557,43 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 	}
 	// 208 rather than 200: a hireling's sheet runs to four gear rows under six
 	// stat rows, and the old height clipped the last one against the frame.
-	// The footer hint sits at 232, so this still leaves a clear gap.
-	// 220 rather than 208: an ally's sheet gained a line for their backstory,
-	// and the panel was already at its limit with four gear rows under six stat
-	// rows. This is the last of the room — the footer sits at 244 and the frame
-	// ends at 236, so the next thing that wants a row has to take one from
-	// something else rather than from the bottom of the panel.
-	ui.TitledPanel(dst, title, 10, 16, 250, 220)
+	// 220 rather than 208: an ally's sheet gained a line for their backstory.
+	//
+	// 232, and the footer moved to 254 with it, because 220 was not enough
+	// either and a frame said so. Eight stat rows is reachable — a caster with
+	// an ancestry, a story, something in their pack and now a purse — and the
+	// charm row was printing through the bottom of the frame and into the hint
+	// underneath it. Counted rather than eyeballed this time: text drawn at y
+	// inks to y+12, the four gear rows are the last four slots, so the panel
+	// has to end at least fourteen below the last of them.
+	ui.TitledPanel(dst, title, 10, 16, 250, 232)
 
 	ui.Slot(dst, 17, 23, 58, 58, nil)
 	render.ScreenFit(dst, g.Assets.Get(portraitOf(p)), 0, 18, 24, 56, 56, nil)
 	render.Text(dst, p.Name, 82, 26, render.ColGold)
+	// What they are saving for goes under their name, where "in your employ"
+	// used to sit saying the same thing on every sheet forever. A line that
+	// never changes is a line the eye stops reading, and this is the one place
+	// the standing charge on every haul can be seen doing something.
+	//
+	// The slot rather than the thing. Naming it came out as "saving for Staff
+	// of the." — the portrait leaves this line 170 pixels and generated gear
+	// names are longer than that — and the slot is the more useful half
+	// anyway: what the player does with this is go to the pack and hand over
+	// something of that kind. The price sits in the cut row underneath, which
+	// is the other half of that decision, and the transcript names the actual
+	// item when they buy it.
+	if p != s.wantFor {
+		s.noteWant(g, p)
+	}
 	subtitle := p.Epithet
 	if p.Ally {
 		subtitle = "in your employ"
+		if s.saving {
+			subtitle = "saving for " + slotWords(s.want.Gear)
+		}
 	}
-	render.Text(dst, subtitle, 82, 26+render.LineH, render.ColInkDim)
+	render.Text(dst, render.Trunc(subtitle, 168), 82, 26+render.LineH, render.ColInkDim)
 
 	render.Text(dst, fmt.Sprintf("%s, level %d", p.Class, p.Level), 82, 26+2*render.LineH, render.ColInk)
 
@@ -543,8 +640,20 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 	// standing claim on yours. Their standing in the world is nobody's concern
 	// including theirs, so Fame and Faith are the hero's row alone.
 	if p.Ally {
+		// The cut and what it has come to, on one row, because either one alone
+		// is half a fact: a percentage with nothing behind it is a tax, and a
+		// purse with no rate attached does not say where it came from. The
+		// panel has no spare rows — see the note on its height — and these two
+		// numbers were always one sentence anyway.
+		cut := fmt.Sprintf("%d%%", p.Cut)
+		switch {
+		case s.saving:
+			cut = fmt.Sprintf("%d%%, %d of %d", p.Cut, p.Coins, s.want.Cost)
+		case p.Coins > 0:
+			cut = fmt.Sprintf("%d%%, %d saved", p.Cut, p.Coins)
+		}
 		rows = append(rows,
-			[2]string{"Their cut", fmt.Sprintf("%d%%", p.Cut)},
+			[2]string{"Their cut", cut},
 			// What they are carrying, because they drink it without asking and
 			// the player is the one who has to decide whether that is enough.
 			[2]string{"Carrying", carrying(p)})
@@ -601,8 +710,11 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 		gearRow("Charm", "nothing worn")
 	}
 
-	// Pack.
-	ui.TitledPanel(dst, "pack", 268, 16, 202, 208)
+	// Pack, ending level with the sheet beside it. Two panels on one screen
+	// stopping at different heights reads as one of them having gone wrong,
+	// and the sheet's height is set by its worst case rather than by taste —
+	// so this is the one that follows.
+	ui.TitledPanel(dst, "pack", 268, 16, 202, 232)
 	s.bag.Draw(dst, 282, 26, 184)
 
 	if it, ok := s.bag.Selected(); ok && !it.Disabled {
@@ -639,7 +751,7 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 			hint = "L/R - B ask - G give - T take - R let go - X close"
 		}
 	}
-	render.TextCenter(dst, hint, render.ScreenW/2, 244, render.ColInkFaint)
+	render.TextCenter(dst, hint, render.ScreenW/2, 254, render.ColInkFaint)
 }
 
 // gearWidth is the room a gear row leaves for its value after the label.

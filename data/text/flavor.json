@@ -367,6 +367,24 @@
     "{N} comes round, checks their purse first, and stands.",
     "{N} is upright again, and has notes."
   ],
+  "giftWanted": [
+    "{N} takes it, looks at what they had been saving, and puts the savings away again.",
+    "{N} was three hauls off buying this themselves, and mentions it twice.",
+    "{N} had a number in their head for this one. You have made the number pointless.",
+    "{N} accepts it with the particular grace of somebody who no longer has to go without."
+  ],
+  "giftBetter": [
+    "{N} turns it over, finds nothing wrong with it, and looks mildly suspicious.",
+    "{N} says nothing, which from them is a review.",
+    "{N} weighs it, weighs the old one, and puts the old one down.",
+    "{N} tries it, approves, and does not thank you."
+  ],
+  "giftPlain": [
+    "{N} takes it. Somebody has to carry it.",
+    "{N} accepts it in the spirit of not arguing in front of the others.",
+    "{N} puts it on and observes that the last one was fine.",
+    "{N} thanks you in the tone people keep for a gift they intend to pass on."
+  ],
   "bloodPitch": {
     "beast": [
       "\"Yes. I know. It's the ears. Everyone starts with the ears.\"",

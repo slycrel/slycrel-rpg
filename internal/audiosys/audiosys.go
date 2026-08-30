@@ -168,8 +168,20 @@ func (b *Bank) Verify() []error {
 	return errs
 }
 
-// Silence disables the bank entirely, for -mute and for headless runs.
-func (b *Bank) Silence() { b.off = true; b.Ambience("") }
+// Silence disables the bank entirely, for -mute and for headless runs. It is
+// not persisted: the flag lives on the bank and never reaches the settings
+// file, so muting a tour or a test cannot change what the player chose.
+//
+// Nil-safe for the same reason Enabled is. A headless Game is built without a
+// bank at all, and the one caller that turns the sound off is the one a test
+// is most likely to reach for.
+func (b *Bank) Silence() {
+	if b == nil {
+		return
+	}
+	b.off = true
+	b.Ambience("")
+}
 
 // Enabled reports whether anything will actually be heard.
 //
@@ -273,6 +285,9 @@ func (b *Bank) decode(path string) ([]byte, error) {
 // no-op, so callers can set it every frame from wherever the player is.
 // An empty key stops ambience.
 func (b *Bank) Ambience(key string) {
+	if b == nil {
+		return
+	}
 	if key == b.ambKey {
 		return
 	}

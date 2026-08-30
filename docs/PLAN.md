@@ -9,7 +9,7 @@ Written 15 Aug 2026, at the end of the session that built the foundation.
 | **Engine** | Go + Ebitengine v2 | Lets the combat/levelling maths port straight out of `../new-slycrel`. Everything is code and JSON, so there is no GUI editor in the loop and no binary project file to merge. Ships as one binary. |
 | **World** | Ultima-style overworld + zoom-in | A coarse continent you walk across; entering a point of interest loads a detailed local scene. Cheapest way to make a genuinely large world, and the strongest fit for a throwback. |
 | **Combat** | Turn-based battle screen | Showcases the bundle's 250 creature portraits and 1,000+ spell icons, and inherits the original's stat maths almost unchanged. |
-| **Canon** | Fresh world, old bones | New setting, names and lore built for an 18+ tone; the proven combat, initiative, levelling and disposition maths carried over from 1994. |
+| **Canon** | Fresh world, old bones | New setting, names and lore built for a bawdy, straight-faced tone; the proven combat, initiative, levelling and disposition maths carried over from 1994. |
 
 ## Tone
 
@@ -21,6 +21,15 @@ the world behaving this way sincerely, not from nudging the player.
 
 All flavour text is data (`data/text/flavor.json` plus per-monster lines), so
 the writing can be revised without touching Go.
+
+**It used to call itself 18+, and that has gone.** *(Jeremy's: "we're lucky to
+be PG-13 at this point, I think that's sort of misleading on what it actually
+is.")* He is right, and the interesting part is that the label was describing
+an intention rather than the game. What actually shipped is innuendo, comic
+violence and a vending machine — a rating badge on that promises something the
+content does not deliver, which is a worse first impression than no badge at
+all. The title screen, the README, the distribution read-me and this document
+all describe the tone instead of rating it, which they can do accurately.
 
 ## Where it stands now
 
@@ -50,8 +59,11 @@ Built and running:
 - Party: up to two hirelings, standing outside inns, rolled at the hero's level
   for a fee and a standing cut of every haul. They act on their own policy —
   the one the balance simulator plays — take a share of the incoming damage,
-  level separately, re-arm out of their cut, and follow the hero in a line that
-  tracks his path rather than his position
+  level separately, and follow the hero in a line that tracks his path rather
+  than his position. The cut is a purse they keep and spend themselves: on
+  arriving somewhere with the right counter they buy the next thing they are
+  behind on, hand back whatever came off, and their sheet says what they are
+  saving for next
 - Effects have a side: which half of the field an effect lands on is derived
   from its kind, not stored, so a heal can never be aimed at a monster and a
   stun can never be aimed at a friend. Anything beneficial — a heal, a blessing,
@@ -206,9 +218,91 @@ than a system.
 
 ### Phase 2 — depth
 
-1. **Party, fourth pass.** What is left after outfitting: letting a companion
-   spend their own cut between towns rather than only re-arming on level-up,
-   and giving them an opinion about the gear you hand them.
+1. ~~**Party, fourth pass.**~~ *(Built.)* What was left after outfitting:
+   letting a companion spend their own cut rather than only re-arming on
+   level-up, and giving them an opinion about the gear you hand them.
+
+   **The cut was a subtraction and nothing else.** A percentage came off every
+   haul, left the purse and went nowhere at all, while the companion re-armed
+   for free into the full on-curve kit on every level-up. Those are two halves
+   of one idea that never met: the money and the gear had no relationship, so
+   neither number could be read against the other, and a player could not tell
+   whether the standing charge on everything they found was expensive because
+   nothing on the screen was its other half.
+
+   So the cut is a purse they carry (`model.Character.Coins`, which allies
+   already had and Recruit already zeroed, so the zero in every old save is the
+   honest answer). `gamedata.Wants` says what they are behind on and
+   `gamedata.Shop` spends it, one piece at a time, on arriving somewhere with a
+   counter. Four things fell out of building it.
+
+   - **The target is `Equip`, not a second opinion about it.** "On curve" has
+     exactly one definition in this game and it is load-bearing enough to have
+     its own test; a companion's kit is now a lagging indicator of that rather
+     than a copy of the rule. `TestACompanionCatchesUpToTheCurveAndStopsThere`
+     holds both ends — they converge on it, and they do not buy past it.
+   - **They compare price tags, not stats.** It is the only comparison that
+     works in all four slots: a charm has no better, only dearer, which is the
+     rule `TestTheShelfNeverGradesACharm` already holds at the counter. It is
+     also what somebody saving up actually does.
+   - **A village has a smith and no armourer**, so a companion who walked out
+     of one wearing a breastplate would be the game naming something that was
+     not there. Which counters are open is read off the map `BuildLocal` just
+     built rather than off the kind of settlement, because a second copy of
+     that rule is a second copy to drift.
+   - **What comes off is the employer's**, into the hero's pack, exactly as
+     every other route gear takes. It is the honest answer to who paid for the
+     replacement, and it stops an upgrade being a cost with nothing coming back.
+
+   **And the report grew the half it had been refusing to measure.** THE
+   COMPANY'S SHARE said in as many words that converting a cut to coins would
+   need a model of what a haul is worth, and inventing one is how a report
+   starts measuring a fiction. It is not invented now — a haul is `CoinAward`
+   plus what `RollLoot` fetches at `rules.SellPrice`, rolled off the same
+   `PickMonsters` the game rolls, at the group sizes a company draws. (Which
+   moved `sellRate` out of the shop screen and into `rules`, because the
+   arbiter pricing a haul at a different rate from the counter would be worse
+   than not pricing it.)
+
+   What WHAT THE CUT BUYS says is that the cut covers 8%, 24%, 38% and 64% of
+   the next tier's kit across the four bands. That is the finding, and it is a
+   shape rather than a shortfall: a sidearm band is a quarter of a main one, so
+   the cut keeps an arm and a charm current by itself and chips at the rest,
+   while the drops column — what the same fights put in the *hero's* hands — is
+   larger than the cut at every tier. The two are a division of labour. The cut
+   buys the cheap slots slowly; the main slots are hand-me-downs, which is why
+   the sheet says what they are saving for. It is a shopping list addressed to
+   the person holding the pack.
+
+   The column climbing the whole way is the half that has to hold. A share that
+   bought a smaller fraction of the shelf every tier would be a mercenary
+   getting relatively poorer the longer they worked for you.
+
+   **The opinion turned out to be two sentences, and the second one is the
+   feature.** What a companion says about a gift is flavour — three banks in
+   `flavor.json`, keyed on whether it was the thing they were saving for,
+   something dearer than they had, or neither. What follows it is not: the line
+   that names where the cut is aimed *now*. A gift is the one way a player can
+   steer a companion's spending, so the useful thing to say is not "thank you",
+   it is "the cut goes toward armour now".
+
+   Two notes from the screen. The sheet says the *slot* rather than the item —
+   naming it came out as "saving for Staff of the." at the width the portrait
+   leaves, and the slot is the more useful half anyway, since what the player
+   does with it is go to the pack. And the transcript says slots too, for a
+   harder reason: the walking-around screen shows exactly one rendered row of
+   the log, so a sentence over about sixty characters appears on screen as its
+   own second half. The purchase line is written last for the same reason —
+   the housekeeping note about where the old coat went was winning the only
+   visible row.
+
+   **A frame caught the sheet overflowing, and it had been for a while.** Eight
+   stat rows is reachable — a caster with an ancestry, a story, something in
+   their pack and now a purse — and the charm row was printing through the
+   bottom of the frame into the hint underneath. The panel is 232 now and the
+   footer moved with it, counted rather than eyeballed: text drawn at `y` inks
+   to `y+12`, the gear rows are the last four slots, so the frame has to end at
+   least fourteen below the last of them.
 
    A resurrecting NPC was considered here and deliberately left out. With the
    fallen standing up when a fight ends and a fallen hero carried to town by
@@ -736,6 +830,29 @@ than a system.
    One thing fell out: `audiosys.Bank.Enabled` now tolerates a nil receiver, so
    a headless Game can run `startRun` without a panic the first time something
    makes a noise.
+
+   **Third pass, and it has a shape rather than a list: a settings screen.**
+   *(Jeremy's, and it arrived as three things that turn out to be one.)*
+
+   - **Combat timing is a notch too fast.** His framing is the useful part:
+     what is currently "fast" should sit a couple of notches down as "slow",
+     with the default somewhere in the middle. That re-anchors the scale rather
+     than adding a number — the top of the range is what is wrong, not the
+     spacing between the steps.
+   - **Sound has settings and nowhere good to set them.** They live on the
+     pause menu, which is where a player goes to put the run down, not where
+     they go to adjust it.
+   - **Key bindings.** The input helpers were written as a single-file change
+     for exactly this, and `S` being the down key along with `J`, `A`, `D`,
+     `H`, `K` and `L` is the standing argument for letting somebody move them.
+
+   One screen, three sections, reachable from the pause menu and from the
+   title — because half of these are wanted before a run starts and the other
+   half during one. It is the same batching argument as the first pass: three
+   settings scattered across three menus is three places to look, and the
+   fourth one will land somewhere else again.
+
+   Held until the current arc lands, which is Jeremy's own sequencing.
 
    Add to this as things turn up; do not fix them in ones. What is left is the
    art pass below, which is a different kind of job.

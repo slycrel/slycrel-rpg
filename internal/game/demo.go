@@ -48,6 +48,14 @@ type demoScript struct {
 
 // StartDemo puts the game into scripted capture mode.
 func (g *Game) StartDemo() {
+	// Silent, and the switch is in here rather than beside the flag so it
+	// travels to any new call site — the same reason the autosave guard lives
+	// inside autosave(). A tour plays a dozen screens in twenty seconds and
+	// fires every cue attached to them, which is a wall of noise nobody asked
+	// for on a run whose entire output is PNG files. Silence() sets the flag
+	// on the bank and does not write it to disk, so it never leaks into the
+	// volume the player chose.
+	g.Sound.Silence()
 	g.demo = &demoScript{start: g.tick, steps: buildDemoSteps()}
 }
 

@@ -23,10 +23,6 @@ const (
 	tabSell
 )
 
-// sellRate is the fraction of an item's value a merchant will pay. Merchants
-// are not charities and the game should not pretend otherwise.
-const sellRate = 0.45
-
 // shopScene is buying and selling, one merchant at a time.
 type shopScene struct {
 	under Scene
@@ -436,13 +432,9 @@ func questItems(g *Game) map[string]bool {
 	return out
 }
 
-// sellPrice is what a merchant will hand over for something worth n new.
-func sellPrice(n int) int {
-	if p := int(float64(n) * sellRate); p > 1 {
-		return p
-	}
-	return 1
-}
+// sellPrice is what a merchant will hand over for something worth n new. The
+// rate is in rules because cmd/balance has to price a haul with the same one.
+func sellPrice(n int) int { return rules.SellPrice(n) }
 
 func (s *shopScene) sell(g *Game, mi ui.MenuItem) {
 	if _, all := mi.Data.(sellAll); all {

@@ -133,6 +133,13 @@ which event fires which trigger, and where it is safe to put a box on screen.
   Mage was already taking half what a Fighter takes from magic and double from
   steel, so a bigger ward would have been an upgrade to the column they were
   winning.
+- **A companion's cut is a purse, not a subtraction.** `Skim` goes into the
+  ally's own `Coins`; `gamedata.Wants` says what they are behind on and
+  `Shop` spends it when the company walks into a settlement with the right
+  counter. The target is `Equip` — one definition of "on curve", and a
+  companion's kit lags it — and the comparison is on *price*, which is the only
+  one that works in all four slots since a charm has no better, only dearer.
+  Nothing re-arms anybody for free any more.
 - **Equipment is carried, not just worn.** `model.Carried` is the pack version;
   buying, finding and taking something off all go there, and `Character.Equip`
   swaps rather than replaces. Nothing should ever destroy a piece of gear.
@@ -202,6 +209,11 @@ which event fires which trigger, and where it is safe to put a box on screen.
   to what is left, and decide *which* thing gives way by which thing moves: a
   hero's name is fixed for a run, a place name changes every time you walk
   through a gate.
+- **The walking-around screen shows one row of the transcript.** `Log.AddColor`
+  wraps at `ScreenW-40` before storing, and `Game.drawStatusBar` draws the last
+  *row* — so anything much over sixty characters logged outside a battle
+  appears on screen as its own second half. Keep overworld and local lines
+  short, and when several go in at once, put the one worth reading last.
 - **A wrapped log fills its last row with a sentence's tail.** Taking the newest
   N *rendered* rows out of a log means the oldest visible entry can lose its
   beginning — "Weather settles into place. 8." is not a shorter version of what

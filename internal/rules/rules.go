@@ -917,6 +917,23 @@ func affordable(c *model.Character, spells []model.Spell, kind model.SpellKind) 
 	return best, found
 }
 
+// SellRate is the fraction of an item's value a merchant will hand over.
+// Merchants are not charities and the game should not pretend otherwise.
+//
+// It lives here rather than at the counter that uses it because the balance
+// report has to price a haul: what a fight is worth is the coins plus what the
+// drops fetch, and a second copy of this number in cmd/balance would be the
+// arbiter quietly measuring a different shop from the one in the game.
+const SellRate = 0.45
+
+// SellPrice is what a merchant will hand over for something worth n new.
+func SellPrice(n int) int {
+	if p := int(float64(n) * SellRate); p > 1 {
+		return p
+	}
+	return 1
+}
+
 // HireCost is the fee a companion of the given level and ancestry asks up
 // front. It grows with the square of level so that a late hire is a considered
 // purchase rather than pocket change, and lands in the same band as a weapon of

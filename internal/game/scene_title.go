@@ -114,7 +114,7 @@ func (t *titleScene) Draw(g *Game, dst *ebiten.Image) {
 
 	render.TextCenter(dst, "S L Y C R E L", render.ScreenW/2, 54, render.ColGold)
 	render.TextCenter(dst, "an open world of poor decisions", render.ScreenW/2, 72, render.ColInkDim)
-	render.TextCenter(dst, "18+  -  contains adults behaving exactly as expected",
+	render.TextCenter(dst, "comic violence, and adults behaving exactly as expected",
 		render.ScreenW/2, 88, render.ColInkFaint)
 
 	ui.Panel(dst, render.ScreenW/2-104, 116, 208, 52)

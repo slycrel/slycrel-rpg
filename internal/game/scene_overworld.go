@@ -258,6 +258,8 @@ func (g *Game) enterPOI(poi *world.POI) {
 	}
 	g.Push(newLocalScene(g))
 	g.Log.AddColor(render.ColGold, "You enter %s.", poi.Name)
+	// Everyone else has their own errands. See companyShops.
+	g.companyShops()
 }
 
 func (s *overworldScene) Draw(g *Game, dst *ebiten.Image) {

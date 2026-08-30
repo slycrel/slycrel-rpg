@@ -11,8 +11,8 @@ This project is a fresh world built on the old bones: the combat, levelling,
 and initiative maths in `internal/rules` are a direct port, so the balance has
 already been playtested by a few hundred BBS users, three decades ago.
 
-**This game is 18+.** The humour is bawdy, the violence is comic, and the
-tone-setting rule is that nobody in the world ever acknowledges the joke.
+The humour is bawdy and the violence is comic, and the tone-setting rule is
+that nobody in the world ever acknowledges the joke.
 
 | | |
 |---|---|
