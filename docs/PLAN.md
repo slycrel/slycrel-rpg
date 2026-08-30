@@ -434,6 +434,86 @@ than a system.
    Still open, and the expensive half: making the content actively support the
    arcs. The report now says what would have to move, which is what it was for.
 
+   **And the first thing it said had to move was the baseline itself.** A
+   survey of what was unfinished turned this up, and it is the most expensive
+   kind of bug: not a wrong number, a right number measured against a wrong
+   assumption.
+
+   The fourth archetype, `warden`, was balanced with the silvered shield
+   instead of the wall and nothing else changed — same slots, same bands, same
+   spend to the coin at every level. It was added to ask whether the ward lane
+   was worth anything. The answer, at six times the usual sample:
+
+   | level | wall | silvered | |
+   |---|---|---|---|
+   | 1 | 86.5% | 86.0% | wall +0.5 |
+   | 3 | 68.0% | 67.1% | wall +0.9 |
+   | 5 | 79.9% | 79.6% | wall +0.3 |
+   | 7 | 91.4% | 92.8% | **silvered +1.4** |
+   | 9 | 75.6% | 77.8% | **silvered +2.2** |
+   | 11 | 57.0% | 62.5% | **silvered +5.5** |
+   | 13 | 50.6% | 61.8% | **silvered +11.2** |
+
+   That is not a trade. It is a trade with one side worth ten times the other:
+   the wall's best level is worth nine tenths of a point, the silvered
+   shield's is worth eleven. And the crossover lands exactly where the content
+   says it should — nothing casts below level ten and half of what lands on
+   you by thirteen is magical — so **the tables were never the problem**. What
+   was wrong was that `Equip` picked the wall, and picked it for the least
+   defensible reason available: `ArmBlock` is the zero value of
+   `Archetype.Arm`, and nobody had ever set the field.
+
+   The cost of that was not confined to the report. `Equip` is what dresses
+   every hireling, every save fixture and — since the party pass — every
+   companion's shopping list. Every companion in the game above level six was
+   being handed the strictly worse off-arm, for free, forever.
+
+   So: `balanced` carries `ArmByLevel`, `gamedata.LaneForLevel` answers it, and
+   the crossover is a named constant at level 6. `warden` is retired, because
+   the right response to an archetype that beats the baseline at identical
+   spend is not to keep it in the table, it is to stop the baseline making that
+   mistake.
+
+   **The measurement is permanent now, in its own LANES section**, and that is
+   the part worth keeping. A crossover justified by a retired archetype is a
+   number nobody can check; LANES runs all three lanes against each other at
+   every level, with the cost column printed to prove the spend is identical,
+   and prints the crossover it measures beside the level `Equip` actually
+   switches at — with a WARNING when they drift apart.
+
+   **And the instrument immediately corrected the finding that motivated it,
+   which is the best argument for building instruments.** Two columns said
+   "the silvered shield beats the wall". Three columns say something sharper
+   and less flattering:
+
+   - **Below level six the lane does not matter at all.** All three come in
+     within a point of each other and the sign of the gap flips from level to
+     level. The wall was not a wrong choice down there; it was not a choice.
+   - **From level six the wall is the worst of the three and never recovers.**
+     Not second of two — worst of three, trailing the best lane by 1.0, then
+     2.7, 4.5, 2.4, 5.0, 7.0, 5.7, 11.1, 6.5.
+   - **Spiked and silvered are close enough to each other to be a coin flip.**
+     Spiked takes 7, 10 and 11; silvered takes 8, 9, 12 and 13; they tie at
+     14. So the numbers do not pick between them, which means the principle
+     has to: a baseline must not have an opinion about offence, and spiked
+     trades guard for strike. The build that makes that trade properly is the
+     duelist, and it already exists. Silvered it is.
+
+   The other correction was to the section's own arithmetic. Its first draft
+   read the crossover off the first row where the silvered column happened to
+   be higher, and duly reported **level one** — off a 0.7-point wobble in a
+   band where nothing casts. It takes a named threshold now (`laneNoise`, one
+   point, which is above the observed flapping below six) and asks for the
+   first level from which the wall never again comes within it. That answers
+   six, which is what the constant says, and the two are now checked against
+   each other on every run rather than agreed with once.
+
+   The lesson generalises, and it is the same one the equipment pass learned
+   the first time: **`gamedata.Equip` is an assumption, and an assumption that
+   has never been compared with its alternatives is a guess with a test around
+   it.** Three of its four slots had been argued over in this document. The off
+   arm had a zero value.
+
    **Found on the way, and fixed: the report had been understating danger since
    it was written.** Two separate causes, both invisible except as a level that
    looked suspiciously comfortable.
@@ -455,10 +535,11 @@ than a system.
    The only remaining short probes are levels 12-14, where mountain is already
    the outermost region and there is nowhere further to stray.
 
-5. **Fleeing should pay something, and the thief should be the one it pays.**
-   *(Jeremy's, in response to the flee work: "fake flee + backstab might be a
-   way around 0 rewards at the cost of survivability; having to run away might
-   not be enjoyable.")*
+5. ~~**Fleeing should pay something, and the thief should be the one it pays.**~~
+   *(Built — the feint, the routed monster's purse, and the thief's two perks;
+   see below.)* *(Jeremy's, in response to the flee work: "fake flee + backstab
+   might be a way around 0 rewards at the cost of survivability; having to run
+   away might not be enjoyable.")*
 
    The point stands and it is a hole in what was just built. Teaching the
    simulator to run fixed a measurement — the thief's speed was invisible and
@@ -899,6 +980,28 @@ than a system.
      since that is a more recent statement of what they want than the command
      line was.
 
+   **Fourth pass, open, and these are the things that have turned up since.**
+   Written down rather than remembered, because the last survey had to derive
+   all of this from scratch.
+
+   - **The walking-around screen shows one row of the transcript, and it is the
+     *last* row.** `Log.AddColor` wraps at `ScreenW-40` — about sixty-two
+     characters — before storing, and `drawStatusBar` draws the newest stored
+     row. So any message longer than that appears on screen as its own second
+     half: not a shorter version of what happened, a different sentence, with
+     nothing saying it was cut. This is the bug `Log.DrawWrapped` was written
+     to fix for the battle log, and the overworld never got the same treatment.
+     Two literal strings already exceed the width ("They were in the middle of
+     something. Somebody will hear about it."), and generated gear, place and
+     monster names push a good many format strings over it. The workaround in
+     the meantime is in CLAUDE.md: keep those lines short, and when several go
+     in at once put the one worth reading last.
+   - **The death screen has never been captured.** `-demo` is one frame per
+     screen by its own definition, and `scene_death.go` — plus the reload offer
+     that sits on top of it, which is the most consequential dialog in the game
+     and arrives at the worst moment — has never been looked at in a frame. The
+     rescue-to-town box is in the same position.
+
    Add to this as things turn up; do not fix them in ones. What is left is the
    art pass below, which is a different kind of job.
 
@@ -987,8 +1090,15 @@ than a system.
     directions. The audit already catches a key with no art; this catches art
     with no key, which is the quieter failure — a file extracted, counted in
     the audit's total, and never once reaching the screen. It caught five.
-12. Balance simulation: run 10,000 headless fights per level band against the
-   pure `rules` package and tune the curve.
+12. ~~Balance simulation: run 10,000 headless fights per level band against the
+    pure `rules` package and tune the curve.~~ *(Built, and then some: this is
+    what `cmd/balance` became.)* It defaults to 2,000 fights per data point and
+    takes `-fights`, it has thirteen sections rather than one curve, and three
+    of them exist because a mechanic turned out to be invisible to it —
+    SHAPES, SUPPLIES and WHAT THE CUT BUYS. The line worth keeping from the
+    original phrasing is "against the pure `rules` package": it plays the
+    game's own code rather than a copy of the maths, which is the only reason
+    any of its numbers mean anything.
 
 ## Since the roadmap
 
@@ -2107,6 +2217,12 @@ This is the fallback that does not care.
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on
   foot. Larger needs fast travel; smaller needs denser points of interest.
+  Untouched since it was written, and two things now lean on the answer that
+  did not exist then: a saga deals its legs out at deliberately increasing
+  distance, and the compass makes crossing the map a matter of holding a
+  direction. Both of those make a bigger continent *more* walkable, which is an
+  argument for growing it — and both also mean the cost of getting the answer
+  wrong has gone up.
 - ~~**Death.**~~ *Settled, and then settled again.* A hero who falls with
   anybody hired is carried to the nearest town for a third of the purse and a
   point of Shame — and any hireling counts, standing or not, because a
@@ -2134,8 +2250,15 @@ This is the fallback that does not care.
   honour if they were mid-story, because that is what walking away from
   somebody's story costs everywhere else.
 - **Multiplayer.** `new-slycrel` was built session-per-user with a shared store,
-  because the original was a door game. Worth deciding before save format
-  hardens.
+  because the original was a door game. This was tagged "worth deciding before
+  save format hardens", and **that deadline has passed rather than been met**:
+  the format is seed-plus-deltas, it has been through three versions, and
+  `v1-solo.json` and `v2-company.json` are committed specifically so the loader
+  can never stop reading the earlier two. Whatever is decided now is decided
+  against a format that already has compatibility obligations. The honest
+  options are to design for it deliberately, accepting that the save file grows
+  an owner, or to close the question and say in this document that the game is
+  single-player — which is what it has been in practice for its whole life.
 
 ## Asset budget
 

@@ -137,3 +137,49 @@ func TestSavingForIsAlwaysAffordableEventually(t *testing.T) {
 		t.Error("a stripped companion never finished re-equipping")
 	}
 }
+
+// TestTheBaselineTakesTheLaneItsLevelCallsFor.
+//
+// The off arm was the one slot in Equip nobody had ever chosen: ArmBlock is
+// the zero value of Archetype.Arm, so the balanced build carried the wall for
+// the life of the report by default rather than by decision — and it cost 11.2
+// points at level thirteen, at identical spend, to every hireling in the game.
+//
+// This holds the decision that replaced it. Not the crossover level, which is
+// LANES' job to measure and move: what is pinned here is that the lane is a
+// function of level at all, that it runs guard-then-ward rather than the other
+// way round, and that the baseline never quietly acquires an opinion about
+// offence.
+func TestTheBaselineTakesTheLaneItsLevelCallsFor(t *testing.T) {
+	tables := load(t)
+	switched := 0
+	for level := 1; level <= 14; level++ {
+		c := &model.Character{Class: model.ClassFighter, Level: level}
+		tables.Equip(c)
+		if !c.Shield.Worn() {
+			continue
+		}
+		lane := c.Shield.Lane()
+		if lane == model.ArmStrike {
+			t.Errorf("level %d: the baseline is carrying %q, which is the offensive lane",
+				level, c.Shield.Name)
+		}
+		if want := gamedata.LaneForLevel(level); lane != want {
+			t.Errorf("level %d: Equip gave lane %v (%q), LaneForLevel says %v",
+				level, lane, c.Shield.Name, want)
+		}
+		if lane == model.ArmWard {
+			if switched == 0 {
+				switched = level
+			}
+		} else if switched != 0 {
+			t.Errorf("level %d went back to the wall after switching at %d", level, switched)
+		}
+	}
+	if switched == 0 {
+		t.Error("the baseline never picks up the ward lane at any level")
+	}
+	if switched <= 1 || switched >= 14 {
+		t.Errorf("the lane switches at level %d, which is not a crossover, it is a constant", switched)
+	}
+}

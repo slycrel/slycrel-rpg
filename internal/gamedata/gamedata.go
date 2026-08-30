@@ -523,12 +523,60 @@ type Archetype struct {
 	Hands int
 }
 
+// ArmByLevel is a lane that is not a lane. It means "whichever of the three is
+// right at this level", and it is what the balanced build reaches for.
+//
+// It lives here rather than in model.SidearmLane because it is a balance
+// decision rather than a property of an item: a shield still sells exactly one
+// thing, and nothing on a shelf is ever "by level". Negative so it can never
+// collide with a real lane however many get added.
+const ArmByLevel = model.SidearmLane(-1)
+
+// wardFromLevel is where the silvered shield overtakes the wall, and it is
+// measured rather than chosen — see the LANES section of cmd/balance, which
+// exists to keep this number honest.
+//
+// The two lanes cost within five per cent of each other in every band, so this
+// is a straight comparison at equal spend, and it is not close. Below this the
+// wall wins by under a point at every level; above it the silvered shield wins
+// by 1.4 points and then 2.2, 5.5 and 11.2. Which is exactly what the content
+// says should happen — nothing casts below level ten, and half of what lands
+// on you by thirteen is magical — so the tables were never the problem. What
+// was not moving with the game was this assumption.
+const wardFromLevel = 6
+
+// WardFromLevel is the crossover, for the report that has to print it beside
+// the numbers that justify it.
+func WardFromLevel() int { return wardFromLevel }
+
+// LaneForLevel is which off-arm lane a sensible person carries at this level.
+//
+// Two lanes, not three. The spiked lane trades guard for strike, which is an
+// offensive choice rather than a defensive one, and the build that makes that
+// trade properly is the duelist — putting it here would mean the baseline had
+// an opinion about offence, which is the one thing a baseline must not have.
+func LaneForLevel(level int) model.SidearmLane {
+	if level >= wardFromLevel {
+		return model.ArmWard
+	}
+	return model.ArmBlock
+}
+
 // Archetypes are the builds the balance report measures.
 //
-// Balanced is the original assumption, unchanged and first on purpose: every
-// other number in the report is still measured against it, and a hireling is
-// still dressed by it. Nothing here is a claim that the other two are viable —
-// that is the question the report exists to answer.
+// Balanced is first on purpose: every other number in the report is measured
+// against it, and a hireling is still dressed by it. Nothing here is a claim
+// that the other two are viable — that is the question the report exists to
+// answer.
+//
+// There was a fourth, "warden", which was balanced with the silvered shield
+// instead of the wall. It has been retired because it won: at identical spend
+// it beat balanced at every level from seven upward, by up to 11.2 points, and
+// the right response to an archetype that dominates the baseline for free is
+// not to keep it in the table, it is to stop the baseline making that mistake.
+// Balanced now takes the lane the level calls for, and the measurement that
+// says which lane that is has its own section — LANES in cmd/balance — because
+// a crossover that lives in a retired archetype is a number nobody can check.
 var Archetypes = []Archetype{
 	{
 		Name: "balanced",
@@ -541,6 +589,14 @@ var Archetypes = []Archetype{
 		Shield: Slot{Back: 1},
 		Charm:  Slot{Back: 1},
 		Hands:  1,
+		// The off arm follows the level rather than sitting on the wall
+		// forever. This used to be the zero value, which is ArmBlock, which
+		// meant the one assumption the whole report is measured against —
+		// and every hireling in the game, since Equip is what dresses them —
+		// carried a shield that stops steel into a game where half the blows
+		// landing by level thirteen are magical. It cost 11.2 points at the
+		// top of the table for nothing, at identical spend.
+		Arm: ArmByLevel,
 	},
 	{
 		Name: "attrition",
@@ -578,23 +634,6 @@ var Archetypes = []Archetype{
 		// move.
 		Charm: Slot{Back: 1},
 		Hands: 2,
-	},
-	{
-		Name: "warden",
-		Note: "the same spend as balanced, with the silvered shield instead of the wall",
-		// The build the shelf grew a lane for, and the one the report could not
-		// see. Two thirds of the incoming damage at the top of the table is
-		// magical, and a shield stops steel — so "give up the shield for a
-		// two-hander" was being measured against the one shield that does
-		// nothing about the half of the fight that matters.
-		//
-		// Identical to balanced in every slot and every band. The only
-		// difference is which of the three things in the sidearm band it picks
-		// up, which is the whole question.
-		Shield: Slot{Back: 1},
-		Charm:  Slot{Back: 1},
-		Hands:  1,
-		Arm:    model.ArmWard,
 	},
 }
 
@@ -653,7 +692,11 @@ func (t *Tables) EquipAs(c *model.Character, a Archetype) {
 	c.Shield = model.Shield{}
 	if tier := a.Shield.tierAt(base); tier >= 1 && c.CanHold() {
 		ss, _ := t.SidearmsFor(tier)
-		c.Shield = pickSidearm(ss, c.Class, a.Arm)
+		arm := a.Arm
+		if arm == ArmByLevel {
+			arm = LaneForLevel(c.Level)
+		}
+		c.Shield = pickSidearm(ss, c.Class, arm)
 	}
 	c.Charm = model.Charm{}
 	if tier := a.Charm.tierAt(base); tier >= 1 {

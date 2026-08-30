@@ -126,8 +126,16 @@ which event fires which trigger, and where it is safe to put a box on screen.
   guard, a silvered one sells ward, a spiked one sells strike, and they are
   graded on the shelf against their own lane's number — ranking all of them by
   `Defense` tells somebody shopping for anti-magic that a shrine plate is worth
-  "+1". Which lane is right moves with the game: nothing casts below level ten
-  and two thirds of what lands on you by thirteen is magical.
+  "+1". **Which lane is right moves with the game, and `Equip` moves with it**:
+  `gamedata.LaneForLevel` takes the wall below level six and the silvered one
+  from six up, because below six the three lanes are within a point of each
+  other and from six the wall is the worst of the three and never recovers —
+  by 11.2 points at thirteen, at identical spend. The crossover is measured by
+  the LANES section of `cmd/balance`, which warns when the constant and the
+  numbers drift apart. It was `ArmBlock` for the life of the report purely
+  because that is the zero value of the field, which is how every hireling in
+  the game ended up carrying a shield against a game that stopped throwing
+  steel.
 - **A caster's off arm holds a talisman, not a shield**, and what it carries is
   `Absorb` rather than `Defense`: a pool spent once per fight against damage of
   any kind. It is not more ward, and that was measured rather than assumed — a

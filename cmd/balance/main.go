@@ -57,6 +57,7 @@ func main() {
 	// would otherwise shift every number after it and cost the cheapest check
 	// there is, which is diffing the report against the last one.
 	reportArcs(out, core.NewRNG(*seed^0x5ACB), t, *fights/2)
+	reportLanes(out, core.NewRNG(*seed^0x1A4E), t, *fights/3)
 	reportDanger(out, core.NewRNG(*seed^0xD1E), t, *fights/3)
 	reportWard(out, core.NewRNG(*seed^0x3A7D), t, *fights)
 	// Its own generator too, for the same reason as ARCS above.
@@ -731,6 +732,136 @@ what a baseline is.
 // band of a main slot. This table is where to look when it is not — it compares
 // what stepping up a band buys against what the entire off-hand or charm slot
 // buys at the same tier, and no simulation is needed to read the answer off it.
+// reportLanes is the one measurement that decides gamedata.LaneForLevel, and
+// it exists because that number used to be a lane nobody had ever compared.
+//
+// The off arm has three lanes and the balanced build has to pick one. For the
+// whole life of this report it picked the wall, not because anything had been
+// measured but because ArmBlock is the zero value of the field. A retired
+// archetype called "warden" eventually asked the question by accident — it was
+// balanced with the silvered shield and nothing else changed — and beat the
+// baseline at identical spend from level seven up, by as much as 11.2 points.
+//
+// So the comparison is permanent now, and it is a clean one: the three builds
+// below differ in exactly one slot, and the cost column is printed to prove
+// it. Anything that moves the shield tables, the monster rosters' magic, or
+// the level bands will show up here as the crossover moving, and the constant
+// in gamedata has to move with it.
+func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+	fmt.Fprintf(out, "LANES — which off-arm lane is right, and from when\n")
+	fmt.Fprintf(out, "identical builds differing in one slot, on the stretch fights three\n")
+	fmt.Fprintf(out, "levels over; the cost column is there to prove the spend is the same\n\n")
+
+	// In the order the columns print. The names are in the header rather than
+	// here: three columns and three rows of legend for three lanes is more
+	// scaffolding than table.
+	lanes := []model.SidearmLane{model.ArmBlock, model.ArmStrike, model.ArmWard}
+
+	fmt.Fprintf(out, "%-6s %8s %9s %9s %9s %s\n",
+		"level", "cost", "wall", "spiked", "silvered", "carried by Equip")
+	fmt.Fprintln(out, strings.Repeat("-", 68))
+
+	// laneNoise is how big a gap has to be before it is a result rather than a
+	// run-to-run wobble. Below level six the three lanes come in within a
+	// point of each other and the sign of the gap flips level to level, which
+	// is what nothing-to-choose-between-them looks like; from six the wall
+	// trails by one, then two, then eleven. Naming the threshold is the honest
+	// alternative to reading a crossover off the first row where a column
+	// happens to be higher — which this section did in its first draft, and
+	// reported level one.
+	const laneNoise = 1.0
+
+	type laneScore struct{ wall, best float64 }
+	seen := map[int]laneScore{}
+	for level := 1; level <= maxLevel; level++ {
+		build := gamedata.Archetypes[0]
+		var cost int
+		rates := make([]float64, len(lanes))
+		for i, lane := range lanes {
+			a := build
+			a.Arm = lane
+			var wins, n int
+			for _, class := range model.AllClasses {
+				for f := 0; f < fights; f++ {
+					c := rules.BuildCharacter(g, class, level)
+					t.EquipAs(c, a)
+					cost = gamedata.GearCost(c)
+					mons := t.PickMonsters(g, biomeForLevel(level+3), level+3, 1)
+					if len(mons) == 0 {
+						continue
+					}
+					fresh := *c
+					r := rules.SimulateFight(g, &fresh, []*model.MonsterDef{mons[0].Def},
+						level+3, 60, t.SpellsFor(c))
+					if r.Won {
+						wins++
+					}
+					n++
+				}
+			}
+			if n > 0 {
+				rates[i] = float64(wins) * 100 / float64(n)
+			}
+		}
+
+		// Which one the game actually hands out at this level, so a reader can
+		// see the constant agreeing or disagreeing with the numbers beside it.
+		carried := "wall"
+		switch gamedata.LaneForLevel(level) {
+		case model.ArmWard:
+			carried = "silvered"
+		case model.ArmStrike:
+			carried = "spiked"
+		}
+		best := rates[0]
+		for _, r := range rates[1:] {
+			if r > best {
+				best = r
+			}
+		}
+		seen[level] = laneScore{wall: rates[0], best: best}
+		fmt.Fprintf(out, "%-6d %8d %8.1f%% %8.1f%% %8.1f%% %s\n",
+			level, cost, rates[0], rates[1], rates[2], carried)
+	}
+
+	// The crossover is the first level from which the wall never again comes
+	// within laneNoise of the best lane — "and never again", because a single
+	// level going the other way is a sample, not a change of régime.
+	crossed := 0
+	for level := maxLevel; level >= 1; level-- {
+		if seen[level].best-seen[level].wall < laneNoise {
+			break
+		}
+		crossed = level
+	}
+
+	switch {
+	case crossed == 0:
+		fmt.Fprintf(out, "\nThe wall is still holding its own at every level, so Equip has no\n")
+		fmt.Fprintf(out, "business switching at %d. Check this before the tables move again.\n",
+			gamedata.WardFromLevel())
+	default:
+		fmt.Fprintf(out, "\nThe wall stops being worth carrying at level %d and never recovers;\n", crossed)
+		fmt.Fprintf(out, "Equip switches at %d. Those two agreeing is the whole job of this\n",
+			gamedata.WardFromLevel())
+		fmt.Fprintf(out, "section, and they are checked rather than assumed:\n")
+		if d := crossed - gamedata.WardFromLevel(); d > 1 || d < -1 {
+			fmt.Fprintf(out, "WARNING: they disagree by %d levels. gamedata.wardFromLevel is stale.\n", d)
+		} else {
+			fmt.Fprintf(out, "they agree.\n")
+		}
+	}
+	fmt.Fprint(out, `
+The spiked lane is deliberately not in the running for the baseline. It
+trades guard for strike, which is an offensive choice, and the build that
+makes it properly is the duelist - a baseline with an opinion about
+offence is not a baseline. It is measured here anyway because the shelf
+sells it and a lane nobody ever compares is how the wall stayed the
+default for the life of this report.
+
+`)
+}
+
 func reportSlotValue(out *os.File, t *gamedata.Tables) {
 	fmt.Fprintf(out, "WHY — what one band is worth in each slot\n")
 	fmt.Fprintf(out, "every archetype is a trade of bands between slots, so these are the\n")
