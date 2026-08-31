@@ -1323,9 +1323,8 @@ genuinely is not there. Full detail in [ASSET-MAP.md](ASSET-MAP.md).
    It animates for free: `drawEntity` already ticks a sprite's frames, so
    stacking the five files into a strip was the whole of it.
 
-3. ~~**A spear that exists.**~~ *(Drawn, by a local model, and it is the
-   weakest icon on the shelf.)* Polearms are the one weapon kind with no picture
-   anywhere.
+3. ~~**A spear that exists.**~~ *(Drawn, by a local model, and it holds its own
+   on the shelf.)* Polearms are the one weapon kind with no picture anywhere.
    "Glaive, Overcompensating" borrows an axe head on a haft and reads correctly;
    "Spear, Regrettably Long" borrows a staff with a point and reads as a wand,
    one tier from an actual rod.
@@ -1374,10 +1373,32 @@ genuinely is not there. Full detail in [ASSET-MAP.md](ASSET-MAP.md).
      locates the lowest-leftmost cell the model actually inked and runs the haft
      from beneath it.
 
-   The result is honest but thin: a pole with a small point, the sparsest icon
-   in the weapon set, and better than the wand it replaces only because it is
-   unmistakably not a wand. Replacing it with a hand-drawn one later would be an
-   improvement and would cost one file.
+   A second pass got it from passable to good, and every step of it was a
+   correction to the *tool* rather than to the prompt:
+
+   - **A constructed example beats both showing icons and showing nothing.** A
+     plain geometric taper — a triangle this draws itself, nobody's art — is the
+     middle ground: it carries the notation and the idea of narrowing without
+     giving the model anything worth copying. Heads went from knobs to
+     recognisable points the run it was added.
+   - **The example has to be drawn on the set's own axis.** The first one was a
+     vertical triangle, and an axis-aligned leaf pasted onto a diagonal haft
+     reads as a flag on a pole. Redrawn as a taper along the diagonal, which is
+     the orientation everything in the pack is drawn in.
+   - **A scorer written for the wrong axis rejects everything.** The head filter
+     originally demanded "taller than wide", which is true of a vertical leaf
+     and false of a diagonal blade — whose bounding box is square. The moment
+     the prompt asked for a diagonal point the filter threw away every reply.
+     It measures along the anti-diagonal now: a tip of one or two cells at the
+     far end, widening back towards the haft.
+   - **The haft's shading was invented and should have been copied.** It laid
+     the shadow cell *below* the body cell; `mace1` and `pick1` both put it to
+     the right on the same row. The difference is one pixel per step and it is
+     the difference between a stick and a haft — invisible alone, obvious in a
+     row of eight.
+
+   The result now carries the same weight as the weapons either side of it and
+   reads unmistakably as a spear rather than as the wand it replaced.
 
    What is committed is the *grid*, not a PNG. `assetpipe build` must stay
    byte-reproducible and a model is not, so `data/art/spear.txt` holds sixteen

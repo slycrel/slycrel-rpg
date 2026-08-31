@@ -267,12 +267,15 @@ This pass is not the last one, and these are the questions it left open.
   the hero sheets — `walk`/`up`/`side` plus three attacks — where every other
   foe carries the flat `idle`/`walk`/`attack`/`hit`/`dead`. Nothing yet reads
   the directional ones: interior foes are drawn from a single pooled key.
-- **The spear is drawn rather than sourced, and it shows.** Six sources were
-  checked and none has one (the list is in PLAN.md's Phase 5), so it was drafted
-  by a local model via `cmd/pixelsmith` and committed as a grid. It is the
-  sparsest icon in the weapon set — a pole with a small point — and earns its
-  place only by being unmistakably not the wand it replaces. A hand-drawn
-  replacement would be better and would cost one file.
+- **The spear is drawn rather than sourced.** Six sources were checked and none
+  has one (the list is in PLAN.md's Phase 5), so it was drafted by a local model
+  via `cmd/pixelsmith` and committed as a grid. Two passes: the first produced a
+  thin stick with a point, the second a blade that flows out of the haft and
+  carries the same weight as the weapons either side of it. What fixed it was
+  the tool, not the prompt — a constructed geometric example, drawn on the set's
+  own diagonal, a head filter that measures along that diagonal instead of the
+  bounding box, and a haft whose shading is copied from `mace1` rather than
+  invented.
 - **The old polearm note, kept because it still describes the glaive:** There
   is no spear anywhere on disk — not in the crafting sheet, not in the ability
   set, not in the skill set. "Glaive, Overcompensating" uses `axe2`, which is

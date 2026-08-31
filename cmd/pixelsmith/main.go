@@ -119,21 +119,30 @@ func gen(args []string) error {
 	}
 
 	var kept []grid
-	for i := 0; len(kept) < *n && i < *n*3; i++ {
+	var heads [][][]byte
+	for i := 0; len(kept) < *n && i < *n*8; i++ {
 		body, err := ask(*model, prompt, 0.9)
 		if err != nil {
 			return err
 		}
 		var g grid
+		var hd [][]byte
 		var ok bool
 		if *head > 0 {
-			g, ok = hafted(body, *head)
+			g, hd, ok = hafted(body, *head)
+			// Judge the point before accepting it. Anything that is not
+			// tapering, connected and taller than wide is an axe or a knob,
+			// and looking at forty of those is how the last pass went.
+			if ok && headScore(hd) <= 0 {
+				ok = false
+			}
 		} else {
 			g, ok = parseGrid(body)
 		}
 		if !ok {
 			continue // a reply that is not a grid is simply discarded
 		}
+		heads = append(heads, hd)
 		kept = append(kept, g)
 		if err := os.WriteFile(filepath.Join(out, fmt.Sprintf("%02d.txt", len(kept))),
 			[]byte(g.String()), 0o644); err != nil {
@@ -145,8 +154,26 @@ func gen(args []string) error {
 		return fmt.Errorf("no usable grids came back from %s", *model)
 	}
 
-	// Best-first, so the eye starts where the machine thinks it should.
-	sort.SliceStable(kept, func(i, j int) bool { return score(kept[i]) > score(kept[j]) })
+	// Best-first, so the eye starts where the machine thinks it should. In head
+	// mode that means the head's own score: the haft is identical on every
+	// candidate and drowns out the only part that differs.
+	// Sorted through an index, because kept and heads are parallel and sorting
+	// one of them alone silently pairs every candidate with somebody else's
+	// score.
+	idx := make([]int, len(kept))
+	for i := range idx {
+		idx[i] = i
+	}
+	rank := func(i int) float64 { return score(kept[i]) }
+	if *head > 0 {
+		rank = func(i int) float64 { return headScore(heads[i]) }
+	}
+	sort.SliceStable(idx, func(a, b int) bool { return rank(idx[a]) > rank(idx[b]) })
+	sorted := make([]grid, len(kept))
+	for i, j := range idx {
+		sorted[i] = kept[j]
+	}
+	kept = sorted
 	for i, g := range kept {
 		os.WriteFile(filepath.Join(out, fmt.Sprintf("%02d.txt", i+1)), []byte(g.String()), 0o644)
 	}
@@ -214,6 +241,18 @@ func buildPrompt(seeds []string, name, desc string, head int) (string, error) {
 		// nine tenths and leaves nothing for the head, which is the only part
 		// that carries the meaning. So: the tool lays the haft, and the model
 		// is asked for a small shape to put on the end of it.
+		// One worked example, generated here rather than taken from the pack.
+		//
+		// This is the middle ground the earlier passes missed. Showing real
+		// icons makes the model copy them, and showing nothing leaves it with
+		// no idea what the notation looks like in practice. A plain geometric
+		// taper is nobody's art — it is a triangle — so it can be shown freely,
+		// and it carries the two things prose kept failing to convey: that the
+		// rows get narrower going up, and that slot 2 wraps the outside.
+		b.WriteString("The notation, on a plain tapering shape. This is a geometric\n")
+		b.WriteString("primitive and not an icon: vary it, do not reproduce it.\n\n")
+		b.WriteString(taperExample(head))
+		b.WriteString("\n")
 		fmt.Fprintf(&b, "Draw ONLY the head of: %s\n", desc)
 		fmt.Fprintf(&b, "Output exactly %d lines of exactly %d characters, not 16.\n", head, head)
 		b.WriteString("The haft is drawn separately and will join at your bottom-left corner,\n")
@@ -226,13 +265,55 @@ func buildPrompt(seeds []string, name, desc string, head int) (string, error) {
 	return b.String(), nil
 }
 
+// taperExample draws a plain narrowing shape in the grid notation: outline in
+// slot 2, body in slot 1, one highlight. Constructed, not sampled.
+func taperExample(n int) string {
+	rows := make([]string, n)
+	for y := range rows {
+		row := make([]byte, n)
+		for i := range row {
+			row[i] = '.'
+		}
+		rows[y] = string(row)
+	}
+	put := func(x, y int, c byte) {
+		if x < 0 || y < 0 || x >= n || y >= n {
+			return
+		}
+		r := []byte(rows[y])
+		r[x] = c
+		rows[y] = string(r)
+	}
+	// A taper along the diagonal, not a vertical triangle.
+	//
+	// This is the orientation the whole set is drawn in, and getting it wrong
+	// in the example teaches the wrong thing: an axis-aligned leaf pasted on a
+	// diagonal haft reads as a flag on a pole. The blade widens towards the
+	// lower left, where the haft arrives, and closes to a single cell at the
+	// upper-right tip.
+	for i := 0; i < n; i++ {
+		x, y := i, n-1-i // the tip end is top-right
+		w := i / 2       // wider as it comes back down the haft
+		put(x, y, '1')
+		put(x+1, y, '2')
+		for k := 1; k <= w; k++ {
+			put(x-k, y, '1')
+			put(x, y+k, '2')
+		}
+		if i > 1 && i < n-1 {
+			put(x-1, y, '3')
+		}
+	}
+	return strings.Join(rows, "\n") + "\n"
+}
+
 // hafted takes a small head from the model and puts it on a haft this draws.
 //
 // The haft is the set's own geometry: a single cell of slot 1 stepping one
 // right and one up, from near the bottom-left corner, with slot 2 shadowing
 // beneath it — which is what every hafted weapon in the pack does and what a
 // model reproduces badly.
-func hafted(reply string, n int) (grid, bool) {
+func hafted(reply string, n int) (grid, [][]byte, bool) {
 	var head [][]byte
 	for _, raw := range strings.Split(reply, "\n") {
 		t := strings.TrimSpace(strings.Trim(strings.TrimSpace(raw), "`"))
@@ -259,7 +340,7 @@ func hafted(reply string, n int) (grid, bool) {
 		}
 	}
 	if len(head) < n {
-		return grid{}, false
+		return grid{}, nil, false
 	}
 
 	var g grid
@@ -305,14 +386,20 @@ func hafted(reply string, n int) (grid, bool) {
 		}
 	}
 	if jx < 0 {
-		return grid{}, false
+		return grid{}, nil, false
 	}
-	for x, y := jx-1, jy+1; x >= 1 && y <= Size-2; x, y = x-1, y+1 {
+	// The haft's own shading is copied from the set's geometry, not invented:
+	// mace1 and pick1 both lay a slot-1 cell with a slot-2 cell to its RIGHT on
+	// the same row, stepping down-left. The first version put the shadow
+	// underneath instead, which reads as a thinner, flatter stick than anything
+	// else on the shelf — the sort of thing that looks fine alone and wrong in
+	// a row of eight.
+	for x, y := jx-1, jy+1; x >= 0 && y <= Size-1; x, y = x-1, y+1 {
 		set(x, y, '1')
-		set(x, y+1, '2')
+		set(x+1, y, '2')
 		empty = false
 	}
-	return g, !empty
+	return g, head, !empty
 }
 
 // stats are the house habits, in numbers, read off the icons themselves.
@@ -674,4 +761,102 @@ func absF(f float64) float64 {
 		return -f
 	}
 	return f
+}
+
+// headScore rates a head block on its own, before it is put on a haft.
+//
+// The whole-icon score cannot see this: attach any blob to a code-drawn haft
+// and it scores well, because the haft is perfect and dominates every measure.
+// Twenty-four candidates in a row passed that test and half of them were axes.
+// So the head is judged separately, against the four things that make a point a
+// point rather than a blade or a knob.
+func headScore(h [][]byte) float64 {
+	n := len(h)
+	var on [][2]int
+	for y := 0; y < n; y++ {
+		for x := 0; x < n; x++ {
+			if h[y][x] != '.' {
+				on = append(on, [2]int{x, y})
+			}
+		}
+	}
+	// A blade, not a speck and not a slab.
+	if len(on) < 5 || len(on) > 18 {
+		return 0
+	}
+
+	// One piece.
+	seen := map[[2]int]bool{on[0]: true}
+	q := [][2]int{on[0]}
+	for len(q) > 0 {
+		p := q[len(q)-1]
+		q = q[:len(q)-1]
+		for dx := -1; dx <= 1; dx++ {
+			for dy := -1; dy <= 1; dy++ {
+				m := [2]int{p[0] + dx, p[1] + dy}
+				if seen[m] || m[0] < 0 || m[1] < 0 || m[0] >= n || m[1] >= n || h[m[1]][m[0]] == '.' {
+					continue
+				}
+				seen[m] = true
+				q = append(q, m)
+			}
+		}
+	}
+	if len(seen) != len(on) {
+		return 0
+	}
+
+	// Everything below is measured along the anti-diagonal, because that is the
+	// axis this set draws on. Judging a diagonal blade by its bounding box says
+	// it is as wide as it is tall, which is true and useless — it was also what
+	// made an earlier version of this reject every candidate the moment the
+	// prompt started asking for a diagonal point.
+	band := map[int]int{}
+	lo, hi := 1<<30, -(1 << 30)
+	for _, p := range on {
+		d := p[0] - p[1] // grows towards the upper-right tip
+		band[d]++
+		if d < lo {
+			lo = d
+		}
+		if d > hi {
+			hi = d
+		}
+	}
+	span := hi - lo + 1
+	if span < 3 {
+		return 0 // a blob, with no length along the blade
+	}
+
+	// A tip: the far end is one or two cells.
+	if band[hi] > 2 {
+		return 0
+	}
+
+	// Widening back towards the haft: more of the blade sits in the half
+	// nearest the handle than in the half nearest the point.
+	mid := lo + span/2
+	var nearHaft, nearTip int
+	for d, c := range band {
+		if d < mid {
+			nearHaft += c
+		} else {
+			nearTip += c
+		}
+	}
+	if nearHaft <= nearTip {
+		return 0
+	}
+
+	taper := float64(nearHaft-nearTip) / float64(len(on))
+	length := minF(float64(span)/float64(n), 1)
+	mass := minF(float64(len(on))/12, 1)
+	return 0.4*taper + 0.35*length + 0.25*mass
+}
+
+func minF(a, b float64) float64 {
+	if a < b {
+		return a
+	}
+	return b
 }
