@@ -209,6 +209,29 @@ which event fires which trigger, and where it is safe to put a box on screen.
   the life of the report purely because that is the zero value of the field,
   and then it was `ArmWard` from level six for two sessions on the strength of
   a table that averaged three classes and called a one-point gap a result.
+- **The off arm holds exactly one thing, and the battle field has two index
+  spaces.** Two rules from the same session, both easy to violate silently.
+
+  A plank, a talisman, or — for the thief alone — a second weapon. `EquipAs`
+  and `Character.Equip` each put one down to pick the other up, and whatever
+  comes off goes into the pack; `TestTheOffArmHoldsOneThing` holds both paths.
+  An off-hand weapon contributes `model.SidearmShare`, half its strike, through
+  `Gear()` like every other bonus — which is why the simulator needed no
+  teaching. Half is the design and not a rounding: the point of a weapon there
+  is that it is priced on the weapon table, five a band against the sidearm
+  table's two, and full strike would rebuild the ladder the three lanes were
+  rescued from.
+
+  And in `internal/game/scene_battle.go`, `living()` returns *creature* indices
+  and `livingSlots()` returns *slot* indices, where a slot is a queue of
+  identical creatures drawn as one portrait with a count. They are separate
+  functions with separate names because a slot index used as a creature index
+  is a wrong monster taking a hit and nothing about the types would say so.
+  Drawing, cursors and targeting are slot space; the monsters' turns and
+  anything that reaches the whole field are creature space. `b.target` is a
+  slot and resolves to a creature *when the blow lands*, not when it is chosen,
+  so a companion emptying the front of a queue means the swing meets whoever
+  stepped up instead of a corpse.
 - **A caster's off arm holds a talisman, not a shield**, and what it carries is
   `Absorb` rather than `Defense`: a pool spent once per fight against damage of
   any kind. It is not more ward, and that was measured rather than assumed — a
