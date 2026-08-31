@@ -190,7 +190,15 @@ which event fires which trigger, and where it is safe to put a box on screen.
   the constant and the fights disagree. If you add a slot, the question to ask
   is not "does this compile" but "what measured this".
 
-  Three occurrences now, and the third is the one worth remembering: the
+  **Four occurrences now, and read a report per class before believing it.**
+  The fourth was `duelist`, which never set `Arm` — so on the two classes that
+  cannot hold a two-hander the fallback leaves the arm free and fills it with
+  the wall. It was invisible because ARCS averaged its three classes into one
+  row, which also hid a Fighter duelist beating the baseline by 5.7 points at
+  88% of its purse. An average is not a measurement of anything that exists;
+  every other section of this report is per class and ARCS was the outlier.
+
+  The third is the one worth remembering: the
   `attrition` archetype had no `Arm` field either, so the build whose entire
   identity is the off arm carried the worst off-arm lane from level six up. It
   read as a trap — losing every level, by a margin that widened to 14.5 points

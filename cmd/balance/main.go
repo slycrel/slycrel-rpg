@@ -579,61 +579,49 @@ const arcRuns = 80
 
 func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "ARCS — is there more than one way to be correctly levelled?\n")
-	fmt.Fprintf(out, "win rates averaged across the three classes, on-level where you are and\n")
-	fmt.Fprintf(out, "three over in the region that far out\n\n")
+	fmt.Fprintf(out, "one row per class, on the stretch fights three levels over, every build\n")
+	fmt.Fprintf(out, "shopping with the same purse: what balanced costs that class at that level\n\n")
 	for _, a := range gamedata.Archetypes {
 		fmt.Fprintf(out, "  %-10s %s\n", a.Name, a.Note)
 	}
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, "%-5s %-10s %7s %6s %9s %8s %8s %8s %9s\n",
-		"level", "build", "cost", "spent", "on-level", "over", "rounds", "hp left", "per rest")
-	fmt.Fprintln(out, strings.Repeat("-", 81))
+	fmt.Fprintf(out, "%-5s %-8s %-10s %7s %6s %8s %8s %9s\n",
+		"level", "class", "build", "cost", "spent", "over", "rounds", "per rest")
+	fmt.Fprintln(out, strings.Repeat("-", 74))
 
-	// The comparison is made on the stretch fights, three levels over, not on
-	// the on-level ones.
+	// Per class, not averaged across the three, and this is the whole of what
+	// this section got wrong for its entire life.
 	//
-	// On-level is saturated: every build wins 96-100% of those at every level,
-	// which is by design — an on-level fight is meant to be winnable — but it
-	// means the column cannot tell two builds apart. A gap measured there says
-	// "all three are fine" no matter what the gear tables contain, which is the
-	// reassuring answer and the useless one. What separates a build is the
-	// fight it was not supposed to take.
-	type row struct {
+	// Only a Fighter may hold a two-handed weapon, so the "duelist" row used to
+	// average one real duelist, one build byte-identical to balanced (the Mage,
+	// which cannot make the trade and falls back), and a Thief holding a
+	// one-hander. At level thirteen the Fighter duelist beats balanced by five
+	// to seven points and the Thief duelist loses by nine to eleven; the mean
+	// of those is "within a point or two", which is what the table reported and
+	// what this document concluded from. An average is not a measurement of
+	// anything that exists.
+	type cell struct {
 		build string
 		over  float64
 		rest  float64
 	}
-	stretch := map[int][]row{}
-	// How many build-levels came in more than a tenth under the purse, which is
-	// the residue this cannot fix: gear comes in bands and a build whose next
-	// upgrade costs more than it has left simply stops.
-	thin := 0
+	best := map[[2]int][]cell{} // level, class index -> builds
+	spentThin := 0
+	rows := 0
 
 	for level := 1; level <= maxLevel; level += 2 {
-		biome := biomeForLevel(level)
-
-		// The purse every build shops with: what the baseline costs this class
-		// at this level. Balanced is Archetypes[0] by definition, so this is
-		// the same number the rest of the report is measured against.
-		//
-		// Per class, not one figure for all three. A Thief's on-curve kit is
-		// about a tenth cheaper than a Fighter's and a Mage's sits between
-		// them, so a single purse would hand the cheaper classes spare money
-		// and call the result a fact about their build.
-		budgetFor := func(class model.Class) int {
+		for ci, class := range model.AllClasses {
 			purse := &model.Character{Level: level, Class: class}
 			t.EquipAs(purse, gamedata.Archetypes[0])
-			return gamedata.GearCost(purse)
-		}
+			budget := gamedata.GearCost(purse)
 
-		for _, a := range gamedata.Archetypes {
-			var cost int
-			rate := func(biome string, encLevel int) (winPct, rounds float64, hp int) {
-				var wins, totalRounds, totalHP, n int
-				for _, class := range model.AllClasses {
+			for _, a := range gamedata.Archetypes {
+				var cost int
+				rate := func(biome string, encLevel int) (winPct, rounds float64) {
+					var wins, totalRounds, n int
 					for i := 0; i < fights; i++ {
 						c := rules.BuildCharacter(g, class, level)
-						t.EquipWithin(c, a, budgetFor(class))
+						t.EquipWithin(c, a, budget)
 						cost = gamedata.GearCost(c)
 						mons := t.PickMonsters(g, biome, encLevel, 1)
 						if len(mons) == 0 {
@@ -646,36 +634,26 @@ func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 							wins++
 						}
 						totalRounds += r.Rounds
-						totalHP += r.HPLeft * 100 / core.Max(1, c.MaxHP)
 						n++
 					}
+					if n == 0 {
+						return 0, 0
+					}
+					return float64(wins) * 100 / float64(n), float64(totalRounds) / float64(n)
 				}
-				if n == 0 {
-					return 0, 0, 0
-				}
-				return float64(wins) * 100 / float64(n),
-					float64(totalRounds) / float64(n), totalHP / n
-			}
-			on, rounds, hp := rate(biome, level)
-			over, _, _ := rate(biomeForLevel(level+3), level+3)
+				over, rounds := rate(biomeForLevel(level+3), level+3)
 
-			// How far one rest goes, which is the axis attrition's whole
-			// premise lives on — fights take longer and you are still standing
-			// at the end — and which this section had never looked at. A win
-			// rate is one fight, and a build that trades damage for staying
-			// power cannot show a profit in one fight by construction. If
-			// attrition is a real arc rather than a trap, this is the column
-			// where it has to say so.
-			perRest := 0.0
-			total, chains := 0, 0
-			for _, class := range model.AllClasses {
+				// How far one rest goes, which is the axis attrition's premise
+				// lives on — fights take longer and you are still standing at
+				// the end — and which a win rate cannot see by construction.
+				total, chains := 0, 0
 				for i := 0; i < arcRuns; i++ {
 					sim := rules.BuildCharacter(g, class, level)
-					t.EquipWithin(sim, a, budgetFor(class))
+					t.EquipWithin(sim, a, budget)
 					sim.HP, sim.Psyche = sim.MaxHP, sim.MaxPsy()
 					spells := t.SpellsFor(sim)
 					for survived := 0; survived < 60; survived++ {
-						mons := t.PickMonsters(g, biome, level, 1)
+						mons := t.PickMonsters(g, biomeForLevel(level), level, 1)
 						if len(mons) == 0 {
 							break
 						}
@@ -688,151 +666,135 @@ func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 					}
 					chains++
 				}
-			}
-			if chains > 0 {
-				perRest = float64(total) / float64(chains)
-			}
+				perRest := 0.0
+				if chains > 0 {
+					perRest = float64(total) / float64(chains)
+				}
 
-			stretch[level] = append(stretch[level], row{a.Name, over, perRest})
-			// The spend column is the point of this table now. A build that
-			// comes in well under the purse is not losing because of its
-			// shape, and one that came in over — which is what the duelist
-			// used to do, by 15 to 18 per cent at every level — was never
-			// being compared with anything.
-			budget := budgetFor(model.AllClasses[len(model.AllClasses)-1])
-			fmt.Fprintf(out, "%-5d %-10s %7d %5.0f%% %8.1f%% %7.1f%% %8.1f %7d%% %9.1f\n",
-				level, a.Name, cost, float64(cost)*100/float64(core.Max(1, budget)),
-				on, over, rounds, hp, perRest)
-			if cost > budget {
-				fmt.Fprintf(out, "      WARNING: %s outspends the purse by %d.\n",
-					a.Name, cost-budget)
-			}
-			if float64(cost) < float64(budget)*0.9 {
-				thin++
+				spent := float64(cost) * 100 / float64(core.Max(1, budget))
+				fmt.Fprintf(out, "%-5d %-8s %-10s %7d %5.0f%% %7.1f%% %8.1f %9.1f\n",
+					level, class, a.Name, cost, spent, over, rounds, perRest)
+				rows++
+				if cost > budget {
+					fmt.Fprintf(out, "      WARNING: %s outspends %s's purse by %d.\n",
+						a.Name, class, cost-budget)
+				}
+				if spent < 90 {
+					spentThin++
+				}
+				key := [2]int{level, ci}
+				best[key] = append(best[key], cell{a.Name, over, perRest})
 			}
 		}
 		fmt.Fprintln(out)
 	}
 
-	// The verdict. A build that is never the best one at any level is not a
-	// playstyle, it is a trap with a name, and the point of measuring before
-	// writing content for three arcs is to find that out first.
-	fmt.Fprintf(out, "stretch fights (three levels over), best build and the gap to the worst\n")
-	levels := make([]int, 0, len(stretch))
-	for l := range stretch {
-		levels = append(levels, l)
-	}
-	sort.Ints(levels)
+	// The verdict, on both axes and with a threshold.
+	//
+	// LANES learned in the same session that reading a winner off whichever
+	// column happens to be higher reports noise as a result; ARCS was still
+	// doing it. A build takes a cell only when it leads by more than the wobble,
+	// and both columns count — a build can be an arc by outlasting rather than
+	// by out-hitting, which is exactly what attrition claims to be.
+	const arcNoise = 2.0
 
-	wins := map[string]int{}
+	wonFight := map[string]int{}
+	wonRest := map[string]int{}
+	keys := make([][2]int, 0, len(best))
+	for k := range best {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		if keys[i][0] != keys[j][0] {
+			return keys[i][0] < keys[j][0]
+		}
+		return keys[i][1] < keys[j][1]
+	})
 	worstGap := 0.0
-	for _, l := range levels {
-		rows := stretch[l]
-		best, worst := rows[0], rows[0]
-		for _, r := range rows[1:] {
-			if r.over > best.over {
-				best = r
+	for _, k := range keys {
+		cells := best[k]
+		topF, topR := cells[0], cells[0]
+		lowF := cells[0]
+		for _, c := range cells[1:] {
+			if c.over > topF.over {
+				topF = c
 			}
-			if r.over < worst.over {
-				worst = r
+			if c.over < lowF.over {
+				lowF = c
+			}
+			if c.rest > topR.rest {
+				topR = c
 			}
 		}
-		wins[best.build]++
-		gap := best.over - worst.over
-		if gap > worstGap {
+		if gap := topF.over - lowF.over; gap > worstGap {
 			worstGap = gap
 		}
-		fmt.Fprintf(out, "  level %-3d %-10s +%.1f points over %s\n", l, best.build, gap, worst.build)
+		// Only a clear lead counts.
+		clear := true
+		for _, c := range cells {
+			if c.build != topF.build && topF.over-c.over < arcNoise {
+				clear = false
+			}
+		}
+		if clear {
+			wonFight[topF.build]++
+		}
+		clear = true
+		for _, c := range cells {
+			if c.build != topR.build && topR.rest-c.rest < arcNoise/10 {
+				clear = false
+			}
+		}
+		if clear {
+			wonRest[topR.build]++
+		}
 	}
 
-	fmt.Fprintf(out, "\nlevels won, out of %d: ", len(levels))
-	for _, a := range gamedata.Archetypes {
-		fmt.Fprintf(out, "%s %d  ", a.Name, wins[a.Name])
-	}
-	// Which builds never took a level. Collected rather than eyeballed, because
-	// the whole question this section asks is whether every shape is playable
-	// and "wins nowhere" is the answer that means no.
+	fmt.Fprintf(out, "cells won outright, of %d (level x class), by more than %.0f points\n",
+		len(keys), arcNoise)
+	fmt.Fprintf(out, "%-12s %10s %10s\n", "build", "the fight", "the rest")
 	var never []string
 	for _, a := range gamedata.Archetypes {
-		if wins[a.Name] == 0 {
+		fmt.Fprintf(out, "%-12s %10d %10d\n", a.Name, wonFight[a.Name], wonRest[a.Name])
+		if wonFight[a.Name] == 0 && wonRest[a.Name] == 0 {
 			never = append(never, a.Name)
 		}
 	}
-	fmt.Fprintf(out, "\nwidest gap at any level: %.1f points.\n", worstGap)
-	// The residue the purse cannot remove, said out loud rather than left for
-	// somebody to notice in the spend column. A build that stopped a tenth
-	// short of the money is still being measured slightly poor.
-	if thin > 0 {
-		fmt.Fprintf(out, "%d of %d build-levels came in more than a tenth under the purse:\n"+
-			"gear is banded, and a build whose next upgrade costs more than it has\n"+
-			"left simply stops. Read those rows as a floor on the build, not a verdict.\n",
-			thin, len(levels)*len(gamedata.Archetypes))
+	fmt.Fprintf(out, "\nwidest gap in any cell: %.1f points.\n", worstGap)
+	if spentThin > 0 {
+		fmt.Fprintf(out, "%d of %d rows came in more than a tenth under the purse — read the\n"+
+			"spend column before believing any gap on those.\n", spentThin, rows)
 	}
 
 	switch {
-	case wins[gamedata.Archetypes[0].Name] == len(levels):
-		fmt.Fprintf(out, "VERDICT: balanced is never beaten. There is one arc, not three —\n"+
-			"the other builds trade a real slot for a bonus too small to pay for it.\n")
 	case len(never) > 0:
-		// A build that never wins is the thing this section was built to find.
-		// The phrase is the plan's own: a build that is never the best one at
-		// any level is not a playstyle, it is a trap with a name.
-		fmt.Fprintf(out, "VERDICT: %s wins at no level at all, and the gap widens with\n"+
-			"level rather than closing. A build that is never the best one anywhere\n"+
-			"is not a playstyle, it is a trap with a name.\n", strings.Join(never, " and "))
+		fmt.Fprintf(out, "VERDICT: %s takes no cell on either axis. A build that is never the\n"+
+			"best one anywhere is not a playstyle, it is a trap with a name.\n",
+			strings.Join(never, " and "))
 	case worstGap <= 10:
-		fmt.Fprintf(out, "VERDICT: no build is ever far behind and each wins somewhere.\n"+
-			"The content already supports more than one arc.\n")
+		fmt.Fprintf(out, "VERDICT: no build is ever far behind and each wins somewhere, on one\n"+
+			"axis or the other. The content supports more than one arc.\n")
 	default:
 		fmt.Fprintf(out, "VERDICT: each build wins somewhere, but the gap is wide enough that\n"+
 			"picking wrong for the level is a real mistake.\n")
 	}
 
-	// Which build wins *when* is the thing this table is actually for, and a
-	// count of levels won hides it. The order below is the whole finding: the
-	// off arm changes hands partway up the game, because what is swinging at
-	// you changes with it.
-	if len(levels) > 1 {
-		fmt.Fprintf(out, "\nwho wins, in order of level: ")
-		for _, l := range levels {
-			rows := stretch[l]
-			best := rows[0]
-			for _, r := range rows[1:] {
-				if r.over > best.over {
-					best = r
-				}
-			}
-			fmt.Fprintf(out, "%s ", best.build)
-		}
-		fmt.Fprintln(out)
-		fmt.Fprint(out, `
-Read that against the WARD table below rather than as a list. Nothing that
-attacks with magic exists under level ten, and by thirteen half the blows
-landing on you are magical - so a shield, which stops steel and nothing
-else, is worth most exactly where there is least magic about.
+	fmt.Fprint(out, `
+Read the class column before the build column. A build is only a build for
+the classes that can make its trade: only a Fighter may hold a two-handed
+weapon, so "duelist" means the two-hander for a Fighter, a fallback
+one-hander for a Thief, and — for a Mage, who cannot hold one at all — a
+build identical to balanced. Averaging those three into one row is how this
+table spent its whole life reporting that the two-handed lane changes
+nothing, while the Fighter duelist beat the baseline by five to seven points
+at level thirteen and the Thief lost by nine to eleven.
 
-The cost column is the thing to read first, and it is the reason this table
-now says something different from what it used to. Every build shops with
-the same purse: what balanced costs that class at that level. Before that,
-the duelist carried fifteen to eighteen per cent more gear than the
-baseline at every level from five up and duly won more levels, and both
-rivals outspent balanced by 37% at level one and duly beat it. None of that
-was a fact about a build.
-
-At equal spend the shape stops mattering nearly as much as it appeared to.
-Balanced and duelist come in within a point or two of each other at every
-level - the two-handed lane is not an arc, it is the same power in a
-different silhouette - and attrition loses everywhere, by a margin that
-widens from 4.5 points at level seven to 14.5 at thirteen.
-
-Attrition is also the one build that cannot spend its purse. Its sidearms
-are already at its tier and the next charm band costs more than its cheaper
-weapon saved, so it stops eight to ten per cent short. Some of its deficit
-is that. Not fourteen points of it: the whole charm slot is worth about
-five.
+The spend column is the second thing to read. Every build shops with the same
+purse, but gear is banded and a build whose next upgrade costs more than it
+has left simply stops — so a row several points behind at ninety per cent of
+the money is not a verdict on a shape, it is a floor on one.
 
 `)
-	}
 	fmt.Fprintln(out)
 	reportSlotValue(out, t)
 }
@@ -855,14 +817,18 @@ five.
 // baseline at identical spend from level seven up, by as much as 11.2 points.
 //
 // So the comparison is permanent now, and it is a clean one: the three builds
-// below differ in exactly one slot, and the cost column is printed to prove
-// it. Anything that moves the shield tables, the monster rosters' magic, or
+// below differ in exactly one slot. The cost column is *not* a proof that they
+// spend the same — it is one lane's kit, printed once per level, and a reviewer
+// was right to call the old claim theatre. The lanes differ by up to 175% at
+// tier one; what makes the comparison sound is that a sidearm is a small part
+// of an outfit, so the largest of those gaps moves a whole kit by about one per
+// cent, against lane differences of up to 11 points. Anything that moves the shield tables, the monster rosters' magic, or
 // the level bands will show up here as the crossover moving, and the constant
 // in gamedata has to move with it.
 func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "LANES — which off-arm lane is right, and from when\n")
 	fmt.Fprintf(out, "identical builds differing in one slot, on the stretch fights three\n")
-	fmt.Fprintf(out, "levels over; the cost column is there to prove the spend is the same\n\n")
+	fmt.Fprintf(out, "levels over; the cost column is one lane's kit, for scale, not a proof\n\n")
 
 	// In the order the columns print. The names are in the header rather than
 	// here: three columns and three rows of legend for three lanes is more

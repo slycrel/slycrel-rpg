@@ -536,10 +536,15 @@ const ArmByLevel = model.SidearmLane(-1)
 // measured rather than chosen — see the LANES section of cmd/balance, which
 // exists to keep this number honest.
 //
-// The two lanes cost within five per cent of each other in every band, so this
-// is a straight comparison at equal spend, and it is not close. Below this the
-// wall wins by under a point at every level; above it the silvered shield wins
-// by 1.4 points and then 2.2, 5.5 and 11.2. Which is exactly what the content
+// The two lanes do not cost the same, and the earlier claim here that they came
+// "within five per cent in every band" was wrong in four bands of five — the
+// wall and the silvered shield run 8/22, 48/52, 110/125, 260/280, 620/650, so
+// the tier-one pair differ by 175%. What makes the comparison honest is that a
+// sidearm is a small part of a kit: the largest gap moves a whole outfit by
+// about one per cent. Below this level the wall wins by under a point at every
+// level; above it the silvered shield wins by 1.4 points and then 2.2, 5.5 and
+// 11.2, which is an order of magnitude more than the spend difference could
+// buy. Which is exactly what the content
 // says should happen — nothing casts below level ten, and half of what lands
 // on you by thirteen is magical — so the tables were never the problem. What
 // was not moving with the game was this assumption.
@@ -641,6 +646,14 @@ var Archetypes = []Archetype{
 		// move.
 		Charm: Slot{Back: 1},
 		Hands: 2,
+		// And the right arm for the level on the classes that cannot make this
+		// build's trade at all. Only a Fighter may hold a two-hander, so a
+		// Thief "duelist" is a one-hander with a free arm — and this field was
+		// unset, which is ArmBlock, which is the wall, which LANES says is the
+		// worst lane from level six. Fourth instance of the same defect, found
+		// by a reviewer inside the very row the equal-purse conclusion was read
+		// off. A build that cannot close its arm should at least fill it well.
+		Arm: ArmByLevel,
 	},
 }
 
@@ -727,8 +740,21 @@ func (t *Tables) EquipAs(c *model.Character, a Archetype) {
 // Thief at level eleven 12.5 points of win rate and a third of its endurance.
 //
 // The numbers are read off that measurement rather than reasoned out, and the
-// CHARMS section of cmd/balance re-derives it on every run and complains when
-// this ranking and the fights disagree. Two of them are worth stating:
+// CHARMS section of cmd/balance re-derives the ordering on every run and
+// complains when this ranking and the fights disagree.
+//
+// What that check can and cannot do is worth being exact about, because the
+// seven decimals here promise more than it delivers. It is five argmax
+// comparisons against seven continuous weights, produced by the same simulator
+// that fitted them, so it guards against content drift flipping a pick and
+// cannot falsify a weight. charmPsyche at 0.2 and at 0.0 choose identically in
+// every band. The top band is never measured at all — reportCharms reaches
+// charm tier four and players shop tier five. And the ordering is one figure
+// across three classes: the Mage measurably prefers The Quiet Stone at level
+// eleven and loses 1.5 points to this ranking. What the measurement actually
+// pins is "ward beats the combat stats beats psyche", not the decimals.
+//
+// Two of the weights are worth stating:
 //
 //   - Psyche is worth almost nothing here, and that is not an oversight about
 //     endurance. Psyche is the currency of the *next* fight, so the obvious

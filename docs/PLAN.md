@@ -578,74 +578,61 @@ than a system.
    sidearms only, because letting spare coin buy a better sword would turn
    "attrition with money left over" into "balanced".
 
-   **At equal spend the answer to this whole roadmap item changes.** It asked
-   whether there is more than one way to be correctly levelled. Measured
-   properly:
+   **At equal spend the answer changed, and then an adversarial review showed
+   the new answer was also wrong.** Both readings came out of the same defect
+   in the instrument, one level up from the ones being hunted: ARCS averaged
+   its three classes into one row, and an average is not a measurement of
+   anything that exists.
 
-   - **Balanced and duelist are the same build.** Within a point or two at
-     every level. The two-handed lane was credited in this document with being
-     the answer to the missing glass cannon and "the trade it was always named
-     for"; at equal spend it is not a trade at all, it is the same power in a
-     different silhouette. Its apparent superiority was the extra 15%.
-   - **Attrition wins at no level at all**, and the gap widens rather than
-     closing — 4.5 points behind at seven, 9.0 at nine, 12.9 at eleven, 14.5 at
-     thirteen. The report has a verdict branch for this now, in the plan's own
-     words: a build that is never the best one anywhere is not a playstyle, it
-     is a trap with a name.
-   - **Attrition is also the one build that cannot spend its purse**, stopping
-     eight to ten per cent short because its sidearms are already at its tier
-     and the next charm band costs more than its cheaper weapon saved. Some of
-     its deficit is that. Not fourteen points of it — the whole charm slot is
-     worth about five.
+   Only a Fighter may hold a two-handed weapon. So the "duelist" row averaged
+   one real duelist, one build that falls back to a one-hander (the Thief), and
+   — for the Mage, who cannot hold one at all — very nearly balanced. Measured
+   per class at level thirteen:
 
-   That read as: one arc, one shape indistinguishable from it, and one trap.
-   Two things were wrong with it, and finding them took one more measurement
-   and one more zero value.
+   | class | balanced | duelist | duelist's spend |
+   |---|---|---|---|
+   | Fighter | 69.6% | **75.3%** | 88% |
+   | Thief | **72.8%** | 71.5% | 100% |
+   | Mage | **62.1%** | 59.3% | 100% |
 
-   **ARCS had never looked at endurance.** Attrition's whole premise is that
-   fights take longer and you are still standing at the end, which a single
-   fight cannot show by construction — so the section was asking a build to
-   prove itself on the one axis its design gives away. It has a fights-per-rest
-   column now, on-level, at the same purse.
+   The Fighter duelist beats the baseline by 5.7 points *while spending twelve
+   per cent less* — which is the exact criterion `warden` was retired for — and
+   the mean of that and the two losses is "within a point or two", which is
+   what the table printed and what this document concluded from. The row is
+   per class now.
 
-   That was necessary and not sufficient: with the column in, attrition won it
-   at exactly one level out of seven. Which is the useful kind of negative
-   result, because it meant the build was not merely invisible to the
-   measurement. It was actually failing.
+   **And the review found the fourth zero value, inside that same row.**
+   `duelist` never set `Arm`, so on the classes that cannot make its trade the
+   fallback one-hander leaves the arm free and fills it with `ArmBlock` — the
+   wall, at the levels LANES says the wall is worst. Fourth instance of the
+   same defect, in the build the headline conclusion was read off, found by a
+   reviewer after three rounds of this document congratulating itself for
+   spotting the pattern.
 
-   **And then the third zero value.** `attrition` had no `Arm` field, so it took
-   the zero value — `ArmBlock`, the plain shield — in the one build whose
-   entire identity is the off arm, at exactly the levels LANES says the plain
-   shield is the worst of the three. The same defect as `Equip`'s off arm and
-   `Equip`'s charm, third time, and this time in a build defined by the slot it
-   was getting wrong. "The wall" is a description of a playstyle, not a claim
-   about which lane; a build that spends most on the arm should spend it on the
-   arm that is worth something.
+   Two other things the review was right about, both the same shape as
+   `reportSlotValue`'s charm column — prose claiming what the code does not
+   measure:
 
-   With `Arm: ArmByLevel` on it, the build does what it always said it did:
+   - **The verdict never read the endurance column.** The per-rest figure was
+     stored and printed while `wins` and `worstGap` were computed from win rate
+     alone, so the commit that said "it loses the fight and wins the afternoon,
+     and the verdict moved" was describing a flip that actually required
+     attrition to top a *win-rate* level. It counts both axes now, with a named
+     threshold, because LANES learned in the same session that reading a winner
+     off whichever column is higher reports noise as a result — and ARCS was
+     still doing it.
+   - **The spend column printed one class of three.** `budgetFor` was called
+     with the last of `AllClasses` and `cost` was whatever survived the last
+     loop, so both described the Mage. "Attrition is the one build that cannot
+     spend its purse" was therefore false: at level thirteen the *Fighter
+     duelist* comes in at 88%, worse than any attrition row.
 
-   | level | | balanced | attrition | duelist |
-   |---|---|---|---|---|
-   | 11 | won | **67.0%** | 59.8% | 66.2% |
-   | 11 | per rest | 9.5 | **10.8** | 7.1 |
-   | 13 | won | **66.3%** | 60.2% | 65.0% |
-   | 13 | per rest | 4.1 | **4.1** | 3.5 |
-
-   It loses the fight and wins the afternoon, which is the trade it was written
-   to be — and it does it while spending eight to ten per cent *under* the
-   purse. The widest gap at any level fell from 16.0 points to 7.2, every build
-   now wins somewhere, and the verdict moved to the branch that says the
-   content already supports more than one arc.
-
-   So the answer to the roadmap item is yes, and it was yes all along: what was
-   missing was a column and a field. The content half — writing new gear so the
-   arcs pull further apart — is not needed to make three builds viable, which
-   is worth knowing before spending a week on it. What it would buy is *wider*
-   arcs rather than merely real ones, and the ceiling on that is the rule in
-   `TestShieldsStaySecondaryToArmour`: every shield in the table already sits
-   exactly at its cap of half the body armour of its band, with zero headroom at
-   every tier. Widening the arcs means revisiting that rule on purpose, which
-   this document has said twice and is still the right sequence.
+   What survives all that: every build now takes cells on both axes — balanced
+   1 fight and 7 rests, attrition 1 and 5, duelist 2 and 4 — so the answer to
+   the roadmap item is still yes, there is more than one way to be correctly
+   levelled. What does not survive is the reason given for it. The arcs are
+   real *per class*, and they are different arcs for different classes, which
+   is a more interesting answer than the one the averages allowed.
 
    Two smaller things fell out. `EquipWithin`'s first draft assumed a two-handed
    build has no off arm, which is what `Hands: 2` says — but the arm is closed
