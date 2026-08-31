@@ -702,3 +702,51 @@ func TestWhereYouCampIsTheDecision(t *testing.T) {
 		}
 	}
 }
+
+// clampedMean is the arithmetic under the retreat, the gamble and the heal, and
+// it is the kind of function that is right in two regions and wrong in the
+// third. The bug it replaced was exactly that shape — taking the mean and then
+// clamping, which is correct when the guard sits under the whole roll and wrong
+// by several points a monster when the guard cuts into it, which is the case
+// on-curve armour creates at the top of the game.
+//
+// Tested directly rather than through a fight, because a bias of two or three
+// points a monster hides inside a win rate. Which is how the old one survived.
+func TestClampedMeanIsTheMeanOfTheClamp(t *testing.T) {
+	for _, tc := range []struct{ lo, hi, guard float64 }{
+		{10, 30, 0}, {10, 30, 5}, {10, 30, 10},
+		{10, 30, 15}, {10, 30, 20}, {10, 30, 29},
+		{10, 30, 30}, {10, 30, 45},
+		{6, 25, 9}, {6, 25, 15}, {6, 25, 20},
+		{20, 20, 5}, {20, 20, 25},
+	} {
+		got := rules.ClampedMean(tc.lo, tc.hi, tc.guard)
+
+		// Brute force over the same roll the closed form integrates.
+		const steps = 200000
+		var sum float64
+		for i := 0; i < steps; i++ {
+			x := tc.lo + (tc.hi-tc.lo)*(float64(i)+0.5)/steps
+			if d := x - tc.guard; d > 0 {
+				sum += d
+			}
+		}
+		want := sum / steps
+
+		if diff := got - want; diff > 0.02 || diff < -0.02 {
+			t.Errorf("lo=%v hi=%v guard=%v: got %.4f, the roll averages %.4f",
+				tc.lo, tc.hi, tc.guard, got, want)
+		}
+		if got < 0 {
+			t.Errorf("lo=%v hi=%v guard=%v: negative damage %.4f", tc.lo, tc.hi, tc.guard, got)
+		}
+	}
+
+	// And the property that motivated the change: clamping after the mean
+	// under-reads whenever the guard reaches into the roll.
+	lo, hi, guard := 6.0, 25.0, 15.0
+	if naive, got := (lo+hi)/2-guard, rules.ClampedMean(lo, hi, guard); got <= naive {
+		t.Errorf("the clamped mean %.2f does not exceed the mean-then-clamp %.2f; "+
+			"the bias this replaced has come back", got, naive)
+	}
+}

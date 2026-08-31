@@ -1215,19 +1215,69 @@ func inTrouble(c *model.Character, living []*model.Monster) bool {
 // hat. The mechanic was visible; the *policy* was reading a different game from
 // the one the damage function plays, which is the same defect one layer up and
 // no easier to spot, because both halves look right on their own.
+//
+// Scaling the roll was necessary and not sufficient. MonsterDamage clamps at
+// zero *after* subtracting the guard, and E[max(0, R-g)] is strictly greater
+// than max(0, E[R]-g) whenever the guard reaches into the roll at all — which
+// is exactly the situation on-curve armour creates at the top of the game.
+// Measured against a level-13 Fighter in mountain at encounter 16, the
+// mean-then-clamp form read a wolf at 1 against a true 3.9, a yeti at 4 against
+// 7.0 and a hill thing at 9 against 11.1. So the first fix left the policy
+// under-reading *physical* damage by two to four a monster while it had just
+// stopped over-reading magical damage — one bias traded for another, and the
+// three thresholds this feeds quietly got bolder both times.
+//
+// clampedMean is the closed form, so there is no third bias to trade. The roll
+// is uniform over [lo, hi]; what lands is that minus the guard, floored at
+// nought; and the expectation of the floored variable has a closed expression.
+// Nothing here is fitted.
+//
+// One approximation remains and it is named rather than buried: Between rolls
+// integers and this integrates a continuous uniform, which differs by about
+// half a point at the boundary and less inside it. That is an order of
+// magnitude under the bias it replaces, and making it exactly discrete would
+// mean a sum where an integral does.
 func incomingPerRound(c *model.Character, living []*model.Monster) int {
 	total := 0
 	for _, m := range living {
 		if m.Dead {
 			continue
 		}
-		swing, guard := float64(m.Offense)*0.85, c.Defense()
+		lo, hi := float64(m.Offense)*0.35, float64(m.Offense)*1.35
+		guard := c.Defense()
 		if m.Def != nil && m.Def.Magic {
-			swing, guard = swing*magicBite, c.Ward()
+			lo, hi, guard = lo*magicBite, hi*magicBite, c.Ward()
 		}
-		total += core.Max(1, int(swing)-guard)
+		// The floor is one rather than nought and that is deliberate: a
+		// creature the player cannot feel is still a creature taking a turn,
+		// and a retreat policy that reads a room of them as harmless is how
+		// the simulator used to stand in a crowd until it died. It does bias
+		// the estimate upward by one per body, which is the honest cost of the
+		// alternative being worse.
+		total += core.Max(1, int(clampedMean(lo, hi, float64(guard))))
 	}
 	return total
+}
+
+// clampedMean is E[max(0, U - g)] for U uniform on [lo, hi].
+//
+// Three regions. The guard is under the whole roll, in which case nothing is
+// clamped and the answer is the plain mean less the guard. It is over the whole
+// roll, in which case nothing lands. Or it cuts the roll somewhere in the
+// middle, and what survives is the triangle above it: the excess averages half
+// the remaining span and arrives for the fraction of the roll that clears the
+// guard, which multiply to the same thing.
+func clampedMean(lo, hi, guard float64) float64 {
+	switch {
+	case hi <= lo:
+		return math.Max(0, lo-guard)
+	case guard <= lo:
+		return (lo+hi)/2 - guard
+	case guard >= hi:
+		return 0
+	}
+	over := hi - guard
+	return over * over / (2 * (hi - lo))
 }
 
 // wantsOut decides whether the simulated player should be trying to leave.
@@ -1334,6 +1384,26 @@ func SimulateGroup(g *core.RNG, c *model.Character, mons []*model.Monster, maxRo
 				target.Dead = true
 			}
 		}
+		// swing is the plain attack with nothing decided: no technique, no
+		// psyche, no flee. Split out of strike() because the second swing has
+		// to repeat exactly this and nothing else.
+		swing := func() {
+			target := living[0]
+			if target.Dead {
+				return
+			}
+			// Buffs and weakenings, which the simulator used to pass as zero.
+			// That was a hole rather than a simplification: the battle screen
+			// has always read them, so a blessing was worth something in the
+			// game and nothing in the report — and it is the whole payload of
+			// the two-sided techniques below, which would otherwise have been
+			// measured as an attack that does nothing.
+			sw := PlayerAttack(g, sim, target, OffenseMod(sim.Active), DexterityMod(sim.Active))
+			if sw.Miss {
+				return
+			}
+			hurt(target, sw.Damage)
+		}
 		strike := func() {
 			target := living[0]
 			if target.Dead {
@@ -1388,11 +1458,7 @@ func SimulateGroup(g *core.RNG, c *model.Character, mons []*model.Monster, maxRo
 			// game and nothing in the report — and it is the whole payload of
 			// the two-sided techniques below, which would otherwise have been
 			// measured as an attack that does nothing.
-			sw := PlayerAttack(g, sim, target, OffenseMod(sim.Active), DexterityMod(sim.Active))
-			if sw.Miss {
-				return
-			}
-			hurt(target, sw.Damage)
+			swing()
 		}
 		// standing counts what is still in the fight, which is what decides
 		// whether the one taking its turn has anybody left to run behind.
@@ -1520,10 +1586,19 @@ func SimulateGroup(g *core.RNG, c *model.Character, mons []*model.Monster, maxRo
 		// technique repeating would spend the psyche twice for one decision,
 		// and a flee or a feint repeating is not a sentence that means
 		// anything.
+		//
+		// It called strike() until a reviewer read the two together. strike()
+		// opens with bestSpell, so the second swing was re-entering the whole
+		// decision and casting a second technique — spending the psyche twice
+		// for one decision, which is the thing the paragraph above says it does
+		// not do. The battle screen repeats playerAttack and only playerAttack,
+		// so this was the simulator playing a different game from the one on
+		// screen, in the class-defining mechanic of the Fighter, with a comment
+		// on top asserting the opposite.
 		again := func() {
 			if !res.Fled && !punished && len(livingMonsters(mons)) > 0 && ExtraSwing(g, sim) {
 				res.Extra++
-				strike()
+				swing()
 			}
 		}
 

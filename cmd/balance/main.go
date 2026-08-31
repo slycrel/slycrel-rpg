@@ -15,7 +15,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"os"
+	"os/exec"
 	"sort"
 	"strings"
 
@@ -48,6 +50,39 @@ const (
 	laneOver    = 5
 )
 
+// provenance is which tree, seed and sample produced the numbers below.
+//
+// It exists because a reviewer caught three constants in this repo justified by
+// figures from a tree that no longer existed. Every one of them was true when
+// it was written; three fixes to internal/rules landed the same evening and
+// moved the whole table. A measurement quoted in a comment without the commit
+// it came from is a measurement nobody can reproduce or falsify, and the cost
+// of saying so is one line at the top of the report.
+//
+// Asked of git rather than read out of the build info, and the first draft did
+// the opposite. runtime/debug's vcs.revision looked like the tidy answer — no
+// subprocess, works from a distributed binary — and in a git *worktree* it
+// stamps the parent repository's HEAD, which is a different commit on a
+// different branch. It confidently printed a commit these numbers had never
+// been near. A provenance line that is wrong is worse than no provenance line,
+// because the whole point of it is to be believed.
+//
+// Falling back to "unstamped" rather than to a guess, for the same reason.
+func provenance(root string, fights int, seed int64) string {
+	rev, dirty := "unstamped", ""
+	if out, err := exec.Command("git", "-C", root, "rev-parse", "--short=10", "HEAD").Output(); err == nil {
+		if s := strings.TrimSpace(string(out)); s != "" {
+			rev = s
+		}
+	}
+	if out, err := exec.Command("git", "-C", root, "status", "--porcelain").Output(); err == nil {
+		if len(strings.TrimSpace(string(out))) > 0 {
+			dirty = "+dirty"
+		}
+	}
+	return fmt.Sprintf("tree %s%s, seed %d, %d fights a data point", rev, dirty, seed, fights)
+}
+
 func main() {
 	fights := flag.Int("fights", 2000, "fights simulated per data point")
 	seed := flag.Int64("seed", 20260815, "simulation seed")
@@ -65,6 +100,8 @@ func main() {
 	g := core.NewRNG(*seed)
 	out := os.Stdout
 
+	fmt.Fprintf(out, "%s\n\n", provenance(root, *fights, *seed))
+
 	reportOpening(out, core.NewRNG(*seed^0x09E4), t, *fights)
 	reportCombat(out, g, t, *fights)
 	// Its own generator, not the shared one. That keeps this section's
@@ -77,7 +114,13 @@ func main() {
 	reportWard(out, core.NewRNG(*seed^0x3A7D), t, *fights)
 	// Twice the sample, because it is measuring a derivative: a difference of
 	// two rates carries both their noise, and the answer is then divided by K.
-	reportExchange(out, core.NewRNG(*seed^0xE7CB), t, *fights*2)
+	// Twice the sample, because it is measuring a derivative: a difference of
+	// two rates carries both their noise, and the answer is then divided by K.
+	// The seed goes in as a value rather than only through the generator —
+	// core.RNG.Fork never reads its receiver, so a section that only ever forks
+	// would run bit-identical streams at every -seed and could never be checked
+	// by replication. Which is the gotcha this repo already had written down.
+	reportExchange(out, t, *fights*2, *seed^0xE7CB)
 	reportCharms(out, core.NewRNG(*seed^0xC4A7), t, *fights/4)
 	// Its own generator too, for the same reason as ARCS above.
 	reportShapes(out, core.NewRNG(*seed^0x5411), t, *fights)
@@ -958,10 +1001,11 @@ Four and six creatures are
 party-sized rolls measured against one character, because EncounterSize
 scales what the world sends with how many people are walking behind you - so
 those columns are "what a solo hero meets after their company has been
-killed", not what a party of three walks into. And level eleven is soft for
-everybody: mountain's roster near that band is weak enough that every class
-posts its best numbers there, which is a fact about the monster tables
-rather than about a class.
+killed", not what a party of three walks into. And read the level column as a
+sawtooth rather than a curve: gear steps at 4, 7, 10 and 13 and the monsters
+do not, so a character decays about thirteen points of win rate inside each
+band and gets it back at the next one. Twelve is the hard level and thirteen
+the easy one, and neither is a fact about a class.
 
 `)
 }
@@ -1414,14 +1458,18 @@ The wall is not a mistake below the crossover and the table is not saying it
 is. Three cells below level ten do put a lane clear of it — and they nominate
 a different lane each time, which is how fifty-odd comparisons against a
 measured floor behave. What the arm is, below level ten, is a slot where the
-choice does not matter; at the top of the game it is a decision worth nine
-points.
+choice does not matter; at the top of the game it is the widest gap on this
+page.
 
 The ward lane is the one to watch. It is the best of the three in one cell
 of the twenty-eight above, and at the top of the game it is the worst thing
 you can put on the arm on the axis that kills you: fewest escapes, most
-deaths, because it pays three points of guard for fifteen of ward and WARD
-prices the whole ward slot at nought to three points. A band of three where
+deaths, and the trade it makes to get there is three points of guard for
+eleven of ward. (Eleven, not fifteen: the balanced build's off arm is a band
+behind its own tier, so the fifteen-ward shield at the top of the shelf is
+never the one in this table. A closing paragraph describing an item its own
+table does not measure is exactly the kind of thing this report should not
+do.) A band of three where
 one is never the answer has stopped being a choice — which is the same
 finding the charm bands have, in a different slot, and it is not fixed here.
 
@@ -1451,7 +1499,7 @@ func laneCross(level int) string {
 // exists because three tables in this game are priced in points and none of
 // them was ever told the rate.
 //
-// A shield that pays three points of guard for fifteen of ward is a trade the
+// A shield that pays three points of guard for eleven of ward is a trade the
 // content author has to price. Until now the pricing was taste: the ward lane
 // carries five to fifteen points of its stat where the strike lane carries two
 // to eight, which looks like the ward one is being generous and is only a
@@ -1477,18 +1525,32 @@ func laneCross(level int) string {
 //     Thief who dodges with it as for a Fighter who does not.
 //   - **The bands saturate at both ends.** On level nothing discriminates,
 //     which is why these are the same two bands LANES measures on.
-func reportExchange(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+func reportExchange(out *os.File, t *gamedata.Tables, fights int, seed int64) {
 	fmt.Fprintf(out, "EXCHANGE — what one point in each stat is worth, measured\n")
-	fmt.Fprintf(out, "the balanced build with K points added to one stat, against the same two\n")
-	fmt.Fprintf(out, "bands LANES uses; per point, so the columns compare; %d fights a cell\n\n",
+	fmt.Fprintf(out, "the balanced build nudged a few points either way in one stat, against the\n")
+	fmt.Fprintf(out, "same two bands LANES uses; per point, so the columns compare; %d fights\n",
 		fights)
+	fmt.Fprintf(out, "a cell, and a central difference because these curves saturate\n\n")
 
-	// K is a nudge rather than a doubling. Big enough to clear the noise floor
-	// the section measures for itself, small enough that the answer is still a
-	// derivative — a stat measured by adding twenty of it reports what the
-	// twentieth point is worth averaged with the first, and the tables buy in
-	// ones and twos. Four was not enough: the first draft printed a floor of
-	// 0.92 per point on the death column and most of the table was inside it.
+	// K is the width of the nudge, and it is now taken in both directions.
+	//
+	// A one-sided difference was the first draft's mistake and it was not a
+	// small one. These curves saturate: a Fighter at the top of the game wins
+	// 83% of the stretch fights, so *adding* six strike buys about 1.0 a point
+	// while *removing* six costs between 1.5 and 3.7 a point. Pricing a shield
+	// swap means removing one stat and adding another, and a rate measured only
+	// upward underprices the removal by a factor of up to three — which is the
+	// whole of why this table said the silvered shield should beat the spiked
+	// one while LANES, measuring the actual items, said the opposite by eleven
+	// points. Two instruments in one report disagreeing, and this was the one
+	// that was wrong.
+	//
+	// A central difference costs one more batch a cell and reports the slope
+	// through the operating point rather than the slope away from it. It does
+	// not make the curve linear — a swap of eleven points is still outside what
+	// any derivative can price, and LANES remains the instrument for whole
+	// items — but it stops the sign of the error depending on which way the
+	// content happens to move.
 	const K = 6
 
 	// The stats a content table can actually spend in, and how to spend them.
@@ -1512,6 +1574,11 @@ func reportExchange(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 		{"strength", func(c *model.Character, k int) { c.Strength += k }},
 		{"dexterity", func(c *model.Character, k int) { c.Dexterity += k }},
 		{"speed", func(c *model.Character, k int) { c.Speed += k }},
+		// MaxPsyche without refilling Psyche, which prices the *power* a pool
+		// grants rather than the casts it affords — SpellPower reads MaxPsy and
+		// the pool itself is spent and refilled at rests. That is the right
+		// question for a charm, since a charm raises the ceiling and a bed
+		// fills it, but it was true by accident until it was written down.
 		{"psyche", func(c *model.Character, k int) { c.MaxPsyche += k }},
 	}
 
@@ -1529,89 +1596,147 @@ func reportExchange(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 	// goes differently — which is the effect being measured, so it is the
 	// variance that should survive.
 	//
-	// It reports each half of its fights separately, because pairing takes the
-	// section's noise floor away with one hand and has to give it back with the
-	// other. LANES reads its floor off rows where three different-looking
-	// builds are secretly the same build; that is unavailable here, since a
-	// nudge which changes nothing produces a bit-identical stream and a floor
-	// of exactly nought — which would license believing any number in the
-	// table. Two independent halves of the same measurement is the honest
-	// replacement: how far they disagree is how far the whole is from the
-	// truth, and it costs nothing but a second counter.
-	run := func(class model.Class, level, delta, k int, add func(*model.Character, int)) (won, died [2]float64) {
+	// And it runs both directions of the nudge together, keeping the *paired*
+	// outcomes, because that is what makes an error bar available at all.
+	//
+	// Pairing takes this section's noise floor away with one hand: LANES reads
+	// its floor off rows where three different-looking builds are secretly the
+	// same build, and here a nudge that changes nothing returns a bit-identical
+	// stream and a floor of exactly nought, which would license believing
+	// anything. The first replacement was two independent halves of each
+	// estimate, printing the widest disagreement across the whole table. A
+	// reviewer was right that this is the wrong statistic: one draw per cell,
+	// below its own sigma two times in three, and then a maximum taken over
+	// sixty-odd cells, which is an order statistic of the noisiest one rather
+	// than an error bar on any of them.
+	//
+	// With paired binary outcomes there is an exact answer and it costs two
+	// counters. For each fight, the two directions either agree or they do not;
+	// the fights where they agree carry no information about the difference at
+	// all, and the standard error of the difference is the square root of the
+	// discordant count over the sample. That is McNemar's, it is per cell, and
+	// it is what the table prints beside every rate now.
+	type cell struct {
+		up, down float64 // rate at +K/2 and -K/2, in points
+		se       float64 // standard error of the difference between them
+	}
+	run := func(class model.Class, level, delta, k int, add func(*model.Character, int)) (won, died cell) {
 		enc := core.Max(1, level+delta)
 		biome := biomeForLevel(enc)
-		label := fmt.Sprintf("exchange/%s/%d/%d", class, level, delta)
-		var wins, deaths, n [2]int
-		for f := 0; f < fights; f++ {
-			rg := g.Fork(label, int64(f))
+		label := fmt.Sprintf("exchange/%d/%s/%d/%d", seed, class, level, delta)
+		// one fight, one direction.
+		play := func(f, k int) (won, died bool, ok bool) {
+			rg := core.NewRNG(seed).Fork(label, int64(f))
 			c := rules.BuildCharacter(rg, class, level)
-			t.Equip(c)
+			equip(t, c)
 			if add != nil && k != 0 {
 				add(c, k)
 			}
 			mons := t.PickMonsters(rg, biome, enc, 1)
 			if len(mons) == 0 {
-				continue
+				return false, false, false
 			}
 			fresh := *c
 			r := rules.SimulateFight(rg, &fresh, []*model.MonsterDef{mons[0].Def},
 				enc, 60, t.SpellsFor(c))
-			h := f % 2
-			if r.Won {
-				wins[h]++
-			}
-			if r.Died() {
-				deaths[h]++
-			}
-			n[h]++
+			return r.Won, r.Died(), true
 		}
-		for h := range n {
-			if n[h] > 0 {
-				won[h] = float64(wins[h]) * 100 / float64(n[h])
-				died[h] = float64(deaths[h]) * 100 / float64(n[h])
+		var winUp, winDn, dieUp, dieDn, n int
+		var wonDisc, diedDisc int
+		for f := 0; f < fights; f++ {
+			wu, du, ok := play(f, k)
+			if !ok {
+				continue
+			}
+			wd, dd, _ := play(f, -k)
+			n++
+			if wu {
+				winUp++
+			}
+			if wd {
+				winDn++
+			}
+			if du {
+				dieUp++
+			}
+			if dd {
+				dieDn++
+			}
+			if wu != wd {
+				wonDisc++
+			}
+			if du != dd {
+				diedDisc++
 			}
 		}
-		return
+		if n == 0 {
+			return
+		}
+		pct := func(v int) float64 { return float64(v) * 100 / float64(n) }
+		se := func(disc int) float64 { return math.Sqrt(float64(disc)) * 100 / float64(n) }
+		return cell{pct(winUp), pct(winDn), se(wonDisc)},
+			cell{pct(dieUp), pct(dieDn), se(diedDisc)}
 	}
 
-	fmt.Fprintf(out, "%-6s %-8s %-10s %11s %11s\n",
+	fmt.Fprintf(out, "%-6s %-8s %-10s %17s %17s\n",
 		"level", "class", "stat", "won +3 /pt", "died +5 /pt")
-	fmt.Fprintln(out, strings.Repeat("-", 52))
+	fmt.Fprintln(out, strings.Repeat("-", 64))
 
-	// wonGap and diedGap are how far the two halves of one estimate disagree,
-	// which is this section's error bar and the nearest thing it has to a floor.
-	var wonGap, diedGap float64
+	// told counts the rows whose sign the sample can actually support, which is
+	// the only honest summary of a table this size.
+	told, rows := 0, 0
 	for _, level := range []int{5, 9, 13} {
 		for _, class := range model.AllClasses {
-			baseWon, _ := run(class, level, laneStretch, 0, nil)
-			_, baseDied := run(class, level, laneOver, 0, nil)
+			// No baseline batch: a central difference is measured between the
+			// two nudged runs, and the unnudged build is not one of its terms.
 			for _, n := range nudges {
-				w, _ := run(class, level, laneStretch, K, n.add)
-				_, d := run(class, level, laneOver, K, n.add)
-				// Per point, per half, then averaged — and the halves' own
-				// disagreement kept, because a number with no error bar on it
-				// is how this report got a crossover four levels early once.
-				won := [2]float64{(w[0] - baseWon[0]) / K, (w[1] - baseWon[1]) / K}
-				died := [2]float64{(baseDied[0] - d[0]) / K, (baseDied[1] - d[1]) / K}
-				wonGap = core.MaxF(wonGap, core.MaxF(won[0]-won[1], won[1]-won[0])/2)
-				diedGap = core.MaxF(diedGap, core.MaxF(died[0]-died[1], died[1]-died[0])/2)
-				fmt.Fprintf(out, "%-6d %-8s %-10s %10.2f %11.2f\n",
-					level, class, n.name, (won[0]+won[1])/2, (died[0]+died[1])/2)
+				w, _ := run(class, level, laneStretch, K/2, n.add)
+				_, d := run(class, level, laneOver, K/2, n.add)
+				// Central: the whole span from -K/2 to +K/2 over K, which is
+				// the slope *through* the operating point rather than away
+				// from it. Dying less is worth more, so that column's sign is
+				// flipped to keep every number in the table "good is bigger".
+				won, wonSE := (w.up-w.down)/K, w.se/K
+				died, diedSE := (d.down-d.up)/K, d.se/K
+				for _, v := range []struct{ est, se float64 }{{won, wonSE}, {died, diedSE}} {
+					rows++
+					if v.est > 2*v.se || v.est < -2*v.se {
+						told++
+					}
+				}
+				fmt.Fprintf(out, "%-6d %-8s %-10s %10.2f ±%.2f %10.2f ±%.2f\n",
+					level, class, n.name, won, wonSE, died, diedSE)
 			}
 			fmt.Fprintln(out)
 		}
 	}
 
-	fmt.Fprintf(out, "the error bar: every figure above is the mean of two independent\n")
-	fmt.Fprintf(out, "halves, and the widest the halves disagreed was %.2f per point on won\n", wonGap)
-	fmt.Fprintf(out, "and %.2f on died. Read anything smaller than that as a zero.\n\n",
-		diedGap)
-	fmt.Fprintf(out, "The exact 0.00 rows are the pairing proving itself rather than a\n")
-	fmt.Fprintf(out, "measurement: a Mage swings a Focus, so Weapon.Strike is read by nothing\n")
-	fmt.Fprintf(out, "it does, the two runs never diverge by a single die, and the answer is\n")
-	fmt.Fprintf(out, "not \"small\" but *identical*. A stat that does nothing should say so in\n")
-	fmt.Fprintf(out, "that voice, and one that does not is a plumbing bug this would catch.\n")
+	fmt.Fprintf(out, "the error bar beside each figure is McNemar's, which the pairing makes\n")
+	fmt.Fprintf(out, "available: the fights where both directions agreed say nothing about the\n")
+	fmt.Fprintf(out, "difference between them, so the standard error is the root of the\n")
+	fmt.Fprintf(out, "discordant count over the sample. %d of %d figures above clear twice\n",
+		told, rows)
+	fmt.Fprintf(out, "their own — the rest are zeroes with decimal points in them, and now\n")
+	fmt.Fprintf(out, "say so individually rather than against one global floor.\n\n")
+	fmt.Fprint(out, `
+There are two kinds of exact 0.00 above and they mean opposite things.
+
+A Mage's strike and strength are the pairing proving itself: a Mage swings a
+Focus, so those fields are read by nothing it does, the two runs never diverge
+by a single die, and the answer is not "small" but *identical*. A stat that
+cannot reach anything should say so in that voice, and one that does not
+would be a plumbing bug this catches.
+
+A Thief's speed at level thirteen is the other kind, and the first draft of
+this paragraph filed it under the first. Speed is read — by initiative, by
+the flee roll and by the dodge — but at the top of the game all three have
+saturated: DodgeChance caps ten over, FleeChance caps at 9.4, initiative only
+needs the difference to be non-negative. So six more points flip no branch and
+the streams stay identical for a reason that has nothing to do with plumbing.
+That is a content finding about the Thief's headline stat, sitting in the
+report dressed as a proof of correctness, which is worse than not measuring
+it.
+`)
 
 	fmt.Fprint(out, `
 What this is for. Three tables spend in these units and none of them was
@@ -1722,10 +1847,11 @@ func reportCharms(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 		worn := &model.Character{Class: model.ClassFighter, Level: level}
 		t.Equip(worn)
 
+		wornWon := rows[0].won
 		for _, r := range rows {
 			mark := ""
 			if r.ch.Name == worn.Charm.Name {
-				mark = "  <- worn"
+				mark, wornWon = "  <- worn", r.won
 			}
 			fmt.Fprintf(out, "%-6d %-30s %8.1f %8.1f%% %9.1f%s\n",
 				level, r.ch.Name, gamedata.CharmValue(r.ch), r.won, r.rest, mark)
@@ -1737,9 +1863,24 @@ func reportCharms(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 			dominated++
 			fmt.Fprintf(out, "       band is not a choice: %.1f points between best and worst\n", gap)
 		}
-		if rows[0].ch.Name != worn.Charm.Name {
-			fmt.Fprintf(out, "WARNING: the fights want %q and CharmValue picks %q.\n",
+		// The second question has to be asked about the *cost* of the
+		// disagreement rather than about the disagreement, and the reason is
+		// the first question succeeding.
+		//
+		// This compared argmaxes: the fights' favourite against CharmValue's
+		// pick, warning on any difference at all. That was serviceable while
+		// the bands had a right answer in them, because then a wrong pick cost
+		// real points. Now that they trade — which is the outcome this section
+		// exists to produce — the argmax over three items inside one noise
+		// interval is a coin, and comparing coins warns every run forever. It
+		// warned five times the first run after the bands were fixed, on gaps
+		// of 0.6 to 1.5 points against a threshold of 3.0 for calling a gap at
+		// all. A check that fires hardest when the content is at its best is
+		// not a check, it is a smoke detector in a kitchen.
+		if worst := rows[0].won - wornWon; worst > spread {
+			fmt.Fprintf(out, "WARNING: the fights want %q and CharmValue picks %q, at a cost\n",
 				rows[0].ch.Name, worn.Charm.Name)
+			fmt.Fprintf(out, "         of %.1f points.\n", worst)
 		}
 		fmt.Fprintln(out)
 	}
@@ -1752,7 +1893,7 @@ the bands above disagree with that premise: they have a right answer, by
 more than the noise, on both axes at once.
 
 That is a content finding rather than a fault in the picking. The ward
-charms carry six to fourteen points of their stat where their rivals carry
+charms used to carry six to fourteen points of their stat where their rivals carried
 one to four of theirs, so the bands are not priced in comparable units -
 which is the same thing LANES found about the off arm, for the same reason.
 This game gets magical at the top and the sidearm tables were written before

@@ -548,18 +548,20 @@ const ArmByLevel = model.SidearmLane(-1)
 // off noise.
 //
 // Measured against a floor taken from those rows, per class, on two axes: the
-// wall goes behind at level eight for a Thief and level ten for a Fighter, and
-// eight costs the Fighter nothing at either level in between — the spiked lane
-// is already ahead of the wall there, just not yet by more than the floor. So
-// the constant does not want a class parameter, which was the open question
-// and is this line's answer.
+// wall goes behind somewhere between level eight and level ten depending on the
+// class and the axis, and eight costs either class nothing in between — the
+// spiked lane is already ahead of the wall there, just not yet by more than the
+// floor. So the constant does not want a class parameter, which was the open
+// question and is this line's answer.
 //
-// It has been re-pinned twice in one sitting, and the second time was not a
-// content change: fixing freeSwingWorth — the simulator's policy had been
-// comparing a paid technique against a bad guess at a swing, so a Fighter cast
-// when it should have hit — moved the crossover two levels on its own. Which is
-// the argument for the whole apparatus. A constant nobody re-derives is a
-// constant that is right about the game it was measured in.
+// It has been re-pinned twice in one sitting and neither time was a content
+// change. Fixing freeSwingWorth — the policy had been comparing a paid
+// technique against a bad guess at a swing, so a Fighter cast when it should
+// have hit — moved the crossover two levels on its own, and two further fixes
+// to the same policy moved it again. Which is the argument for the whole
+// apparatus rather than against it: a constant nobody re-derives is a constant
+// that is right about the game it was measured in, and this one is checked
+// against the fights on every report run rather than trusted.
 //
 // The two lanes do not cost the same, and the earlier claim here that they came
 // "within five per cent in every band" was wrong in four bands of five — the
@@ -586,14 +588,26 @@ func StrikeFromLevel() int { return strikeFromLevel }
 // an opinion about offence, which is the one thing a baseline must not have.
 // That argument still holds wherever the premise does. At the top of the game
 // the premise does not hold. Averaged over levels twelve to fourteen, a Fighter
-// carrying the spiked shield into fights five levels over its head wins 54.5%
-// of them and dies in 23.2%; the same Fighter carrying the wall wins 37.0% and
-// dies in 32.7%, and carrying the silvered shield wins 45.0% and dies in 35.5%.
+// carrying the spiked shield into fights five levels over its head wins 60.2%
+// of them and dies in 23.3%; the same Fighter carrying the wall wins 46.9% and
+// dies in 32.9%, and carrying the silvered shield wins 54.9% and dies in 33.4%.
 // The spiked lane is not trading anything there. It is the best defensive item
 // on the arm as well as the best offensive one, and it gets there by killing
 // rather than by escaping — it flees *less* than the wall does and still dies
 // nine points less often. A design position whose premise has been measured
 // away is not a position.
+//
+// **Those figures are from a particular evening's tree and that matters.** The
+// first draft of this comment quoted 54.5 / 37.0 / 45.0 and death rates eight
+// to eleven points lower, and every one of them was true when it was written —
+// then three fixes to internal/rules landed the same night (the retreat policy
+// misreading magical damage, the second swing re-entering the technique
+// chooser, and the same policy clamping a mean where it wanted the mean of a
+// clamp) and the whole table moved. The decision survived all three and the
+// crossover has been re-pinned twice. The numbers did not survive, and a
+// comment that quotes measurements without saying which game they were taken
+// in will be quietly wrong the next time the rules move. If these disagree with
+// a fresh report run, believe the run.
 //
 // The silvered shield is the casualty. It is now the best lane in one cell of
 // the twenty-eight LANES measures, which is what a coin looks like, and it is
@@ -817,14 +831,29 @@ func (t *Tables) EquipAs(c *model.Character, a Archetype) {
 // argmax comparisons — which charm the fights preferred in each band — and the
 // comment below them was honest that seven continuous weights cannot be
 // recovered from five discrete choices. EXCHANGE measures the thing directly:
-// it nudges the balanced build by K points of one stat and reads what that buys
-// on both of LANES' bands. These are its all-class, both-axis means over levels
-// five, nine and thirteen, rounded, and re-deriving them is a report run rather
-// than an argument.
+// it nudges the balanced build a few points either way in one stat and reads
+// what that buys on both of LANES' bands. These are its all-class, both-axis
+// means over levels five, nine and thirteen, rounded, and re-deriving them is a
+// report run rather than an argument.
 //
-// The old weights had ward at 1.0 against a measured 0.22, guard at 1.5 against
-// 0.53 and dexterity at 1.0 against 0.17 — which is why the balanced build kept
-// reaching for the ward charm in every band that had one.
+// The hand-fitted weights had ward at 1.0 against a measured 0.15, dexterity at
+// 1.0 against 0.19 and guard at 1.5 against 0.81 — which is why the balanced
+// build kept reaching for the ward charm in every band that had one.
+//
+// They have been re-derived once already, and the reason is worth keeping,
+// because the first measurement was wrong in a way that looked right. EXCHANGE
+// began as a one-sided difference: it added K points and never removed any.
+// These curves saturate — a Fighter at the top of the game wins 83% of the
+// stretch fights — so adding six strike bought about 1.0 a point while removing
+// six cost between 1.5 and 3.7 a point, and the rate depended on which
+// direction the content happened to move. It is a central difference now, and
+// the weights moved by up to a factor of two when it changed: guard from 0.53
+// to 0.81, speed from 0.29 to 0.55.
+//
+// Which is also the standing caveat. A derivative through the operating point
+// prices a point; it cannot price a swap of eleven, and LANES remains the
+// instrument for whole items. When the two disagree, LANES is measuring the
+// thing and this is measuring the neighbourhood of it.
 //
 // Still class-blind, and that is now a known cost rather than an oversight: a
 // point of psyche is worth 0.68 to a Mage at level thirteen and -0.01 to a
@@ -833,13 +862,13 @@ func (t *Tables) EquipAs(c *model.Character, a Archetype) {
 // it wants the same answer — a measurement per class before a parameter — which
 // EXCHANGE can now supply and this has not spent yet.
 const (
-	charmStrike = 0.72
-	charmGuard  = 0.53
-	charmStr    = 0.53
-	charmSpeed  = 0.29
+	charmStrike = 0.98
+	charmGuard  = 0.81
+	charmStr    = 0.68
+	charmSpeed  = 0.55
 	charmPsyche = 0.23
-	charmWard   = 0.22
-	charmDex    = 0.17
+	charmDex    = 0.19
+	charmWard   = 0.15
 )
 
 // CharmValue scores what a charm's trade is worth, positive and negative
