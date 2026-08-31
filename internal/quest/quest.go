@@ -108,7 +108,21 @@ type Catalog interface {
 
 // Generate invents an errand for an NPC standing in a settlement, or reports
 // false when the surrounding world offers nothing to ask for.
-func Generate(g *core.RNG, w *world.Map, cat Catalog, wr Writer, giverPOI int, giver string) (*Quest, bool) {
+// Generate builds an errand. prefer names the kind this giver ought to ask for
+// and is honoured when the settlement can support it.
+//
+// The preference exists so a face can be chosen before the quest is: the
+// portrait pools are keyed by errand, and a person whose face changed when they
+// handed you a job — and changed back when you finished it — would undo the one
+// thing a face is for. Passing the empty string picks at random, which is what
+// this always did.
+//
+// It is a preference rather than an instruction because the candidate list is
+// built from what actually exists nearby. A settlement with no dungeon in reach
+// cannot ask for a delve however much its resident looks the part, and offering
+// an errand that points at nothing would be a worse failure than a face that
+// does not quite match the job.
+func Generate(g *core.RNG, w *world.Map, cat Catalog, wr Writer, giverPOI int, giver string, prefer Kind) (*Quest, bool) {
 	if giverPOI < 0 || giverPOI >= len(w.POIs) {
 		return nil, false
 	}
@@ -134,11 +148,18 @@ func Generate(g *core.RNG, w *world.Map, cat Catalog, wr Writer, giverPOI int, g
 		return nil, false
 	}
 
+	chosen := core.Pick(g, kinds)
+	for _, k := range kinds {
+		if k == prefer {
+			chosen = prefer
+			break
+		}
+	}
 	q := &Quest{
 		State:    Active,
 		Giver:    giver,
 		GiverPOI: giverPOI,
-		Kind:     core.Pick(g, kinds),
+		Kind:     chosen,
 	}
 
 	switch q.Kind {

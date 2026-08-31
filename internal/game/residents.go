@@ -123,7 +123,7 @@ func (g *Game) talkToResident(e *world.Entity, poiIdx int) bool {
 		if t.State == thread.Ready {
 			g.offerThreadEnding(t, owed)
 		} else {
-			g.SayAs(t.Owner, roleOf(e), owed)
+			g.SayAs(t.Owner, roleOf(e), g.faceOf(e), owed)
 			g.showThreadDestination(t)
 		}
 		return true
@@ -143,7 +143,7 @@ func (g *Game) talkToResident(e *world.Entity, poiIdx int) bool {
 	if p := t.Progress(&g.Data.Threads); p != "" {
 		note += "  (" + p + ")"
 	}
-	g.SayAs(t.Owner, roleOf(e), note)
+	g.SayAs(t.Owner, roleOf(e), g.faceOf(e), note)
 	return true
 }
 

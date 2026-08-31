@@ -341,7 +341,7 @@ func TestAJobInProgressIsNotStarred(t *testing.T) {
 		t.Skip("this town generated nobody to ask")
 	}
 
-	q, ok := quest.Generate(g.RNG, g.World, g.Data, g.Write, idx, giver.Name)
+	q, ok := quest.Generate(g.RNG, g.World, g.Data, g.Write, idx, giver.Name, "")
 	if !ok {
 		t.Skip("no errand could be generated for this town")
 	}

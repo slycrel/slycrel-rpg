@@ -519,7 +519,7 @@ func (g *Game) demoTakeQuest() {
 	// Nobody in this town happened to be a giver; ask the generator directly
 	// so the capture still shows the interface.
 	if idx := g.currentPOIIndex(); idx >= 0 {
-		if q, ok := quest.Generate(g.RNG, g.World, g.Data, g.Write, idx, "Someone"); ok {
+		if q, ok := quest.Generate(g.RNG, g.World, g.Data, g.Write, idx, "Someone", ""); ok {
 			g.offerQuest(&world.Entity{Name: q.Giver}, q)
 		}
 	}

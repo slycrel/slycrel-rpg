@@ -21,7 +21,7 @@ const maxActiveQuests = 6
 func (g *Game) talkTo(e *world.Entity) {
 	poiIdx := g.currentPOIIndex()
 	if poiIdx < 0 {
-		g.SayAs(e.Name, roleOf(e), e.Line)
+		g.SayAs(e.Name, roleOf(e), g.faceOf(e), e.Line)
 		return
 	}
 	g.Quests.SyncFetch(g.Player.Bag)
@@ -37,7 +37,7 @@ func (g *Game) talkTo(e *world.Entity) {
 		if q.Complete() {
 			g.offerTurnIn(e, q)
 		} else {
-			g.SayAs(e.Name, roleOf(e), q.Nag)
+			g.SayAs(e.Name, roleOf(e), g.faceOf(e), q.Nag)
 		}
 		return
 	}
@@ -54,12 +54,15 @@ func (g *Game) talkTo(e *world.Entity) {
 	// their own line, which is the whole reason they have one.
 	if !g.Quests.HasFrom(poiIdx) && g.Quests.CountActive() < maxActiveQuests &&
 		g.wantsToAsk(e, poiIdx) {
-		if q, ok := quest.Generate(g.RNG, g.World, g.Data, g.Write, poiIdx, e.Name); ok {
+		// The kind this person was always going to ask for, so their face is
+		// the same before, during and after the errand.
+		prefer, _ := g.questFaceKind(e)
+		if q, ok := quest.Generate(g.RNG, g.World, g.Data, g.Write, poiIdx, e.Name, prefer); ok {
 			g.offerQuest(e, q)
 			return
 		}
 	}
-	g.SayAs(e.Name, roleOf(e), g.townLine(e))
+	g.SayAs(e.Name, roleOf(e), g.faceOf(e), g.townLine(e))
 }
 
 // townLine is what a person in a settlement opens with.
@@ -173,7 +176,7 @@ func (g *Game) wantsToAsk(e *world.Entity, poiIdx int) bool {
 
 func (g *Game) offerQuest(e *world.Entity, q *quest.Quest) {
 	body := fmt.Sprintf("%s\n\nReward: %d coins, %d experience.", q.Ask, q.RewardCoins, q.RewardXP)
-	g.AskAs(e.Name, roleOf(e), body, []ui.MenuItem{
+	g.AskAs(e.Name, roleOf(e), g.faceOf(e), body, []ui.MenuItem{
 		{Label: "Take the job"}, {Label: "Decline"},
 	}, func(g *Game, choice int) {
 		if choice != 0 {
@@ -193,7 +196,7 @@ func (g *Game) offerQuest(e *world.Entity, q *quest.Quest) {
 }
 
 func (g *Game) offerTurnIn(e *world.Entity, q *quest.Quest) {
-	g.AskAs(e.Name, roleOf(e), q.Thank+"\n\n"+q.Title+" — complete.",
+	g.AskAs(e.Name, roleOf(e), g.faceOf(e), q.Thank+"\n\n"+q.Title+" — complete.",
 		[]ui.MenuItem{{Label: "Collect"}, {Label: "Later"}}, func(g *Game, choice int) {
 			if choice != 0 {
 				return

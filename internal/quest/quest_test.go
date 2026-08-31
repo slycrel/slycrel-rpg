@@ -53,7 +53,7 @@ func TestGeneratedQuestsAreCompletable(t *testing.T) {
 				continue
 			}
 			for try := 0; try < 12; try++ {
-				q, ok := quest.Generate(g, w, tb, stubWriter{}, i, "Giver")
+				q, ok := quest.Generate(g, w, tb, stubWriter{}, i, "Giver", "")
 				if !ok {
 					continue
 				}

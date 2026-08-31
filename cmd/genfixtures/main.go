@@ -181,7 +181,7 @@ func buildAs(t *gamedata.Tables, class model.Class, seed int64, level, allies in
 	}
 	f.Threads = log.Threads
 
-	if q, ok := quest.Generate(g, m, t, writerFor(t), 0, "Person"); ok {
+	if q, ok := quest.Generate(g, m, t, writerFor(t), 0, "Person", ""); ok {
 		f.Quests = append(f.Quests, q)
 	}
 

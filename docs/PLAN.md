@@ -1449,11 +1449,47 @@ ma." is not a shorter way of saying "undead mage". It is deliberately empty for
 an ordinary townsperson: "villager" under every second face is noise that
 teaches the player to stop reading it.
 
-Still to do, and the reason this is a phase rather than a commit: the portrait
-pool is 69 adventurer busts from the character pack, so a village elder can come
-up wearing a helmet. Leaning into the tropes properly wants faces that know they
-are a shopkeeper or a suspicious hermit, and a caption that is written rather
-than derived.
+**Faces are pooled by what somebody is.** Hashing a name across all seventy-six
+portraits put a helmeted knight behind the apothecary's counter, because the
+pack is mostly adventurers. `internal/game/faces.go` holds the pools and three
+rules hold them together: a face belongs to a person rather than to a
+conversation, the pool is chosen by something that cannot change about them, and
+nothing is saved because every input is already in the seed.
+
+- **Recruits** get the armour and the helmets — the pool that matters most,
+  since a hireling's face follows them into the party panel and every battle
+  after it.
+- **Each counter** has its own: a smith built like one, an apothecary who looks
+  like they know something, an innkeeper pleased you came in.
+- **Errand-givers by errand.** A cull is asked for by somebody it has happened
+  to, a delve by somebody frightened enough to send a stranger into a hole.
+- **Everybody else** is the plain-faces pool, which is also what an oddity's
+  residents draw from: the joke there is that nobody in the frame is in on it.
+- **The cultists are in no pool at all.** One of them has glowing eyes, and a
+  cultist behind the counter is the game telling a joke about its own asset
+  pack.
+
+Keying a face on the errand needed one thing fixed first. `wantsToAsk` was
+already deterministic — whether somebody has an errand is a hash of where they
+stand and the settlement's seed — but *which* errand came off the run RNG at the
+moment of the first conversation. A face built on that would appear when they
+handed you a job and vanish when you finished it. `questFaceKind` hashes the
+kind the same way and `quest.Generate` takes it as a preference, honoured when
+the settlement can support it. The face uses the preference whether or not a
+quest exists and never reads back off the quest: a settlement with no dungeon in
+reach produces a different errand, and there a face that stays put is worth more
+than a face that matches the job.
+
+**The shop gave up a column.** A counter was the last place in the game where
+you dealt with a person and never saw one. Tucking the portrait into a corner
+does not work — a list that reaches the panel edge has no spare corner, and both
+attempts collided with the rows — so the rows are 54px narrower and the vendor
+stands in the gap. No caption under it: the panel title is already the counter's
+name.
+
+Still open: the captions are derived from `ShopKind` and `Class` rather than
+written, so they say "blacksmith" and "fey mage" and never anything with a voice.
+Leaning into the tropes properly wants writing.
 
 ## Since the roadmap
 

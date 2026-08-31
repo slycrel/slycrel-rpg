@@ -83,18 +83,18 @@ func (g *Game) offerRecruit(e *world.Entity) {
 
 	switch {
 	case g.PartyFull():
-		g.SayAs(e.Name, roleOf(e), e.Line+"\n\nYou already have as many people as you can keep track of. "+
+		g.SayAs(e.Name, roleOf(e), g.faceOf(e), e.Line+"\n\nYou already have as many people as you can keep track of. "+
 			"They take this well, which is somehow worse.")
 		return
 	case g.Player.Coins < cost:
-		g.SayAs(e.Name, roleOf(e), body+"\n\nYou do not have it. They resume looking at the middle distance.")
+		g.SayAs(e.Name, roleOf(e), g.faceOf(e), body+"\n\nYou do not have it. They resume looking at the middle distance.")
 		return
 	}
 
 	// The purse is already checked above, so this cannot be greyed out — but it
 	// says what the hire costs against what you are holding, which is the half
 	// that was missing.
-	g.AskAs(e.Name, roleOf(e), fmt.Sprintf("%s\n\nYou have %d coins.", body, g.Player.Coins),
+	g.AskAs(e.Name, roleOf(e), g.faceOf(e), fmt.Sprintf("%s\n\nYou have %d coins.", body, g.Player.Coins),
 		[]ui.MenuItem{
 			{Label: "Pay", Detail: fmt.Sprintf("%d coins", cost)},
 			{Label: "Walk away"},
@@ -135,7 +135,7 @@ func (g *Game) hire(e *world.Entity, level int) {
 	// met — you agree terms with a dark-haired mage and a redhead walks off with
 	// your money. Keyed on e.Name rather than the uniquified name, since the
 	// suffix is bookkeeping for a second Nessa and not a different woman.
-	c.Portrait = g.faceFor(e.Name)
+	c.Portrait = g.faceOf(e)
 
 	// What they ask for every haul from here, adjusted for what the last people
 	// you took on had to say about it. Applied here rather than inside Recruit

@@ -614,6 +614,13 @@ func statWords(b model.Bonus) string {
 	return strings.Join(parts, ", ")
 }
 
+// shopFaceW is the vendor's portrait, and shopFaceCol is what the rows give up
+// to make room for it: the frame plus the gap either side.
+const (
+	shopFaceW   = 42
+	shopFaceCol = shopFaceW + 12
+)
+
 func (s *shopScene) Draw(g *Game, dst *ebiten.Image) {
 	if s.under != nil {
 		s.under.Draw(g, dst)
@@ -622,6 +629,31 @@ func (s *shopScene) Draw(g *Game, dst *ebiten.Image) {
 
 	title := s.e.Name
 	ui.TitledPanel(dst, title, 20, 18, render.ScreenW-40, 196)
+
+	// The person behind the counter.
+	//
+	// The rows give up a column for it rather than the portrait being tucked
+	// into a corner. Tucking was tried: at the top right it lands on the coin
+	// count and the first two rows, because the list is full width and a shop
+	// row's detail column is right-aligned into it. Nothing on a strip can be
+	// positioned by a constant that assumes another thing's width, and a list
+	// that reaches the panel edge has no spare corner by definition.
+	//
+	// A shop is a list of prices and stays one. But a counter with nobody at
+	// it was the last place in the game where you dealt with a person and
+	// never saw one, and the vendor pools exist so that a smith looks like a
+	// smith.
+	fx, fy := float64(render.ScreenW-40-shopFaceW), 46.0
+	ui.Slot(dst, fx, fy, shopFaceW, shopFaceW, render.ColInkDim)
+	if sp := g.Assets.Get(g.faceOf(s.e)); sp != nil {
+		render.ScreenFit(dst, sp, 0, fx+2, fy+2, shopFaceW-4, shopFaceW-4, nil)
+	}
+	// No caption under it. The panel's title is already the counter's name —
+	// "Blacksmith" — so a word underneath saying blacksmith is the interface
+	// telling the player something twice, and the two attempts at placing it
+	// both collided with the rows: from the left it ran out through the panel
+	// border, and right-aligned it butted straight into a row's detail column.
+	// The redundancy was the real problem and the collisions were it arguing.
 
 	tabs := []string{"Buy", "Sell"}
 	for i, t := range tabs {
@@ -640,7 +672,7 @@ func (s *shopScene) Draw(g *Game, dst *ebiten.Image) {
 	}
 	render.Rect(dst, 30, 44, render.ScreenW-60, 1, render.ColInkFaint)
 
-	s.menu.Draw(dst, 40, 52, render.ScreenW-80)
+	s.menu.Draw(dst, 40, 52, render.ScreenW-80-shopFaceCol)
 
 	// What the highlighted thing actually is, live as the cursor moves.
 	//

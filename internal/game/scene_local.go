@@ -201,7 +201,7 @@ func (g *Game) interact(e *world.Entity) {
 				Disabled: g.Player.Coins < int64(cost)},
 			{Label: "Decline"},
 		}
-		g.AskMenu(e.Name, fmt.Sprintf("%s\n\nA night costs %d coins. You have %d.",
+		g.AskAs(e.Name, roleOf(e), g.faceOf(e), fmt.Sprintf("%s\n\nA night costs %d coins. You have %d.",
 			body, cost, g.Player.Coins), rows, func(g *Game, choice int) {
 			if choice != 0 {
 				return

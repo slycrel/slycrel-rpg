@@ -42,18 +42,18 @@ func (g *Game) Say(speaker, body string) {
 // third of the panel. Getting that wrong is not subtle — the text runs under
 // the frame and out the other side, since a panel does not clip what you draw
 // in it.
-func (g *Game) SayAs(name, role, body string) {
+func (g *Game) SayAs(name, role, face, body string) {
 	g.Push(&messageScene{
 		under:    g.Top(),
 		speaker:  name,
 		role:     role,
-		portrait: g.faceFor(name),
+		portrait: face,
 		body:     render.Wrap(body, talkTextW),
 	})
 }
 
 // AskAs is AskMenu for a person, with the same face and the same width.
-func (g *Game) AskAs(name, role, body string, items []ui.MenuItem, onChoose func(*Game, int)) {
+func (g *Game) AskAs(name, role, face, body string, items []ui.MenuItem, onChoose func(*Game, int)) {
 	labels := make([]string, len(items))
 	for i, it := range items {
 		labels[i] = it.Label
@@ -62,7 +62,7 @@ func (g *Game) AskAs(name, role, body string, items []ui.MenuItem, onChoose func
 		under:    g.Top(),
 		speaker:  name,
 		role:     role,
-		portrait: g.faceFor(name),
+		portrait: face,
 		body:     render.Wrap(body, talkTextW),
 		choices:  labels,
 		onChoose: onChoose,

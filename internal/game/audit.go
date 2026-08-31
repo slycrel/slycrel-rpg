@@ -84,6 +84,15 @@ func (g *Game) Audit(w io.Writer) error {
 		}
 	}
 
+	// Every face any pool can hand out. These are hand-written lists of keys,
+	// which is a hundred-odd chances to name a portrait that is not there — and
+	// unlike the rest of this, a missing one does not show as a magenta box: it
+	// falls back to the default face, so an entire pool could be wrong and the
+	// game would look merely repetitive.
+	for _, key := range faceKeys() {
+		check(key, "conversation portrait")
+	}
+
 	// Scenery with art of its own. One key today, and it is checked for the
 	// same reason the oddity's furniture is: a brazier that failed to resolve
 	// would be a magenta box standing in a dungeon.

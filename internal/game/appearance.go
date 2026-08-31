@@ -1,11 +1,6 @@
 package game
 
-import (
-	"fmt"
-	"strings"
-
-	"github.com/slycrel/slycrel-rpg/internal/world"
-)
+import "fmt"
 
 // What a hero looks like, which is now the player's business rather than a
 // consequence of the class they picked.
@@ -83,80 +78,4 @@ func (g *Game) heroFaces() []string {
 	}
 	g.faces = out
 	return out
-}
-
-// faceFor picks the portrait a named person wears, and picks the same one every
-// time.
-//
-// Residents are not stored — a town's people are regenerated from the world
-// seed whenever you walk into it — so a face cannot be assigned once and kept.
-// It has to be a function of something stable, and the name is the only thing
-// about a townsperson that is both stable and theirs. Hashing it means the
-// baker is the same baker on your third visit, which is the whole point of
-// giving them a face at all: a portrait that changed between conversations
-// would make the town feel less peopled rather than more.
-//
-// Deliberately not saved and deliberately not in world generation. The save
-// format is seed plus deltas and this derives from data already in it.
-func (g *Game) faceFor(name string) string {
-	faces := g.heroFaces()
-	if len(faces) == 0 {
-		return defaultPortrait
-	}
-	// FNV-1a, written out rather than imported: it is four lines and the point
-	// is that it never changes, since changing it re-faces every NPC in every
-	// town at once.
-	var h uint32 = 2166136261
-	for i := 0; i < len(name); i++ {
-		h ^= uint32(name[i])
-		h *= 16777619
-	}
-	return faces[h%uint32(len(faces))]
-}
-
-// roleOf is the word under a person's face: what they are, in the player's
-// terms rather than the code's.
-//
-// One word where possible. The name is already the panel's title and the line
-// is already in their mouth; this is only there so a player can place somebody
-// at a glance — which is the difference between "a stranger asked me to kill
-// six gulls" and "the innkeeper asked me to kill six gulls".
-//
-// An empty answer is fine and common. A townsperson with nothing particular
-// about them gets no caption rather than a filler one, because "villager" under
-// every second face is noise that teaches the player to stop reading it.
-func roleOf(e *world.Entity) string {
-	if e == nil {
-		return ""
-	}
-	switch e.Kind {
-	case world.EShop:
-		return shopRole[e.Shop]
-	case world.EInn:
-		return "innkeeper"
-	case world.ERecruit:
-		// What they do, and what they are when that is worth saying. A
-		// half-ogre sellsword is a more useful thing to have read than either
-		// half on its own.
-		switch {
-		case e.Blood != "" && e.Class != "":
-			return e.Blood + " " + strings.ToLower(e.Class)
-		case e.Class != "":
-			return strings.ToLower(e.Class)
-		case e.Blood != "":
-			return e.Blood
-		}
-		return "for hire"
-	}
-	return ""
-}
-
-// shopRole names the counter someone stands behind. Taken from the same list
-// the settlement builder signs the doors with, so the word over the shop and
-// the word under the face are the same word.
-var shopRole = map[world.ShopKind]string{
-	world.ShopSmith:      "blacksmith",
-	world.ShopArmorer:    "armourer",
-	world.ShopApothecary: "apothecary",
-	world.ShopInn:        "innkeeper",
 }
