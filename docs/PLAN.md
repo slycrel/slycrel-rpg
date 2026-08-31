@@ -3119,6 +3119,63 @@ thief's counter fell into one step earlier.
 Level three is unchanged because the Mage has no talisman at that tier yet. The
 unit arrives when the item does, which is how the off arm has always worked.
 
+### Step four, built: the fighter swings twice, sometimes
+
+The fighter's active, and the last of the four because it is the largest thing
+in the scheme. It is also the smallest number in it, deliberately.
+
+`rules.ExtraSwing` is Fighter-only and reads Speed above a floor of 14 — where
+a Fighter arrives around the middle of a run, since it rolls 6-9 at level one
+and climbs about a point a level. So the reward is for having levelled rather
+than for the class one picked, which is what "as you levelled" meant. It grows
+at 1.5% a point past the floor and stops at 15%, which puts a top-end Fighter
+around one round in ten.
+
+Only a plain swing repeats. A technique repeating would spend the psyche twice
+for one decision, and a flee or a feint repeating is not a sentence that means
+anything.
+
+It is the right shape for the class the tropes want brainless: there is nothing
+to decide, it simply happens. The other two actives are conditional on being
+attacked — a counter needs a dodge, a siphon needs a blow to answer — and the
+fighter should not have to wait for permission.
+
+**What the caution was for, and what it turned out to be.** The fear was the
+arcs: three builds sit within seven points of each other at equal spend, and a
+class taking occasional double rounds could blow that open. It did not, and the
+reason is worth writing down rather than being relieved about — ARCS compares
+builds *within* a class, so a class-gated mechanic lifts all three Fighter
+builds equally and none of the others. The widest gap in any cell moved 13.0 to
+13.7 points, which is noise. **The thing to have watched was the class
+comparison, not the build comparison**, and that is COMBAT and CROWDS.
+
+There the effect is real, small, and confined to the top: the Fighter's stretch
+column moves +1.5 points at level eleven and +4.0 at thirteen, and its
+three-creature crowd numbers move nought below level nine and +3 to +6 above it.
+Below level eight it does nothing at all, because the speed floor has not been
+reached.
+
+That is the timid end on purpose. A weapon band is +5 strike and a second swing
+is an entire extra attack; the report can re-price a charm and cannot re-price
+"sometimes twice", so the number that shipped is the one that could be raised
+later rather than the one that has to be walked back. Whether one round in ten
+*feels* like the trope is a judgement the report cannot make — it is the
+question to take to a playthrough.
+
+### Where the scheme stands
+
+All four built, and the shape it was designed for is what the tables now show:
+
+| class | unit | active |
+|---|---|---|
+| Fighter | block — flat off every hit | a second swing, sometimes |
+| Thief | dodge — a chance of nothing | a counter off the dodge |
+| Mage | absorb — a pool | the pool refills from damage dealt |
+
+Two of the three answer "do not die" *while* attacking, and the three units are
+different arithmetic rather than three sizes of the same number. The loop is
+still kill things and do not die, which was never the thing to fix.
+
 ### The order, and why it is an order
 
 Every term here changes `PlayerAttack` or `MonsterDamage`, which is what

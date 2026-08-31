@@ -1120,6 +1120,9 @@ type FightResult struct {
 	// to say what the fight refunded.
 	HPBack     int
 	PsycheBack int
+	// Extra is how many second swings the round order handed out, counted for
+	// the same reason as the two below it.
+	Extra int
 	// Siphoned is how much barrier the talisman rebuilt out of damage dealt,
 	// for the same reason Dodges is counted: a mechanic whose effect can only
 	// be inferred from a win rate is one nobody can tune.
@@ -1457,8 +1460,21 @@ func SimulateGroup(g *core.RNG, c *model.Character, mons []*model.Monster, maxRo
 			}
 		}
 
+		// A second swing, sometimes, for the class whose active is not
+		// conditional on being attacked. Only the plain strike repeats: a
+		// technique repeating would spend the psyche twice for one decision,
+		// and a flee or a feint repeating is not a sentence that means
+		// anything.
+		again := func() {
+			if !res.Fled && !punished && len(livingMonsters(mons)) > 0 && ExtraSwing(g, sim) {
+				res.Extra++
+				strike()
+			}
+		}
+
 		if playerFirst {
 			act()
+			again()
 			if res.Fled {
 				break
 			}
@@ -1467,6 +1483,7 @@ func SimulateGroup(g *core.RNG, c *model.Character, mons []*model.Monster, maxRo
 			monsterTurns()
 			if sim.HP > 0 {
 				act()
+				again()
 			}
 			if res.Fled {
 				break

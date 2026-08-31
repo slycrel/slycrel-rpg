@@ -883,7 +883,18 @@ func (b *battleScene) confirmTarget(g *Game) {
 		})
 		return
 	}
-	b.runRound(g, func(g *Game) { b.playerAttack(g, g.Player, tgt) })
+	b.runRound(g, func(g *Game) {
+		b.playerAttack(g, g.Player, tgt)
+		// And sometimes again. The fighter's active: nothing to decide, it
+		// simply happens, which is the right shape for the class the tropes
+		// want brainless. Only a plain swing repeats — a technique repeating
+		// would spend the psyche twice for one decision, and a flee or a feint
+		// repeating is not a sentence that means anything.
+		if rules.ExtraSwing(g.RNG, g.Player) && b.firstLiving() >= 0 {
+			b.log.AddColor(render.ColGold, "%s is already swinging again.", g.Player.Name)
+			b.playerAttack(g, g.Player, tgt)
+		}
+	})
 }
 
 // cast is one queued casting: who is doing it, what, and at whom. It exists so
@@ -968,6 +979,10 @@ func (b *battleScene) allyTurn(g *Game, c *model.Character) {
 		b.log.AddColor(render.ColInkDim, "%s gets behind %s and stays there.", c.Name, c.Armor.Name)
 	default:
 		b.playerAttack(g, c, b.weakestLiving())
+		if rules.ExtraSwing(g.RNG, c) && b.firstLiving() >= 0 {
+			b.log.AddColor(render.ColGold, "%s is already swinging again.", c.Name)
+			b.playerAttack(g, c, b.weakestLiving())
+		}
 	}
 }
 
