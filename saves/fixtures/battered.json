@@ -45,17 +45,13 @@
       "icon": "icon/band/loot/monster_scales_t3"
     },
     "shield": {
-      "name": "Saint's Doorplate",
-      "defense": 1,
-      "cost": 52,
+      "name": "Buckler, Previously Owned",
+      "defense": 3,
+      "cost": 48,
       "tier": 2,
-      "verb": "declines",
-      "icon": "icon/loot/moon_stone",
-      "extra": {
-        "speed": -1,
-        "ward": 4
-      },
-      "desc": "Prised off a shrine door. Still refuses things out of habit, which is most of what a saint did."
+      "verb": "turns",
+      "icon": "icon/loot/monster_scale",
+      "desc": "Previously owned by somebody who is not using it now, for reasons the seller declines to go into."
     },
     "charm": {
       "name": "Cracked Spectacles",
@@ -159,17 +155,13 @@
         "icon": "icon/band/loot/monster_scales_t3"
       },
       "shield": {
-        "name": "Saint's Doorplate",
-        "defense": 1,
-        "cost": 52,
+        "name": "Buckler, Previously Owned",
+        "defense": 3,
+        "cost": 48,
         "tier": 2,
-        "verb": "declines",
-        "icon": "icon/loot/moon_stone",
-        "extra": {
-          "speed": -1,
-          "ward": 4
-        },
-        "desc": "Prised off a shrine door. Still refuses things out of habit, which is most of what a saint did."
+        "verb": "turns",
+        "icon": "icon/loot/monster_scale",
+        "desc": "Previously owned by somebody who is not using it now, for reasons the seller declines to go into."
       },
       "charm": {
         "name": "Cracked Spectacles",
@@ -234,17 +226,13 @@
         }
       },
       "shield": {
-        "name": "Saint's Doorplate",
-        "defense": 1,
-        "cost": 52,
+        "name": "Buckler, Previously Owned",
+        "defense": 3,
+        "cost": 48,
         "tier": 2,
-        "verb": "declines",
-        "icon": "icon/loot/moon_stone",
-        "extra": {
-          "speed": -1,
-          "ward": 4
-        },
-        "desc": "Prised off a shrine door. Still refuses things out of habit, which is most of what a saint did."
+        "verb": "turns",
+        "icon": "icon/loot/monster_scale",
+        "desc": "Previously owned by somebody who is not using it now, for reasons the seller declines to go into."
       },
       "charm": {
         "name": "Cracked Spectacles",

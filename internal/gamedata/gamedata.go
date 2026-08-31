@@ -532,37 +532,72 @@ type Archetype struct {
 // collide with a real lane however many get added.
 const ArmByLevel = model.SidearmLane(-1)
 
-// wardFromLevel is where the silvered shield overtakes the wall, and it is
+// strikeFromLevel is where the wall stops being worth carrying, and it is
 // measured rather than chosen — see the LANES section of cmd/balance, which
-// exists to keep this number honest.
+// exists to keep this number honest and which had to be rebuilt before it
+// could.
+//
+// It was 6 and it was the ward lane, on the strength of a table that averaged
+// three classes into one row and called a gap of one point a result. Neither
+// half survived being measured properly. LANES now prints, in the same table,
+// twenty rows where all three lanes dress the character identically — a
+// Mage, who cannot hold a plank at any level; anybody at all below the level
+// the balanced build affords an off arm — and the spread across those columns
+// is sampling wobble by construction. It spreads by up to 4.3 points. The
+// threshold that gated this constant was 1.0, so the old crossover was read
+// off noise.
+//
+// Measured against a floor taken from those rows, per class, on two axes: the
+// wall is not measurably behind anything until level ten for a Fighter and
+// eleven for a Thief, and the two classes are close enough together that this
+// constant does not want a class parameter — which was the open question, and
+// this is its answer.
 //
 // The two lanes do not cost the same, and the earlier claim here that they came
 // "within five per cent in every band" was wrong in four bands of five — the
 // wall and the silvered shield run 8/22, 48/52, 110/125, 260/280, 620/650, so
 // the tier-one pair differ by 175%. What makes the comparison honest is that a
-// sidearm is a small part of a kit: the largest gap moves a whole outfit by
-// about one per cent. Below this level the wall wins by under a point at every
-// level; above it the silvered shield wins by 1.4 points and then 2.2, 5.5 and
-// 11.2, which is an order of magnitude more than the spend difference could
-// buy. Which is exactly what the content
-// says should happen — nothing casts below level ten, and half of what lands
-// on you by thirteen is magical — so the tables were never the problem. What
-// was not moving with the game was this assumption.
-const wardFromLevel = 6
+// sidearm is a small part of a kit, and LANES now prints that as a number
+// rather than asserting it: the widest gap between the three lanes' whole kits
+// is 1.5% from level seven up, against lane differences reaching fourteen.
+const strikeFromLevel = 10
 
-// WardFromLevel is the crossover, for the report that has to print it beside
+// StrikeFromLevel is the crossover, for the report that has to print it beside
 // the numbers that justify it.
-func WardFromLevel() int { return wardFromLevel }
+func StrikeFromLevel() int { return strikeFromLevel }
 
 // LaneForLevel is which off-arm lane a sensible person carries at this level.
 //
-// Two lanes, not three. The spiked lane trades guard for strike, which is an
-// offensive choice rather than a defensive one, and the build that makes that
-// trade properly is the duelist — putting it here would mean the baseline had
+// Two lanes, not three, and the ward lane is not one of them — which reverses
+// what this function used to say and is worth stating plainly, because the
+// reasoning that put the silvered shield here was sound and the premise under
+// it was false.
+//
+// The premise was that the spiked lane trades guard for strike: an offensive
+// choice, properly made by the duelist, and a baseline that made it would have
 // an opinion about offence, which is the one thing a baseline must not have.
+// That argument still holds wherever the premise does. At the top of the game
+// the premise does not hold. Averaged over levels twelve to fourteen, a Fighter
+// carrying the spiked shield into fights five levels over its head wins 54.5%
+// of them and dies in 23.2%; the same Fighter carrying the wall wins 37.0% and
+// dies in 32.7%, and carrying the silvered shield wins 45.0% and dies in 35.5%.
+// The spiked lane is not trading anything there. It is the best defensive item
+// on the arm as well as the best offensive one, and it gets there by killing
+// rather than by escaping — it flees *less* than the wall does and still dies
+// nine points less often. A design position whose premise has been measured
+// away is not a position.
+//
+// The silvered shield is the casualty. It is now the best lane in one cell of
+// the twenty-eight LANES measures, which is what a coin looks like, and it is
+// the worst of the three on the death rate at the top of the game — fewest
+// escapes, most deaths, because it pays three points of guard for fifteen of
+// ward and the WARD section prices the whole ward slot at nought to three
+// points. That is a content problem rather than a constant problem: a band of
+// three where one is never the answer has stopped being a choice, exactly as
+// the charm bands have. It is written down and not fixed here.
 func LaneForLevel(level int) model.SidearmLane {
-	if level >= wardFromLevel {
-		return model.ArmWard
+	if level >= strikeFromLevel {
+		return model.ArmStrike
 	}
 	return model.ArmBlock
 }
@@ -579,6 +614,11 @@ func LaneForLevel(level int) model.SidearmLane {
 // it beat balanced at every level from seven upward, by up to 11.2 points, and
 // the right response to an archetype that dominates the baseline for free is
 // not to keep it in the table, it is to stop the baseline making that mistake.
+// (Most of that 11.2 was noise — the section that produced it called a gap of
+// one point a result, and it took a per-class rebuild of LANES to find out. The
+// warden's retirement was still the right call: it just was not beating the
+// baseline for the reason it was credited with, and the lane it was retired in
+// favour of turned out to be the wrong one too.)
 // Balanced now takes the lane the level calls for, and the measurement that
 // says which lane that is has its own section — LANES in cmd/balance — because
 // a crossover that lives in a retired archetype is a number nobody can check.
@@ -596,11 +636,11 @@ var Archetypes = []Archetype{
 		Hands:  1,
 		// The off arm follows the level rather than sitting on the wall
 		// forever. This used to be the zero value, which is ArmBlock, which
-		// meant the one assumption the whole report is measured against —
-		// and every hireling in the game, since Equip is what dresses them —
-		// carried a shield that stops steel into a game where half the blows
-		// landing by level thirteen are magical. It cost 11.2 points at the
-		// top of the table for nothing, at identical spend.
+		// meant the one assumption the whole report is measured against — and
+		// every hireling in the game, since Equip is what dresses them — kept
+		// the plainest plank in the band into the levels where it is the worst
+		// of the three, at identical spend. Which lane it follows to is
+		// LaneForLevel's business and has changed once already.
 		Arm: ArmByLevel,
 	},
 	{
@@ -650,7 +690,7 @@ var Archetypes = []Archetype{
 		// build's trade at all. Only a Fighter may hold a two-hander, so a
 		// Thief "duelist" is a one-hander with a free arm — and this field was
 		// unset, which is ArmBlock, which is the wall, which LANES says is the
-		// worst lane from level six. Fourth instance of the same defect, found
+		// worst lane from level ten. Fourth instance of the same defect, found
 		// by a reviewer inside the very row the equal-purse conclusion was read
 		// off. A build that cannot close its arm should at least fill it well.
 		Arm: ArmByLevel,

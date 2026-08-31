@@ -57,7 +57,7 @@ func main() {
 	// would otherwise shift every number after it and cost the cheapest check
 	// there is, which is diffing the report against the last one.
 	reportArcs(out, core.NewRNG(*seed^0x5ACB), t, *fights/2)
-	reportLanes(out, core.NewRNG(*seed^0x1A4E), t, *fights/3)
+	reportLanes(out, core.NewRNG(*seed^0x1A4E), t, *fights)
 	reportDanger(out, core.NewRNG(*seed^0xD1E), t, *fights/3)
 	reportWard(out, core.NewRNG(*seed^0x3A7D), t, *fights)
 	reportCharms(out, core.NewRNG(*seed^0xC4A7), t, *fights/4)
@@ -948,13 +948,6 @@ rather than about a class.
 `)
 }
 
-// reportSlotValue is the diagnosis behind the verdict above.
-//
-// An archetype is a trade: give up a band in one slot, buy a band in another.
-// That trade can only pay if a whole sidearm slot is worth about as much as one
-// band of a main slot. This table is where to look when it is not — it compares
-// what stepping up a band buys against what the entire off-hand or charm slot
-// buys at the same tier, and no simulation is needed to read the answer off it.
 // reportLanes is the one measurement that decides gamedata.LaneForLevel, and
 // it exists because that number used to be a lane nobody had ever compared.
 //
@@ -971,146 +964,480 @@ rather than about a class.
 // was right to call the old claim theatre. The lanes differ by up to 175% at
 // tier one; what makes the comparison sound is that a sidearm is a small part
 // of an outfit, so the largest of those gaps moves a whole kit by about one per
-// cent, against lane differences of up to 11 points. Anything that moves the shield tables, the monster rosters' magic, or
-// the level bands will show up here as the crossover moving, and the constant
-// in gamedata has to move with it.
+// cent, against lane differences reaching fourteen.
+//
+// Three things changed after the first draft of this section was read back,
+// and all three were the instrument rather than the content.
+//
+// It measured one axis, and it was the wrong one to measure alone. Win rate on
+// the stretch fights is what the spiked lane is *built* to win: it trades guard
+// for strike, so asking only "did you kill it" hands it the comparison before a
+// die is rolled. An off arm is defensive gear and the question that binds it is
+// whether you get out of a fight you should never have taken — so the second
+// axis is the death rate five levels over, which DANGER already establishes is
+// the band where the death-versus-flee split is the only thing still legible.
+// A lane that wins both is better. A lane that wins one is a choice, and the
+// baseline's job is to say out loud which choice it is making.
+//
+// It averaged three classes into one verdict, which ARCS had to be talked out
+// of separately, and here it is worse than an average usually is: a Mage cannot
+// hold a plank at all, so a third of the average was three copies of one number
+// that could not move.
+//
+// And it called a gap of one point a result. The threshold was a named constant
+// with a paragraph of reasoning attached and no measurement under it, while the
+// table it gated already contained the experiment: every row where all three
+// lanes dress the character identically is three identical builds measured
+// three times, and the spread across those columns is sampling wobble by
+// construction. There are twenty of them, they spread by up to 4.3 points at
+// three times the old sample, and the constant was 1.0. The floor is read off
+// them now, and the rows are marked in the table so the reader can check it.
+//
+// Anything that moves the shield tables, the monster rosters' magic, or the
+// level bands will show up here as the crossover moving, and the constant in
+// gamedata has to move with it.
 func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
-	fmt.Fprintf(out, "LANES — which off-arm lane is right, and from when\n")
-	fmt.Fprintf(out, "identical builds differing in one slot, on the stretch fights three\n")
-	fmt.Fprintf(out, "levels over; the cost column is one lane's kit, for scale, not a proof\n\n")
+	fmt.Fprintf(out, "LANES — which off-arm lane is right, for whom, and from when\n")
+	fmt.Fprintf(out, "identical builds differing in one slot, on both of DANGER's legible\n")
+	fmt.Fprintf(out, "bands: won three levels over, died five levels over, %d fights a cell\n\n",
+		fights)
 
-	// In the order the columns print. The names are in the header rather than
-	// here: three columns and three rows of legend for three lanes is more
-	// scaffolding than table.
+	// In the order the columns print.
 	lanes := []model.SidearmLane{model.ArmBlock, model.ArmStrike, model.ArmWard}
+	laneNames := []string{"wall", "spiked", "silvered"}
 
-	fmt.Fprintf(out, "%-6s %-8s %8s %9s %9s %9s %s\n",
-		"level", "class", "cost", "wall", "spiked", "silvered", "worn")
-	fmt.Fprintln(out, strings.Repeat("-", 76))
+	// The two bands, and why these two rather than DANGER's whole spread. On
+	// level and below, both axes are saturated by design — the brief asks for
+	// nought to five per cent deaths and the rest of the report records 96-100%
+	// wins — so a lane cannot show up there however good it is. Three over is
+	// the last band where a win rate discriminates; five over is the band where
+	// a death rate does.
+	const (
+		laneStretch = 3
+		laneOver    = 5
+	)
 
-	// laneNoise is how big a gap has to be before it is a result rather than a
-	// run-to-run wobble. Below level six the three lanes come in within a
-	// point of each other and the sign of the gap flips level to level, which
-	// is what nothing-to-choose-between-them looks like; from six the wall
-	// trails by one, then two, then eleven. Naming the threshold is the honest
-	// alternative to reading a crossover off the first row where a column
-	// happens to be higher — which this section did in its first draft, and
-	// reported level one.
-	const laneNoise = 1.0
+	// The top of the game, averaged, because the last three levels are where
+	// the lanes have separated and any one level of it is a sample.
+	const laneTop = 12
 
-	type laneScore struct{ wall, best float64 }
-	seen := map[int]laneScore{}
-	// Per class, for the reason ARCS had to learn: an average across three
-	// classes is not a measurement of anything that exists. It matters here
-	// too — a Thief cannot close its arm with a two-hander and a Mage cannot
-	// hold a plank at all, so "which plank is best" is a different question
-	// for each of them, and the Mage's answer is none of the three.
-	for level := 1; level <= maxLevel; level++ {
-		build := gamedata.Archetypes[0]
-		var wallAvg, bestAvg float64
-		for _, class := range model.AllClasses {
-			var cost int
-			rates := make([]float64, len(lanes))
-			for i, lane := range lanes {
-				a := build
-				a.Arm = lane
-				var wins, n int
-				for f := 0; f < fights; f++ {
-					c := rules.BuildCharacter(g, class, level)
-					t.EquipAs(c, a)
-					cost = gamedata.GearCost(c)
-					mons := t.PickMonsters(g, biomeForLevel(level+3), level+3, 1)
-					if len(mons) == 0 {
-						continue
-					}
-					fresh := *c
-					r := rules.SimulateFight(g, &fresh, []*model.MonsterDef{mons[0].Def},
-						level+3, 60, t.SpellsFor(c))
-					if r.Won {
-						wins++
-					}
-					n++
-				}
-				if n > 0 {
-					rates[i] = float64(wins) * 100 / float64(n)
-				}
+	type cell struct {
+		won, died, fled float64
+		item            string
+		cost            int
+	}
+
+	// run fights one lane's build in one band and reports both rates off the
+	// same batch, so a cell's two numbers are never each other's excuse.
+	run := func(a gamedata.Archetype, class model.Class, level, delta int) (won, died, fled float64, item string, cost int) {
+		enc := core.Max(1, level+delta)
+		biome := biomeForLevel(enc)
+		var wins, deaths, flights, n int
+		for f := 0; f < fights; f++ {
+			c := rules.BuildCharacter(g, class, level)
+			t.EquipAs(c, a)
+			item, cost = c.Shield.Name, gamedata.GearCost(c)
+			mons := t.PickMonsters(g, biome, enc, 1)
+			if len(mons) == 0 {
+				continue
 			}
-
-			// What this class is actually wearing on that arm, which for a
-			// Mage is a talisman whatever the lane asked for.
-			worn := &model.Character{Level: level, Class: class}
-			t.EquipAs(worn, build)
-			label := "nothing"
-			if worn.Shield.Worn() {
-				switch worn.Shield.Lane() {
-				case model.ArmWard:
-					label = "silvered"
-				case model.ArmStrike:
-					label = "spiked"
-				default:
-					label = "wall"
-				}
-				if worn.Shield.Barrier() {
-					label = "talisman"
-				}
+			fresh := *c
+			r := rules.SimulateFight(g, &fresh, []*model.MonsterDef{mons[0].Def},
+				enc, 60, t.SpellsFor(c))
+			if r.Won {
+				wins++
 			}
-			best := rates[0]
-			for _, r := range rates[1:] {
-				if r > best {
-					best = r
-				}
+			if r.Died() {
+				deaths++
 			}
-			wallAvg += rates[0] / float64(len(model.AllClasses))
-			bestAvg += best / float64(len(model.AllClasses))
-			fmt.Fprintf(out, "%-6d %-8s %8d %8.1f%% %8.1f%% %8.1f%% %s\n",
-				level, class, cost, rates[0], rates[1], rates[2], label)
+			if r.Fled {
+				flights++
+			}
+			n++
 		}
-		seen[level] = laneScore{wall: wallAvg, best: bestAvg}
+		if n > 0 {
+			won = float64(wins) * 100 / float64(n)
+			died = float64(deaths) * 100 / float64(n)
+			fled = float64(flights) * 100 / float64(n)
+		}
+		return
+	}
+
+	// grid[level][class] is the three lanes in the order above.
+	grid := make([]map[model.Class][]cell, maxLevel+1)
+	for level := 1; level <= maxLevel; level++ {
+		grid[level] = map[model.Class][]cell{}
+		for _, class := range model.AllClasses {
+			cs := make([]cell, len(lanes))
+			for i, lane := range lanes {
+				a := gamedata.Archetypes[0]
+				a.Arm = lane
+				won, _, _, item, cost := run(a, class, level, laneStretch)
+				_, died, fled, _, _ := run(a, class, level, laneOver)
+				cs[i] = cell{won: won, died: died, fled: fled, item: item, cost: cost}
+			}
+			grid[level][class] = cs
+		}
+	}
+
+	// A null row is one where all three lanes dressed the character
+	// identically: a Mage at any level, since it cannot hold a plank and
+	// pickSidearm falls back to the talisman whichever lane is asked for, and
+	// anybody at all below the level where the balanced build affords an off
+	// arm. It is a free experiment with a known answer, and this section is the
+	// one that needed one.
+	null := func(cs []cell) bool {
+		return cs[0].item == cs[1].item && cs[1].item == cs[2].item
+	}
+	spread := func(vs ...float64) float64 {
+		lo, hi := vs[0], vs[0]
+		for _, v := range vs {
+			if v < lo {
+				lo = v
+			}
+			if v > hi {
+				hi = v
+			}
+		}
+		return hi - lo
+	}
+
+	fmt.Fprintf(out, "%22s%28s%29s\n", "", "won on +3 fights", "died on +5 fights")
+	fmt.Fprintf(out, "%-6s %-8s %6s", "level", "class", "cost")
+	for pass := 0; pass < 2; pass++ {
+		for _, n := range laneNames {
+			fmt.Fprintf(out, " %8s", n)
+		}
+		fmt.Fprintf(out, " ")
+	}
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, strings.Repeat("-", 79))
+
+	var nullWon, nullDied []float64
+	for level := 1; level <= maxLevel; level++ {
+		for _, class := range model.AllClasses {
+			cs := grid[level][class]
+			fmt.Fprintf(out, "%-6d %-8s %6d", level, class, cs[0].cost)
+			for _, c := range cs {
+				fmt.Fprintf(out, " %7.1f%%", c.won)
+			}
+			fmt.Fprintf(out, " ")
+			for _, c := range cs {
+				fmt.Fprintf(out, " %7.1f%%", c.died)
+			}
+			if null(cs) {
+				fmt.Fprintf(out, " null")
+				nullWon = append(nullWon, spread(cs[0].won, cs[1].won, cs[2].won))
+				nullDied = append(nullDied, spread(cs[0].died, cs[1].died, cs[2].died))
+			}
+			fmt.Fprintln(out)
+		}
 		fmt.Fprintln(out)
 	}
 
-	// The crossover is the first level from which the wall never again comes
-	// within laneNoise of the best lane — "and never again", because a single
-	// level going the other way is a sample, not a change of régime.
-	crossed := 0
-	for level := maxLevel; level >= 1; level-- {
-		if seen[level].best-seen[level].wall < laneNoise {
-			break
+	// What the lanes cost, because the whole comparison leans on them costing
+	// about the same and the old section asserted that rather than printing it.
+	// One row per band, since a band is where the price steps.
+	fmt.Fprintf(out, "what the three lanes cost, per band, since the comparison leans on it\n")
+	fmt.Fprintf(out, "%-6s %-8s %8s %8s %8s   %s\n",
+		"level", "class", "wall", "spiked", "silvered", "widest gap, as a share of the kit")
+	fmt.Fprintln(out, strings.Repeat("-", 79))
+	for _, class := range model.AllClasses {
+		last := -1
+		for level := 1; level <= maxLevel; level++ {
+			cs := grid[level][class]
+			if cs[0].cost == last {
+				continue
+			}
+			last = cs[0].cost
+			gap := spread(float64(cs[0].cost), float64(cs[1].cost), float64(cs[2].cost))
+			fmt.Fprintf(out, "%-6d %-8s %8d %8d %8d   %.1f%%\n",
+				level, class, cs[0].cost, cs[1].cost, cs[2].cost,
+				gap*100/float64(cs[0].cost))
 		}
-		crossed = level
+	}
+	fmt.Fprintln(out)
+
+	stats := func(xs []float64) (mean, worst float64) {
+		for _, x := range xs {
+			mean += x / float64(len(xs))
+			if x > worst {
+				worst = x
+			}
+		}
+		return
+	}
+	meanWon, worstWon := stats(nullWon)
+	meanDied, worstDied := stats(nullDied)
+	fmt.Fprintf(out, "the noise floor, measured rather than asserted\n")
+	fmt.Fprintf(out, "  %d rows above are three identical builds measured three times, so the\n", len(nullWon))
+	fmt.Fprintf(out, "  spread across their columns is sampling wobble and nothing else:\n")
+	fmt.Fprintf(out, "  won   mean %.1f  worst %.1f       died  mean %.1f  worst %.1f\n",
+		meanWon, worstWon, meanDied, worstDied)
+	fmt.Fprintf(out, "  Nothing below is called until it clears the worst of them. That is\n")
+	fmt.Fprintf(out, "  deliberately conservative, because it gates a change to a constant, and\n")
+	fmt.Fprintf(out, "  it is a floor measured at the null rows' own rates rather than at every\n")
+	fmt.Fprintf(out, "  row's — a Fighter at 60%% and a Mage at 85%% do not wobble equally.\n\n")
+
+	// best returns the winning lane in a set of three and how far clear of the
+	// runner-up it is. Higher wins on won, lower wins on died.
+	best := func(cs []cell, died bool) (lane int, margin float64) {
+		v := func(c cell) float64 {
+			if died {
+				return -c.died
+			}
+			return c.won
+		}
+		for i := range cs {
+			if v(cs[i]) > v(cs[lane]) {
+				lane = i
+			}
+		}
+		second := 0
+		if lane == 0 {
+			second = 1
+		}
+		for i := range cs {
+			if i != lane && v(cs[i]) > v(cs[second]) {
+				second = i
+			}
+		}
+		return lane, v(cs[lane]) - v(cs[second])
 	}
 
-	switch {
-	case crossed == 0:
-		fmt.Fprintf(out, "\nThe wall is still holding its own at every level, so Equip has no\n")
-		fmt.Fprintf(out, "business switching at %d. Check this before the tables move again.\n",
-			gamedata.WardFromLevel())
-	default:
-		fmt.Fprintf(out, "\nThe wall stops being worth carrying at level %d and never recovers;\n", crossed)
-		fmt.Fprintf(out, "Equip switches at %d. Those two agreeing is the whole job of this\n",
-			gamedata.WardFromLevel())
-		fmt.Fprintf(out, "section, and they are checked rather than assumed:\n")
-		if d := crossed - gamedata.WardFromLevel(); d > 1 || d < -1 {
-			fmt.Fprintf(out, "WARNING: they disagree by %d levels. gamedata.wardFromLevel is stale.\n", d)
-		} else {
-			fmt.Fprintf(out, "they agree.\n")
+	// chooses reports whether this class ever has a lane to pick, which is the
+	// question a Mage answers no to at every level.
+	chooses := func(class model.Class) bool {
+		for level := 1; level <= maxLevel; level++ {
+			if !null(grid[level][class]) {
+				return true
+			}
+		}
+		return false
+	}
+
+	fmt.Fprintf(out, "crossover, per class and per axis\n")
+	fmt.Fprintf(out, "  the first level from which the wall never again comes within the noise\n")
+	fmt.Fprintf(out, "  floor of the best lane — \"never again\", because one level going the\n")
+	fmt.Fprintf(out, "  other way is a sample and not a change of régime\n")
+	crossed := map[model.Class][2]int{}
+	for _, class := range model.AllClasses {
+		if !chooses(class) {
+			fmt.Fprintf(out, "  %-9s no lane to choose: every row is the talisman\n", class)
+			continue
+		}
+		var got [2]int
+		for axis := 0; axis < 2; axis++ {
+			died := axis == 1
+			floor := worstWon
+			if died {
+				floor = worstDied
+			}
+			for level := maxLevel; level >= 1; level-- {
+				cs := grid[level][class]
+				lane, _ := best(cs, died)
+				gap := cs[lane].won - cs[0].won
+				if died {
+					gap = cs[0].died - cs[lane].died
+				}
+				if gap < floor {
+					break
+				}
+				got[axis] = level
+			}
+		}
+		crossed[class] = got
+		fmt.Fprintf(out, "  %-9s won %-10s lived %s\n", class,
+			laneCross(got[0]), laneCross(got[1]))
+	}
+	fmt.Fprintf(out, "  Equip leaves the wall at %d, for every class alike, and the answer to\n",
+		gamedata.StrikeFromLevel())
+	fmt.Fprintf(out, "  whether that constant wants a class is the two rows above it.\n\n")
+
+	fmt.Fprintf(out, "the top of the game — levels %d-%d averaged, one level being a sample\n",
+		laneTop, maxLevel)
+	fmt.Fprintf(out, "%-8s %-8s %8s %8s %8s   %s\n",
+		"class", "axis", "wall", "spiked", "silvered", "best, and by how much")
+	fmt.Fprintln(out, strings.Repeat("-", 72))
+	for _, class := range model.AllClasses {
+		cs := make([]cell, len(lanes))
+		for i := range lanes {
+			n := float64(maxLevel - laneTop + 1)
+			for level := laneTop; level <= maxLevel; level++ {
+				cs[i].won += grid[level][class][i].won / n
+				cs[i].died += grid[level][class][i].died / n
+				cs[i].fled += grid[level][class][i].fled / n
+				cs[i].item = grid[level][class][i].item
+			}
+		}
+		// The two axes, and between them the rest of what happens five over,
+		// because "died less" has two possible mechanisms and the ratio of
+		// these three rows says which. A lane can die less by getting away —
+		// the flee roll reads Speed, and two of these three planks charge two
+		// points of it — or by killing the thing. The rows are printed in
+		// outcome order so the reader can see which.
+		for _, row := range []struct {
+			label  string
+			vals   []float64
+			better func(a, b float64) bool
+			floor  float64
+		}{
+			{"won +3", []float64{cs[0].won, cs[1].won, cs[2].won},
+				func(a, b float64) bool { return a > b }, worstWon},
+			{"won +5", []float64{100 - cs[0].fled - cs[0].died,
+				100 - cs[1].fled - cs[1].died, 100 - cs[2].fled - cs[2].died}, nil, 0},
+			{"fled +5", []float64{cs[0].fled, cs[1].fled, cs[2].fled}, nil, 0},
+			{"died +5", []float64{cs[0].died, cs[1].died, cs[2].died},
+				func(a, b float64) bool { return a < b }, worstDied},
+		} {
+			call := "how, not whether"
+			if row.better != nil {
+				lane, second := 0, 1
+				for i, v := range row.vals {
+					if row.better(v, row.vals[lane]) {
+						lane = i
+					}
+				}
+				if lane == 0 {
+					second = 1
+				} else {
+					second = 0
+				}
+				for i, v := range row.vals {
+					if i != lane && row.better(v, row.vals[second]) {
+						second = i
+					}
+				}
+				margin := row.vals[lane] - row.vals[second]
+				if margin < 0 {
+					margin = -margin
+				}
+				switch {
+				case null(cs):
+					call = "no choice: the talisman"
+				case margin < row.floor:
+					call = "nothing in it"
+				default:
+					call = fmt.Sprintf("%s by %.1f", laneNames[lane], margin)
+				}
+			}
+			fmt.Fprintf(out, "%-8s %-8s %7.1f%% %7.1f%% %7.1f%%   %s\n",
+				class, row.label, row.vals[0], row.vals[1], row.vals[2], call)
 		}
 	}
+
+	// What this section exists to check, and it is not the crossover.
+	//
+	// The crossover is a derived number and comparing it against the constant
+	// warns about arithmetic rather than about the game: a Thief's defensive
+	// crossover lands three levels after a Fighter's purely because its gaps
+	// spend three levels sitting just under the noise floor while pointing the
+	// same way, and a constant set anywhere in that range does the Thief no
+	// harm at all. The question that matters is the one the constant actually
+	// decides — is the lane Equip hands ever behind the shelf? That catches
+	// switching late, switching early and switching to the wrong thing, which
+	// is the whole space of ways this can be wrong, and it is asked against
+	// what LaneForLevel returns rather than against a lane named here, since a
+	// check that names its own expected answer has stopped being a check.
+	//
+	// Two consecutive levels, and the same challenger both times. Fifty-odd
+	// comparisons against a floor read off twenty null rows will throw single
+	// levels over it whatever is true — three of them here, and they nominate a
+	// different lane each time, which is what noise looks like when you ask it
+	// to name a winner. A real advantage is persistent and belongs to one lane.
+	// This is the same "and never again" rule the crossover uses, for the same
+	// reason, applied to the thing that matters.
+	fmt.Fprintf(out, "\nagainst the constant — is the lane Equip hands ever measurably behind?\n")
+	agrees := true
+	for _, class := range model.AllClasses {
+		if !chooses(class) {
+			continue
+		}
+		for axis, name := range []string{"won", "lived"} {
+			died := axis == 1
+			floor := worstWon
+			if died {
+				floor = worstDied
+			}
+			for ch := range lanes {
+				// run is how many consecutive levels this challenger has been
+				// clear of what Equip hands, and total is by how much.
+				run, total := 0, 0.0
+				flush := func(end int) {
+					if run >= 2 {
+						fmt.Fprintf(out, "  WARNING: %s at %d-%d holds the %s lane; the %s one is %.1f\n",
+							class, end-run+1, end,
+							laneNames[laneIndex(lanes, gamedata.LaneForLevel(end))],
+							laneNames[ch], total/float64(run))
+						fmt.Fprintf(out, "           better on %s. LaneForLevel is wrong there.\n", name)
+						agrees = false
+					}
+					run, total = 0, 0
+				}
+				for level := 1; level <= maxLevel; level++ {
+					cs := grid[level][class]
+					held := laneIndex(lanes, gamedata.LaneForLevel(level))
+					gap := -1.0
+					if !null(cs) && ch != held {
+						if died {
+							gap = cs[held].died - cs[ch].died
+						} else {
+							gap = cs[ch].won - cs[held].won
+						}
+					}
+					if gap > floor {
+						run, total = run+1, total+gap
+						continue
+					}
+					flush(level - 1)
+				}
+				flush(maxLevel)
+			}
+		}
+	}
+	if agrees {
+		fmt.Fprintf(out, "  no: not for either class that has the choice, on either axis, at any\n")
+		fmt.Fprintf(out, "  two levels running. And the two classes' crossovers above sit within a\n")
+		fmt.Fprintf(out, "  level of each other on the axis that can see them, which is the answer\n")
+		fmt.Fprintf(out, "  to whether this constant wants a class parameter. It does not.\n")
+	}
+
 	fmt.Fprint(out, `
-A Mage's three columns are the same build measured three times: it cannot
-hold a plank at all, so pickSidearm falls back to the talisman whichever
-lane is asked for. Read that row as one number with error bars on it, not
-as a comparison — and as the reason the averaged version of this table was
-answering a question about two classes with a third mixed in.
+The wall is not a mistake below the crossover and the table is not saying it
+is. Three cells below level ten do put a lane clear of it — and they nominate
+a different lane each time, which is how fifty-odd comparisons against a
+measured floor behave. What the arm is, below level ten, is a slot where the
+choice does not matter; at the top of the game it is a decision worth nine
+points.
 
-The spiked lane is deliberately not in the running for the baseline. It
-trades guard for strike, which is an offensive choice, and the build that
-makes it properly is the duelist - a baseline with an opinion about
-offence is not a baseline. It is measured here anyway because the shelf
-sells it and a lane nobody ever compares is how the wall stayed the
-default for the life of this report.
+The ward lane is the one to watch. It is the best of the three in one cell
+of the twenty-eight above, and at the top of the game it is the worst thing
+you can put on the arm on the axis that kills you: fewest escapes, most
+deaths, because it pays three points of guard for fifteen of ward and WARD
+prices the whole ward slot at nought to three points. A band of three where
+one is never the answer has stopped being a choice — which is the same
+finding the charm bands have, in a different slot, and it is not fixed here.
 
 `)
+}
+
+// laneIndex is which column a lane prints in, for the verdict lines that have
+// to name a lane the constant chose rather than one this section named.
+func laneIndex(lanes []model.SidearmLane, want model.SidearmLane) int {
+	for i, l := range lanes {
+		if l == want {
+			return i
+		}
+	}
+	return 0
+}
+
+// laneCross renders a crossover level, or the absence of one.
+func laneCross(level int) string {
+	if level == 0 {
+		return "never"
+	}
+	return fmt.Sprintf("level %d", level)
 }
 
 // reportCharms is the charm slot's LANES: the measurement that decides what
@@ -1270,6 +1597,13 @@ func charmBand(t *gamedata.Tables, level int) []model.Charm {
 	return band
 }
 
+// reportSlotValue is the diagnosis behind the verdict above.
+//
+// An archetype is a trade: give up a band in one slot, buy a band in another.
+// That trade can only pay if a whole sidearm slot is worth about as much as one
+// band of a main slot. This table is where to look when it is not — it compares
+// what stepping up a band buys against what the entire off-hand or charm slot
+// buys at the same tier, and no simulation is needed to read the answer off it.
 func reportSlotValue(out *os.File, t *gamedata.Tables) {
 	fmt.Fprintf(out, "WHY — what one band is worth in each slot\n")
 	fmt.Fprintf(out, "every archetype is a trade of bands between slots, so these are the\n")

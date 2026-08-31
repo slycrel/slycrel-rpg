@@ -45,17 +45,13 @@
       "icon": "icon/band/garb/jerkin4_t2"
     },
     "shield": {
-      "name": "Pot Lid, Dented Twice",
+      "name": "Barrel Lid",
       "defense": 1,
-      "cost": 22,
+      "cost": 8,
       "tier": 1,
-      "verb": "clangs against",
-      "icon": "icon/loot/crab_claw",
-      "extra": {
-        "speed": -1,
-        "ward": 1
-      },
-      "desc": "Something was cast at it once and bounced. The cook has not stopped mentioning this."
+      "verb": "takes",
+      "icon": "icon/loot/turtle_shell",
+      "desc": "It was a barrel this morning. Nobody has asked where the rest of it went."
     },
     "charm": {
       "name": "Heavy Knucklebone",
@@ -159,17 +155,13 @@
         "icon": "icon/band/garb/jerkin4_t2"
       },
       "shield": {
-        "name": "Pot Lid, Dented Twice",
+        "name": "Barrel Lid",
         "defense": 1,
-        "cost": 22,
+        "cost": 8,
         "tier": 1,
-        "verb": "clangs against",
-        "icon": "icon/loot/crab_claw",
-        "extra": {
-          "speed": -1,
-          "ward": 1
-        },
-        "desc": "Something was cast at it once and bounced. The cook has not stopped mentioning this."
+        "verb": "takes",
+        "icon": "icon/loot/turtle_shell",
+        "desc": "It was a barrel this morning. Nobody has asked where the rest of it went."
       },
       "charm": {
         "name": "Heavy Knucklebone",

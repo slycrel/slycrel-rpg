@@ -56,17 +56,17 @@
       }
     },
     "shield": {
-      "name": "Mirror-Backed Targe",
+      "name": "Percussive Argument",
       "defense": 3,
-      "cost": 125,
+      "cost": 120,
       "tier": 3,
-      "verb": "returns",
-      "icon": "icon/loot/smoky_quartz",
+      "verb": "answers",
+      "icon": "icon/loot/monster_claw",
       "extra": {
-        "speed": -1,
-        "ward": 7
+        "strike": 4,
+        "dexterity": -1
       },
-      "desc": "Whoever silvered the back of it did not explain why, and then left town rather promptly."
+      "desc": "Rimmed in iron and swung like a closing statement."
     },
     "charm": {
       "name": "Saint's Fingerbone, Disputed",
@@ -173,17 +173,17 @@
         }
       },
       "shield": {
-        "name": "Mirror-Backed Targe",
+        "name": "Percussive Argument",
         "defense": 3,
-        "cost": 125,
+        "cost": 120,
         "tier": 3,
-        "verb": "returns",
-        "icon": "icon/loot/smoky_quartz",
+        "verb": "answers",
+        "icon": "icon/loot/monster_claw",
         "extra": {
-          "speed": -1,
-          "ward": 7
+          "strike": 4,
+          "dexterity": -1
         },
-        "desc": "Whoever silvered the back of it did not explain why, and then left town rather promptly."
+        "desc": "Rimmed in iron and swung like a closing statement."
       },
       "charm": {
         "name": "Saint's Fingerbone, Disputed",
@@ -248,17 +248,17 @@
         }
       },
       "shield": {
-        "name": "Mirror-Backed Targe",
+        "name": "Percussive Argument",
         "defense": 3,
-        "cost": 125,
+        "cost": 120,
         "tier": 3,
-        "verb": "returns",
-        "icon": "icon/loot/smoky_quartz",
+        "verb": "answers",
+        "icon": "icon/loot/monster_claw",
         "extra": {
-          "speed": -1,
-          "ward": 7
+          "strike": 4,
+          "dexterity": -1
         },
-        "desc": "Whoever silvered the back of it did not explain why, and then left town rather promptly."
+        "desc": "Rimmed in iron and swung like a closing statement."
       },
       "charm": {
         "name": "Saint's Fingerbone, Disputed",

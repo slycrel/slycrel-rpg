@@ -180,10 +180,10 @@ Requires Go 1.25+. The art lives outside the repo; see **Assets** below.
   the fight. The menu quotes both halves before you commit.
 - **The off arm is a choice, not a ladder.** Every band stocks a wall, a
   silvered shield that trades guard for anti-magic, and a spiked one you hit
-  with. Nothing with teeth casts anything below level ten and two thirds of what
-  lands on you by level thirteen is magical, so which of them is right moves as
-  the game does. The shelf grades each against its own lane rather than pretending
-  they are three grades of the same thing.
+  with. For most of the game the choice barely matters and the numbers say so;
+  at the top of it, it is worth nine points of whether you walk away from a
+  fight you should not have taken. The shelf grades each against its own lane
+  rather than pretending they are three grades of the same thing.
 - **A caster's off arm.** A mage cannot hold a shield and cast at the same time,
   so what goes on that arm instead is a talisman: a pool of absorption that
   every blow comes off before it reaches you, of any kind, until it is spent.

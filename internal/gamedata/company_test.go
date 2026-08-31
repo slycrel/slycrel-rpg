@@ -142,17 +142,28 @@ func TestSavingForIsAlwaysAffordableEventually(t *testing.T) {
 //
 // The off arm was the one slot in Equip nobody had ever chosen: ArmBlock is
 // the zero value of Archetype.Arm, so the balanced build carried the wall for
-// the life of the report by default rather than by decision — and it cost 11.2
-// points at level thirteen, at identical spend, to every hireling in the game.
+// the life of the report by default rather than by decision — and at the top
+// of the game that costs a Fighter fourteen points of win rate on the stretch
+// fights and nine points of death rate five levels over, at a spend difference
+// of one per cent, to every hireling in the game.
 //
-// This holds the decision that replaced it. Not the crossover level, which is
-// LANES' job to measure and move: what is pinned here is that the lane is a
-// function of level at all, that it runs guard-then-ward rather than the other
-// way round, and that the baseline never quietly acquires an opinion about
-// offence.
+// This holds the decision that replaced it, and it holds the shape of it
+// rather than the answer. It used to name the answer — no strike lane ever,
+// the ward lane from the crossover up — and both halves turned out to be
+// wrong: LANES was rebuilt per class, on two axes, against a noise floor read
+// off its own null rows, and it says the wall until level ten and the spiked
+// shield above it. A test that pins which lane wins is a test that has to be
+// edited every time the tables move, which means it is not defending anything;
+// LANES is where the lane is decided and it re-derives its answer every run.
+//
+// What is pinned here is the shape: that the lane is a function of level at
+// all, that Equip and LaneForLevel cannot disagree, that it changes exactly
+// once and never changes back, and that the change is somewhere in the middle
+// of the game rather than at either end — a "crossover" at level one or level
+// fourteen is a constant wearing a function's clothes.
 func TestTheBaselineTakesTheLaneItsLevelCallsFor(t *testing.T) {
 	tables := load(t)
-	switched := 0
+	switched, seen := 0, []model.SidearmLane{}
 	for level := 1; level <= 14; level++ {
 		c := &model.Character{Class: model.ClassFighter, Level: level}
 		tables.Equip(c)
@@ -160,26 +171,23 @@ func TestTheBaselineTakesTheLaneItsLevelCallsFor(t *testing.T) {
 			continue
 		}
 		lane := c.Shield.Lane()
-		if lane == model.ArmStrike {
-			t.Errorf("level %d: the baseline is carrying %q, which is the offensive lane",
-				level, c.Shield.Name)
-		}
 		if want := gamedata.LaneForLevel(level); lane != want {
 			t.Errorf("level %d: Equip gave lane %v (%q), LaneForLevel says %v",
 				level, lane, c.Shield.Name, want)
 		}
-		if lane == model.ArmWard {
-			if switched == 0 {
+		if n := len(seen); n == 0 || seen[n-1] != lane {
+			seen = append(seen, lane)
+			if n > 0 {
 				switched = level
 			}
-		} else if switched != 0 {
-			t.Errorf("level %d went back to the wall after switching at %d", level, switched)
 		}
 	}
-	if switched == 0 {
-		t.Error("the baseline never picks up the ward lane at any level")
-	}
-	if switched <= 1 || switched >= 14 {
+	switch {
+	case len(seen) < 2:
+		t.Errorf("the lane never changes: %v at every level, which is not a function of level", seen)
+	case len(seen) > 2:
+		t.Errorf("the lane changes %d times (%v); one crossover is the whole design", len(seen)-1, seen)
+	case switched <= 1 || switched >= 14:
 		t.Errorf("the lane switches at level %d, which is not a crossover, it is a constant", switched)
 	}
 }

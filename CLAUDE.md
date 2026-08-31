@@ -177,15 +177,18 @@ which event fires which trigger, and where it is safe to put a box on screen.
   graded on the shelf against their own lane's number — ranking all of them by
   `Defense` tells somebody shopping for anti-magic that a shrine plate is worth
   "+1". **Which lane is right moves with the game, and `Equip` moves with it**:
-  `gamedata.LaneForLevel` takes the wall below level six and the silvered one
-  from six up, because below six the three lanes are within a point of each
-  other and from six the wall is the worst of the three and never recovers —
-  by 11.2 points at thirteen, at identical spend. The crossover is measured by
-  the LANES section of `cmd/balance`, which warns when the constant and the
-  numbers drift apart. It was `ArmBlock` for the life of the report purely
-  because that is the zero value of the field, which is how every hireling in
-  the game ended up carrying a shield against a game that stopped throwing
-  steel.
+  `gamedata.LaneForLevel` takes the wall below level ten and the spiked one
+  from ten up, because below ten nothing on the shelf is measurably better than
+  anything else and from ten the spiked shield wins on both axes — and it wins
+  the *defensive* one, which is the finding, because it flees less than the
+  wall does and still dies nine points less often. It kills the thing. The
+  crossover is measured by the LANES section of `cmd/balance`, which warns
+  when the constant and the numbers drift apart, and which asks the question
+  the constant actually decides: is the lane `Equip` hands ever behind the
+  shelf, at two levels running, for the same challenger? It was `ArmBlock` for
+  the life of the report purely because that is the zero value of the field,
+  and then it was `ArmWard` from level six for two sessions on the strength of
+  a table that averaged three classes and called a one-point gap a result.
 - **A caster's off arm holds a talisman, not a shield**, and what it carries is
   `Absorb` rather than `Defense`: a pool spent once per fight against damage of
   any kind. It is not more ward, and that was measured rather than assumed — a
@@ -209,12 +212,21 @@ which event fires which trigger, and where it is safe to put a box on screen.
   over is a nought for everybody. CROWDS is the section that measures it.
 
   **Five occurrences now, and read a report per class before believing it.**
-  The fifth is `LaneForLevel`, which takes a level and no class — and the
-  spiked lane, not the silvered one, is the best off arm at the top of the game
-  for both classes that can hold a plank, by up to eleven points. Not yet
-  changed: the constant was set off an averaged table and re-pinning it needs a
-  per-class measurement at the sample DANGER uses, measured *before* deciding
-  rather than after.
+  The fifth was `LaneForLevel`, which took a level and no class, and it is
+  fixed — but the fix was the *instrument*, not the constant, and that is the
+  part worth keeping. **A threshold nobody measured is a decision nobody made.**
+  LANES gated its crossover on a named constant of 1.0 points, with a paragraph
+  of reasoning and no measurement under it, while the table it gated already
+  contained the experiment: every row where all three lanes dress the character
+  identically — a Mage, who cannot hold a plank; anybody below the level the
+  baseline affords an off arm — is three identical builds measured three times,
+  and the spread across those columns is sampling wobble by construction. It
+  runs to four points. So the crossover had been read off noise, the switch was
+  four levels early, and it switched to the lane that is *worst* at the top.
+  Look for the null rows already in a table before inventing a threshold for
+  it, and print them, marked, so the reader can check. **And check that a check
+  can fail**: this one was run against the old constant to watch it fire before
+  it was believed passing against the new one.
 
   The fourth was `duelist`, which never set `Arm` — so on the two classes that
   cannot hold a two-hander the fallback leaves the arm free and fills it with

@@ -508,6 +508,20 @@ than a system.
    six, which is what the constant says, and the two are now checked against
    each other on every run rather than agreed with once.
 
+   **Every number in the four paragraphs above is inside the noise, and the
+   threshold in the last one is the reason.** `laneNoise` was set at one point
+   because that is "above the observed flapping below six" — but the flapping
+   below six *is* the measurement of the noise, and reading a threshold off it
+   by eye put it four times too low. The rows where all three lanes dress the
+   character identically spread by up to 4.3 points. So "the wall trails by
+   1.0, then 2.7, 4.5..." is a list of coin flips, "spiked and silvered are a
+   coin flip" was true for the wrong reason, and the crossover at six was read
+   off nothing. Retiring the warden was still right; it just was not winning
+   for the reason it was credited with. See "The fifth zero value, and the
+   threshold nobody measured" below, which rebuilt LANES per class, on two
+   axes, with the floor taken off those identical rows — and moved the
+   constant to level ten and the spiked lane.
+
    The lesson generalises, and it is the same one the equipment pass learned
    the first time: **`gamedata.Equip` is an assumption, and an assumption that
    has never been compared with its alternatives is a guess with a test around
@@ -2162,6 +2176,14 @@ silvered shield, which is the monster table's own shift from steel to magic read
 back as a build. That is three arcs that are each right somewhere, which is what
 this section has been asking for since it was written.
 
+*(The second half of that reading did not survive being measured properly. The
+shift from steel to magic is real and the WARD table still shows it; what does
+not follow is that the answer to it is a shield. WARD prices the entire ward
+slot at nought to three points even at thirteen against magical attackers only,
+and the silvered shield pays three points of guard for fifteen of ward to buy
+it. It is now the worst of the three lanes at the top of the game on the axis
+that kills you. See "The fifth zero value, and the threshold nobody measured".)*
+
 Balanced now wins nothing, and that is not a fault to fix. It is the
 straightforward build, it is what `Equip` means, and every other number in the
 report is measured against it — a middle option that is never best and never
@@ -2767,6 +2789,12 @@ been "decide, then measure". The next pass measures first, per class, at the
 sample the DANGER table uses, and only then moves `LaneForLevel` to take a
 class.
 
+*(It did, and the numbers in the table above are half noise — see "The fifth
+zero value, and the threshold nobody measured" below. The conclusion held, the
+per-class part did not: the constant is now the wall below ten and the spiked
+shield above it, and it stayed class-blind because the two plank classes cross
+within a level of each other.)*
+
 LANES is per class now regardless, which is an instrument fix rather than a
 content one. It also exposed that a Mage's three columns are the same build
 measured three times — it cannot hold a plank, so `pickSidearm` falls back to
@@ -3263,6 +3291,138 @@ arithmetic instead of the same subtraction, and answering it *while* attacking
 in two cases out of three. That is as far as mechanics can carry class
 identity; the rest of it is what the writing already does.
 
+## The fifth zero value, and the threshold nobody measured
+
+The plan above said `LaneForLevel` wanted a per-class measurement at DANGER's
+sample, taken *before* deciding rather than after, and that the answer was
+expected to be "the spiked lane, for both plank classes, and probably per
+class". Three of those four expectations were wrong, and the one that mattered
+was not about the constant at all.
+
+**LANES was measuring on one axis, and it was the axis the spiked lane is built
+to win.** Win rate on the stretch fights asks "did you kill it". The spiked
+shield trades guard for strike. Handing that comparison to a lane that sells
+damage decides it before a die is rolled — the mirror of tuning something on
+the axis it is behind on rather than the one that binds. An off arm is
+defensive gear, so the second axis is the death rate five levels over, which is
+the band DANGER already establishes is where the death-versus-flee split is the
+only thing still legible. Both axes are printed now, and so is the rest of the
++5 outcome — won, fled, died — because "died less" has two mechanisms and only
+the ratio between those three rows says which one is operating.
+
+**LANES was calling a gap of one point a result, and the experiment that says
+otherwise was already in its own table.** The threshold was a named constant,
+`laneNoise = 1.0`, with a paragraph of reasoning attached and no measurement
+under it. Meanwhile every row where all three lanes dress the character
+identically — a Mage at any level, since it cannot hold a plank and
+`pickSidearm` falls back to the talisman; anybody at all below the level the
+baseline affords an off arm — is three identical builds measured three times.
+The spread across those columns is sampling wobble by construction. There are
+twenty of them, they run to **4.3 points** on the win axis and 3.8 on the death
+axis at three times the old sample, and the threshold was 1.0.
+
+So the crossover had been read off noise. The rebuilt section marks those rows
+`null` in the table, takes the floor off them, prints the mean and the worst,
+and says out loud that it is a floor measured at the null rows' own rates
+rather than at every row's.
+
+### What the measurement said
+
+Per class, two axes, 2000 fights a cell, floor from the null rows:
+
+| | won +3 | lived +5 |
+|---|---|---|
+| Fighter | level 10 | level 10 |
+| Thief | level 11 | level 13 |
+| Mage | no lane to choose: every row is the talisman |
+
+The wall is not measurably behind anything until level ten. The constant said
+six. And the two plank classes cross within a level of each other on the axis
+that can see them, so **the constant does not want a class parameter** — which
+was the open question, and this is its answer. The Thief's defensive crossover
+lands three levels later only because its gaps spend three levels sitting just
+under the floor while pointing the same way.
+
+At the top of the game — levels 12-14 averaged — the picture is not close:
+
+| class | axis | wall | spiked | silvered |
+|---|---|---|---|---|
+| Fighter | won +3 | 60.8% | **74.9%** | 69.1% |
+| Fighter | won +5 | 37.0% | **54.5%** | 45.0% |
+| Fighter | fled +5 | 30.3% | 22.2% | 19.5% |
+| Fighter | died +5 | 32.7% | **23.2%** | 35.5% |
+| Thief | won +3 | 68.2% | 76.8% | 74.2% |
+| Thief | won +5 | 41.8% | **52.3%** | 49.0% |
+| Thief | fled +5 | 35.4% | 28.9% | 25.4% |
+| Thief | died +5 | 22.8% | **18.7%** | 25.6% |
+
+The spiked lane wins the *defensive* axis, and the flee row says how: it flees
+less than the wall does and still dies nine points less often. It is not
+escaping. It is killing the thing before the thing kills you. The dose-response
+backs it — the strike bonus steps 2, 4, 6, 8 across the shield bands and the
+advantage appears exactly as it grows.
+
+The three lanes' whole kits are within 1.5% of each other on price from level
+seven up, which the section now prints as a table rather than asserting in a
+comment. At levels four to six the silvered shield is 6.6-7.4% dearer, which is
+the band the old constant switched in.
+
+### What changed, and the design position that fell
+
+`wardFromLevel = 6` is now `strikeFromLevel = 10`, and `LaneForLevel` returns
+`ArmBlock` below it and `ArmStrike` above.
+
+That reverses a stated design position, and the position deserves its epitaph:
+*the spiked lane trades guard for strike, which is an offensive choice, and a
+baseline with an opinion about offence is not a baseline.* The argument is
+sound. Its premise is false at the top of the game, where the spiked shield
+does not trade anything — it is the best defensive item on the arm as well as
+the best offensive one. A design position whose premise has been measured away
+is not a position.
+
+**The check was rewritten to ask what the constant decides**, which is not the
+crossover. Comparing a derived crossover against the constant warns about
+arithmetic; the question that matters is whether the lane `Equip` hands is ever
+behind the shelf. It fires when the same challenger beats the handed lane by
+more than the floor at two consecutive levels — because fifty-odd comparisons
+against a floor read off twenty null rows will throw single levels over it
+whatever is true, and three did here, nominating a different lane each time.
+
+**And the check was run against the old constant to watch it fail.** With
+`ArmWard` from six restored it reports six warnings, the loudest being "Fighter
+at 8-14 holds the silvered lane; the spiked one is 10.3 better on lived". A
+check nobody has seen fail is a check nobody has tested.
+
+### What this leaves open, which is a content question
+
+**The ward lane is now the thing to watch.** It is the best of the three in one
+cell of the twenty-eight LANES measures, which is what a coin looks like, and
+at the top of the game it is the *worst* thing on the arm on the axis that
+kills you: fewest escapes, most deaths. The cause is legible — it pays three
+points of guard for fifteen of ward, and the WARD section prices the entire
+ward slot at nought to three points even at level thirteen against magical
+attackers only. A band of three where one is never the answer has stopped being
+a choice, which is the charm-band finding in a different slot. Not fixed here,
+because retuning a table until the answer comes out differently is
+decide-then-measure wearing a lab coat.
+
+### What it moved in the rest of the report
+
+`Equip` is the on-curve assumption, so this moves everything. Read the shift as
+the assumption changing, not the content:
+
+- **ARCS**: balanced went from winning 2 cells outright to 3 and the duelist
+  from 6 to 3 — the baseline caught up because it stopped carrying a bad arm.
+  The widest gap grew from 11.9 to 13.7 points.
+- **COMBAT**: levels 6-9 lost one to three points of stretch win rate, all of
+  it under the noise floor, because those levels moved from the silvered shield
+  back to the wall. Levels 10-14 gained.
+- **CROWDS**: the Mage is now the class left behind in 8 cells rather than 7,
+  which is not the Mage changing — it holds a talisman — but the other two
+  getting better above it.
+- **DANGER** fails the same two bands by the same margins it failed before.
+- Five save fixtures were regenerated; the diff is shields and nothing else.
+
 ## What is open, and in what order
 
 Written at the end of the session that built the class-identity scheme, while
@@ -3282,14 +3442,18 @@ The tool for it already exists and is short of what this needs:
 fixtures — a level-11 Thief and a level-11 Mage with a talisman — would make all
 four playable in a minute rather than an hour.
 
-### 2. The fifth zero value is still live
+### 2. The fifth zero value — done, and it left a content question behind
 
-`gamedata.LaneForLevel` takes a level and no class, and the spiked lane beats
-the silvered one at the top of the game for *both* classes that can hold a
-plank, by up to eleven points. It is documented and deliberately unfixed: the
-constant was originally set off an averaged table, and re-pinning it on another
-thin measurement would be the fourth round of decide-then-measure in a month.
-It wants DANGER's sample, per class, measured before anything is changed.
+`LaneForLevel` has been re-pinned: the wall below level ten, the spiked shield
+above it, class-blind because the measurement says the two plank classes cross
+within a level of each other. The section above has the numbers and the three
+things that turned out to be wrong with the instrument rather than the content.
+
+What replaces it on this list is smaller and is a content job: **the ward lane
+is never the answer.** It wins one cell in twenty-eight and is the worst arm at
+the top of the game on the axis that kills you. That is the shield table's
+version of the charm-band problem in item 4, and the two should probably be
+done together, since both are "a band of N where one row is not a choice".
 
 ### 3. Two designs finished and unbuilt
 
