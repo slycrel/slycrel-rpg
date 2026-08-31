@@ -130,6 +130,20 @@ func shelfDelta(buyer *model.Character, data any) (int, bool) {
 			have = laneValue(buyer.Shield)
 		}
 		want = laneValue(v)
+	case model.OffHand:
+		// Off-hand weapons are one lane with a single number, so unlike the
+		// charms they have an honest answer and should give it. Falling into
+		// the charm default meant no verdict on the row and — since the
+		// "wear it now?" prompt needs a positive delta — no offer to put on a
+		// strictly better dagger than the one already in that hand.
+		//
+		// Against another off-hand weapon only. A plank in that hand is a
+		// different plan rather than a rung below, the same reasoning that
+		// stops a wall being graded against a silvered one.
+		if buyer.Sidearm.Worn() {
+			have = model.SidearmShare(buyer.Sidearm) + affixOf(buyer.Sidearm.Affix).Strike
+		}
+		want = model.SidearmShare(v.Weapon)
 	default:
 		// Charms deliberately have no answer: every one gives with one hand and
 		// takes with the other, so there is no better one to point at.

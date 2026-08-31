@@ -117,7 +117,15 @@ func buildBands() error {
 // bandedTables are the gear tables whose icons carry a tier band. Shields and
 // charms are not here: both already have one picture each and nothing shared,
 // so banding them would generate art nothing asks for.
-var bandedTables = []string{"armor.json", "weapons.json"}
+//
+// sidearms.json is, and had to be added the moment that shelf existed. The
+// off-hand weapons ship in five tiers on the same counter as the main-hand
+// daggers, so they need the band for the same reason the weapons do — and a
+// table that names band keys this pass does not enumerate is the silent
+// failure CLAUDE.md describes: the keys are simply absent, the game falls back,
+// and -audit still says "all referenced art resolves" because the content
+// names what it always named.
+var bandedTables = []string{"armor.json", "weapons.json", "sidearms.json"}
 
 // bandedIcons reads the distinct icon keys those tables name, sorted so the
 // pipeline's output does not depend on map iteration order.

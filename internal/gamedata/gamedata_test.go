@@ -1789,3 +1789,161 @@ func TestOnlyTheThiefHasAnOffHandShelf(t *testing.T) {
 		lastCost, lastStrike = w.Cost, w.Strike
 	}
 }
+
+// The third door into "one arm, one thing", and the oldest.
+//
+// CanHold is consulted when something goes *onto* the off arm and nothing
+// consulted it when the other hand closed, so a Fighter could take up a
+// greatsword while wearing a tower shield and Gear() counted both — a whole
+// shield's guard for free, for as long as the equipment system has existed. It
+// is unreachable through the sidearm, since no class that may hold one may hold
+// a two-hander, which is exactly why the invariant test written with that slot
+// passed straight over this.
+func TestATwoHandedWeaponEmptiesTheOffArm(t *testing.T) {
+	tables := load(t)
+
+	c := &model.Character{Class: model.ClassFighter, Level: 11}
+	tables.Equip(c)
+	if !c.Shield.Worn() {
+		t.Fatal("a level-11 fighter should start this test holding a plank")
+	}
+	plank := c.Shield.Name
+
+	// The heaviest thing on the shelf that needs both hands.
+	var two model.Weapon
+	ws, _ := tables.StockForClass(4, model.ClassFighter)
+	for _, w := range ws {
+		if w.TwoHanded() && w.Strike > two.Strike {
+			two = w
+		}
+	}
+	if !two.Worn() {
+		t.Fatal("no two-handed weapon on a tier-4 fighter's shelf")
+	}
+
+	c.Carry(model.Carried{Weapon: &two})
+	if !c.Equip(len(c.Carried) - 1) {
+		t.Fatal("the fighter refused a two-hander it may wield")
+	}
+	if c.Shield.Worn() {
+		t.Errorf("%q stayed on the arm under a two-handed %q", c.Shield.Name, two.Name)
+	}
+	if c.CanHold() {
+		t.Error("CanHold says the arm is free while a two-hander is in both hands")
+	}
+
+	// And into the pack rather than the ground.
+	found := false
+	for _, g := range c.Carried {
+		if g.Shield != nil && g.Shield.Name == plank {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("%q was not put in the pack when the two-hander closed the arm", plank)
+	}
+}
+
+// An escort's caster must never stack with its own guards, and the thing that
+// currently stops it is a property of the content rather than of the code.
+//
+// model.SameKind compares offence, guard, ward and speed — everything Spawn and
+// the encounter shapes scale deterministically — and deliberately not hit
+// points, which Spawn jitters. An escort scales its caster's hit points and
+// leaves its guards alone, so the two differ *only* in HP, and they are told
+// apart by the guards being drawn a band lower and coming out with different
+// offence. That holds until a creature's offence is small enough for the
+// scaling to round back onto itself: the guard multiplier floors at one, so a
+// magical creature with offence 1 would produce a guard indistinguishable from
+// the caster it is guarding, and the two would share a slot. The player would
+// be told one thing was two of the same thing when one of them is a scaled boss.
+//
+// Nothing in the tables is anywhere near that today — the quietest magical
+// creature swings for 24 — so this asserts the margin rather than the mechanism,
+// and it fails loudly the day somebody writes a whispering magical thing that
+// hits for one.
+func TestNoMagicalCreatureIsQuietEnoughToStackWithItsOwnEscort(t *testing.T) {
+	tables := load(t)
+	for biome, defs := range tables.Monsters {
+		for _, d := range defs {
+			if !d.Magic {
+				continue
+			}
+			if d.Offense < 2 {
+				t.Errorf("%s: %q is magical and swings for %d — an escort of it would "+
+					"stack its caster with its own guards", biome, d.Name, d.Offense)
+			}
+		}
+	}
+}
+
+// Two tables can be distinct on their own and still put one picture twice on
+// one counter, which is the failure TestGearIconsAreDistinct cannot see.
+//
+// It checks each table separately, so the off-hand weapons could ship on the
+// same five banded dagger icons the main-hand daggers use — "Farmer's Knife"
+// and "Off-Hand Knife, Borrowed", one picture, twice, on the smith's list — and
+// every existing check passed. The unit of the rule was never the table. It is
+// the shelf.
+//
+// The smith is the only counter that draws from two gear tables today; the
+// armourer draws armour, talismans and charms, which are three tables and are
+// covered here too for the same reason.
+func TestNoCounterShowsOnePictureTwice(t *testing.T) {
+	tables := load(t)
+
+	// tier 5 so every band of every shelf is on the counter at once, which is
+	// the worst case and the only one worth checking.
+	const tier = 5
+
+	check := func(counter string, rows map[string]string) {
+		seen := map[string]string{}
+		for name, icon := range rows {
+			if prev, dup := seen[icon]; dup {
+				a, b := name, prev
+				if a > b {
+					a, b = b, a
+				}
+				t.Errorf("the %s shows %q and %q as the same picture, %q", counter, a, b, icon)
+			}
+			seen[icon] = name
+		}
+	}
+
+	// The smith: weapons, planks, and the off-hand shelf.
+	smith := map[string]string{}
+	ws, _ := tables.StockFor(tier)
+	for _, w := range ws {
+		if w.Cost > 0 {
+			smith[w.Name] = w.Icon
+		}
+	}
+	shields, charms := tables.SidearmsFor(tier)
+	for _, s := range shields {
+		if !s.Barrier() {
+			smith[s.Name] = s.Icon
+		}
+	}
+	for _, w := range tables.OffHandFor(tier, model.ClassThief) {
+		smith[w.Name] = w.Icon
+	}
+	check("smith", smith)
+
+	// The armourer: coats, talismans, charms.
+	armourer := map[string]string{}
+	_, as := tables.StockFor(tier)
+	for _, a := range as {
+		if a.Cost > 0 {
+			armourer[a.Name] = a.Icon
+		}
+	}
+	for _, s := range shields {
+		if s.Barrier() {
+			armourer[s.Name] = s.Icon
+		}
+	}
+	for _, c := range charms {
+		armourer[c.Name] = c.Icon
+	}
+	check("armourer", armourer)
+}

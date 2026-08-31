@@ -84,7 +84,7 @@
     "name": "Ring of the Overcommitted",
     "cost": 315,
     "tier": 4,
-    "icon": "icon/loot/thunder_topaz",
+    "icon": "icon/loot/whetstonel",
     "desc": "Makes every swing count for more, including the ones that miss.",
     "bonus": {
       "defense": -2,

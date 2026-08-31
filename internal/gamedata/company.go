@@ -93,12 +93,34 @@ func (t *Tables) wants(c *model.Character) []Want {
 		if s.Barrier() {
 			at = CounterArmorer
 		}
-		behind(model.Carried{Shield: &s}, c.Shield.Cost, at)
+		// What they have on that arm, whichever thing it is. Reading
+		// c.Shield.Cost alone made a companion holding a gifted off-hand
+		// weapon look like somebody with an empty arm: they registered as
+		// behind on a shield, bought one at the next smith out of their own
+		// savings, and handed the gift back to the pack. Nothing was destroyed
+		// and no invariant broke — the player's one way of steering a
+		// companion's kit was simply undone by the recipient at the first
+		// counter, quietly, which is worse than a bug that shows.
+		behind(model.Carried{Shield: &s}, armCost(c), at)
 	}
 	if ch := probe.Charm; ch.Worn() {
 		behind(model.Carried{Charm: &ch}, c.Charm.Cost, CounterArmorer)
 	}
 	return out
+}
+
+// armCost is what is already on the off arm, in the unit Wants compares in.
+//
+// One arm, one thing: a plank, a talisman, or the thief's second weapon. A
+// companion is never sent shopping for an off-hand weapon — the shelf is
+// narrowed to the class and the balanced build does not take one, so "on
+// curve" for the arm is a shield — but somebody *holding* one is not behind,
+// and this is what says so.
+func armCost(c *model.Character) int {
+	if c.Sidearm.Worn() {
+		return c.Sidearm.Cost
+	}
+	return c.Shield.Cost
 }
 
 // Shop spends a companion's own savings on the best thing the town can sell

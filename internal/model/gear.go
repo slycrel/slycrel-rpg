@@ -486,6 +486,13 @@ func max0(n int) int {
 // the 1994 original did it because a BBS door had eight equipment slots and no
 // inventory to speak of; there is no reason to inherit the limitation along
 // with the maths.
+// Five methods switch on which field is set — Empty, Titled, Slot, Cost and
+// Icon — and a sixth enumeration lives in gamedata.GearCost. Adding a slot
+// means visiting all six, and the fifth slot was added having visited three:
+// a carried off-hand weapon sold for nothing, drew no icon in the pack, and
+// was invisible to the purse the balance report fits builds to. None of that
+// failed loudly. If you are adding a seventh, grep for the other five before
+// you start rather than after.
 type Carried struct {
 	Weapon *Weapon `json:"weapon,omitempty"`
 	Armor  *Armor  `json:"armor,omitempty"`
@@ -542,6 +549,8 @@ func (c Carried) Slot() string {
 // Cost is what it was worth new, which is what a sale is reckoned from.
 func (c Carried) Cost() int {
 	switch {
+	case c.Sidearm != nil:
+		return c.Sidearm.Cost
 	case c.Weapon != nil:
 		return c.Weapon.Cost
 	case c.Armor != nil:
@@ -557,6 +566,8 @@ func (c Carried) Cost() int {
 // Icon is the manifest key for the thing, for the lists it appears in.
 func (c Carried) Icon() string {
 	switch {
+	case c.Sidearm != nil:
+		return c.Sidearm.Icon
 	case c.Weapon != nil:
 		return c.Weapon.Icon
 	case c.Armor != nil:
@@ -593,6 +604,24 @@ func (c *Character) Equip(i int) bool {
 		c.Weapon = *g.Weapon
 		if old.Name != "" {
 			c.Carry(Carried{Weapon: &old})
+		}
+		// A weapon that needs both hands empties the off arm, and this was the
+		// third door into "one arm, one thing" — older than the other two and
+		// unguarded the whole time. A Fighter could take up a greatsword while
+		// wearing a tower shield and Gear() counted both, because CanHold is
+		// consulted when something *fills* the arm and nothing consulted it
+		// when the other hand closed. Unreachable for sidearms, since no class
+		// that may hold one may hold a two-hander, which is why the new
+		// invariant test passed straight over it.
+		if c.Weapon.TwoHanded() {
+			if s := c.Shield; s.Worn() {
+				c.Shield = Shield{}
+				c.Carry(Carried{Shield: &s})
+			}
+			if w := c.Sidearm; w.Worn() {
+				c.Sidearm = Weapon{}
+				c.Carry(Carried{Sidearm: &w})
+			}
 		}
 	case g.Armor != nil:
 		old := c.Armor

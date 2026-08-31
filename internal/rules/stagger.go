@@ -11,11 +11,26 @@ import "github.com/slycrel/slycrel-rpg/internal/model"
 // staggering takes away is the choice of which identical wolf to kill first,
 // which was never a choice.
 //
+// One consequence is worth knowing before it is reported as a bug. A condition
+// that lands on one creature lands on the *front* of a queue, and the slot
+// draws the front's pips — so a stunned slot of three is one stunned wolf and
+// two swinging ones, and the screen has no way to say "one of these is
+// stunned" because it is drawing one portrait. Anything over the whole field
+// reaches every member and the pips are then honest. The alternative is a
+// per-member readout inside one slot, which is the crowded field this feature
+// exists to un-crowd.
+//
 // It is a rule rather than a drawing trick, which is why it lives here and not
-// beside the battle screen. The screen has to lay stacks out, the transcript
-// has to name them, and the balance report has to be able to price them, and
-// three copies of "which of these are the same creature" would be three chances
-// to disagree.
+// beside the battle screen: the screen lays stacks out and the transcript names
+// them, and two copies of "which of these are the same creature" would be two
+// chances to disagree.
+//
+// The first draft of this paragraph also claimed the balance report needs it.
+// It does not, and the reason is the good news about this whole feature:
+// SimulateGroup has always attacked the first thing still standing, so the
+// simulator was fighting a stacked field before there were stacks. Nothing in
+// cmd/balance calls anything here. If that changes — a report that prices what
+// a queue does to a crowd fight — this is where it would call.
 type Stack struct {
 	// At is the field indices of this stack's members, in the order they queue.
 	At []int

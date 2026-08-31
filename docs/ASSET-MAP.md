@@ -20,11 +20,11 @@ person to have made it.
 
 <!-- BEGIN generated: go run ./cmd/assetpipe map -->
 
-**919 keys across 15 namespaces.**
+**925 keys across 15 namespaces.**
 
 | namespace | keys | sources |
 |---|--:|---|
-| `icon/` | 396 | `_generated/icons` 264, `_generated/bands` 132 |
+| `icon/` | 402 | `_generated/icons` 264, `_generated/bands` 138 |
 | `mob/` | 168 | `mobsavataricons_windows` 133, `sci-ficharactersicons` 35 |
 | `boss/` | 107 | `monstersavataricons_windows` 107 |
 | `portrait/` | 76 | `characteravataricons_windows` 76 |
@@ -226,24 +226,35 @@ The spear is the one still open, and it is now known to be unclosable from what
 we own: six sources checked and a composite attempted, all written up in
 [PLAN.md](PLAN.md) so nobody repeats the search.
 
+### The off-hand shelf has its own dagger, and the test that missed it
+
+`data/items/sidearms.json` first shipped naming `icon/band/arms/dagger1_t1`
+through `_t5` — the same five banded icons the main-hand daggers use. Both
+tables are stocked by the *same smith counter*, so "Fang, Unlicensed" and
+"Parrying Dagger, Insistent" were one picture, twice, on one list.
+
+`TestGearIconsAreDistinct` passed the whole time, because it checks each table
+against itself. The unit of that rule was never the table — it is the shelf,
+and two tables can each be internally distinct and still put one picture twice
+in front of a player. `TestNoCounterShowsOnePictureTwice` is the check that
+knows the difference, and the first thing it found was not the sidearms at all:
+"Ring of the Overcommitted" and "The Standing Refusal" had been sharing
+`icon/loot/thunder_topaz` on the armourer's counter, a collision older than any
+of this work and invisible to every test that existed.
+
+The fix was `dagger2`, which the crafting sheet has always had and nothing had
+ever named — `bandedTables` in `cmd/assetpipe/recolor.go` gained
+`sidearms.json`, and `assetpipe build` minted the six bands. Worth noting that
+the table had to be added there in the same breath as the shelf: a content file
+naming band keys that the recolour pass does not enumerate is the silent
+failure this document describes twice over, where the keys are simply absent,
+the game falls back, and `-audit` still reports that all referenced art
+resolves because the content names what it always named.
+
 ## What is not settled
 
 This pass is not the last one, and these are the questions it left open.
 
-- **The off-hand weapons share the dagger's pictures.** `data/items/sidearms.json`
-  names `icon/band/arms/dagger1_t1` through `_t5` — the same five banded icons
-  the main-hand daggers use. So a thief's smith counter can show "Fang,
-  Unlicensed" and "Parrying Dagger, Insistent" as the same picture in the same
-  tier colour, which is exactly the ambiguity `TestGearIconsAreDistinct` exists
-  to prevent on the other shelves. It is not a coincidence and it is not
-  laziness: every one of the ten banded `arms` bases is already spent on a
-  weapon, so a distinct picture means running `assetpipe build` to mint a new
-  band — and the work was done in a git worktree whose `assets-raw` is a
-  symlink to the main checkout, where another session was playing. Writing a
-  new generated tree and a new manifest into somebody else's running game is
-  not a trade worth making for an icon. The fix is one `assetpipe build` from
-  the main checkout with a base picked out of the arms sheet, and it should
-  happen before anybody calls the shelf finished.
 - **Lane is under-encoded, and the armourer's frame confirms it.** Cloth reads
   as a dress and *both* other lanes as a jerkin, so light and heavy differ only
   by which jerkin and which tier — "Padded Jerkin" and "Ringmail, Secondhand"

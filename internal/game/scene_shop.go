@@ -575,8 +575,16 @@ func shopDescribe(data any) string {
 		// "Strike 16" on a row that adds eight would be the counter lying by
 		// omission, and the halving is the whole of what makes this a choice
 		// against a shield rather than a strictly better one.
-		out := fmt.Sprintf("Strike %d on the off arm — half of %d.",
-			model.SidearmShare(v.Weapon), v.Strike)
+		// "Strike 1 — half of 3" is not true, and this is the one sentence in
+		// the shop written specifically so the counter would not misstate the
+		// number. SidearmShare rounds down, so the claim only holds on even
+		// strikes; on odd ones it says what it actually gives and leaves the
+		// arithmetic out rather than getting it wrong.
+		out := fmt.Sprintf("Strike %d on the off arm.", model.SidearmShare(v.Weapon))
+		if v.Strike%2 == 0 {
+			out = fmt.Sprintf("Strike %d on the off arm — half of %d.",
+				model.SidearmShare(v.Weapon), v.Strike)
+		}
 		if v.Extra != nil {
 			out += " " + statWords(*v.Extra) + "."
 		}

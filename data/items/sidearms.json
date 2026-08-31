@@ -8,7 +8,7 @@
     "quality": 1,
     "verb": "opens",
     "tier": 1,
-    "icon": "icon/band/arms/dagger1_t1",
+    "icon": "icon/band/arms/dagger2_t1",
     "extra": {
       "dexterity": -1
     }
@@ -22,7 +22,7 @@
     "quality": 1,
     "verb": "catches",
     "tier": 2,
-    "icon": "icon/band/arms/dagger1_t2",
+    "icon": "icon/band/arms/dagger2_t2",
     "extra": {
       "dexterity": -1
     }
@@ -36,7 +36,7 @@
     "quality": 2,
     "verb": "answers",
     "tier": 3,
-    "icon": "icon/band/arms/dagger1_t3",
+    "icon": "icon/band/arms/dagger2_t3",
     "extra": {
       "dexterity": -1
     }
@@ -50,7 +50,7 @@
     "quality": 3,
     "verb": "surprises",
     "tier": 4,
-    "icon": "icon/band/arms/dagger1_t4",
+    "icon": "icon/band/arms/dagger2_t4",
     "extra": {
       "dexterity": -2
     }
@@ -64,7 +64,7 @@
     "quality": 4,
     "verb": "interrupts",
     "tier": 5,
-    "icon": "icon/band/arms/dagger1_t5",
+    "icon": "icon/band/arms/dagger2_t5",
     "extra": {
       "dexterity": -2,
       "speed": -1

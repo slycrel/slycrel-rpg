@@ -1560,10 +1560,15 @@ func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 	// best thing on the arm at every level and turn the slot back into a
 	// ladder, which is the state the three lanes were rescued from.
 	fmt.Fprintf(out, "\nthe fourth option — a weapon on the arm, for the class that may hold one\n")
-	fmt.Fprintf(out, "%-6s %-8s %8s %8s %8s   %s\n",
-		"level", "class", "lane", "sidearm", "cost", "against the lane it replaces")
+	fmt.Fprintf(out, "%-8s %-6s %8s %8s %8s   %s\n",
+		"level", "axis", "lane", "sidearm", "kit", "against the lane it replaces")
 	fmt.Fprintln(out, strings.Repeat("-", 74))
-	for _, level := range []int{5, 9, 13} {
+	// Five levels rather than three. The first draft sampled 5/9/13 and the
+	// death axis came back +4.0 at nine against a floor of 3.6 — one cell over
+	// the line with no way to tell an effect from a coin, since LANES' own
+	// "two consecutive levels" rule needs neighbours to apply and this table
+	// had none.
+	for _, level := range []int{5, 7, 9, 11, 13} {
 		for _, class := range model.AllClasses {
 			probe := &model.Character{Class: class, Level: level}
 			side := gamedata.Archetypes[0]
@@ -1572,20 +1577,50 @@ func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 			if !probe.Sidearm.Worn() {
 				continue
 			}
-			lane, _, _, _, _, _, laneCost := run(gamedata.Archetypes[0], class, level, laneStretch)
-			arm, _, _, _, _, _, armCost := run(side, class, level, laneStretch)
-			call := fmt.Sprintf("%+.1f", arm-lane)
-			if d := arm - lane; d < worstWon && d > -worstWon {
-				call = "nothing in it"
+			// Both axes, for the reason the three lanes get both: the trade
+			// being priced is strike for guard, and guard is spent on not
+			// dying. Reading only the win rate three over would leave the
+			// column the cost lands in unmeasured — which is what the first
+			// draft did, and the level-nine row was the one that needed it.
+			laneWon, _, _, _, _, _, laneCost := run(gamedata.Archetypes[0], class, level, laneStretch)
+			armWon, _, _, _, _, _, armCost := run(side, class, level, laneStretch)
+			_, laneDied, _, _, _, _, _ := run(gamedata.Archetypes[0], class, level, laneOver)
+			_, armDied, _, _, _, _, _ := run(side, class, level, laneOver)
+
+			for _, row := range []struct {
+				label      string
+				lane, arm  float64
+				floor      float64
+				betterDown bool
+			}{
+				{"won +3", laneWon, armWon, worstWon, false},
+				{"died +5", laneDied, armDied, worstDied, true},
+			} {
+				d := row.arm - row.lane
+				if row.betterDown {
+					d = -d
+				}
+				call := fmt.Sprintf("%+.1f", d)
+				if d < row.floor && d > -row.floor {
+					call = "nothing in it"
+				}
+				cost := ""
+				if !row.betterDown {
+					cost = fmt.Sprintf("%+d", armCost-laneCost)
+				}
+				fmt.Fprintf(out, "%-8s %-6s %7.1f%% %7.1f%% %8s   %s\n",
+					fmt.Sprintf("%d %s", level, class), row.label,
+					row.lane, row.arm, cost, call)
 			}
-			fmt.Fprintf(out, "%-6d %-8s %7.1f%% %7.1f%% %8d   %s\n",
-				level, class, lane, arm, armCost-laneCost, call)
 		}
 	}
 	fmt.Fprint(out, `
-The cost column is what the swap does to the whole kit, which is the honest
-frame: an off-hand weapon is bought instead of a plank, not as well as one,
-and the two shelves are priced within a band of each other on purpose.
+The kit column is what the swap does to the whole outfit's price, and it is
+small because the two shelves are priced within a band of each other on
+purpose — an off-hand weapon is bought instead of a plank, not as well as one.
+It was reading as a large saving until GearCost was told the fifth slot
+exists: the dagger was entering the kit for free, so the column was printing
+the plank's price back as a discount.
 
 What to want from these rows is *nothing in it*. A weapon on the arm that
 beat the lane by more than the floor would be the ladder again with an extra

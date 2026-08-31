@@ -975,10 +975,23 @@ func BestCharm(cs []model.Charm) model.Charm {
 
 // GearCost totals what a character is wearing, which is what makes an archetype
 // a trade rather than a preference.
+//
+// Every slot, and the off arm counts whichever thing is on it. The fifth slot
+// was added without this being told, which had two consequences and neither
+// announced itself: LANES printed a cost column claiming to be "what the swap
+// does to the whole kit" while the dagger entered the kit for free — the real
+// deltas were +12/0/+3 against a printed -8/-55/-275 — and EquipWithin, which
+// fits a build to the purse balanced spends, could not see the dagger at all.
+// The second is the worse one. It is exactly the "measuring a budget rather
+// than a build" confound the spend column exists to prevent, lying dormant
+// until an archetype set OffHand.
 func GearCost(c *model.Character) int {
 	n := c.Weapon.Cost + c.Armor.Cost
 	if c.Shield.Worn() {
 		n += c.Shield.Cost
+	}
+	if c.Sidearm.Worn() {
+		n += c.Sidearm.Cost
 	}
 	if c.Charm.Worn() {
 		n += c.Charm.Cost
