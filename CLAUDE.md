@@ -109,6 +109,16 @@ which event fires which trigger, and where it is safe to put a box on screen.
   places and items it has checked for; a test asserts the same of save fixtures.
 - **Gear whose name already ends in a flourish never gets an affix**, or you get
   "Runed Maul of the Last Word of the Last Word".
+- **A creature's name plate says both halves, and prose says the species.**
+  `model.SplitName` divides "Crab, Territorial" at the comma and keeps the
+  group letter with the species; a name with no comma is all species, which is
+  right for "Owl That Knows" where the phrase is the joke. The portrait carries
+  both lines, always, because an epithet that waits for the target cursor is a
+  joke that lands once a fight. Prose uses `Monster.Short()` — "Wolf B bites
+  Bosk", not "Wolf, Deeply Unimpressed B bites Bosk", and a taunt naming the
+  creature twice made that unreadable. `TestEveryMonsterNameFitsItsPlate` walks
+  the roster against every layout, so a new monster with a long name fails a
+  test rather than appearing on screen as "Goblin Middle".
 - **Never write `a %s` around a generated name.** Monsters, gear and places are
   all generated, so "a Actual Sword of Mild Regret" and "a Owl That Knows" are
   the default outcome, not the unlucky one. Use `article()` in `internal/game`,

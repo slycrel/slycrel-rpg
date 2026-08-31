@@ -4,7 +4,11 @@
 // math in package rules is a direct port and expects those fields.
 package model
 
-import "github.com/slycrel/slycrel-rpg/internal/core"
+import (
+	"strings"
+
+	"github.com/slycrel/slycrel-rpg/internal/core"
+)
 
 // Class is a character occupation. The three originals survive; the stat
 // growth curves in rules.LevelUp are keyed off these.
@@ -372,6 +376,31 @@ type Drop struct {
 	Max    int    `json:"max"`
 }
 
+// SplitName divides a creature's name into what it is and what sort of one.
+//
+// Every name in the tables is written one of two ways. "Crab, Territorial" is a
+// species and a characterisation, and the characterisation is the joke; "Owl
+// That Knows" is a whole phrase and the phrase is the joke. The comma is the
+// only thing that tells them apart, so a name with no comma is all species and
+// no epithet, which is the honest answer for the second kind.
+//
+// The group letter stays with the species. Two crabs are "Crab A" and "Crab B",
+// and a head that dropped the letter would label them identically at the exact
+// moment the player is choosing between them.
+//
+// It lives here rather than beside the battle screen that draws it because the
+// writing needs it too: prose says the species, the portrait says both.
+func SplitName(full string) (head, tail string) {
+	letter := ""
+	if n := len(full); n > 2 && full[n-2] == ' ' && full[n-1] >= 'A' && full[n-1] <= 'Z' {
+		letter, full = " "+full[n-1:], full[:n-2]
+	}
+	if i := strings.Index(full, ", "); i >= 0 {
+		return full[:i] + letter, full[i+2:]
+	}
+	return full + letter, ""
+}
+
 // Monster is a live combatant instantiated from a MonsterDef.
 //
 // It carries its own stats rather than reading the template, because a monster
@@ -400,6 +429,20 @@ type Monster struct {
 	// Active is what the monster is currently suffering. Monsters are spawned
 	// fresh for every encounter and never stored, so this needs no exclusion.
 	Active Effects
+}
+
+// Short is what a creature is called in prose: the species and its group
+// letter, without the epithet.
+//
+// The transcript says "Wolf B bites Bosk" because that is what a person
+// watching would say. It used to say "Wolf, Deeply Unimpressed B bites Bosk",
+// and a taunt naming the same creature twice came out as "Wolf, Deeply
+// Unimpressed has watched you fight before. Wolf, Deeply Unimpressed was not
+// impressed then either." The epithet is not lost — it is under the portrait,
+// permanently, which is where a joke can be read rather than scrolled past.
+func (m *Monster) Short() string {
+	head, _ := SplitName(m.Name)
+	return head
 }
 
 // HPFrac returns current HP as a fraction of max.

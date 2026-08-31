@@ -867,3 +867,68 @@ func TestAShopIsLabelledFromAnywhereInTown(t *testing.T) {
 		t.Skip("this continent generated no settlements")
 	}
 }
+
+// TestEveryMonsterNameFitsItsPlate.
+//
+// The name plate under a portrait now carries the species *and* the epithet,
+// because the epithet is the funny half and one that waits for the target
+// cursor is a joke that lands once a fight instead of four times. That only
+// works if the whole thing actually goes on screen: the version before this
+// gave a stacked layout one line, drew the first row of a wrapped name and
+// silently dropped the rest, and put "Goblin Middle" on screen for as long as
+// nobody captured a frame of five creatures.
+//
+// So this walks the whole roster against every layout the field can produce —
+// one creature up to six, which is what a pack sends — and asks whether the
+// lines the plate is allowed would hold the name. It is a content test, not a
+// drawing test: the failure it exists to catch is somebody adding a monster
+// with a longer name than the shelf it has to sit on.
+func TestEveryMonsterNameFitsItsPlate(t *testing.T) {
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Skipf("no data directory: %v", err)
+	}
+	tables, err := gamedata.Load(root)
+	if err != nil {
+		t.Fatalf("loading content: %v", err)
+	}
+
+	// One through six. Four is the most an ordinary encounter sends, and a
+	// pack shape adds two bodies on top of that.
+	for n := 1; n <= 6; n++ {
+		_, _, slotW, _ := monSlot(0, n)
+		budget := monNameLines(n)
+		for _, defs := range tables.Monsters {
+			for _, d := range defs {
+				// The group letter is the widest form a name takes: two
+				// creatures of a kind get "Crab A" and "Crab B".
+				head, tail := monsterName(d.Name + " A")
+				used := len(render.Wrap(head, slotW-8))
+				if used > budget {
+					t.Errorf("%d up: %q needs %d lines for the species alone, plate holds %d",
+						n, d.Name, used, budget)
+					continue
+				}
+				if tail == "" {
+					continue
+				}
+				room := budget - used
+				if room < 1 {
+					t.Errorf("%d up: %q leaves no room at all for %q",
+						n, d.Name, tail)
+					continue
+				}
+				// The epithet has to fit whole wherever the field is a single
+				// row, which is every layout up to four creatures. Above that
+				// the rows are stacked, the columns are a third of the field,
+				// and two names in the roster spill their last line — which is
+				// truncated visibly rather than dropped, and still reads. What
+				// is guaranteed everywhere is that it *starts*.
+				if want := len(render.Wrap(tail, slotW-8)); want > room && n <= 4 {
+					t.Errorf("%d up: %q leaves %d line(s) for %q, which needs %d",
+						n, d.Name, room, tail, want)
+				}
+			}
+		}
+	}
+}

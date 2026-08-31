@@ -255,7 +255,17 @@ func buildDemoSteps() []demoStep {
 			}
 		}},
 
-		{at: 1250, do: func(g *Game) { g.Quit() }},
+		// The end of a run, which is the one screen the tour had never been to
+		// and the one a player meets at the worst possible moment. Staged after
+		// the save above rather than by losing a fight: offerRewind needs a
+		// save of this run to offer back, and the real path is what should be
+		// captured — the black the battle faded into, with the question on top
+		// of it and the cost of saying no written out in full.
+		{at: 1248, do: func(g *Game) { g.offerRewind() }},
+		{at: 1258, shot: "12b-death"},
+		{at: 1262, do: func(g *Game) { g.dropOverlays() }},
+
+		{at: 1268, do: func(g *Game) { g.Quit() }},
 	}
 }
 

@@ -403,7 +403,11 @@ func (g *Game) drawStatusBar(dst *ebiten.Image, place, hint string) {
 		ax += 28
 	}
 
-	g.Log.Draw(dst, 8, y+30, 1)
+	// One row, the width of the screen less the margins it is drawn inside.
+	// The transcript is the last thing that happened and this is the only line
+	// of it anybody sees out here — so it is the beginning of that sentence,
+	// cut by Trunc if it has to be, rather than whatever fell off the end.
+	g.Log.Draw(dst, 8, y+30, render.ScreenW-16, 1)
 }
 
 // Layout fixes the logical resolution; the window scales by whole multiples.

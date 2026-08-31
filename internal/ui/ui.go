@@ -496,12 +496,21 @@ func NewLog(max int) *Log { return &Log{max: max} }
 // Add appends a line in the default ink colour.
 func (l *Log) Add(format string, args ...any) { l.AddColor(render.ColInk, format, args...) }
 
-// AddColor appends a coloured line. Long lines are wrapped to the standard
-// message width before being stored so scrollback stays accurate.
+// AddColor appends a coloured entry.
+//
+// Whole, not pre-wrapped. It used to break every message into rows at
+// ScreenW-40 and store those, which made the log a list of *rows* rather than
+// of things that happened — and every reader after it inherited the confusion.
+// The walking-around screen has room for one row and drew the last one, so any
+// message over about sixty-two characters appeared on screen as its own second
+// half: "Somebody will hear about it." in place of a sentence explaining why.
+// A different and shorter thing, with nothing to say it had been cut.
+//
+// An entry is now an entry, and wrapping is the drawer's business — which is
+// where it has to be anyway, since the two places that draw this have panels
+// of different widths.
 func (l *Log) AddColor(c color.Color, format string, args ...any) {
-	for _, s := range render.Wrap(fmt.Sprintf(format, args...), render.ScreenW-40) {
-		l.lines = append(l.lines, logLine{s, c})
-	}
+	l.lines = append(l.lines, logLine{fmt.Sprintf(format, args...), c})
 	if len(l.lines) > l.max {
 		l.lines = l.lines[len(l.lines)-l.max:]
 	}
@@ -510,8 +519,19 @@ func (l *Log) AddColor(c color.Color, format string, args ...any) {
 // Clear empties the log.
 func (l *Log) Clear() { l.lines = nil }
 
-// Draw renders the last n lines ending at the given baseline, oldest fading.
-func (l *Log) Draw(dst *ebiten.Image, x, y float64, n int) {
+// Draw renders the last n entries ending at the given baseline, oldest fading,
+// one row each.
+//
+// One row each, and the row shows the *beginning* of the entry. That is the
+// whole difference from what this used to do: with pre-wrapped storage it
+// showed the last row of the newest message, which is a sentence's tail
+// presented as a sentence. A beginning that runs out of width is cut by Trunc,
+// which leaves a mark; a tail is not marked as anything.
+//
+// w is the room available. It is a parameter rather than the screen width
+// because a caller that knew the answer and did not pass it is how the old
+// version came to wrap against a width nothing was drawn at.
+func (l *Log) Draw(dst *ebiten.Image, x, y, w float64, n int) {
 	start := core.Max(0, len(l.lines)-n)
 	shown := l.lines[start:]
 	for i, ln := range shown {
@@ -520,7 +540,7 @@ func (l *Log) Draw(dst *ebiten.Image, x, y float64, n int) {
 		if i < len(shown)-2 {
 			c = render.ColInkDim
 		}
-		render.Text(dst, ln.text, x, y+float64(i)*render.LineH, c)
+		render.Text(dst, render.Trunc(ln.text, w), x, y+float64(i)*render.LineH, c)
 	}
 }
 

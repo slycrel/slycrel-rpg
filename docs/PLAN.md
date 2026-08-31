@@ -980,27 +980,28 @@ than a system.
      since that is a more recent statement of what they want than the command
      line was.
 
-   **Fourth pass, open, and these are the things that have turned up since.**
-   Written down rather than remembered, because the last survey had to derive
-   all of this from scratch.
+   **Fourth pass, done, and the two things it fixed had one cause between
+   them.**
 
-   - **The walking-around screen shows one row of the transcript, and it is the
-     *last* row.** `Log.AddColor` wraps at `ScreenW-40` — about sixty-two
-     characters — before storing, and `drawStatusBar` draws the newest stored
-     row. So any message longer than that appears on screen as its own second
-     half: not a shorter version of what happened, a different sentence, with
-     nothing saying it was cut. This is the bug `Log.DrawWrapped` was written
-     to fix for the battle log, and the overworld never got the same treatment.
-     Two literal strings already exceed the width ("They were in the middle of
-     something. Somebody will hear about it."), and generated gear, place and
-     monster names push a good many format strings over it. The workaround in
-     the meantime is in CLAUDE.md: keep those lines short, and when several go
-     in at once put the one worth reading last.
-   - **The death screen has never been captured.** `-demo` is one frame per
-     screen by its own definition, and `scene_death.go` — plus the reload offer
-     that sits on top of it, which is the most consequential dialog in the game
-     and arrives at the worst moment — has never been looked at in a frame. The
-     rescue-to-town box is in the same position.
+   - ~~**The walking-around screen shows the last *row* of the transcript.**~~
+     `Log.AddColor` pre-wrapped every message at `ScreenW-40` and stored the
+     rows, which quietly turned the log from a list of things that happened
+     into a list of rows — and everything downstream inherited it. The
+     overworld draws one and got a sentence's tail presented as the sentence.
+     Worse, `DrawWrapped`'s stated promise that an entry goes in whole or not
+     at all was operating on rows too, so the battle log's guarantee was never
+     the guarantee it advertised.
+
+     An entry is an entry now and wrapping is the drawer's business, which is
+     where it has to be anyway: the two panels that show this are different
+     widths, and the old code wrapped against a width neither of them used.
+     `Log.Draw` takes the room it has, so a line too long for the ticker is cut
+     by `Trunc` with a mark on it rather than beheaded.
+   - ~~**The death screen has never been captured.**~~ It is in the tour now,
+     staged after the demo save rather than by losing a fight — `offerRewind`
+     needs a save of this run to offer back, and it is the real path that
+     should be captured: the black the battle faded into, the question on top
+     of it, and the cost of saying no written out.
 
    Add to this as things turn up; do not fix them in ones. What is left is the
    art pass below, which is a different kind of job.
@@ -2129,6 +2130,48 @@ The other half of the roster is not written that way at all: "Owl That Knows",
 "Something That Was A Diver" are whole phrases and the phrase is the joke. A
 test asserts the split is lossless rather than clever, and the name wraps to two
 lines whenever the field is a single row — which is what rescues those.
+
+**And then the names went back together.** *(Jeremy's: "we should help the
+jokes land somehow with showing name + subtext for all the monsters. I think
+that's taking some of the fun out of things without it.")*
+
+He is right, and a captured frame showed it was worse than a preference. Five
+creatures were labelled "Goblin Middle" and "Overfamiliar" — the first row of a
+wrapped name with the rest silently dropped, and nothing on screen to say so.
+That is the transcript's own bug, the one two paragraphs up, moved under a
+portrait: a thing shown in part, reading as a different and shorter thing.
+
+So the plate carries both halves now, always. The species in ink and the
+epithet under it in dim, because the plate should answer "which one do I hit"
+before it answers "what am I looking at". The vertical room was there and
+nobody had asked for it: a single row of creatures has 176 pixels of field to
+hang a 96-pixel portrait in, so the fourth line is free. The stacked layout has
+88 a row and pays for its third line with the portrait, down to 36 — which is
+the party panel's size, and the trade is worth it, because a six-strong pack is
+the case where the labels are doing the most work.
+
+The line counts are not taste. They are what the widest names in the roster
+need at three columns — "Living Armour" is two lines by itself and "Two People
+Inside" is another two — and `TestEveryMonsterNameFitsItsPlate` is what said
+so, having first failed at three. It walks the whole roster against every
+layout from one creature to six, which is what a pack shape sends, so the
+failure it catches is somebody adding a monster whose name is longer than the
+shelf it has to sit on.
+
+**And prose went the other way, to the species alone.** The taunt panel read
+"Wolf, Deeply Unimpressed has watched you fight before. Wolf, Deeply
+Unimpressed was not impressed then either" — the joke told twice, in the middle
+of a sentence, where it is a parsing problem rather than a joke. `{T}` and every
+combat line take `Monster.Short()` now. The two halves finally do different
+jobs: the plate is where the joke is read, and the transcript is where the
+fight is. They also compose, which was the accident worth keeping — the plate
+says the wolf is Deeply Unimpressed and the taunt says it was not impressed
+last time either.
+
+`model.SplitName` is where the comma rule lives now rather than beside the
+battle screen, because the writing needs the same split and two copies of
+"find the comma, keep the group letter with the species" is two copies to
+disagree.
 
 **Labels grew a third band.** Gold used to mean the one thing you were pointed
 directly at and grey meant everything else in range, which made being told which

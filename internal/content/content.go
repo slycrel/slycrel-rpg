@@ -243,7 +243,11 @@ func (w *Writer) Taunt(g *core.RNG, m *model.Monster) string {
 	if len(m.Def.Taunt) == 0 {
 		return ""
 	}
-	return strings.ReplaceAll(core.Pick(g, m.Def.Taunt), "{T}", m.Name)
+	// The species, not the whole name. A taunt that names the creature twice
+	// came out as "Wolf, Deeply Unimpressed has watched you fight before.
+	// Wolf, Deeply Unimpressed was not impressed then either." The epithet is
+	// under the portrait now, where it can be read rather than parsed.
+	return strings.ReplaceAll(core.Pick(g, m.Def.Taunt), "{T}", m.Short())
 }
 
 // MonsterAttack builds the "the X verbs you with its Y" line for a monster.

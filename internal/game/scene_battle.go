@@ -203,7 +203,7 @@ func (b *battleScene) tickEffects(g *Game) {
 			// The line before the blow: damageMonster writes the death notice
 			// when it finishes something off, and a transcript that announces
 			// the corpse before the poison that made it reads backwards.
-			b.log.AddColor(render.ColGold, "%s %s for %d.", t.Kind.Verb(), m.Name, t.Damage)
+			b.log.AddColor(render.ColGold, "%s %s for %d.", t.Kind.Verb(), m.Short(), t.Damage)
 			b.damageMonster(g, i, t.Damage)
 			if m.Dead {
 				break // the rest of what is wrong with it no longer matters
@@ -736,7 +736,7 @@ func (b *battleScene) attemptFeint(g *Game) {
 	d := rules.FeintDamage(g.RNG, g.Player, m)
 	b.damageMonster(g, idx, d)
 	b.log.AddColor(render.ColGold, "%s breaks, %s follows, and %s was never leaving. %d.",
-		g.Player.Name, m.Name, g.Player.Name, d)
+		g.Player.Name, m.Short(), g.Player.Name, d)
 }
 
 // chooseSpell routes a technique to whichever cursor it needs.
@@ -999,7 +999,7 @@ func (b *battleScene) playerAttack(g *Game, p *model.Character, idx int) {
 	sw := rules.PlayerAttack(g.RNG, p, m, str, dex)
 	if sw.Miss {
 		g.Sound.Play("fight/miss")
-		b.log.Add("%s", g.Write.Miss(g.RNG, p.Name, m.Name))
+		b.log.Add("%s", g.Write.Miss(g.RNG, p.Name, m.Short()))
 		return
 	}
 	dmg, crit := sw.Damage, sw.Crit
@@ -1027,7 +1027,7 @@ func (b *battleScene) playerAttack(g *Game, p *model.Character, idx int) {
 	} else {
 		g.Sound.Play("fight/hit")
 	}
-	b.log.Add("%s", g.Write.Hit(g.RNG, p.Name, p.Weapon.Verb, m.Name, dmg, crit))
+	b.log.Add("%s", g.Write.Hit(g.RNG, p.Name, p.Weapon.Verb, m.Short(), dmg, crit))
 }
 
 // buffsFor returns what the conditions riding on a member are worth to a blow.
@@ -1204,33 +1204,33 @@ func (b *battleScene) castOnFoes(g *Game, c cast) {
 			// hits three things is resisted three times, once by each of them.
 			d := rules.AfterWard(rules.SpellDamage(g.RNG, p, s), m.Ward)
 			b.damageMonster(g, i, d)
-			b.log.Add("%s takes %d.", m.Name, d)
+			b.log.Add("%s takes %d.", m.Short(), d)
 		case model.SpellDrain:
 			d := rules.AfterWard(rules.SpellDamage(g.RNG, p, s), m.Ward)
 			b.damageMonster(g, i, d)
 			healed := p.Heal(d / 2)
-			b.log.Add("%s takes %d; %s recovers %d of it.", m.Name, d, p.Name, healed)
+			b.log.Add("%s takes %d; %s recovers %d of it.", m.Short(), d, p.Name, healed)
 			b.addFloater(hx, hy, fmt.Sprintf("+%d", healed), render.ColHeal)
 		case model.SpellWeaken:
 			m.Active = rules.Apply(m.Active, model.Effect{
 				Kind: model.EffectWeaken, Power: s.Power, Rounds: model.Forever,
 			})
-			b.log.Add("%s hits noticeably softer now.", m.Name)
+			b.log.Add("%s hits noticeably softer now.", m.Short())
 		case model.SpellStun:
 			m.Active = rules.Apply(m.Active, model.Effect{
 				Kind: model.EffectStun, Power: 1, Rounds: 1,
 			})
-			b.log.Add("%s loses track of the fight entirely.", m.Name)
+			b.log.Add("%s loses track of the fight entirely.", m.Short())
 		case model.SpellPoison:
 			m.Active = rules.Apply(m.Active, model.Effect{
 				Kind: model.EffectPoison, Power: s.Power, Rounds: 4,
 			})
-			b.log.Add("%s has been given something it cannot metabolise.", m.Name)
+			b.log.Add("%s has been given something it cannot metabolise.", m.Short())
 		case model.SpellBurn:
 			m.Active = rules.Apply(m.Active, model.Effect{
 				Kind: model.EffectBurn, Power: s.Power, Rounds: 3,
 			})
-			b.log.Add("%s is on fire, and has noticed.", m.Name)
+			b.log.Add("%s is on fire, and has noticed.", m.Short())
 		case model.SpellSap:
 			// Half the exchange. The other half lands on the caster once,
 			// below, rather than once per target — otherwise pointing it at
@@ -1240,7 +1240,7 @@ func (b *battleScene) castOnFoes(g *Game, c cast) {
 			m.Active = rules.Apply(m.Active, model.Effect{
 				Kind: model.EffectWeaken, Power: s.Power, Rounds: model.Forever,
 			})
-			b.log.Add("%s has less of whatever that was.", m.Name)
+			b.log.Add("%s has less of whatever that was.", m.Short())
 		case model.SpellPact:
 			d := rules.AfterWard(rules.SpellDamage(g.RNG, p, s), m.Ward)
 			b.damageMonster(g, i, d)
@@ -1406,7 +1406,7 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 	}
 	if rules.Has(m.Active, model.EffectStun) {
 		m.Active = rules.Remove(m.Active, model.EffectStun)
-		b.log.AddColor(render.ColInkDim, "%s is still working out what happened.", m.Name)
+		b.log.AddColor(render.ColInkDim, "%s is still working out what happened.", m.Short())
 		return
 	}
 
@@ -1416,10 +1416,10 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 		// is the whole reward — see awardSpoils.
 		m.Dead = true
 		m.Fled = true
-		b.log.AddColor(render.ColInkDim, "%s decides this is not its problem and goes.", m.Name)
+		b.log.AddColor(render.ColInkDim, "%s decides this is not its problem and goes.", m.Short())
 		return
 	case rules.MonDefend:
-		b.log.AddColor(render.ColInkDim, "%s hides behind %s.", m.Name, m.Def.DefendWith)
+		b.log.AddColor(render.ColInkDim, "%s hides behind %s.", m.Short(), m.Def.DefendWith)
 		return
 	}
 
@@ -1449,7 +1449,7 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 	g.Sound.Play("fight/monster")
 	if dmg == 0 {
 		b.log.Add("%s %s at %s with %s. %s %s it.",
-			m.Name, verb, tgt.Name, with, tgt.Armor.Name, tgt.Armor.Verb)
+			m.Short(), verb, tgt.Name, with, tgt.Armor.Name, tgt.Armor.Verb)
 		return
 	}
 	// The barrier takes what it can first, and says so — a number that lands
@@ -1485,7 +1485,7 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 	fx, fy := b.memberFloat(tgt)
 	b.addFloater(fx, fy, fmt.Sprintf("-%d", dmg), render.ColBlood)
 	b.log.AddColor(render.ColBlood, "%s %s %s with %s for %d.",
-		m.Name, verb, tgt.Name, with, dmg)
+		m.Short(), verb, tgt.Name, with, dmg)
 
 	// Some things leave more than a wound. A spider's bite is worth more than
 	// its damage roll suggests, which is what makes the roster's stat lines
@@ -1978,19 +1978,34 @@ func monSlotY(i, n int) float64 {
 	return cy
 }
 
-// monNameLines is how many lines a creature's name may take under its portrait.
+// monNameLines is how many lines a creature's name plate may take under its
+// portrait: the species, and then what sort of one it is.
 //
-// Two when the field is a single row, one when it is stacked. Half the roster is
-// not written "Species, Epithet" at all — "Goblin Middle Manager", "Bear With
-// Boundaries", "Something That Was A Diver" are whole phrases and the joke is
-// the whole phrase — so splitting on the comma cannot rescue those, and a
-// single line cut them to "Goblin Middle Manag.". A second line does, whenever
-// there is a second line to spare.
+// Three when the field is a single row and two when it is stacked, and both
+// numbers exist to fit the *whole* name rather than as much of it as happened
+// to go in. It was two and one, which was enough for the species alone, and a
+// captured frame showed what that actually looked like: five creatures labelled
+// "Goblin Middle" and "Overfamiliar", each the first row of a wrapped name with
+// the rest silently dropped and nothing on screen to say so. That is the
+// transcript's own bug — an entry shown in part, reading as a different and
+// shorter thing — moved under a portrait.
+//
+// Four when the field is a single row, three when it is stacked, and the
+// difference is what the vertical room will pay for rather than a preference.
+// A single row hangs its portraits in 176 pixels, so the fourth line is free —
+// the portrait stays at its 96-pixel cap either way. A stacked row has 88, and
+// the third line is what takes the portrait down to 36; a fourth would take the
+// two rows past the field and into each other.
+//
+// Four is not arbitrary either. It is what the widest names in the roster
+// actually need at three columns: "Living Armour" is two lines on its own and
+// "Two People Inside" is another two. At three lines the test that measures
+// this said so, which is the whole reason it exists.
 func monNameLines(n int) int {
 	if (n+monCols(n)-1)/monCols(n) == 1 {
-		return 2
+		return 4
 	}
-	return 1
+	return 3
 }
 
 // monBelow is the height of everything under the portrait: the health meter,
@@ -2004,6 +2019,15 @@ func monBox(i, n int) (x, top, w, h float64) {
 	below := monBelow(n)
 	w = core.ClampF(cw-16, 40, 104)
 	h = core.ClampF(ch-4-below, 36, 96)
+	// Never wider than it is tall. The art is square and ScreenFit keeps it
+	// that way, so a box 91 across and 36 down is a 36-pixel creature with
+	// twenty-seven pixels of empty frame on either side of it — which reads as
+	// a portrait that failed to load rather than as a small portrait. The name
+	// under it still gets the whole slot width, so squaring the box costs the
+	// label nothing.
+	if w > h {
+		w = h
+	}
 	// The portrait and everything under it are centred as one block, so a lone
 	// creature sits in the middle of the field rather than hanging from the top
 	// of it.
@@ -2024,31 +2048,76 @@ func partyRowY(i, n int) float64 {
 	return partyPanelY + (partyPanelH-block)/2 + float64(i)*partyRowH
 }
 
+// drawNamePlate writes a creature's name under its portrait: the species, then
+// the epithet in dimmer ink, wrapped into whatever lines the layout affords.
+//
+// The head is served first and the epithet gets the remainder, because the
+// species is the half that answers "which one do I hit" and the epithet is the
+// half that answers "what am I looking at". A name that needs every line leaves
+// nothing for its epithet, which is correct: those are the whole-phrase names,
+// where the phrase *is* the epithet.
+//
+// Nothing is ever dropped silently. A line that will not fit is truncated,
+// which at least reads as cut; a line quietly not drawn reads as the whole
+// name, and that is how "Goblin Middle Manager" appeared on screen as "Goblin
+// Middle" for as long as it did.
+func (b *battleScene) drawNamePlate(dst *ebiten.Image, cx, y, slotW float64,
+	head, tail string, col color.Color, dead bool) {
+
+	budget := monNameLines(len(b.mons))
+	lines := render.Wrap(head, slotW-8)
+	if len(lines) > budget {
+		lines = lines[:budget]
+		// The last line carries the cut rather than the name simply stopping.
+		lines[budget-1] = render.Trunc(lines[budget-1]+" "+wrapTail(head, lines), slotW-6)
+	}
+	headLines := len(lines)
+
+	// The epithet is dimmer than the species, and stays dim when the cursor
+	// lands on the slot: the gold species is already the whole of "this one",
+	// and a second gold line would compete with it for the same job.
+	sub := render.ColInkDim
+	if dead {
+		sub = render.ColInkFaint
+	}
+	var tailLines []string
+	if tail != "" && headLines < budget {
+		tailLines = render.Wrap(tail, slotW-8)
+		if room := budget - headLines; len(tailLines) > room {
+			tailLines = tailLines[:room]
+			tailLines[room-1] = render.Trunc(tailLines[room-1]+" "+wrapTail(tail, tailLines), slotW-6)
+		}
+	}
+
+	for j, ln := range lines {
+		render.TextCenter(dst, render.Trunc(ln, slotW-6), cx, y+float64(j)*render.LineH, col)
+	}
+	for j, ln := range tailLines {
+		render.TextCenter(dst, render.Trunc(ln, slotW-6), cx,
+			y+float64(headLines+j)*render.LineH, sub)
+	}
+}
+
+// wrapTail is whatever of a phrase the kept lines did not carry, so a truncated
+// last line ends in the beginning of the words it is cutting rather than
+// stopping cleanly at a word boundary and reading as complete.
+func wrapTail(full string, kept []string) string {
+	used := 0
+	for _, ln := range kept {
+		used += len(ln) + 1
+	}
+	if used >= len(full) {
+		return ""
+	}
+	return full[used:]
+}
+
 // monsterName splits a creature's name into what it is and what sort of one.
 //
-// Every name in the tables is written "Crab, Territorial" — a species and a
-// characterisation, and the characterisation is the joke. Printing both under
-// a portrait meant every label was too long for the slot it was in, so the
-// tables' funniest column was the half that got truncated away: "Goblin Middle
-// Manag." says neither thing.
-//
-// So the field shows what it is, and the epithet is kept for the moment it is
-// worth reading — the target cursor landing on one — where there is a whole
-// panel to say it in.
-//
-// The group letter stays with the head. Two crabs are "Crab A" and "Crab B",
-// and a head that dropped it would label them identically at the exact moment
-// the player is choosing between them.
-func monsterName(full string) (head, tail string) {
-	letter := ""
-	if n := len(full); n > 2 && full[n-2] == ' ' && full[n-1] >= 'A' && full[n-1] <= 'Z' {
-		letter, full = " "+full[n-1:], full[:n-2]
-	}
-	if i := strings.Index(full, ", "); i >= 0 {
-		return full[:i] + letter, full[i+2:]
-	}
-	return full + letter, ""
-}
+// A thin wrapper on model.SplitName, which is where the rule lives now: the
+// writing needs the same split, and two copies of "find the comma, keep the
+// group letter with the species" is two copies to disagree.
+func monsterName(full string) (head, tail string) { return model.SplitName(full) }
 
 // drawAllyCursor frames the party row the cursor is on. It borrows the gold
 // frame the monster cursor uses, so "this is the thing you are about to act on"
@@ -2171,18 +2240,16 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 			ui.Bar(dst, cx-boxW/2, top+boxH+2, boxW, 4, m.HPFrac(), render.ColBlood)
 			drawEffectPips(dst, cx-boxW/2, top+boxH+8, m.Active)
 		}
-		// What it is, not what sort of one. The epithet is the half worth
-		// reading and the half that will not fit, so it waits for the target
-		// cursor and a panel with room in it. See monsterName.
-		head, _ := monsterName(m.Name)
-		lines := render.Wrap(head, slotW-8)
-		for j, ln := range lines {
-			if j >= monNameLines(len(b.mons)) {
-				break
-			}
-			render.TextCenter(dst, render.Trunc(ln, slotW-6), cx,
-				top+boxH+12+float64(j)*render.LineH, nameCol)
-		}
+		// What it is, and then what sort of one — both, under every portrait.
+		//
+		// The epithet used to wait for the target cursor, on the grounds that
+		// it was the half that would not fit. It is the half that is funny, and
+		// a joke the player has to point at to read is a joke that lands once
+		// per fight instead of four times. It is dim rather than absent, so the
+		// species still reads first and the plate still answers "what is that"
+		// before it answers "what sort".
+		head, tail := monsterName(m.Name)
+		b.drawNamePlate(dst, cx, top+boxH+12, slotW, head, tail, nameCol, m.Dead)
 	}
 
 	// Effects over the portraits, under everything with a number on it.
