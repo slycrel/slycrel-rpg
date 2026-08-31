@@ -65,6 +65,16 @@
       "desc": "Somebody's. It has been lucky for exactly one of you so far.",
       "icon": "icon/loot/canine_tooth"
     },
+    "sidearm": {
+      "name": "",
+      "strike": 0,
+      "range": 0,
+      "cost": 0,
+      "quality": 0,
+      "verb": "",
+      "tier": 0,
+      "icon": ""
+    },
     "bag": [
       {
         "name": "Small Beer",
@@ -175,6 +185,16 @@
         "tier": 1,
         "desc": "Somebody's. It has been lucky for exactly one of you so far.",
         "icon": "icon/loot/canine_tooth"
+      },
+      "sidearm": {
+        "name": "",
+        "strike": 0,
+        "range": 0,
+        "cost": 0,
+        "quality": 0,
+        "verb": "",
+        "tier": 0,
+        "icon": ""
       },
       "bag": null,
       "ally": true,

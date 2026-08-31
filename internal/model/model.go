@@ -69,7 +69,16 @@ type Character struct {
 	Armor  Armor  `json:"armor"`
 	Shield Shield `json:"shield,omitempty"`
 	Charm  Charm  `json:"charm,omitempty"`
-	Bag    []Item `json:"bag"`
+	// Sidearm is a second weapon on the off arm, which is the thief's answer
+	// to a slot the other two classes fill with a plank or a talisman.
+	//
+	// It shares the off arm with Shield and the two are mutually exclusive:
+	// EquipAs and Character.Equip both put one down to pick the other up, and
+	// TestTheOffArmHoldsOneThing says so. Absent in every save written before
+	// it existed, which unmarshals to a weapon with no name, which Worn reads
+	// as an empty hand — the honest answer, and the safe one.
+	Sidearm Weapon `json:"sidearm,omitempty"`
+	Bag     []Item `json:"bag"`
 	// Carried is equipment in the pack rather than on the body: bought, found,
 	// or taken off. See Carried in gear.go for why it exists.
 	Carried []Carried `json:"carried,omitempty"`
@@ -223,6 +232,44 @@ type Weapon struct {
 
 // TwoHanded reports whether the weapon occupies the shield arm as well.
 func (w Weapon) TwoHanded() bool { return w.Hands >= 2 }
+
+// Worn reports whether this is a weapon at all, as opposed to an empty slot.
+func (w Weapon) Worn() bool { return w.Name != "" }
+
+// OffHand is a weapon on a shelf that is for the other arm.
+//
+// It is a wrapper rather than a flag because the only thing that needs to tell
+// the difference is a type switch — the shop deciding which slot a purchase
+// goes into. Everything else treats it as the Weapon it embeds, which it is.
+// A flag would have to be checked at every one of those places and would be
+// forgotten at one of them.
+type OffHand struct{ Weapon }
+
+// SidearmShare is how much of an off-hand weapon's strike reaches the blow.
+//
+// Half, and the half is the whole design. The point of putting a weapon on the
+// off arm rather than a shield is that it is priced on the *weapon* table,
+// which steps about five a band where the sidearm table steps two — that is
+// the one legitimate way past TestShieldsStaySecondaryToArmour, since a dagger
+// is not a shield and the rule that holds shields under half the body armour
+// of their band has nothing to say about it.
+//
+// Full strike would make it strictly the best thing on the arm at every level
+// and turn the slot back into a ladder. Half puts a tier-4 sidearm at about
+// what the spiked shield of the same band is worth, which is where a choice
+// lives: EXCHANGE prices strike near a point of win rate each at the top of
+// the game, the spiked lane carries six of it, and half of a tier-4 dagger is
+// in the same neighbourhood.
+//
+// It is a function rather than a constant beside the field because the halving
+// has to happen in exactly one place. Two copies is how a stat ends up counted
+// once on the character sheet and twice in the damage roll.
+func SidearmShare(w Weapon) int {
+	if !w.Worn() {
+		return 0
+	}
+	return w.Strike / 2
+}
 
 // ArmorKind is how heavy a coat is, which is the whole of who can move in it.
 // The empty string means "anyone", for the same reason WeaponKind's does.

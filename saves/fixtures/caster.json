@@ -72,6 +72,16 @@
       "desc": "Worn by people who are paid to already be elsewhere.",
       "icon": "icon/loot/bird_feather"
     },
+    "sidearm": {
+      "name": "",
+      "strike": 0,
+      "range": 0,
+      "cost": 0,
+      "quality": 0,
+      "verb": "",
+      "tier": 0,
+      "icon": ""
+    },
     "bag": [
       {
         "name": "Small Beer",
@@ -186,6 +196,16 @@
         "tier": 2,
         "desc": "Worn by people who are paid to already be elsewhere.",
         "icon": "icon/loot/bird_feather"
+      },
+      "sidearm": {
+        "name": "",
+        "strike": 0,
+        "range": 0,
+        "cost": 0,
+        "quality": 0,
+        "verb": "",
+        "tier": 0,
+        "icon": ""
       },
       "bag": null,
       "ally": true,

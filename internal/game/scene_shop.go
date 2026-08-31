@@ -105,6 +105,15 @@ func (s *shopScene) refresh(g *Game) {
 				}
 				items = append(items, s.gearRow(g, sh.Name, sh.Icon, sh.Cost, sh))
 			}
+			// And the off-hand weapons, on the same counter as the shields for
+			// the same reason: they are the other thing a smith beats, and they
+			// compete for the same arm. Narrowed to the class at the counter
+			// rather than listed and greyed — two of the three can never hold
+			// one at any tier, and a permanently dead shelf is worse than no
+			// shelf.
+			for _, w := range g.Data.OffHandFor(tier, s.buyer(g).Class) {
+				items = append(items, s.gearRow(g, w.Name, w.Icon, w.Cost, model.OffHand{Weapon: w}))
+			}
 		case world.ShopArmorer:
 			for _, a := range armors {
 				if a.Cost == 0 {
@@ -295,6 +304,9 @@ func (s *shopScene) buy(g *Game, it ui.MenuItem) {
 		carry(model.Carried{Armor: &v}, v.Cost, v)
 	case model.Shield:
 		carry(model.Carried{Shield: &v}, v.Cost, v)
+	case model.OffHand:
+		w := v.Weapon
+		carry(model.Carried{Sidearm: &w}, v.Cost, v)
 	case model.Charm:
 		carry(model.Carried{Charm: &v}, v.Cost, v)
 	case model.Item:
@@ -558,6 +570,17 @@ func shopDescribe(data any) string {
 			out += " " + statWords(*v.Extra)
 		}
 		return strings.TrimSpace(out + " " + bonusWords(v.Affix))
+	case model.OffHand:
+		// Half, said out loud and in the same unit the weapon shelf uses.
+		// "Strike 16" on a row that adds eight would be the counter lying by
+		// omission, and the halving is the whole of what makes this a choice
+		// against a shield rather than a strictly better one.
+		out := fmt.Sprintf("Strike %d on the off arm — half of %d.",
+			model.SidearmShare(v.Weapon), v.Strike)
+		if v.Extra != nil {
+			out += " " + statWords(*v.Extra) + "."
+		}
+		return out + " Instead of a shield, not as well as one."
 	case model.Shield:
 		out := fmt.Sprintf("Guard %d on the off arm.", v.Defense)
 		if v.Barrier() {

@@ -80,6 +80,16 @@
       "desc": "Holding it, you can hear yourself think. This is not always welcome.",
       "icon": "icon/loot/moon_stone"
     },
+    "sidearm": {
+      "name": "",
+      "strike": 0,
+      "range": 0,
+      "cost": 0,
+      "quality": 0,
+      "verb": "",
+      "tier": 0,
+      "icon": ""
+    },
     "bag": [
       {
         "name": "Small Beer",
@@ -198,6 +208,16 @@
         "desc": "Holding it, you can hear yourself think. This is not always welcome.",
         "icon": "icon/loot/moon_stone"
       },
+      "sidearm": {
+        "name": "",
+        "strike": 0,
+        "range": 0,
+        "cost": 0,
+        "quality": 0,
+        "verb": "",
+        "tier": 0,
+        "icon": ""
+      },
       "bag": null,
       "ally": true,
       "cut": 9,
@@ -273,6 +293,16 @@
         "tier": 3,
         "desc": "Holding it, you can hear yourself think. This is not always welcome.",
         "icon": "icon/loot/moon_stone"
+      },
+      "sidearm": {
+        "name": "",
+        "strike": 0,
+        "range": 0,
+        "cost": 0,
+        "quality": 0,
+        "verb": "",
+        "tier": 0,
+        "icon": ""
       },
       "bag": null,
       "ally": true,

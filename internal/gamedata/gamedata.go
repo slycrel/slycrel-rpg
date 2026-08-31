@@ -30,8 +30,15 @@ type Tables struct {
 	Armors  []model.Armor
 	Shields []model.Shield
 	Charms  []model.Charm
-	Items   map[string]model.Item
-	Spells  []model.Spell
+	// Sidearms are the off-hand weapons, which are Weapons in every respect
+	// except which arm they go on. A separate table rather than a flag on the
+	// main one because the shop has to list them as their own shelf and the
+	// thief has to be able to buy one without being asked which hand — a
+	// parrying dagger is an off-arm item the way a shield is, not a sword that
+	// happens to be small.
+	Sidearms []model.Weapon
+	Items    map[string]model.Item
+	Spells   []model.Spell
 	// Affixes are the suffixes a piece of gear can carry, and what they do.
 	Affixes []model.Affix
 
@@ -208,6 +215,9 @@ func Load(root string) (*Tables, error) {
 		t.Items[it.Name] = it
 	}
 	if err := readJSON(filepath.Join(dd, "items", "shields.json"), &t.Shields); err != nil {
+		return nil, err
+	}
+	if err := readJSON(filepath.Join(dd, "items", "sidearms.json"), &t.Sidearms); err != nil {
 		return nil, err
 	}
 	if err := readJSON(filepath.Join(dd, "items", "charms.json"), &t.Charms); err != nil {
@@ -428,6 +438,36 @@ func bestArmor(as []model.Armor) (model.Armor, bool) {
 }
 
 // SidearmsFor returns the shields and charms a shop of the given tier carries.
+// OffHandFor is the off-hand weapons a shop of the given tier carries, narrowed
+// to the ones this class may actually hold.
+//
+// Narrowed rather than listed-and-greyed, unlike the main shelves, because the
+// answer is the same for every member of a class at every tier: two of the
+// three can never hold one at all, and a shelf that is empty for them is a
+// shelf that should not be drawn.
+func (t *Tables) OffHandFor(tier int, class model.Class) []model.Weapon {
+	var out []model.Weapon
+	for _, w := range t.Sidearms {
+		if w.Tier <= tier && model.CanHoldSidearm(class, w) {
+			out = append(out, w)
+		}
+	}
+	return out
+}
+
+// BestSidearm is the heaviest off-hand weapon on a shelf, which for this table
+// is simply the dearest — they are one lane, so there is nothing to weigh.
+func BestSidearm(ws []model.Weapon) (model.Weapon, bool) {
+	var best model.Weapon
+	found := false
+	for _, w := range ws {
+		if !found || w.Tier > best.Tier || (w.Tier == best.Tier && w.Strike > best.Strike) {
+			best, found = w, true
+		}
+	}
+	return best, found
+}
+
 func (t *Tables) SidearmsFor(tier int) ([]model.Shield, []model.Charm) {
 	var ss []model.Shield
 	for _, s := range t.Shields {
@@ -511,6 +551,12 @@ type Archetype struct {
 	// exactly the state the report was in when it said the two-hander beats
 	// the shield everywhere. It beats *one* of the shields.
 	Arm model.SidearmLane
+
+	// OffHand puts a second weapon on the arm instead of a plank, for the one
+	// class that may. False is a plank, which is what every build measured
+	// before this existed took, so the zero value keeps every earlier number
+	// meaning what it meant.
+	OffHand bool
 
 	// Hands is how the weapon arm is spent: 1 leaves the off arm free for a
 	// shield, 2 commits both, 0 takes whatever is best in the band.
@@ -770,15 +816,26 @@ func (t *Tables) EquipAs(c *model.Character, a Archetype) {
 		}
 	}
 	// The off arm needs a free hand and something the class may put on it —
-	// a plank for two of them, a talisman for the third.
+	// a plank for two of them, a talisman for the third, or a second weapon
+	// for the one that duels. One thing, whichever it is: putting a dagger on
+	// the arm puts the shield down, which is the trade the slot exists to make
+	// and the invariant TestTheOffArmHoldsOneThing holds.
 	c.Shield = model.Shield{}
+	c.Sidearm = model.Weapon{}
 	if tier := a.Shield.tierAt(base); tier >= 1 && c.CanHold() {
-		ss, _ := t.SidearmsFor(tier)
-		arm := a.Arm
-		if arm == ArmByLevel {
-			arm = LaneForLevel(c.Level)
+		if a.OffHand {
+			if w, ok := BestSidearm(t.OffHandFor(tier, c.Class)); ok {
+				c.Sidearm = w
+			}
 		}
-		c.Shield = pickSidearm(ss, c.Class, arm)
+		if !c.Sidearm.Worn() {
+			ss, _ := t.SidearmsFor(tier)
+			arm := a.Arm
+			if arm == ArmByLevel {
+				arm = LaneForLevel(c.Level)
+			}
+			c.Shield = pickSidearm(ss, c.Class, arm)
+		}
 	}
 	c.Charm = model.Charm{}
 	if tier := a.Charm.tierAt(base); tier >= 1 {

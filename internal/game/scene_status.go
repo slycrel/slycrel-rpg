@@ -335,7 +335,17 @@ func wornCost(c *model.Character, gear model.Carried) int {
 	case gear.Armor != nil:
 		return c.Armor.Cost
 	case gear.Shield != nil:
+		// The off arm holds one thing, so what a plank displaces is whatever
+		// was on that arm — which may have been a weapon.
+		if c.Sidearm.Worn() {
+			return c.Sidearm.Cost
+		}
 		return c.Shield.Cost
+	case gear.Sidearm != nil:
+		if c.Shield.Worn() {
+			return c.Shield.Cost
+		}
+		return c.Sidearm.Cost
 	case gear.Charm != nil:
 		return c.Charm.Cost
 	}
@@ -699,10 +709,17 @@ func (s *statusScene) Draw(g *Game, dst *ebiten.Image) {
 	gearRow("Armour", fitGear(p.Armor.Name, p.Armor.Affix, gearWidth("Armour")))
 	// The two new slots always show, empty or not. A slot the player does not
 	// know exists is a slot they never go shopping for.
-	if p.Shield.Worn() {
-		gearRow("Shield", fitGear(p.Shield.Name, p.Shield.Affix, gearWidth("Shield")))
-	} else {
-		gearRow("Shield", "nothing on that arm")
+	// One row for the off arm, because it is one slot. A shield line and a
+	// separate off-hand line would show one of them permanently empty and read
+	// as a slot that had gone missing, which is the opposite of why these
+	// always show.
+	switch {
+	case p.Sidearm.Worn():
+		gearRow("Off arm", fitGear(p.Sidearm.Name, p.Sidearm.Affix, gearWidth("Off arm")))
+	case p.Shield.Worn():
+		gearRow("Off arm", fitGear(p.Shield.Name, p.Shield.Affix, gearWidth("Off arm")))
+	default:
+		gearRow("Off arm", "nothing on that arm")
 	}
 	if p.Charm.Worn() {
 		gearRow("Charm", fitGear(p.Charm.Name, p.Charm.Affix, gearWidth("Charm")))

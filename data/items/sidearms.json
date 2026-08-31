@@ -1,0 +1,73 @@
+[
+  {
+    "name": "Off-Hand Knife, Borrowed",
+    "kind": "dagger",
+    "strike": 3,
+    "range": 0,
+    "cost": 20,
+    "quality": 1,
+    "verb": "opens",
+    "tier": 1,
+    "icon": "icon/band/arms/dagger1_t1",
+    "extra": {
+      "dexterity": -1
+    }
+  },
+  {
+    "name": "Main-Gauche, Chipped",
+    "kind": "dagger",
+    "strike": 8,
+    "range": 0,
+    "cost": 55,
+    "quality": 1,
+    "verb": "catches",
+    "tier": 2,
+    "icon": "icon/band/arms/dagger1_t2",
+    "extra": {
+      "dexterity": -1
+    }
+  },
+  {
+    "name": "Parrying Dagger, Insistent",
+    "kind": "dagger",
+    "strike": 12,
+    "range": 0,
+    "cost": 122,
+    "quality": 2,
+    "verb": "answers",
+    "tier": 3,
+    "icon": "icon/band/arms/dagger1_t3",
+    "extra": {
+      "dexterity": -1
+    }
+  },
+  {
+    "name": "Sleeve Blade, Ill-Advised",
+    "kind": "dagger",
+    "strike": 16,
+    "range": 0,
+    "cost": 278,
+    "quality": 3,
+    "verb": "surprises",
+    "tier": 4,
+    "icon": "icon/band/arms/dagger1_t4",
+    "extra": {
+      "dexterity": -2
+    }
+  },
+  {
+    "name": "The Second Opinion",
+    "kind": "dagger",
+    "strike": 20,
+    "range": 0,
+    "cost": 645,
+    "quality": 4,
+    "verb": "interrupts",
+    "tier": 5,
+    "icon": "icon/band/arms/dagger1_t5",
+    "extra": {
+      "dexterity": -2,
+      "speed": -1
+    }
+  }
+]

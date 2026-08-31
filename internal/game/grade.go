@@ -161,6 +161,9 @@ func carriedOf(data any) model.Carried {
 		return model.Carried{Armor: &v}
 	case model.Shield:
 		return model.Carried{Shield: &v}
+	case model.OffHand:
+		w := v.Weapon
+		return model.Carried{Sidearm: &w}
 	case model.Charm:
 		return model.Carried{Charm: &v}
 	}

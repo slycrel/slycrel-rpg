@@ -1548,6 +1548,54 @@ func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 		fmt.Fprintf(out, "  reweighting the roster rescues it: the item is mispriced.\n")
 	}
 
+	// And the fourth thing that can go on the arm, for the one class that may.
+	//
+	// A second weapon is not a lane — it is not a shield at all, which is the
+	// point of it: it is priced on the weapon table, which steps about five a
+	// band where the sidearm table steps two. So it does not belong in the
+	// three columns above, and it does belong on the same page, because the
+	// question it answers is the same one: what is that arm worth.
+	//
+	// Half the weapon's strike reaches the blow. Full strike would make it the
+	// best thing on the arm at every level and turn the slot back into a
+	// ladder, which is the state the three lanes were rescued from.
+	fmt.Fprintf(out, "\nthe fourth option — a weapon on the arm, for the class that may hold one\n")
+	fmt.Fprintf(out, "%-6s %-8s %8s %8s %8s   %s\n",
+		"level", "class", "lane", "sidearm", "cost", "against the lane it replaces")
+	fmt.Fprintln(out, strings.Repeat("-", 74))
+	for _, level := range []int{5, 9, 13} {
+		for _, class := range model.AllClasses {
+			probe := &model.Character{Class: class, Level: level}
+			side := gamedata.Archetypes[0]
+			side.OffHand = true
+			t.EquipAs(probe, side)
+			if !probe.Sidearm.Worn() {
+				continue
+			}
+			lane, _, _, _, _, _, laneCost := run(gamedata.Archetypes[0], class, level, laneStretch)
+			arm, _, _, _, _, _, armCost := run(side, class, level, laneStretch)
+			call := fmt.Sprintf("%+.1f", arm-lane)
+			if d := arm - lane; d < worstWon && d > -worstWon {
+				call = "nothing in it"
+			}
+			fmt.Fprintf(out, "%-6d %-8s %7.1f%% %7.1f%% %8d   %s\n",
+				level, class, lane, arm, armCost-laneCost, call)
+		}
+	}
+	fmt.Fprint(out, `
+The cost column is what the swap does to the whole kit, which is the honest
+frame: an off-hand weapon is bought instead of a plank, not as well as one,
+and the two shelves are priced within a band of each other on purpose.
+
+What to want from these rows is *nothing in it*. A weapon on the arm that
+beat the lane by more than the floor would be the ladder again with an extra
+rung; one that lost by more than the floor would be a shelf nobody should
+buy from. The thief now has four things it can put on that arm and the
+report says which of them is a mistake, which is all this section has ever
+been for.
+
+`)
+
 	// What this section exists to check, and it is not the crossover.
 	//
 	// The crossover is a derived number and comparing it against the constant

@@ -217,6 +217,14 @@ var arms = map[Class]struct {
 	twoHanded bool
 	armors    map[ArmorKind]bool
 	shields   map[ShieldKind]bool
+	// sidearm is whether this class may put a second weapon on the off arm,
+	// and only one of them may. It is the thief's, and it is the thief's for
+	// the reason the other two do not need it: a fighter's off arm already has
+	// three planks competing for it and a mage's has a talisman built for the
+	// way a mage dies. The thief could hold a plank and the lane rule now
+	// hands it the offensive one, which is most of the gap closed — this is
+	// the rest of it, and the difference is which table it is priced on.
+	sidearm bool
 }{
 	ClassFighter: {
 		weapons:   map[WeaponKind]bool{WeaponBlade: true, WeaponBlunt: true, WeaponPolearm: true},
@@ -228,6 +236,7 @@ var arms = map[Class]struct {
 		weapons: map[WeaponKind]bool{WeaponDagger: true, WeaponBlade: true, WeaponBlunt: true},
 		armors:  map[ArmorKind]bool{ArmorCloth: true, ArmorLight: true},
 		shields: map[ShieldKind]bool{ShieldBuckler: true},
+		sidearm: true,
 	},
 	ClassMage: {
 		weapons: map[WeaponKind]bool{WeaponDagger: true, WeaponFocus: true},
@@ -276,6 +285,26 @@ func CanHoldShield(class Class, s Shield) bool {
 // arm free at all.
 func (c *Character) CanHold() bool { return !c.Weapon.TwoHanded() }
 
+// CanHoldSidearm reports whether a class may put this weapon on its off arm.
+//
+// Two gates, and they are separate on purpose. The class has to be one that
+// duels with two hands full at all — one is, by design — and the weapon has to
+// be one that class could hold in the main hand anyway, because "a thief may
+// wield a dagger but not in the left hand" is a rule nobody would guess and
+// nobody would enjoy discovering.
+//
+// A two-hander is refused for the reason it refuses a shield: there is no arm.
+func CanHoldSidearm(class Class, w Weapon) bool {
+	a, ok := arms[class]
+	if !ok || !a.sidearm {
+		return false
+	}
+	if w.TwoHanded() || w.Kind == WeaponFocus {
+		return false
+	}
+	return CanWield(class, w)
+}
+
 // CanUse reports whether the character may equip a carried piece, and says why
 // not when they may not. The reason is for the shelf and the character sheet,
 // which both have a detail column to put it in.
@@ -295,6 +324,13 @@ func (c *Character) CanUse(g Carried) (bool, string) {
 		}
 		if !CanHoldShield(c.Class, *g.Shield) {
 			return false, heldBy(*g.Shield)
+		}
+	case g.Sidearm != nil:
+		if c.Weapon.TwoHanded() {
+			return false, "both hands are full"
+		}
+		if !CanHoldSidearm(c.Class, *g.Sidearm) {
+			return false, "only a thief fights with two"
 		}
 	}
 	return true, ""
@@ -346,6 +382,15 @@ func (c *Character) Gear() Bonus {
 	}
 	if c.Armor.Affix != nil {
 		b = b.Add(c.Armor.Affix.Bonus)
+	}
+	if c.Sidearm.Worn() {
+		b = b.Add(Bonus{Strike: SidearmShare(c.Sidearm)})
+		if c.Sidearm.Extra != nil {
+			b = b.Add(*c.Sidearm.Extra)
+		}
+		if c.Sidearm.Affix != nil {
+			b = b.Add(c.Sidearm.Affix.Bonus)
+		}
 	}
 	if c.Shield.Worn() {
 		b = b.Add(Bonus{Defense: c.Shield.Defense})
@@ -446,17 +491,25 @@ type Carried struct {
 	Armor  *Armor  `json:"armor,omitempty"`
 	Shield *Shield `json:"shield,omitempty"`
 	Charm  *Charm  `json:"charm,omitempty"`
+	// Sidearm is an off-hand weapon, and it is a separate field from Weapon
+	// rather than the same one because which arm it goes on is a property of
+	// the item and not a question to ask the player. A Weapon in the pack goes
+	// in the hand; a Sidearm goes on the arm; neither ever prompts.
+	Sidearm *Weapon `json:"sidearm,omitempty"`
 }
 
 // Empty reports a slot holding nothing, which should not occur but is cheaper
 // to check than to prove impossible.
 func (c Carried) Empty() bool {
-	return c.Weapon == nil && c.Armor == nil && c.Shield == nil && c.Charm == nil
+	return c.Weapon == nil && c.Armor == nil && c.Shield == nil &&
+		c.Charm == nil && c.Sidearm == nil
 }
 
 // Titled is the full name of whatever is in here, affix included.
 func (c Carried) Titled() string {
 	switch {
+	case c.Sidearm != nil:
+		return c.Sidearm.Titled()
 	case c.Weapon != nil:
 		return c.Weapon.Titled()
 	case c.Armor != nil:
@@ -472,6 +525,8 @@ func (c Carried) Titled() string {
 // Slot names which part of a character this would go on.
 func (c Carried) Slot() string {
 	switch {
+	case c.Sidearm != nil:
+		return "off hand"
 	case c.Weapon != nil:
 		return "weapon"
 	case c.Armor != nil:
@@ -547,9 +602,28 @@ func (c *Character) Equip(i int) bool {
 		}
 	case g.Shield != nil:
 		old := c.Shield
+		oldSide := c.Sidearm
 		c.Shield = *g.Shield
+		// One arm, one thing. Taking up a plank puts down whatever weapon was
+		// in that hand, into the pack rather than into the ground — nothing in
+		// this game destroys a piece of gear.
+		c.Sidearm = Weapon{}
 		if old.Worn() {
 			c.Carry(Carried{Shield: &old})
+		}
+		if oldSide.Worn() {
+			c.Carry(Carried{Sidearm: &oldSide})
+		}
+	case g.Sidearm != nil:
+		old := c.Sidearm
+		oldShield := c.Shield
+		c.Sidearm = *g.Sidearm
+		c.Shield = Shield{}
+		if old.Worn() {
+			c.Carry(Carried{Sidearm: &old})
+		}
+		if oldShield.Worn() {
+			c.Carry(Carried{Shield: &oldShield})
 		}
 	case g.Charm != nil:
 		old := c.Charm

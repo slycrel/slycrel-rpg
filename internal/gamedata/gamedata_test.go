@@ -334,6 +334,11 @@ func TestIconsResolve(t *testing.T) {
 	for _, c := range tables.Charms {
 		check("charm", c.Name, c.Icon)
 	}
+	// And the off-hand weapons, added to this list in the same commit that
+	// added the shelf, because the lesson above was learned by not doing that.
+	for _, w := range tables.Sidearms {
+		check("off-hand weapon", w.Name, w.Icon)
+	}
 }
 
 // TestGearIconsAreDistinct keeps every shelf readable: two entries sharing a
@@ -1620,5 +1625,167 @@ func TestTheWorldReachesTheTopOfItsOwnContent(t *testing.T) {
 		if !seen[lvl] {
 			t.Errorf("no location at level %d in any of %d seeds", lvl, len(seeds))
 		}
+	}
+}
+
+// The off arm holds one thing, and that is the trade the whole slot is.
+//
+// A dagger in the left hand instead of a plank is priced on the *weapon* table,
+// which steps about five a band where the sidearm table steps two — and that is
+// the one legitimate way past TestShieldsStaySecondaryToArmour, since a dagger
+// is not a shield. What stops it being a free upgrade is that it costs the
+// shield entirely. If the two ever coexisted, the thief would be carrying a
+// weapon *and* a guard for the price of one slot, and nothing else in the
+// equipment system would say so.
+func TestTheOffArmHoldsOneThing(t *testing.T) {
+	tables := load(t)
+
+	// Through EquipAs, which is what dresses every simulated subject and every
+	// hireling in the game.
+	build := gamedata.Archetypes[0]
+	build.OffHand = true
+	for level := 1; level <= 14; level++ {
+		for _, class := range model.AllClasses {
+			c := &model.Character{Class: class, Level: level}
+			tables.EquipAs(c, build)
+			if c.Shield.Worn() && c.Sidearm.Worn() {
+				t.Fatalf("level %d %s: holding %q and %q on one arm",
+					level, class, c.Shield.Name, c.Sidearm.Name)
+			}
+			// And only the class that may.
+			if c.Sidearm.Worn() && !model.CanHoldSidearm(class, c.Sidearm) {
+				t.Errorf("level %d %s: handed %q, which that class may not hold",
+					level, class, c.Sidearm.Name)
+			}
+		}
+	}
+
+	// And through the pack, which is how a player does it.
+	c := &model.Character{Class: model.ClassThief, Level: 9}
+	tables.Equip(c)
+	if !c.Shield.Worn() {
+		t.Fatalf("a level-9 thief should start this test holding a plank")
+	}
+	plank := c.Shield.Name
+
+	side, ok := gamedata.BestSidearm(tables.OffHandFor(3, model.ClassThief))
+	if !ok {
+		t.Fatal("no off-hand weapon on a tier-3 shelf")
+	}
+	c.Carry(model.Carried{Sidearm: &side})
+	if !c.Equip(len(c.Carried) - 1) {
+		t.Fatal("the thief refused an off-hand weapon it may hold")
+	}
+	if c.Shield.Worn() {
+		t.Errorf("the plank %q stayed on after a dagger went into the same hand", c.Shield.Name)
+	}
+	if !c.Sidearm.Worn() {
+		t.Fatal("the dagger did not go on")
+	}
+	// Nothing is ever destroyed: the plank is in the pack.
+	found := false
+	for _, g := range c.Carried {
+		if g.Shield != nil && g.Shield.Name == plank {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("%q was not put in the pack when it came off", plank)
+	}
+
+	// And back the other way.
+	for i, g := range c.Carried {
+		if g.Shield != nil {
+			if !c.Equip(i) {
+				t.Fatal("the thief refused the plank back")
+			}
+			break
+		}
+	}
+	if c.Sidearm.Worn() {
+		t.Errorf("the dagger %q stayed on after a plank went back into that hand", c.Sidearm.Name)
+	}
+}
+
+// Half of the weapon's strike, counted once. The failure this guards against is
+// the halving being written in two places and the character sheet disagreeing
+// with the damage roll — which is the shape of bug this project has now found
+// three times in the space between a rule and something that estimates it.
+func TestAnOffHandWeaponIsWorthHalfOfItself(t *testing.T) {
+	tables := load(t)
+	side, ok := gamedata.BestSidearm(tables.OffHandFor(5, model.ClassThief))
+	if !ok {
+		t.Fatal("no off-hand weapon on a tier-5 shelf")
+	}
+
+	bare := &model.Character{Class: model.ClassThief, Level: 13}
+	tables.Equip(bare)
+	bare.Shield = model.Shield{}
+	before := bare.Strike()
+
+	armed := *bare
+	armed.Sidearm = side
+	if got, want := armed.Strike()-before, model.SidearmShare(side); got != want {
+		t.Errorf("the off-hand weapon added %d strike, want %d (half of %d)",
+			got, want, side.Strike)
+	}
+	if model.SidearmShare(side) >= side.Strike {
+		t.Errorf("SidearmShare returned %d of a %d-strike weapon; it is meant to be a share",
+			model.SidearmShare(side), side.Strike)
+	}
+	// An empty hand adds nothing, which is the case every save written before
+	// this slot existed unmarshals to.
+	if n := model.SidearmShare(model.Weapon{}); n != 0 {
+		t.Errorf("an empty off arm is worth %d strike, want 0", n)
+	}
+}
+
+// The off-hand shelf exists for exactly one class, and the shop narrows to it
+// rather than listing a row nobody at the counter can take.
+//
+// Narrowing is the exception here — every other shelf lists everything and
+// greys what the buyer cannot use, so that a mage can see plate exists. This
+// one is different because the answer never changes: two of the three classes
+// can never hold an off-hand weapon at any tier, so a greyed row would be
+// permanent furniture rather than information.
+func TestOnlyTheThiefHasAnOffHandShelf(t *testing.T) {
+	tables := load(t)
+
+	for tier := 1; tier <= 5; tier++ {
+		if n := len(tables.OffHandFor(tier, model.ClassThief)); n == 0 {
+			t.Errorf("tier %d: a thief's off-hand shelf is empty", tier)
+		}
+		for _, class := range []model.Class{model.ClassFighter, model.ClassMage} {
+			if got := tables.OffHandFor(tier, class); len(got) > 0 {
+				t.Errorf("tier %d: %s was offered %q on the off arm",
+					tier, class, got[0].Name)
+			}
+		}
+	}
+
+	// The shelf climbs with the tier, the way every other shelf does — a band
+	// that stocked nothing new would be a band with nothing to save for.
+	prev := 0
+	for tier := 1; tier <= 5; tier++ {
+		n := len(tables.OffHandFor(tier, model.ClassThief))
+		if n < prev {
+			t.Errorf("tier %d stocks %d off-hand weapons against tier %d's %d", tier, n, tier-1, prev)
+		}
+		prev = n
+	}
+
+	// And the best of each band is dearer and heavier than the last, or the
+	// slot is a ladder with a rung missing.
+	var lastCost, lastStrike int
+	for tier := 1; tier <= 5; tier++ {
+		w, ok := gamedata.BestSidearm(tables.OffHandFor(tier, model.ClassThief))
+		if !ok {
+			t.Fatalf("tier %d has no best off-hand weapon", tier)
+		}
+		if w.Cost <= lastCost || w.Strike <= lastStrike {
+			t.Errorf("tier %d's %q costs %d and strikes %d, against the band below's %d and %d",
+				tier, w.Name, w.Cost, w.Strike, lastCost, lastStrike)
+		}
+		lastCost, lastStrike = w.Cost, w.Strike
 	}
 }
