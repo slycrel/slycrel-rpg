@@ -1250,6 +1250,9 @@ func SimulateGroup(g *core.RNG, c *model.Character, mons []*model.Monster, maxRo
 		// it hits harder for the round. Declared up here because monsterTurns
 		// closes over it below.
 		punished := false
+		// bracing is a failed escape covering up, which is what the battle
+		// screen does with the round it would otherwise have wasted.
+		bracing := false
 
 		hurt := func(target *model.Monster, dmg int) {
 			target.HP = core.Max(0, target.HP-dmg)
@@ -1346,6 +1349,9 @@ func SimulateGroup(g *core.RNG, c *model.Character, mons []*model.Monster, maxRo
 					if punished {
 						dmg = FeintPunish(dmg)
 					}
+					if bracing {
+						dmg = Defending(dmg)
+					}
 					// The barrier eats what it can before anything reaches the
 					// body, whatever the blow was made of.
 					sim.Active, dmg, _ = Soak(sim.Active, dmg)
@@ -1396,7 +1402,14 @@ func SimulateGroup(g *core.RNG, c *model.Character, mons []*model.Monster, maxRo
 			act = func() {
 				if g.Chance(FleeChance(sim.Spd(), fastest)) {
 					res.Fled = true
+					return
 				}
+				// A failed escape braces rather than spending the round on
+				// nothing, which is what the battle screen does. Without this
+				// the report would price running away as strictly worse than
+				// it is — and the whole reason the flee work exists is that
+				// running away was not worth doing.
+				bracing = true
 			}
 		case CanFeint(sim) && inTrouble(sim, living) && FeintIsWorthIt(sim, living[0]) &&
 			FeintChance(sim, fastest) >= feintFloor:

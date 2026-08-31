@@ -2664,6 +2664,102 @@ And the flavour half is nearly free either way. "Spiked Boss, Regrettable" is
 already a thief's offensive off arm wearing a shield's name; a second dagger in
 the strike lane is the same mechanic with the right fiction on it.
 
+## Parry, and whether the classes actually play differently
+
+*(Jeremy's: "Wondering if a parry bonus (instead of block) might apply to the
+thief to help keep that survivability balanced, but maybe that's already there
+so no harm no foul. That's closer to illusion than actual difference, and
+hopefully we're starting to converge on actual different gameplay for the
+different classes, even if ultimately it's the same (kill stuff, don't die).")*
+
+**It is not already there.** There is no evasion of any kind on the player's
+side. `MonsterDamage` rolls between 0.35 and 1.35 times a creature's Offense
+and subtracts flat `Defense` — or `Ward`, if the attack is magical — and that
+is the whole of defence. Every monster attack connects. Dexterity feeds the
+*player's* miss chance, the crit roll and the feint odds; Speed feeds
+initiative and the flee roll. Neither does anything defensive.
+
+Worth noting on the way past: the miss roll runs one direction only. A player
+can whiff against a fast creature; a creature never whiffs. That is probably
+right — it keeps incoming damage predictable, which is what the DANGER table is
+built on — but it means "dodge" already exists in the maths and only the
+monsters are exempt from it.
+
+**And it would not be illusion.** Flat reduction and a chance to negate are
+different arithmetic against a spread roll, not two names for one thing:
+
+- Flat −N comes off every hit and clips the small ones to nothing. It is worth
+  most where hits are many and small.
+- A chance to negate removes a share of the *total* regardless of hit size. It
+  is worth the same against a big hit as a small one, so relative to armour it
+  gains as hits grow.
+
+Monster Offense grows with level, so those two curves diverge with level rather
+than staying parallel. A parrying thief and an armoured fighter would not be
+the same character with different words on the sheet: they would take damage in
+different shapes — the fighter chipped steadily, the thief untouched and then
+hit hard — and the thief's existing kit already leans that way. It has no
+healing technique at all, its sustain is items, and its signature move is a
+gamble. High variance is what that class already is.
+
+There is also a precedent for the shape of the change. The Mage's talisman
+carries `Absorb` rather than `Defense`: a pool spent once per fight against
+damage of any kind. That is already defence in a different *unit* for one
+class. Parry would be a second, and it would go to the class that currently has
+none.
+
+**On the wider question, which deserves a straight answer.** The classes are
+differentiated today almost entirely *outside* the fight. The thief has no
+healing, buys two restoratives for one, works the drop table of creatures that
+ran, and can feint. The mage has the talisman, the deepest psyche pool, and
+spell damage that scales on psyche and focus. The fighter has heavy armour and
+the two-handed lane. Those are real and they are mostly economic.
+
+Inside the fight all three run one loop: roll damage, subtract guard. The only
+class-shaped terms in that loop are Focus, which exists for the caster, and the
+miss and crit terms, which read Dexterity. So the observation is accurate — the
+combat core is currently the same game three times, and the differences sit
+around it rather than in it.
+
+A parry term would be the first thing to make the *defensive* maths differ by
+class, which is the half where the sameness is most felt.
+
+**Half of it is built, because half of it was a hole rather than a feature.**
+*(Jeremy's, in the same breath: "we should change flee to auto-defend, and have
+a higher chance to have monsters miss. Nothing like starting a fight you know
+you can't win and can't flee and die.")*
+
+A failed escape used to cost the entire round and do nothing at all — "turns to
+run and immediately reconsiders", and then every creature present hit for full
+against a character who had spent their turn. `FleeChance` floors at ten per
+cent, which is where a slow company against a fast creature sits, so escaping
+from there expects nine failures. Nine rounds of damage taken with nothing
+given back and nothing turned aside, against monsters that cannot miss. A whole
+fight is about six rounds. That is not a risk with a button on it, it is a
+death spiral, and it fires exactly in the situation the button exists for.
+
+A failed flee braces now: the whole party, since fleeing is a party action and
+it would be strange for the one who called the retreat to be the only one who
+stopped covering up. `Defending` already halves incoming damage and the Defend
+command already used it; the round is no longer spent on nothing.
+
+`SimulateFight` learned it in the same commit, because a mechanic the simulator
+cannot see is a mechanic the balance pass is lying about — and this one lands
+on the exact measurement the whole flee feature was built to fix. The report
+would otherwise have gone on pricing retreat as strictly worse than it is.
+
+The other half — monsters missing — is the parry idea in its general form and
+stays unbuilt for the reason below.
+
+**And it is the largest-blast-radius change proposed so far**, which is the
+reason it is written down here rather than started. `MonsterDamage` is what
+every number in the report is built on: DANGER, ENDURANCE, ARCS, LANES, WARD
+and the whole curve. Adding a term to it re-tunes all of them at once, and the
+last five findings in this document were all instruments lying about content.
+The order is the one the stagger and dual-wield ideas got, and more so here:
+teach `SimulateFight` the term, run the report, read what moved, and only then
+decide what the number should be.
+
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on

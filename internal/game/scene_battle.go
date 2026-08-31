@@ -1395,7 +1395,23 @@ func (b *battleScene) attemptFlee(g *Game) {
 		b.finish(g)
 		return
 	}
-	b.log.Add("%s turns to run and immediately reconsiders.", g.Player.Name)
+	// A failed escape backs away with the guard up rather than spending the
+	// round on nothing.
+	//
+	// It used to cost the whole turn. FleeChance floors at ten per cent, so a
+	// slow company against a fast creature expects nine failures before it gets
+	// out, and each of those was a full round of damage taken with nothing
+	// given back and nothing turned aside — against a monster that cannot miss.
+	// That is not a risk, it is a death spiral with a button on it: the fight
+	// you already know you cannot win is the one you cannot leave either.
+	//
+	// The whole party braces, because fleeing is a party action and it would be
+	// strange for the person who called the retreat to be the only one who
+	// stopped covering themselves.
+	for _, c := range g.Party() {
+		b.guarding[c] = true
+	}
+	b.log.Add("%s turns to run, thinks better of it, and covers up.", g.Player.Name)
 }
 
 func (b *battleScene) monsterTurn(g *Game, idx int) {
