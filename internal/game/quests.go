@@ -8,6 +8,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
+	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
 
@@ -20,7 +21,7 @@ const maxActiveQuests = 6
 func (g *Game) talkTo(e *world.Entity) {
 	poiIdx := g.currentPOIIndex()
 	if poiIdx < 0 {
-		g.Say(e.Name, e.Line)
+		g.SayAs(e.Name, roleOf(e), e.Line)
 		return
 	}
 	g.Quests.SyncFetch(g.Player.Bag)
@@ -36,7 +37,7 @@ func (g *Game) talkTo(e *world.Entity) {
 		if q.Complete() {
 			g.offerTurnIn(e, q)
 		} else {
-			g.Say(e.Name, q.Nag)
+			g.SayAs(e.Name, roleOf(e), q.Nag)
 		}
 		return
 	}
@@ -58,7 +59,7 @@ func (g *Game) talkTo(e *world.Entity) {
 			return
 		}
 	}
-	g.Say(e.Name, g.townLine(e))
+	g.SayAs(e.Name, roleOf(e), g.townLine(e))
 }
 
 // townLine is what a person in a settlement opens with.
@@ -172,7 +173,9 @@ func (g *Game) wantsToAsk(e *world.Entity, poiIdx int) bool {
 
 func (g *Game) offerQuest(e *world.Entity, q *quest.Quest) {
 	body := fmt.Sprintf("%s\n\nReward: %d coins, %d experience.", q.Ask, q.RewardCoins, q.RewardXP)
-	g.Ask(e.Name, body, []string{"Take the job", "Decline"}, func(g *Game, choice int) {
+	g.AskAs(e.Name, roleOf(e), body, []ui.MenuItem{
+		{Label: "Take the job"}, {Label: "Decline"},
+	}, func(g *Game, choice int) {
 		if choice != 0 {
 			return
 		}
@@ -190,8 +193,8 @@ func (g *Game) offerQuest(e *world.Entity, q *quest.Quest) {
 }
 
 func (g *Game) offerTurnIn(e *world.Entity, q *quest.Quest) {
-	g.Ask(e.Name, q.Thank+"\n\n"+q.Title+" — complete.",
-		[]string{"Collect", "Later"}, func(g *Game, choice int) {
+	g.AskAs(e.Name, roleOf(e), q.Thank+"\n\n"+q.Title+" — complete.",
+		[]ui.MenuItem{{Label: "Collect"}, {Label: "Later"}}, func(g *Game, choice int) {
 			if choice != 0 {
 				return
 			}

@@ -1409,6 +1409,52 @@ genuinely is not there. Full detail in [ASSET-MAP.md](ASSET-MAP.md).
    `internal/pixelpal`, which exists because the two tools disagreed about which
    colour slot 4 was and produced a valid grid that rendered yellow.
 
+### Phase 6 — people with faces
+
+*(Started.)* Everything a person said came through one bottom-anchored strip:
+the same box for a signpost, a chest, the game narrating, and somebody offering
+you a job. A quest-giver had exactly the same presence as a plank with writing
+on it.
+
+**A conversation is now its own layout.** A face on the left in a `ui.Slot`, the
+name as the panel's title, what they said in a column beside the portrait, and
+the choice underneath it — so the eye goes down one column instead of crossing
+back. It stops just above the status strip rather than covering it, because
+where you are and what you are carrying are both things you want in hand while
+deciding whether to take a job.
+
+Three things fell out of building it.
+
+- **The box already had a `portrait` field, declared and never used.** Somebody
+  started this before and stopped. It was dead code, not a capability — the
+  usual rule about checking whether a thing is merely unreachable cut the other
+  way this time.
+- **A face has to be stable, and nothing stores one.** A town's people are
+  regenerated from the world seed on every visit, so a face cannot be assigned
+  and kept. `faceFor` hashes the name, which is the only thing about a
+  townsperson that is both theirs and stable. The baker is the same baker on
+  your third visit, which is the entire point — a portrait that changed between
+  conversations would make a town feel less peopled rather than more. Nothing is
+  saved; it derives from data the save already holds.
+- **It exposed a mismatch that had always been there and was invisible.**
+  Hirelings drew a battle portrait at random from a pool of ten. Nobody outside
+  a fight had a face, so nobody could tell. The moment the hiring conversation
+  showed one, you agreed terms with a dark-haired mage and a redhead walked off
+  with your money. A recruit now keeps the face they were wearing when you
+  talked to them.
+
+A caption under the face says what they are — "blacksmith", "fey mage" — wrapped
+to the portrait's width over two lines rather than truncated, because "undead
+ma." is not a shorter way of saying "undead mage". It is deliberately empty for
+an ordinary townsperson: "villager" under every second face is noise that
+teaches the player to stop reading it.
+
+Still to do, and the reason this is a phase rather than a commit: the portrait
+pool is 69 adventurer busts from the character pack, so a village elder can come
+up wearing a helmet. Leaning into the tropes properly wants faces that know they
+are a shopkeeper or a suspicious hermit, and a caption that is written rather
+than derived.
+
 ## Since the roadmap
 
 **A followed destination, and a compass.** *(Jeremy's, on seeing the saga

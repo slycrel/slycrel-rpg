@@ -151,7 +151,7 @@ func (g *Game) serviceThreads() bool {
 		g.pendingBeats = g.pendingBeats[1:]
 		g.Sound.Play("ui/page")
 		if !f.Last {
-			g.Say(f.Thread.Owner, f.Text)
+			g.SayAs(f.Thread.Owner, "", f.Text)
 			return true
 		}
 		// The last beat is the setup for the choice, so it and the options
@@ -221,7 +221,7 @@ func (g *Game) offerThreadEnding(t *thread.Thread, setup string) bool {
 	// number from another room.
 	setup += fmt.Sprintf("\n\nYou have %d coins.", g.Player.Coins)
 
-	g.AskMenu(t.Owner, setup, rows, func(g *Game, choice int) {
+	g.AskAs(t.Owner, "", setup, rows, func(g *Game, choice int) {
 		if choice < 0 || choice >= len(opts) {
 			return // "Not yet", or backed out: ask again in the next town
 		}
@@ -247,7 +247,7 @@ func (g *Game) resolveThread(t *thread.Thread, e thread.Ending, owner *model.Cha
 	// Every thread is authored with a free ending, so refusing here can never
 	// leave the player holding a story they cannot finish.
 	if coins < 0 && g.Player.Coins < -coins {
-		g.Say(t.Owner, "You do not have it. "+t.Owner+
+		g.SayAs(t.Owner, "", "You do not have it. "+t.Owner+
 			" says that is fine in the tone of somebody filing it away.")
 		return
 	}

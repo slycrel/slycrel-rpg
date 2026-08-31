@@ -83,18 +83,18 @@ func (g *Game) offerRecruit(e *world.Entity) {
 
 	switch {
 	case g.PartyFull():
-		g.Say(e.Name, e.Line+"\n\nYou already have as many people as you can keep track of. "+
+		g.SayAs(e.Name, roleOf(e), e.Line+"\n\nYou already have as many people as you can keep track of. "+
 			"They take this well, which is somehow worse.")
 		return
 	case g.Player.Coins < cost:
-		g.Say(e.Name, body+"\n\nYou do not have it. They resume looking at the middle distance.")
+		g.SayAs(e.Name, roleOf(e), body+"\n\nYou do not have it. They resume looking at the middle distance.")
 		return
 	}
 
 	// The purse is already checked above, so this cannot be greyed out — but it
 	// says what the hire costs against what you are holding, which is the half
 	// that was missing.
-	g.AskMenu(e.Name, fmt.Sprintf("%s\n\nYou have %d coins.", body, g.Player.Coins),
+	g.AskAs(e.Name, roleOf(e), fmt.Sprintf("%s\n\nYou have %d coins.", body, g.Player.Coins),
 		[]ui.MenuItem{
 			{Label: "Pay", Detail: fmt.Sprintf("%d coins", cost)},
 			{Label: "Walk away"},
@@ -127,7 +127,15 @@ func (g *Game) hire(e *world.Entity, level int) {
 	c := rules.Recruit(g.RNG, g.uniqueName(e.Name), class, model.MonsterKind(e.Blood), level)
 	g.Data.Equip(c)
 	c.Sprite = e.Look
-	c.Portrait = allyPortrait(g.RNG)
+	// The face they had when you were talking to them, not a fresh roll.
+	//
+	// This used to be a random draw from a pool of ten, which was invisible
+	// while nobody outside battle had a face. Now that the hiring conversation
+	// shows one, a random draw means the person who joins is not the person you
+	// met — you agree terms with a dark-haired mage and a redhead walks off with
+	// your money. Keyed on e.Name rather than the uniquified name, since the
+	// suffix is bookkeeping for a second Nessa and not a different woman.
+	c.Portrait = g.faceFor(e.Name)
 
 	// What they ask for every haul from here, adjusted for what the last people
 	// you took on had to say about it. Applied here rather than inside Recruit
@@ -217,18 +225,6 @@ func (g *Game) dismiss(c *model.Character) {
 		}
 		return
 	}
-}
-
-// allyPortrait picks a battle portrait for a hireling. The hero is always
-// m_01, so anyone else drawing from the wider pool is immediately not the hero.
-func allyPortrait(g *core.RNG) string {
-	pool := []string{
-		"portrait/male/m_07", "portrait/male/m_14", "portrait/male/m_22",
-		"portrait/male/m_31", "portrait/male/cultist_02",
-		"portrait/female/f_03", "portrait/female/f_08", "portrait/female/f_12",
-		"portrait/female/f_17", "portrait/female/f_24",
-	}
-	return core.Pick(g, pool)
 }
 
 // --- what the cut buys ----------------------------------------------------

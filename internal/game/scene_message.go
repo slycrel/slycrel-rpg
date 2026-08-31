@@ -18,7 +18,12 @@ type messageScene struct {
 	choices  []string
 	menu     ui.Menu
 	onChoose func(g *Game, choice int)
+	// portrait and role turn the box into a conversation rather than a
+	// notice. Empty for a sign, a chest, or the game telling you something:
+	// those have no face, and drawing an empty frame beside them would be
+	// worse than the plain box they get now.
 	portrait string
+	role     string
 }
 
 // Say pushes a plain message box over the current scene.
@@ -28,6 +33,42 @@ func (g *Game) Say(speaker, body string) {
 		speaker: speaker,
 		body:    render.Wrap(body, render.ScreenW-56),
 	})
+}
+
+// SayAs is Say for a person: it carries a face and, when there is one, a word
+// for what they are.
+//
+// The wrapping width is narrower than Say's because the portrait takes the left
+// third of the panel. Getting that wrong is not subtle — the text runs under
+// the frame and out the other side, since a panel does not clip what you draw
+// in it.
+func (g *Game) SayAs(name, role, body string) {
+	g.Push(&messageScene{
+		under:    g.Top(),
+		speaker:  name,
+		role:     role,
+		portrait: g.faceFor(name),
+		body:     render.Wrap(body, talkTextW),
+	})
+}
+
+// AskAs is AskMenu for a person, with the same face and the same width.
+func (g *Game) AskAs(name, role, body string, items []ui.MenuItem, onChoose func(*Game, int)) {
+	labels := make([]string, len(items))
+	for i, it := range items {
+		labels[i] = it.Label
+	}
+	m := &messageScene{
+		under:    g.Top(),
+		speaker:  name,
+		role:     role,
+		portrait: g.faceFor(name),
+		body:     render.Wrap(body, talkTextW),
+		choices:  labels,
+		onChoose: onChoose,
+	}
+	m.menu.SetItems(items)
+	g.Push(m)
 }
 
 // SayThen pushes a plain message box and runs then once it is dismissed.
@@ -121,6 +162,12 @@ func (m *messageScene) Draw(g *Game, dst *ebiten.Image) {
 	}
 	render.Rect(dst, 0, 0, render.ScreenW, render.ScreenH, render.ColShadow)
 
+	// A face means a person, and a person gets the big layout.
+	if m.portrait != "" {
+		m.drawTalk(g, dst)
+		return
+	}
+
 	lines := len(m.body)
 	h := float64(lines)*render.LineH + 26
 	if len(m.choices) > 0 {
@@ -141,5 +188,111 @@ func (m *messageScene) Draw(g *Game, dst *ebiten.Image) {
 		m.menu.Draw(dst, 34, ty+4, render.ScreenW-80)
 	} else if (g.Tick()/24)%2 == 0 {
 		render.TextRight(dst, "v", render.ScreenW-28, y+h-16, render.ColGold)
+	}
+}
+
+// The conversation layout.
+//
+// A person talking gets most of the screen, because the alternative — the
+// bottom strip every message shared — gave a quest-giver exactly the same
+// presence as a signpost. The panel stops just above the status bar rather than
+// covering it: the strip says where you are and what you are carrying, and both
+// are things you want while deciding whether to take a job.
+const (
+	talkX = 12
+	talkY = 16
+	talkW = render.ScreenW - 2*talkX
+	// talkMaxH ends above the HUD rather than over it: the strip says where you
+	// are and what you are carrying, and both are things you want in hand while
+	// deciding whether to take a job.
+	talkMaxH = render.ScreenH - hudH - talkY - 6
+
+	// The portrait pane. 76 is as large as the frame goes without the text
+	// column dropping below the width a sentence needs to not read as poetry.
+	faceSize = 76
+	facePad  = 12
+
+	// Text starts to the right of the portrait and wraps well short of the
+	// panel edge, since ui.Panel draws a border this must not run into.
+	talkTextX = talkX + facePad + faceSize + 12
+	talkTextW = talkW - (talkTextX - talkX) - 18
+
+	// How many lines the caption may take under the face. Two is enough for
+	// every role the game produces and short enough that it stays a label.
+	roleLines = 2
+)
+
+// drawTalk renders the conversation layout: a face on the left, what they said
+// on the right, and the choice underneath.
+// talkHeight is the panel's height: enough for the face, enough for the words,
+// and no more.
+//
+// Fixed height was tried first and looked worse than the strip it replaced. A
+// two-line exchange in a panel sized for eight is a face at the top, a menu
+// pinned to the bottom, and a hundred pixels of nothing between them — the
+// screen was being used rather than filled. So it grows with the content and
+// stops at the face's own height, which is the floor a conversation cannot go
+// below anyway.
+func (m *messageScene) talkHeight() float64 {
+	text := float64(len(m.body))*render.LineH + 24
+	if len(m.choices) > 0 {
+		text += m.menu.Height() + 10
+	}
+	face := float64(faceSize) + 30
+	if m.role != "" {
+		n := len(render.Wrap(m.role, faceSize))
+		if n > roleLines {
+			n = roleLines
+		}
+		face += float64(n) * render.LineH
+	}
+	h := text
+	if face > h {
+		h = face
+	}
+	if h > talkMaxH {
+		h = talkMaxH
+	}
+	return h
+}
+
+func (m *messageScene) drawTalk(g *Game, dst *ebiten.Image) {
+	h := m.talkHeight()
+	ui.TitledPanel(dst, m.speaker, talkX, talkY, talkW, h)
+
+	fx, fy := float64(talkX+facePad), float64(talkY+18)
+	ui.Slot(dst, fx, fy, faceSize, faceSize, render.ColInkDim)
+	if sp := g.Assets.Get(m.portrait); sp != nil {
+		render.ScreenFit(dst, sp, 0, fx+2, fy+2, faceSize-4, faceSize-4, nil)
+	}
+
+	// What they are, under the face. A word rather than a sentence: the name is
+	// already the title, and this is the thing the player is placing them by.
+	//
+	// Wrapped to the portrait's width over two lines rather than truncated to
+	// one. "undead mage" is eleven characters against a box that fits ten, and
+	// cutting it produced "undead ma." — which is not a shorter way of saying
+	// it, it is a different thing that happens to start the same.
+	ry := fy + faceSize + 4
+	for i, ln := range render.Wrap(m.role, faceSize) {
+		if i >= roleLines {
+			break
+		}
+		render.Text(dst, ln, fx, ry, render.ColInkDim)
+		ry += render.LineH
+	}
+
+	ty := float64(talkY + 20)
+	for _, ln := range m.body {
+		render.Text(dst, ln, talkTextX, ty, render.ColInk)
+		ty += render.LineH
+	}
+
+	// The choice sits under the text, not under the portrait, so the eye goes
+	// down one column instead of crossing back.
+	if len(m.choices) > 0 {
+		m.menu.Draw(dst, talkTextX+8, ty+6, talkW-(talkTextX-talkX)-26)
+	} else if (g.Tick()/24)%2 == 0 {
+		render.TextRight(dst, "v", talkX+talkW-12, talkY+h-16, render.ColGold)
 	}
 }
