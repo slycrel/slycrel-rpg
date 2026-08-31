@@ -1689,7 +1689,33 @@ func (b *battleScene) damageMonster(g *Game, idx, dmg int) {
 	}
 }
 
+// addFloater puts a number over the field, nudged clear of any other number
+// already sitting there.
+//
+// Before creatures stacked, two damage numbers could only coincide if two
+// things in different slots were hit in the same instant, which the round order
+// makes rare. A queue makes it ordinary: a spell over the whole field hits every
+// wolf in a stack of three, and all three numbers are addressed to one slot. On
+// top of each other they read as one number with bad kerning, so the spell that
+// hits hardest is the one whose damage the player cannot read.
+//
+// Nudged rather than summed. A sum would be a different and arguably nicer
+// readout — "the spell did 36 to that queue" — but damageMonster is called once
+// per creature from half a dozen paths that know nothing about each other, and
+// making them agree on a total would put batching into all of them for a
+// cosmetic gain. Stacking the numbers down the slot says the same thing and
+// costs one loop.
 func (b *battleScene) addFloater(x, y float64, text string, c color.RGBA) {
+	// Only against numbers still near the top of their life: an older one has
+	// drifted up and out of the way on its own.
+	for _, f := range b.floaters {
+		if f.life < 38 || f.x != x {
+			continue
+		}
+		if d := f.y - y; d < render.LineH && d > -render.LineH {
+			y += render.LineH
+		}
+	}
 	b.floaters = append(b.floaters, floater{x: x, y: y, text: text, life: 46, col: c})
 }
 
