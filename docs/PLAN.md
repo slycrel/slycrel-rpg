@@ -3822,6 +3822,100 @@ than tuning:
 What is *not* an option is raising the ward number, and the measurement above is
 what says so: eleven is already past the point where more helps.
 
+## The two finished designs, built
+
+Both of item 3, which had been "finished and unbuilt" since it was written.
+
+### Staggering: six wolves are one slot with a number on it
+
+Identical creatures collapse into one queue. Only the one at the front can be
+hit; the ones behind still swing.
+
+The two problems it was listed for are both gone. A field of five could not fit
+its own names — three columns, two rows, and a plate sized to the longest
+species in the field, so "Goblin Middle Manager" beside "Overfamiliar Spider"
+squeezed the portraits toward their thirty-pixel floor. And three identical
+portraits printed one joke three times, which is the opposite of what an
+epithet is for. The demo frame shows five creatures in three slots with the
+names intact.
+
+What it changes about the fight is smaller than the write-up implied, and worth
+being exact about: the player loses the choice of *which* identical wolf to
+kill first, which was never a choice. Anything that reaches the field at large
+— a spell over everybody, a sap — still reaches past the queue.
+
+**The balance report did not move, and that is the interesting part.**
+`SimulateGroup` has always attacked `living[0]`, the first thing still
+standing, so the simulator has been fighting a stacked field since before there
+were stacks. Staggering moves the *game* toward what the report already
+assumed rather than the other way round. The line in this document saying
+"`SimulateFight` has to learn the rule before CROWDS can price it" was wrong:
+it already knew.
+
+Three pieces, and the rule lives in `internal/rules` rather than beside the
+screen, because the screen lays stacks out, the transcript names them and the
+report has to be able to price them — three copies of "which of these are the
+same creature" would be three chances to disagree.
+
+`model.SameKind` is the test, and hit points are deliberately excluded: `Spawn`
+jitters HP by an eighth, so two wolves off one definition are never equal there
+and would never stack. Everything else is deterministic given the definition,
+the level and the scaling. That distinction is load-bearing — a pack scales
+every body it draws, but an escort scales its caster and leaves its guards
+alone, so a magical wolf leading two ordinary ones is two kinds wearing one
+name and must not share a slot.
+
+`nameGroup` letters the *kind* now instead of the body. A letter labels a
+choice, and identical creatures no longer offer one: "Wolf A" over a plate
+reading "Wolf x2" invites the player to work out which of the two the
+transcript means, and the answer is that it does not matter.
+
+The battle screen grew a slot layer, and the two index spaces are separate
+functions with separate names on purpose. `living()` is creature space for the
+monsters' turns; `livingSlots()` is slot space for drawing and targeting. A
+slot index used as a creature index is a wrong monster taking a hit and nothing
+about the types would say so.
+
+### An off-hand weapon: a dagger priced on the weapon table
+
+A fifth equipment slot, for the one class that duels. Half the weapon's strike
+reaches the blow.
+
+Half is the design rather than a rounding. The point of a weapon on that arm is
+that it is priced on the weapon table — about five a band, where the sidearm
+table steps two — which is the one legitimate way past
+`TestShieldsStaySecondaryToArmour`, a dagger not being a shield. Full strike
+would make it the best thing on the arm at every level and rebuild the ladder
+the three lanes were rescued from.
+
+What stops it being free is that it costs the shield entirely. One arm, one
+thing, through `EquipAs` and through the pack, with whatever comes off going
+into the pack rather than the ground.
+
+**The simulator needed no teaching**, which the write-up did not expect. The
+contribution goes through `Gear()` like every other bonus, so `PlayerDamage`,
+`freeSwingWorth`, the character sheet and EXCHANGE all picked it up untold —
+the seam that made one shared `Bonus` type worth having.
+
+LANES prices it, and the numbers are the target rather than a disappointment:
+
+| level | lane | sidearm | kit cost | |
+|---|---|---|---|---|
+| 5 | 82.5% | 83.2% | −8 | nothing in it |
+| 9 | 80.2% | 77.5% | −55 | nothing in it |
+| 13 | 77.2% | 76.9% | −275 | nothing in it |
+
+A fourth option on the arm that beat the lane by more than the noise floor
+would be the ladder again with an extra rung. The first draft missed at level
+five — +3.8 against a 3.6 floor — because the tier-one plank is nearly
+worthless and anything beats it; the tier-one dagger came down a point and
+picked up the dexterity cost the rest of the shelf carries.
+
+The art is the dagger band, reused rather than generated: `assets-raw` is a
+symlink to the main checkout in this worktree, and minting a new banded icon
+would write into the tree the other session is playing from. Deliberate, and
+recorded in ASSET-MAP's unsettled list.
+
 ## What is open, and in what order
 
 Rewritten after the session that answered items 2, 4 and half of 6, and found
@@ -3871,28 +3965,18 @@ design decisions: change what ward does, give the lane a second stat to carry,
 or retire it to two lanes and let the charm slot sell ward, where a smaller
 amount beside another stat does trade. **Jeremy's call, not a number to nudge.**
 
-### 3. Two designs finished and unbuilt — still the biggest thing on the list
+### 3. Two designs finished and unbuilt — both built
 
-Untouched, and deliberately: both are multi-day features touching the battle
-screen, and half-building either is worse than not starting. A simulator that
-knows about staggering and a screen that does not is the "mechanic the
-simulator cannot see" rule pointed the other way.
+See the section above. Staggering is in and the balance report did not move,
+because `SimulateGroup` had been fighting a stacked field all along; the
+off-hand weapon is in and measures "nothing in it" against the lane it
+replaces at every level sampled, which is what a fourth option on one arm is
+supposed to read.
 
-**Staggering identical creatures** into one slot with a count, where only the
-front one can be hit. It solves two problems at once — the crowded field's
-layout, where six creatures at three columns cannot fit their own names, and
-the wallpaper of three identical portraits carrying three copies of one joke —
-and it changes the fight, turning a group into a queue. `SimulateFight` has to
-learn the rule before CROWDS can price it, and the screen has to learn it in
-the same pass.
-
-**An off-hand weapon for the Thief.** The class already has an offensive off
-arm and the lane rule is not giving it to them. Its own value is real but
-smaller than it looks: a sidearm band steps +2 where a weapon band steps +5,
-and a weapon in that arm is the one legitimate way past
-`TestShieldsStaySecondaryToArmour`, because it is not a shield. Note that
-EXCHANGE now prices what it would buy — strike at about 1.0 a point at the top
-of the game — so the design can be costed before it is built rather than after.
+What is left of this item is the thing neither could be finished without
+admitting: **both were designed against a report that cannot simulate a
+party**, and the off-hand weapon in particular is a thief's answer to a slot
+whose value depends on how many people are swinging beside them. See item 5.
 
 ### 4. The charm bands are done; the shield cap turns out to be the wrong lever
 
