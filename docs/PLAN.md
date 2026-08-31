@@ -2555,6 +2555,76 @@ Two things it cost to get right, both of which look like hangs:
 The host path still works and is still the fast one when the screen is awake.
 This is the fallback that does not care.
 
+## The thief's off arm, and a fifth zero value
+
+*(Jeremy's: "Worth adding dual wielding for the thief? Seems like that class is
+lacking in flavour just a little.")*
+
+The instinct was right and the cause is not what it looks like. The thief is
+not short of options — it has the **widest** weapon access of the three (18 of
+27 weapons, against the fighter's 15 and the mage's 11) and the same number of
+techniques as the fighter. What it lacks is one specific thing, and the
+adversarial review had already brushed against it: every class's off arm can be
+traded for something except the thief's.
+
+| class | the off arm can be |
+|---|---|
+| Fighter | a plank, or closed for a two-hander |
+| Mage | a talisman — its own slot, in its own unit |
+| Thief | a plank |
+
+So chasing the flavour question found the mechanic, and then measuring the
+mechanic per class found a fifth instance of the defect this document has now
+spent four rounds on. **`gamedata.LaneForLevel` takes a level and no class**,
+and the right lane is not the same for both classes that can hold a plank:
+
+| level | | wall | spiked | silvered | handed out |
+|---|---|---|---|---|---|
+| 11 | Thief | 62.6% | **73.5%** | 67.6% | silvered |
+| 12 | Thief | 52.7% | **64.2%** | 59.1% | silvered |
+| 13 | Fighter | 59.7% | **80.0%** | 69.3% | silvered |
+| 14 | Fighter | 66.7% | **77.9%** | 69.3% | silvered |
+
+The spiked lane — guard traded for reach — is the best off arm at the top of
+the game for *both* plank classes, by up to eleven points, and the game hands
+out the silvered one because one global constant decides for everybody. That
+constant was set off the averaged version of this table, by me, three commits
+ago.
+
+**It is not being changed on this measurement.** Three thousand fights a cell
+is enough to see an eleven-point gap and not enough to re-pin a constant that
+moves every number in the report, and the last four rounds of this have all
+been "decide, then measure". The next pass measures first, per class, at the
+sample the DANGER table uses, and only then moves `LaneForLevel` to take a
+class.
+
+LANES is per class now regardless, which is an instrument fix rather than a
+content one. It also exposed that a Mage's three columns are the same build
+measured three times — it cannot hold a plank, so `pickSidearm` falls back to
+the talisman whichever lane is asked for — so the old averaged row was
+answering a question about two classes with a third mixed into it.
+
+**On dual wielding itself.** The honest reading is that the thief already has
+an offensive off arm and the game is not giving it to them, so the first fix is
+the lane rule and not new content. What dual wielding would add on top is real
+but smaller than it looks: the strike lane is a *sidearm*, so
+`TestShieldsStaySecondaryToArmour` caps what it can carry, and a spiked shield
+steps +2 where a weapon band steps +5. A second weapon in that arm would scale
+on the weapon table instead, which is the one legitimate way past that ceiling
+— it is not a shield, so the rule that holds shields under half the body armour
+of their band does not apply to it.
+
+That is worth having, and it is a bigger job than it sounds: a fifth equipment
+slot means a new field in the save (nil for "none", which is the safe zero),
+a rule for what a second weapon actually does, `SimulateFight` taught to model
+it before the report can price it, a lane for `EquipAs`, a row on a character
+sheet that is already at its height limit, and a shop that sells it. The order
+is the same one the stagger idea gets: the simulator first, then the screen.
+
+And the flavour half is nearly free either way. "Spiked Boss, Regrettable" is
+already a thief's offensive off arm wearing a shield's name; a second dagger in
+the strike lane is the same mechanic with the right fiction on it.
+
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on

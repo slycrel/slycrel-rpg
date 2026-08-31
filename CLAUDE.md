@@ -190,7 +190,14 @@ which event fires which trigger, and where it is safe to put a box on screen.
   the constant and the fights disagree. If you add a slot, the question to ask
   is not "does this compile" but "what measured this".
 
-  **Four occurrences now, and read a report per class before believing it.**
+  **Five occurrences now, and read a report per class before believing it.**
+  The fifth is `LaneForLevel`, which takes a level and no class — and the
+  spiked lane, not the silvered one, is the best off arm at the top of the game
+  for both classes that can hold a plank, by up to eleven points. Not yet
+  changed: the constant was set off an averaged table and re-pinning it needs a
+  per-class measurement at the sample DANGER uses, measured *before* deciding
+  rather than after.
+
   The fourth was `duelist`, which never set `Arm` — so on the two classes that
   cannot hold a two-hander the fallback leaves the arm free and fills it with
   the wall. It was invisible because ARCS averaged its three classes into one

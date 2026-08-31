@@ -835,9 +835,9 @@ func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 	// scaffolding than table.
 	lanes := []model.SidearmLane{model.ArmBlock, model.ArmStrike, model.ArmWard}
 
-	fmt.Fprintf(out, "%-6s %8s %9s %9s %9s %s\n",
-		"level", "cost", "wall", "spiked", "silvered", "carried by Equip")
-	fmt.Fprintln(out, strings.Repeat("-", 68))
+	fmt.Fprintf(out, "%-6s %-8s %8s %9s %9s %9s %s\n",
+		"level", "class", "cost", "wall", "spiked", "silvered", "worn")
+	fmt.Fprintln(out, strings.Repeat("-", 76))
 
 	// laneNoise is how big a gap has to be before it is a result rather than a
 	// run-to-run wobble. Below level six the three lanes come in within a
@@ -851,15 +851,21 @@ func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 
 	type laneScore struct{ wall, best float64 }
 	seen := map[int]laneScore{}
+	// Per class, for the reason ARCS had to learn: an average across three
+	// classes is not a measurement of anything that exists. It matters here
+	// too — a Thief cannot close its arm with a two-hander and a Mage cannot
+	// hold a plank at all, so "which plank is best" is a different question
+	// for each of them, and the Mage's answer is none of the three.
 	for level := 1; level <= maxLevel; level++ {
 		build := gamedata.Archetypes[0]
-		var cost int
-		rates := make([]float64, len(lanes))
-		for i, lane := range lanes {
-			a := build
-			a.Arm = lane
-			var wins, n int
-			for _, class := range model.AllClasses {
+		var wallAvg, bestAvg float64
+		for _, class := range model.AllClasses {
+			var cost int
+			rates := make([]float64, len(lanes))
+			for i, lane := range lanes {
+				a := build
+				a.Arm = lane
+				var wins, n int
 				for f := 0; f < fights; f++ {
 					c := rules.BuildCharacter(g, class, level)
 					t.EquipAs(c, a)
@@ -876,30 +882,42 @@ func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 					}
 					n++
 				}
+				if n > 0 {
+					rates[i] = float64(wins) * 100 / float64(n)
+				}
 			}
-			if n > 0 {
-				rates[i] = float64(wins) * 100 / float64(n)
-			}
-		}
 
-		// Which one the game actually hands out at this level, so a reader can
-		// see the constant agreeing or disagreeing with the numbers beside it.
-		carried := "wall"
-		switch gamedata.LaneForLevel(level) {
-		case model.ArmWard:
-			carried = "silvered"
-		case model.ArmStrike:
-			carried = "spiked"
-		}
-		best := rates[0]
-		for _, r := range rates[1:] {
-			if r > best {
-				best = r
+			// What this class is actually wearing on that arm, which for a
+			// Mage is a talisman whatever the lane asked for.
+			worn := &model.Character{Level: level, Class: class}
+			t.EquipAs(worn, build)
+			label := "nothing"
+			if worn.Shield.Worn() {
+				switch worn.Shield.Lane() {
+				case model.ArmWard:
+					label = "silvered"
+				case model.ArmStrike:
+					label = "spiked"
+				default:
+					label = "wall"
+				}
+				if worn.Shield.Barrier() {
+					label = "talisman"
+				}
 			}
+			best := rates[0]
+			for _, r := range rates[1:] {
+				if r > best {
+					best = r
+				}
+			}
+			wallAvg += rates[0] / float64(len(model.AllClasses))
+			bestAvg += best / float64(len(model.AllClasses))
+			fmt.Fprintf(out, "%-6d %-8s %8d %8.1f%% %8.1f%% %8.1f%% %s\n",
+				level, class, cost, rates[0], rates[1], rates[2], label)
 		}
-		seen[level] = laneScore{wall: rates[0], best: best}
-		fmt.Fprintf(out, "%-6d %8d %8.1f%% %8.1f%% %8.1f%% %s\n",
-			level, cost, rates[0], rates[1], rates[2], carried)
+		seen[level] = laneScore{wall: wallAvg, best: bestAvg}
+		fmt.Fprintln(out)
 	}
 
 	// The crossover is the first level from which the wall never again comes
@@ -930,6 +948,12 @@ func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 		}
 	}
 	fmt.Fprint(out, `
+A Mage's three columns are the same build measured three times: it cannot
+hold a plank at all, so pickSidearm falls back to the talisman whichever
+lane is asked for. Read that row as one number with error bars on it, not
+as a comparison — and as the reason the averaged version of this table was
+answering a question about two classes with a third mixed in.
+
 The spiked lane is deliberately not in the running for the baseline. It
 trades guard for strike, which is an offensive choice, and the build that
 makes it properly is the duelist - a baseline with an opinion about
