@@ -2478,6 +2478,18 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 			}
 			nameCol = render.ColGold
 		}
+		// The meter and the pips describe the creature at the *front* of the
+		// queue, which is the one being drawn and the only one anything
+		// single-target can reach. The ones behind have their own hit points
+		// and their own conditions and the slot does not show them.
+		//
+		// That is the honest reading rather than a shortcut, and the
+		// alternative is worse: a pooled health bar would say a stack of three
+		// is at two thirds when the thing you are about to hit is at full, and
+		// the number that matters to the next blow is the one in front. It does
+		// mean a poisoned front dying makes the pips vanish as the next steps
+		// up, which is correct — that creature is gone — and reads for a moment
+		// like the condition wore off.
 		if standing > 0 {
 			ui.Bar(dst, cx-boxW/2, top+boxH+2, boxW, 4, m.HPFrac(), render.ColBlood)
 			drawEffectPips(dst, cx-boxW/2, top+boxH+8, m.Active)
