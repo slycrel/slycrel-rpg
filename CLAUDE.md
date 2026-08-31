@@ -399,6 +399,26 @@ which event fires which trigger, and where it is safe to put a box on screen.
   follows the link and bind-mounts the target, because a symlink to an absolute
   host path means nothing inside the container.
 
+## What the tour cannot reach, the tests must
+
+`-demo` is a tour and does not exercise the game: `demoWalk` teleports rather
+than stepping, so the encounter roll never runs and a wandering monster can
+never appear in it; `demoOpenShop` takes the first counter, which is the smith
+under every seed tried. Both features were verified by patching the tour, taking
+a frame, and reverting — fine once, useless as a regression net.
+
+So anything the tour cannot reach gets a test instead of a longer tour. Growing
+`-demo` to cover everything is the drift the scope note below is about. And a
+guard is only a guard if it has been seen to fail: every one of these was
+checked by breaking the thing it protects.
+
+- `TestOnlyOneEncounterIsEverOut` — the rate guarantee, and the single condition
+  that keeps this one encounter system rather than two.
+- `TestTheVendorsColumnDoesNotEatTheNames` — a ratchet on how far a shop row is
+  truncated, since the vendor's portrait was paid for in item names. Its floor
+  is *measured*, not chosen: the first version asserted "no two rows collide"
+  and a column nearly three times the real one sailed straight through it.
+
 ## Scope discipline
 
 `-demo` is a tour: one frame per screen. It has drifted once already (an

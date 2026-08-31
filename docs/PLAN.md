@@ -1300,10 +1300,15 @@ genuinely is not there. Full detail in [ASSET-MAP.md](ASSET-MAP.md).
    is otherwise identical because at most one wanderer exists at a time and the
    roll does not fire again while one is out.
 
-   Two things it cannot do yet. `-demo` cannot show it: `demoWalk` teleports the
-   player rather than stepping, so the tour never runs the encounter roll at
-   all, and the frame that proved this works was staged by hand. And the
-   creature does not animate — the sheet has a walk pose per row and only the
+   `-demo` still cannot show it — `demoWalk` teleports the player rather than
+   stepping, so the tour never runs the encounter roll — and the answer to that
+   is tests rather than a longer tour. `internal/world` covers the movement;
+   `internal/game/wanderer_test.go` covers the half that lives in the scene,
+   including the one that matters most: **only one encounter is ever out**,
+   which is the whole difference between this and a second encounter system.
+   Each was checked by breaking the thing it guards and watching it fail.
+
+   The creature does not animate — the sheet has a walk pose per row and only the
    standing one is cut, because legibility decides whether the feature works and
    animation does not.
 
