@@ -3075,6 +3075,50 @@ Fighter at eleven with a Mage at thirteen and calls the difference a fact about
 classes — the same defect this report has been finding all month, written fresh
 into the instrument built to find it.
 
+### Step three, built: the mage's barrier refills
+
+Proposed as flavour — something the class earns by attacking rather than
+another number — and CROWDS gave it a far better brief before it was written: a
+barrier is a pool spent once, which is the worst possible unit against a crowd.
+It is gone after the first blow and the next five arrive against nothing.
+
+`rules.Siphon` turns 35% of damage dealt back into barrier, capped at twice
+what the talisman put up. The gate is the *item* rather than the class, because
+the talisman is the unit — a Mage holding nothing on that arm has no pool to
+refill, and nobody else can hold one at all. It goes through the one closure
+every kind of player damage passes through, so a swing, a technique, a feint
+and a counter all feed it; a siphon that only some of them fed would be a
+mechanic that depended on which button was pressed.
+
+Deliberately **not** healing. The Mage already has the deepest psyche pool and
+the only healing techniques in the game; lifesteal would hand more sustain to
+the class that has the most of it, and would be a fourth answer to "do not die"
+rather than a repair of the one it owns.
+
+What it did, and where it was measured:
+
+| Mage against three, on level | 5 | 7 | 9 | 11 | 13 |
+|---|---|---|---|---|---|
+| before | 12.4% | 14.8% | 4.4% | 29.2% | 3.2% |
+| after | 42.4% | 47.6% | 14.2% | 58.4% | 17.0% |
+| Fighter | 83.0% | 52.8% | 40.8% | 94.4% | 33.8% |
+
+And on the whole table: the widest gap between two classes at one level falls
+from 70.6 points to 43.0 at three creatures and from 54.4 to 38.8 at four, and
+the section's warning goes from the Mage trailing in fourteen of the winnable
+cells to seven. Still behind everywhere, which is correct — it is the fragile
+class — but it can now fight a crowd rather than folding to one.
+
+**One-on-one it does nothing at all**, at any share from nothing to 0.80,
+because a duel is already a hundred per cent for every class at every level
+below thirteen. That is the point rather than a disappointment: the mechanic
+cannot disturb the curve, because the curve is set in the column it does not
+touch. It is also why it could never have been priced there — the same trap the
+thief's counter fell into one step earlier.
+
+Level three is unchanged because the Mage has no talisman at that tier yet. The
+unit arrives when the item does, which is how the off arm has always worked.
+
 ### The order, and why it is an order
 
 Every term here changes `PlayerAttack` or `MonsterDamage`, which is what

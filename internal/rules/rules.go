@@ -1120,6 +1120,10 @@ type FightResult struct {
 	// to say what the fight refunded.
 	HPBack     int
 	PsycheBack int
+	// Siphoned is how much barrier the talisman rebuilt out of damage dealt,
+	// for the same reason Dodges is counted: a mechanic whose effect can only
+	// be inferred from a win rate is one nobody can tune.
+	Siphoned int
 	// Dodges is how many incoming blows found nobody there. Counted so the
 	// report can say what the Thief's unit actually did rather than only that
 	// the numbers moved — a mechanic whose effect can only be inferred from a
@@ -1262,6 +1266,12 @@ func SimulateGroup(g *core.RNG, c *model.Character, mons []*model.Monster, maxRo
 		hurt := func(target *model.Monster, dmg int) {
 			target.HP = core.Max(0, target.HP-dmg)
 			res.DamageDealt += dmg
+			// Damage dealt rebuilds a talisman's pool. Here rather than at each
+			// call site because this closure is the one door every kind of
+			// player damage goes through — swing, technique, feint, counter —
+			// and a siphon that only some of them fed would be a mechanic that
+			// depended on which button was pressed.
+			res.Siphoned += Siphon(sim, dmg)
 			if target.HP == 0 {
 				target.Dead = true
 			}

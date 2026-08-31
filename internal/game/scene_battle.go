@@ -734,7 +734,7 @@ func (b *battleScene) attemptFeint(g *Game) {
 	}
 	g.Sound.Play("fight/crit")
 	d := rules.FeintDamage(g.RNG, g.Player, m)
-	b.damageMonster(g, idx, d)
+	b.damageMonsterBy(g, g.Player, idx, d)
 	b.log.AddColor(render.ColGold, "%s breaks, %s follows, and %s was never leaving. %d.",
 		g.Player.Name, m.Short(), g.Player.Name, d)
 }
@@ -1004,7 +1004,7 @@ func (b *battleScene) playerAttack(g *Game, p *model.Character, idx int) {
 	}
 	dmg, crit := sw.Damage, sw.Crit
 
-	b.damageMonster(g, idx, dmg)
+	b.damageMonsterBy(g, p, idx, dmg)
 	// The swing lands where it lands. Played here rather than inside
 	// damageMonster because that is also where a spell's damage goes, and a
 	// fireball should not come with a sword slash behind it.
@@ -1203,11 +1203,11 @@ func (b *battleScene) castOnFoes(g *Game, c cast) {
 			// it is applied per target rather than to the roll: a fireball that
 			// hits three things is resisted three times, once by each of them.
 			d := rules.AfterWard(rules.SpellDamage(g.RNG, p, s), m.Ward)
-			b.damageMonster(g, i, d)
+			b.damageMonsterBy(g, p, i, d)
 			b.log.Add("%s takes %d.", m.Short(), d)
 		case model.SpellDrain:
 			d := rules.AfterWard(rules.SpellDamage(g.RNG, p, s), m.Ward)
-			b.damageMonster(g, i, d)
+			b.damageMonsterBy(g, p, i, d)
 			healed := p.Heal(d / 2)
 			b.log.Add("%s takes %d; %s recovers %d of it.", m.Short(), d, p.Name, healed)
 			b.addFloater(hx, hy, fmt.Sprintf("+%d", healed), render.ColHeal)
@@ -1243,7 +1243,7 @@ func (b *battleScene) castOnFoes(g *Game, c cast) {
 			b.log.Add("%s has less of whatever that was.", m.Short())
 		case model.SpellPact:
 			d := rules.AfterWard(rules.SpellDamage(g.RNG, p, s), m.Ward)
-			b.damageMonster(g, i, d)
+			b.damageMonsterBy(g, p, i, d)
 			b.log.Add("%s takes %d.", m.Name, d)
 		}
 	}
@@ -1468,7 +1468,7 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 			g.Sound.Play("fight/hit")
 			b.playOnMonster(g, idx, b.nextSlash())
 			b.log.AddColor(render.ColGold, "%s answers for %d.", tgt.Name, d)
-			b.damageMonster(g, idx, d)
+			b.damageMonsterBy(g, tgt, idx, d)
 		}
 		return
 	}
@@ -1547,6 +1547,18 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 		g.Sound.Play("fight/die")
 		b.log.AddColor(render.ColBlood, "%s", g.Write.AllyDown(g.RNG, tgt.Name))
 	}
+}
+
+// damageMonster applies a blow to a creature. by is whoever landed it, or nil
+// for damage with no owner — a poison tick, a burn. It is a parameter because
+// a talisman rebuilds itself out of damage dealt, and "dealt by whom" is the
+// whole of that question.
+func (b *battleScene) damageMonsterBy(g *Game, by *model.Character, idx, dmg int) {
+	if gain := rules.Siphon(by, dmg); gain > 0 {
+		b.log.AddColor(render.ColMagic, "%s draws %d of it back into the ward.",
+			by.Name, gain)
+	}
+	b.damageMonster(g, idx, dmg)
 }
 
 func (b *battleScene) damageMonster(g *Game, idx, dmg int) {
