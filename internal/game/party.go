@@ -83,18 +83,18 @@ func (g *Game) offerRecruit(e *world.Entity) {
 
 	switch {
 	case g.PartyFull():
-		g.SayAs(e.Name, roleOf(e), g.faceOf(e), e.Line+"\n\nYou already have as many people as you can keep track of. "+
+		g.SayAs(e.Name, g.roleOf(e), g.faceOf(e), e.Line+"\n\nYou already have as many people as you can keep track of. "+
 			"They take this well, which is somehow worse.")
 		return
 	case g.Player.Coins < cost:
-		g.SayAs(e.Name, roleOf(e), g.faceOf(e), body+"\n\nYou do not have it. They resume looking at the middle distance.")
+		g.SayAs(e.Name, g.roleOf(e), g.faceOf(e), body+"\n\nYou do not have it. They resume looking at the middle distance.")
 		return
 	}
 
 	// The purse is already checked above, so this cannot be greyed out — but it
 	// says what the hire costs against what you are holding, which is the half
 	// that was missing.
-	g.AskAs(e.Name, roleOf(e), g.faceOf(e), fmt.Sprintf("%s\n\nYou have %d coins.", body, g.Player.Coins),
+	g.AskAs(e.Name, g.roleOf(e), g.faceOf(e), fmt.Sprintf("%s\n\nYou have %d coins.", body, g.Player.Coins),
 		[]ui.MenuItem{
 			{Label: "Pay", Detail: fmt.Sprintf("%d coins", cost)},
 			{Label: "Walk away"},

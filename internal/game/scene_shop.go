@@ -617,9 +617,23 @@ func statWords(b model.Bonus) string {
 // shopFaceW is the vendor's portrait, and shopFaceCol is what the rows give up
 // to make room for it: the frame plus the gap either side.
 const (
-	shopFaceW   = 42
-	shopFaceCol = shopFaceW + 12
+	shopFaceW = 42
+	// shopFaceCol is what the rows give up. Wide enough for the longest word
+	// any caption starts with — "apothecary," is 77px on its own — because a
+	// word wider than its column cannot be wrapped and runs out through the
+	// panel border, which a panel does not clip. shopCaptionW is tested.
+	shopFaceCol  = 76
+	shopCaptionW = shopFaceCol - 4
 )
+
+// shopCaption drops the leading trade word from a caption, since the shop's
+// title has already said it.
+func shopCaption(full string) string {
+	if i := strings.Index(full, ", "); i >= 0 {
+		return full[i+2:]
+	}
+	return full
+}
 
 func (s *shopScene) Draw(g *Game, dst *ebiten.Image) {
 	if s.under != nil {
@@ -648,12 +662,33 @@ func (s *shopScene) Draw(g *Game, dst *ebiten.Image) {
 	if sp := g.Assets.Get(g.faceOf(s.e)); sp != nil {
 		render.ScreenFit(dst, sp, 0, fx+2, fy+2, shopFaceW-4, shopFaceW-4, nil)
 	}
-	// No caption under it. The panel's title is already the counter's name —
-	// "Blacksmith" — so a word underneath saying blacksmith is the interface
-	// telling the player something twice, and the two attempts at placing it
-	// both collided with the rows: from the left it ran out through the panel
-	// border, and right-aligned it butted straight into a row's detail column.
-	// The redundancy was the real problem and the collisions were it arguing.
+	// And what they are, under them.
+	//
+	// This was dropped once, correctly: while the caption was derived it read
+	// "blacksmith" under a panel already titled Blacksmith, which is the
+	// interface saying a thing twice, and both attempts to place it collided
+	// with the rows. Now that the captions are written the two say different
+	// things — the title is the counter, the caption is the person behind it —
+	// so it earns its place back.
+	//
+	// The trade word is dropped here and only here. A caption reads "smith, no
+	// eyebrows" in a conversation because nothing else on that screen says what
+	// they are; in a shop the panel is already titled Blacksmith, so the first
+	// clause is the interface saying it twice — and paying for it, because every
+	// pixel this column takes is a pixel of item name the rows have to cut, and
+	// the names in this game are jokes that do not survive being shortened.
+	//
+	// Wrapped to the column the rows gave up, and only below the portrait,
+	// which is the one region no row reaches.
+	if r := shopCaption(g.roleOf(s.e)); r != "" {
+		cy := fy + shopFaceW + 3
+		for i, ln := range render.Wrap(r, shopCaptionW) {
+			if i >= 3 {
+				break
+			}
+			render.Text(dst, ln, fx-shopFaceCol+shopFaceW+4, cy+float64(i)*render.LineH, render.ColInkDim)
+		}
+	}
 
 	tabs := []string{"Buy", "Sell"}
 	for i, t := range tabs {

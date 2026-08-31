@@ -1487,9 +1487,31 @@ attempts collided with the rows — so the rows are 54px narrower and the vendor
 stands in the gap. No caption under it: the panel title is already the counter's
 name.
 
-Still open: the captions are derived from `ShopKind` and `Class` rather than
-written, so they say "blacksmith" and "fey mage" and never anything with a voice.
-Leaning into the tropes properly wants writing.
+**The captions are written now.** Six per counter and six per errand kind,
+picked by the same name hash the faces use, so two smiths in two towns read
+differently and the same smith reads the same way every visit. Three passes at
+the voice were commissioned in parallel and the final set is mixed from all
+three — flat occupational ("smith, no eyebrows"), quiet grievance ("smith,
+apprentice fled") and something very slightly wrong that nobody finds remarkable
+("smith, never burns") — because a town where every caption is the same joke is
+a town telling one joke six times.
+
+The trade is always the first word and the joke rides on top of it: a player who
+cannot tell the smith from the innkeeper has lost what the plain word gave them.
+The exception is the shop, which drops the trade word because the panel is
+already titled Blacksmith — and pays for the redundancy in item names, since
+every pixel that column takes is a pixel the rows have to cut.
+
+Recruits keep a derived caption. Blood and class decide what that person may
+wield and wear, so the caption is load-bearing there in a way it is nowhere
+else, and a joke in the slot would cost the player the fact they need before
+paying.
+
+`TestCaptionsFitUnderAPortrait` measures every caption in both places it is
+drawn. The widths were wrong at first in a way that only measuring found: the
+brief asked for twenty-two characters over two lines, and "apothecary," is
+seventy-seven pixels on its own against a seventy-six pixel frame, so a whole
+class of caption could never have fitted however short the rest of it was.
 
 ## Since the roadmap
 

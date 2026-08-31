@@ -241,32 +241,57 @@ func (g *Game) questFaceKind(e *world.Entity) (quest.Kind, bool) {
 	return kinds[i], true
 }
 
-// roleOf is the word under a person's face: what they are, in the player's
+// captionPool is the set of things somebody of this sort might be captioned as.
+//
+// A pool rather than one string, and picked by the same name hash the faces
+// use, so two smiths in two towns are captioned differently and the same smith
+// is captioned the same way every time you walk in. Voice and stability at once:
+// the caption is a fact about a person, not a line the game says about a job.
+type captionPool []string
+
+func (p captionPool) pick(name string) string {
+	if len(p) == 0 {
+		return ""
+	}
+	var h uint32 = 2166136261
+	for i := 0; i < len(name); i++ {
+		h ^= uint32(name[i])
+		h *= 16777619
+	}
+	// Salted differently from the face hash. Sharing it would tie caption to
+	// portrait, so every smith with that face would carry that caption and the
+	// two pools would collapse into one list of pairs.
+	h ^= 0x5CA1
+	h *= 16777619
+	return p[h%uint32(len(p))]
+}
+
+// roleOf is the caption under a person's face: what they are, in the player's
 // terms rather than the code's.
 //
-// One word where possible. The name is already the panel's title and the line
-// is already in their mouth; this is only there so a player can place somebody
-// at a glance — the difference between "a stranger asked me to kill six gulls"
-// and "the innkeeper asked me to kill six gulls".
+// Short by construction — the caption sits under a 76px portrait and wraps to
+// two lines of about twelve characters, so anything over twenty-two characters
+// does not fit. The name is already the panel's title and the line is already
+// in their mouth; this only exists so a player can place somebody at a glance.
 //
-// An empty answer is fine and common. A townsperson with nothing particular
-// about them gets no caption rather than a filler one, because "villager" under
-// every second face is noise that teaches the player to stop reading it — and
-// the face is already doing that job, since the pools are chosen by what
-// somebody is.
-func roleOf(e *world.Entity) string {
+// Empty is fine and common. An ordinary townsperson gets no caption rather than
+// a filler one, because "villager" under every second face is noise that
+// teaches the player to stop reading it — and the face is already saying what
+// they are, since the pools are chosen by what somebody is.
+func (g *Game) roleOf(e *world.Entity) string {
 	if e == nil {
 		return ""
 	}
 	switch e.Kind {
 	case world.EShop:
-		return shopRole[e.Shop]
+		return vendorCaptions[e.Shop].pick(e.Name)
 	case world.EInn:
-		return "innkeeper"
+		return capInnkeeper.pick(e.Name)
 	case world.ERecruit:
-		// What they do, and what they are when that is worth saying. A
-		// half-ogre sellsword is a more useful thing to have read than either
-		// half on its own.
+		// Derived rather than written, and deliberately so: blood and class
+		// decide what this person may wield and wear, so the caption is load
+		// bearing here in a way it is nowhere else. A joke in this slot would
+		// cost the player the one fact they need before paying.
 		switch {
 		case e.Blood != "" && e.Class != "":
 			return e.Blood + " " + strings.ToLower(e.Class)
@@ -276,16 +301,105 @@ func roleOf(e *world.Entity) string {
 			return e.Blood
 		}
 		return "for hire"
+	case world.ENPC:
+		if k, ok := g.questFaceKind(e); ok {
+			return questCaptions[k].pick(e.Name)
+		}
 	}
 	return ""
 }
 
-// shopRole names the counter somebody stands behind. Taken from the same list
-// the settlement builder signs the doors with, so the word over the shop and
-// the word under the face are the same word.
-var shopRole = map[world.ShopKind]string{
-	world.ShopSmith:      "blacksmith",
-	world.ShopArmorer:    "armourer",
-	world.ShopApothecary: "apothecary",
-	world.ShopInn:        "innkeeper",
+// The counters.
+//
+// Six each, drawn from three passes at the voice — flat occupational, quiet
+// grievance, and something very slightly wrong that nobody in the world finds
+// remarkable. Mixed on purpose: a town where every caption is the same joke is
+// a town telling one joke six times.
+//
+// The rule they all follow is the game's: never comment on the joke, and never
+// let it eat the information. A player who cannot tell the smith from the
+// innkeeper has lost something the plain word gave them, so the trade is always
+// the first thing said and the rest rides on top of it.
+var (
+	capSmith = captionPool{
+		"smith, no eyebrows",
+		"smith, deaf in one ear",
+		"smith, never burns",
+		"smith, apprentice fled",
+		"smith, no windows",
+		"smith, counts fingers",
+	}
+	capArmourer = captionPool{
+		"armourer, dents show",
+		"armourer, own dents",
+		"armourer, sizes by eye",
+		"armourer, straps fray",
+		"armourer, no returns",
+		"armourer, one good ear",
+	}
+	capApothecary = captionPool{
+		"apothecary, don't ask",
+		"apothecary, no labels",
+		"apothecary, sells both",
+		"apothecary, went sour",
+		"apothecary, tastes it",
+		"apothecary, guesses",
+	}
+	capInnkeeper = captionPool{
+		"innkeeper, watered ale",
+		"innkeeper, extra rooms",
+		"innkeeper, keeps a tab",
+		"innkeeper, rooms damp",
+		"innkeeper, spare key",
+		"innkeeper, no candles",
+	}
+)
+
+var vendorCaptions = map[world.ShopKind]captionPool{
+	world.ShopSmith:      capSmith,
+	world.ShopArmorer:    capArmourer,
+	world.ShopApothecary: capApothecary,
+	world.ShopInn:        capInnkeeper,
+}
+
+// The errand-givers, who had no caption at all before this: there was nothing
+// true to derive, since "villager" is not what somebody with a problem is.
+//
+// Each names a trade the errand makes sense coming from, so the caption is
+// doing two jobs — placing the person, and saying why this is their problem.
+// A cull comes from somebody it has happened to; a delve from somebody who is
+// emphatically not coming with you.
+var questCaptions = map[quest.Kind]captionPool{
+	quest.Cull: {
+		"farmer, losing sheep",
+		"widow, took the flock",
+		"cooper, taking names",
+		"herder, it's personal",
+		"miller, rats again",
+		"beekeeper, remembers",
+	},
+	quest.Fetch: {
+		"witch, won't explain",
+		"alchemist, buys scales",
+		"trader, has a use",
+		"scholar, needs proof",
+		"trapper, no questions",
+		"chandler, keeps count",
+	},
+	quest.Delve: {
+		"elder, won't go down",
+		"priest, won't enter",
+		"surveyor, drew the map",
+		"clerk, not paid enough",
+		"warden, minds the gate",
+		"monk, prefers daylight",
+	},
+	quest.Deliver: {
+		"trader, bad knee",
+		"courier, overbooked",
+		"merchant, closing shop",
+		"widow, can't travel",
+		"clerk, already leaving",
+		"steward, leaves soon",
+	},
 }

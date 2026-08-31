@@ -217,9 +217,16 @@ const (
 	talkTextX = talkX + facePad + faceSize + 12
 	talkTextW = talkW - (talkTextX - talkX) - 18
 
-	// How many lines the caption may take under the face. Two is enough for
-	// every role the game produces and short enough that it stays a label.
-	roleLines = 2
+	// The caption's own column, which is wider than the portrait it sits under
+	// and shorter than the text column it sits beside.
+	//
+	// Wrapping it to the frame was the obvious thing and the wrong one: at 76px
+	// the word "apothecary," is 77 and overflows on its own, so a whole class of
+	// caption could never fit however short the rest of it was. The left column
+	// runs to where the body text starts and nothing else is drawn in it, so the
+	// caption may have all of it.
+	captionW  = talkTextX - talkX - facePad - 6
+	roleLines = 3
 )
 
 // drawTalk renders the conversation layout: a face on the left, what they said
@@ -240,7 +247,7 @@ func (m *messageScene) talkHeight() float64 {
 	}
 	face := float64(faceSize) + 30
 	if m.role != "" {
-		n := len(render.Wrap(m.role, faceSize))
+		n := len(render.Wrap(m.role, captionW))
 		if n > roleLines {
 			n = roleLines
 		}
@@ -274,7 +281,7 @@ func (m *messageScene) drawTalk(g *Game, dst *ebiten.Image) {
 	// cutting it produced "undead ma." — which is not a shorter way of saying
 	// it, it is a different thing that happens to start the same.
 	ry := fy + faceSize + 4
-	for i, ln := range render.Wrap(m.role, faceSize) {
+	for i, ln := range render.Wrap(m.role, captionW) {
 		if i >= roleLines {
 			break
 		}
