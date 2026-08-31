@@ -261,6 +261,20 @@ which event fires which trigger, and where it is safe to put a box on screen.
 
 ## Gotchas
 
+- **A fraction of a bounding box is not a fraction of the land.** Every
+  location's difficulty was `d / (half the map's diagonal)`, and the continent
+  is a blob inside that rectangle: the land only reaches 59% of the way to the
+  corners, so 41% of the range fell off the edge of the world and no location
+  above level 9 was ever generated, in any seed, for the life of the project.
+  The trap has two halves worth remembering separately. The formula was
+  scale-invariant, so "make the world bigger" — which is how it sat on the open
+  list for months — would have moved nothing at all. And nothing caught it
+  because `cmd/balance` reads `biomeForLevel`, a lookup from level to biome
+  name, rather than the map: the report measured a danger curve at levels 10-14
+  without ever asking whether the world could produce them. `gradeByDistance`
+  now normalises against the map's own reach, and
+  `TestTheWorldReachesTheTopOfItsOwnContent` asserts the property rather than
+  the arithmetic.
 - **`core.RNG.Fork` never reads its receiver.** It derives the child stream from
   the label and the salt alone, so `g.RNG.Fork("thing", 0)` is the same stream in
   every run of every seed. Whatever should vary has to go into the salt —

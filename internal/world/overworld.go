@@ -436,26 +436,13 @@ func placePOIs(m *Map, g *core.RNG, namer Namer) {
 		capital = best
 	}
 
-	maxDist := math.Hypot(float64(Width), float64(Height)) / 2
-
 	add := func(kind POIKind, at core.Point) {
-		d := math.Hypot(float64(at.X-capital.X), float64(at.Y-capital.Y))
-		level := 1 + int(d/maxDist*11)
-		switch kind {
-		case KindCapital:
-			level = 1
-		case KindDungeon:
-			level += 2 // dungeons punch above their neighbourhood
-		case KindVillage, KindCamp:
-			level = core.Max(1, level-1)
-		}
 		p := &POI{
-			Pos:   at,
-			Kind:  kind,
-			Name:  namer.PlaceName(g, string(kind)),
-			Tag:   namer.PlaceTag(g, string(kind)),
-			Level: core.Clamp(level, 1, 14),
-			Seed:  int64(g.Intn(1<<30)) ^ (int64(at.X)<<20 | int64(at.Y)),
+			Pos:  at,
+			Kind: kind,
+			Name: namer.PlaceName(g, string(kind)),
+			Tag:  namer.PlaceTag(g, string(kind)),
+			Seed: int64(g.Intn(1<<30)) ^ (int64(at.X)<<20 | int64(at.Y)),
 		}
 		m.POIs = append(m.POIs, p)
 		taken[at] = true
@@ -476,6 +463,68 @@ func placePOIs(m *Map, g *core.RNG, namer Namer) {
 			add(plan.kind, at)
 			placed++
 		}
+	}
+
+	gradeByDistance(m, capital)
+}
+
+// gradeByDistance is "danger radiates outward" turned into a level per location,
+// and it runs after placement rather than during it because it needs to know how
+// far the outward goes.
+//
+// It used to divide by half the diagonal of the map rectangle, and that is the
+// bug this function exists to have fixed. The continent is a blob inside the
+// rectangle, so the land never gets near the corners: measured over forty
+// seeds, the farthest walkable tile from the capital is 49 to 72 tiles out
+// against a denominator of 100. The level formula was therefore spending 59%
+// of its range on the whole world and throwing the rest off the edge of the
+// map. The highest location generated in forty maps — 1,778 of them — was
+// level 9. Levels 10 through 14 did not exist anywhere, ever, and the content
+// tables, the gear bands and the entire top half of the balance report were
+// describing a place the player cannot be sent to.
+//
+// Worth being exact about why "make the world bigger" was the wrong question,
+// since that is how this sat on the open list for months: the formula is a
+// *fraction* of the denominator, so it is scale-invariant. Doubling Width and
+// Height would have moved nothing at all. The variable was never the size, it
+// was what the size is measured against.
+//
+// The denominator is now the map's own reach — the farthest location actually
+// placed — so the ramp spans whatever continent the noise produced, and a small
+// map gets a steep ramp rather than no endgame.
+//
+// And it spans the whole of it: thirteen steps, so the outermost location is
+// level fourteen. Twelve was the first attempt, on the reasoning that the top
+// two bands are what a dungeon's +2 is for — which reproduced the original bug
+// two notches up, because a dungeon has to happen to be the farthest thing on
+// the map to reach fourteen, and across ten seeds none was. A level-14
+// character wants somewhere that is level 14 to be in; the overworld blends
+// two parts the player's level with one part the region's, so nothing above a
+// level-12 region can hand a level-14 player a level-14 fight at all. The
+// dungeon bonus still matters everywhere it has room, which is everywhere but
+// the rim.
+func gradeByDistance(m *Map, capital core.Point) {
+	reach := 0.0
+	for _, p := range m.POIs {
+		if d := math.Hypot(float64(p.Pos.X-capital.X), float64(p.Pos.Y-capital.Y)); d > reach {
+			reach = d
+		}
+	}
+	if reach <= 0 {
+		reach = 1
+	}
+	for _, p := range m.POIs {
+		d := math.Hypot(float64(p.Pos.X-capital.X), float64(p.Pos.Y-capital.Y))
+		level := 1 + int(d/reach*13)
+		switch p.Kind {
+		case KindCapital:
+			level = 1
+		case KindDungeon:
+			level += 2 // dungeons punch above their neighbourhood
+		case KindVillage, KindCamp:
+			level = core.Max(1, level-1)
+		}
+		p.Level = core.Clamp(level, 1, 14)
 	}
 }
 

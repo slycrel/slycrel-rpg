@@ -1566,3 +1566,59 @@ func TestSomewhereSellsAWayToSleepRough(t *testing.T) {
 			"the whole of the choice", kits)
 	}
 }
+
+// TestTheWorldReachesTheTopOfItsOwnContent is the regression net under the
+// bug that had the game's whole upper half unreachable.
+//
+// Locations are graded by distance from the capital, and the divisor used to be
+// half the diagonal of the map rectangle. The continent is a blob inside that
+// rectangle, so the land only ever gets about 59% of the way to the corners:
+// the formula spent well over a third of its range off the edge of the world.
+// Across forty seeds and 1,778 locations the highest level ever generated was
+// 9. Levels 10 to 14 did not exist. Every monster, every gear band and every
+// row of the balance report above level nine described somewhere the player
+// could not be sent, and nothing anywhere said so — the balance report reads
+// biomeForLevel rather than the map, so it never asked whether the map could
+// produce the levels it was measuring.
+//
+// This asserts the property rather than the arithmetic: that a spread of seeds
+// between them reaches the top of the band content is written for, and that
+// each map spans most of its own range. Either could be satisfied by a
+// different formula, which is the point.
+func TestTheWorldReachesTheTopOfItsOwnContent(t *testing.T) {
+	const top = 14 // maxLevel in cmd/balance, and the clamp in placePOIs
+
+	seeds := []int64{1, 2, 3, 5, 8, 13, 42, 1994, 20260815, 999999}
+	seen := map[int]bool{}
+	for _, seed := range seeds {
+		m := world.Generate(seed, stubNamer{})
+		lo, hi := top+1, 0
+		for _, p := range m.POIs {
+			seen[p.Level] = true
+			if p.Level < lo {
+				lo = p.Level
+			}
+			if p.Level > hi {
+				hi = p.Level
+			}
+		}
+		// One map does not have to hold every band, but it does have to be a
+		// world with a journey in it rather than a plateau.
+		if hi-lo < 8 {
+			t.Errorf("seed %d: locations run level %d to %d, a span of %d — "+
+				"the map is not grading its own distance", seed, lo, hi, hi-lo)
+		}
+		if hi < top-3 {
+			t.Errorf("seed %d: the most dangerous place on the map is level %d, "+
+				"against content written to %d", seed, hi, top)
+		}
+	}
+
+	// And the bands between them: a level with nowhere in it across ten maps is
+	// content nobody will ever be sent to.
+	for lvl := 1; lvl <= top-1; lvl++ {
+		if !seen[lvl] {
+			t.Errorf("no location at level %d in any of %d seeds", lvl, len(seeds))
+		}
+	}
+}

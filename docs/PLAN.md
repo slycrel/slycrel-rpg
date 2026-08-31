@@ -3423,6 +3423,93 @@ the assumption changing, not the content:
 - **DANGER** fails the same two bands by the same margins it failed before.
 - Five save fixtures were regenerated; the diff is shields and nothing else.
 
+## World size: the oldest question, and it was the wrong question
+
+`placePOIs` grades every location by how far it sits from the capital, and the
+divisor was half the diagonal of the map rectangle:
+
+```go
+maxDist := math.Hypot(float64(Width), float64(Height)) / 2   // 100
+level := 1 + int(d/maxDist*11)
+```
+
+The continent is a blob inside that rectangle. Measured over forty seeds, the
+farthest *walkable tile* from the capital is 49 to 72 tiles out, mean 59 — so
+the land reaches 59% of the divisor and the formula spent the other 41% of its
+range off the edge of the world.
+
+What that cost, over the same forty seeds and 1,778 locations:
+
+| level | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10-14 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| locations a map | 4.2 | 6.7 | 10.2 | 9.8 | 8.0 | 4.0 | 1.3 | 0.25 | 0.03 | **0** |
+
+**The highest place that has ever existed in this game is level 9, and it
+turned up once in forty maps.** Levels 10 to 14 have never been generated. Every
+monster above level nine, the tier-four and tier-five gear bands, the LANES
+crossover this session moved to level ten, the whole of CROWDS above the middle
+— all of it describes country the player cannot be sent to.
+
+**Why "make the world bigger" would have changed nothing.** That is how this sat
+on the open list under the heading "world size" for months, and it is worth
+being exact about: the formula is a *fraction* of the divisor, so it is scale
+invariant. Doubling `Width` and `Height` doubles both `d` and `maxDist` and
+leaves every level exactly where it was. The variable was never the size of the
+map. It was what the size was being measured against.
+
+**And why nothing caught it.** The balance report reads `biomeForLevel`, a
+lookup table from level to biome name, rather than the map. So it happily
+measured the danger curve at levels 10 through 14 without ever asking whether
+the world could produce them, and the only section that touches a real
+continent — SAGA — was reporting the answer in plain sight: its final leg, the
+end of the game's longest story, was landing in level-7 country.
+
+### The fix
+
+`gradeByDistance` now runs after placement and divides by the map's own reach —
+the distance to the farthest location actually placed — in thirteen steps, so
+the outermost location on every map is level 14.
+
+Twelve steps was the first attempt, on the reasoning that the top two bands are
+what a dungeon's `+2` is for. That reproduced the original bug two notches up:
+reaching 14 then requires a dungeon to happen to be the farthest thing on the
+map, and across ten seeds none was. It also does not survive contact with
+`encounterLevel`, which blends two parts the player's level with one part the
+region's — so a level-12 region hands a level-14 player a level-12 fight, and
+the top of the game has nothing in it. The dungeon bonus still does its work
+everywhere it has room, which is everywhere but the rim.
+
+Normalising per map also means a cramped continent gets a steep ramp rather
+than no endgame, which is the property that was missing: the ramp now spans
+whatever the noise produced.
+
+| level | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| before | 4.2 | 6.7 | 10.2 | 9.8 | 8.0 | 4.0 | 1.3 | .25 | .03 | 0 | 0 | 0 | 0 | 0 |
+| after | 1.3 | 1.5 | 2.1 | 3.3 | 4.0 | 4.5 | 4.7 | 5.2 | 5.0 | 4.0 | 3.2 | 2.6 | 1.9 | 1.1 |
+
+SAGA is the visible consequence, and it is the whole point of the change: the
+spine's five legs used to run 2/3/5/6/7 in region level and now run 4/7/10/12/14.
+A story that ends at the top of the content is a story the content was written
+for.
+
+`TestTheWorldReachesTheTopOfItsOwnContent` is the net under it, and it asserts
+the property rather than the arithmetic: a spread of seeds reaches the top band,
+each map spans at least eight levels of its own, and no band between one and
+thirteen is empty across ten maps. A different formula could satisfy all three,
+which is the point of writing it that way.
+
+### What this does not fix
+
+`encounterLevel` is `(player*2 + region) / 3`, so the world can still only ever
+hand you about a third of the gap between your level and the ground you are
+standing on. That is a deliberate blend and it now works as designed — a level-3
+character who walks to the rim meets level-8 country after the night shift and
+the jitter, which is the "+5 by poor choices" the DANGER brief asks for and
+could not previously produce. It is only worth restating because the brief's
+bands and the world's bands finally mean the same thing, and before this commit
+they did not.
+
 ## What is open, and in what order
 
 Written at the end of the session that built the class-identity scheme, while
@@ -3503,12 +3590,18 @@ leans on items, the one who never flees, or the one who hires two companions
 and fights behind them — and SUPPLIES exists precisely because the first of
 those is invisible to `SimulateFight`.
 
-### 6. The two oldest questions
+### 6. The two oldest questions — world size is answered
 
-**Multiplayer**, whose "decide before the save format hardens" deadline has
-passed rather than been met — three versions, two committed compatibility
-fixtures. **World size**, untouched, with two things now leaning on the answer
-that did not exist when it was written.
+**World size** is done, and the answer was that it was the wrong question: the
+map's difficulty ramp was normalised against the bounding rectangle rather than
+against the land, so 41% of the range fell off the edge of the continent and no
+location above level 9 had ever been generated. Making the map bigger would
+have changed nothing, the formula being scale-invariant. See the section above.
+
+**Multiplayer** is still open, and it is now the only thing on this list that
+is a decision rather than a task. Its "decide before the save format hardens"
+deadline has passed rather than been met — three versions, two committed
+compatibility fixtures.
 
 ### Not yet needed, and worth knowing they are cheap
 
