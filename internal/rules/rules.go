@@ -1329,6 +1329,15 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 	return SimulateGroup(g, c, mons, maxRounds, spells)
 }
 
+// SimulateFightAs is SimulateFight with a named policy.
+func SimulateFightAs(g *core.RNG, c *model.Character, defs []*model.MonsterDef, level, maxRounds int, spells []model.Spell, pol Policy) FightResult {
+	mons := make([]*model.Monster, 0, len(defs))
+	for _, d := range defs {
+		mons = append(mons, d.Spawn(g, level))
+	}
+	return SimulateGroupAs(g, c, mons, maxRounds, spells, pol)
+}
+
 // SimulateGroup is SimulateFight against creatures that already exist.
 //
 // The split is what lets the report measure an *encounter* rather than a
@@ -1337,6 +1346,33 @@ func SimulateFight(g *core.RNG, c *model.Character, defs []*model.MonsterDef, le
 // that survives being flattened into "n definitions, all at level L", which is
 // the only thing SimulateFight could ever say.
 func SimulateGroup(g *core.RNG, c *model.Character, mons []*model.Monster, maxRounds int, spells []model.Spell) FightResult {
+	return SimulateGroupAs(g, c, mons, maxRounds, spells, Policy{})
+}
+
+// Policy is how the simulated player *behaves*, as opposed to what they are
+// carrying, and it exists because the report could measure three ways of
+// spending money and no ways of playing.
+//
+//	"at some point we might need full testing against each class and each
+//	flavour of playstyle"
+//
+// The zero value is the competent default every other section measures, which
+// is the only shape this may take: a policy field whose zero value meant
+// something new would silently re-measure the whole report the day it was
+// added, and every number in it is compared against numbers taken before.
+type Policy struct {
+	// NeverFlee holds the ground. The retreat is the most load-bearing piece
+	// of judgement in the simulator — it decides the difference between a
+	// death and a bad afternoon in every band the DANGER brief is about — and
+	// two separate bugs in the estimate feeding it turned up in one evening.
+	// A run with it switched off is the bound on how much that judgement is
+	// worth at all, and it is also a real way people play.
+	NeverFlee bool
+}
+
+// SimulateGroupAs is SimulateGroup with the player's behaviour named rather
+// than assumed.
+func SimulateGroupAs(g *core.RNG, c *model.Character, mons []*model.Monster, maxRounds int, spells []model.Spell, pol Policy) FightResult {
 	// The character is spent, not copied: hit points and psyche carry out of
 	// the fight so a run of encounters can be simulated on one rest. Callers
 	// wanting an isolated fight pass a copy.
@@ -1556,7 +1592,7 @@ func SimulateGroup(g *core.RNG, c *model.Character, mons []*model.Monster, maxRo
 		// find out who runs out first.
 		act := strike
 		switch {
-		case wantsOut(sim, living):
+		case !pol.NeverFlee && wantsOut(sim, living):
 			act = func() {
 				if g.Chance(FleeChance(sim.Spd(), fastest)) {
 					res.Fled = true

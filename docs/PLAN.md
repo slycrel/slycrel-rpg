@@ -3946,12 +3946,37 @@ than fixed, because the alternative is unbanding the gear. Five creatures went
 into the top of the roster anyway, for the different reason that the world fix
 made levels 10-14 reachable at all.
 
-**ARCS tests gear builds, not playstyles.** *(Jeremy's: "at some point we might
-need full testing against each class and each flavour of playstyle.")* Three
-archetypes are three ways of spending money. Nothing measures the player who
-leans on items, the one who never flees, or the one who hires two companions
-and fights behind them — and SUPPLIES exists precisely because the first of
-those is invisible to `SimulateFight`.
+**ARCS tests gear builds, not playstyles** — one of the three is now measured,
+and the other two are each blocked on one missing thing, named rather than
+faked. *(Jeremy's: "at some point we might need full testing against each class
+and each flavour of playstyle.")*
+
+`rules.Policy` is the hook, with the zero value meaning the competent default
+every other section measures — which is the only shape it may take, since a
+policy field whose zero value meant something new would silently re-measure the
+entire report the day it was added.
+
+**The never-run player** is the PLAYSTYLES section, and it starts there because
+the retreat is the most load-bearing judgement in the simulator. Standing your
+ground buys up to 8.1 points of win rate and costs up to **40.1 points of death
+rate**, and the widest cost falls on the Thief, the class whose survival plan
+*is* leaving: at level nine, five over, it dies in 69.6% of fights instead of
+29.5%.
+
+That is also the bound this report badly needed on its own arithmetic. Every
+other section shares one retreat policy, so a bug in it moves every section
+together and cancels out of every comparison — and two such bugs turned up in a
+single evening. This is the only column that can see the judgement rather than
+through it.
+
+**The item-user** needs the simulator to carry a pack, which it deliberately
+does not: "no potions" in every heading is a decision, and SUPPLIES prices the
+counter instead. Building it means a buying policy as well as a using one,
+which is a second set of judgement calls to get wrong.
+
+**The player who fights behind two companions** needs the party simulator that
+item 5's CROWDS entry also wants. Same missing instrument, twice — which is the
+argument for building it.
 
 ### 6. The two oldest questions — world size is answered
 

@@ -121,6 +121,7 @@ func main() {
 	// would run bit-identical streams at every -seed and could never be checked
 	// by replication. Which is the gotcha this repo already had written down.
 	reportExchange(out, t, *fights*2, *seed^0xE7CB)
+	reportPlaystyles(out, core.NewRNG(*seed^0x9147), t, *fights)
 	reportCharms(out, core.NewRNG(*seed^0xC4A7), t, *fights/4)
 	// Its own generator too, for the same reason as ARCS above.
 	reportShapes(out, core.NewRNG(*seed^0x5411), t, *fights)
@@ -1915,6 +1916,139 @@ one stat for another, affixes do both. "Fifteen points of ward for three of
 guard" is not generous or stingy until the two are in the same currency, and
 this is the exchange desk. Read the row for the level the item's band is
 worn at, and for the class that can hold it.
+
+`)
+}
+
+// reportPlaystyles measures a way of *playing* rather than a way of spending,
+// which is the one thing ARCS above cannot do.
+//
+//	"at some point we might need full testing against each class and each
+//	flavour of playstyle" — Jeremy
+//
+// ARCS has three archetypes and all three are budgets: give up a band here, buy
+// one there. Nothing in the report has ever varied what the player *does*. This
+// is the first thing that does, and it starts with the retreat, for two
+// reasons.
+//
+// It is the most load-bearing piece of judgement in the simulator. The whole
+// DANGER brief is a statement about deaths, and the difference between a death
+// and a bad afternoon is almost always whether the simulated player left. Two
+// separate bugs in the estimate feeding that decision turned up in one evening
+// — one over-reading magical damage by three fifths, one taking a mean where it
+// wanted the mean of a clamp — and neither would have been visible in any
+// section here, because every section shared the same policy and so moved
+// together. A column with the retreat switched off is the bound on how much
+// that judgement is worth at all.
+//
+// And it is a real way people play. "Never run" is a style, not a mistake, and
+// the game charges for it in exactly the coin the brief cares about.
+//
+// What this is not: the other two playstyles the open list names. The player
+// who leans on items needs the simulator to carry a pack, which it deliberately
+// does not — SUPPLIES prices the counter instead — and the player who fights
+// behind two companions needs a party simulator, which does not exist at all.
+// Both are named in the closing text rather than faked.
+func reportPlaystyles(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+	fmt.Fprintf(out, "PLAYSTYLES — what a way of playing costs, as opposed to a way of spending\n")
+	fmt.Fprintf(out, "on-curve gear, the same fights, one behaviour changed\n\n")
+
+	fmt.Fprintf(out, "%-6s %-8s %-6s %8s %8s %8s   %s\n",
+		"level", "class", "band", "won", "fled", "died", "vs the competent player")
+	fmt.Fprintln(out, strings.Repeat("-", 74))
+
+	// run plays one band under one policy, paired against the other policy by
+	// the same trick EXCHANGE uses: the fight number seeds the stream, so both
+	// styles meet the same subject in the same encounter and the difference is
+	// the behaviour rather than the luck.
+	run := func(class model.Class, level, delta int, pol rules.Policy) (won, fled, died float64) {
+		enc := core.Max(1, level+delta)
+		biome := biomeForLevel(enc)
+		label := fmt.Sprintf("playstyle/%s/%d/%d", class, level, delta)
+		var wins, flights, deaths, n int
+		for f := 0; f < fights; f++ {
+			rg := g.Fork(label, int64(f))
+			c := rules.BuildCharacter(rg, class, level)
+			equip(t, c)
+			mons := t.PickMonsters(rg, biome, enc, 1)
+			if len(mons) == 0 {
+				continue
+			}
+			fresh := *c
+			r := rules.SimulateFightAs(rg, &fresh, []*model.MonsterDef{mons[0].Def},
+				enc, 60, t.SpellsFor(c), pol)
+			if r.Won {
+				wins++
+			}
+			if r.Fled {
+				flights++
+			}
+			if r.Died() {
+				deaths++
+			}
+			n++
+		}
+		if n > 0 {
+			won = float64(wins) * 100 / float64(n)
+			fled = float64(flights) * 100 / float64(n)
+			died = float64(deaths) * 100 / float64(n)
+		}
+		return
+	}
+
+	// The two bands where a retreat is a live option. On level almost nobody
+	// wants out, and the sections above say so.
+	bands := []struct {
+		label string
+		delta int
+	}{{"+3", laneStretch}, {"+5", laneOver}}
+
+	var worstCost, bestGain float64
+	for _, level := range []int{5, 9, 13} {
+		for _, class := range model.AllClasses {
+			for _, b := range bands {
+				baseWon, baseFled, baseDied := run(class, level, b.delta, rules.Policy{})
+				w, fl, d := run(class, level, b.delta, rules.Policy{NeverFlee: true})
+
+				// Holding the ground converts flights into something. The
+				// question is which, and the answer is the whole section.
+				deaths, wins := d-baseDied, w-baseWon
+				note := fmt.Sprintf("%+.1f won, %+.1f died", wins, deaths)
+				if deaths > worstCost {
+					worstCost = deaths
+				}
+				if wins > bestGain {
+					bestGain = wins
+				}
+				fmt.Fprintf(out, "%-6d %-8s %-6s %7.1f%% %7.1f%% %7.1f%%   %s\n",
+					level, class, b.label, w, fl, d, note)
+				_ = baseFled
+			}
+		}
+		fmt.Fprintln(out)
+	}
+
+	fmt.Fprintf(out, "The rows are the never-run player; the note is the difference against the\n")
+	fmt.Fprintf(out, "competent one the rest of this report measures. Standing your ground buys\n")
+	fmt.Fprintf(out, "up to %.1f points of win rate and costs up to %.1f points of death rate.\n\n",
+		bestGain, worstCost)
+
+	fmt.Fprint(out, `That number is the price of the retreat, and it is worth having for a
+reason beyond the playstyle: every other section in this report shares one
+retreat policy, so a bug in it moves every section together and cancels out
+of every comparison. Two such bugs turned up in a single evening — the
+estimate feeding the decision was over-reading magical damage by three
+fifths, and then taking a mean where it wanted the mean of a clamp. Neither
+was visible anywhere else. This column is the only place the report can see
+that judgement at all rather than through it.
+
+Two playstyles the open list names are still not here, and are named rather
+than faked. The player who leans on items needs the simulator to carry a
+pack, which it deliberately does not — the "no potions" in every heading is
+a decision, and SUPPLIES prices the counter instead. The player who fights
+behind two companions needs a party simulator, which does not exist: every
+fight in this report is one character, which is also why CROWDS' wider
+columns mean "a solo hero after their company was killed".
 
 `)
 }
