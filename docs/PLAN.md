@@ -3510,6 +3510,169 @@ could not previously produce. It is only worth restating because the brief's
 bands and the world's bands finally mean the same thing, and before this commit
 they did not.
 
+## Three policies that were reading a different game
+
+Chasing "the ward lane is never the answer" did not end at the shield table. It
+ended at three places where code that *estimates* what the rules do had drifted
+from what the rules actually do, and every one of them was under numbers this
+document has been quoting for months.
+
+The pattern is worth the name, because it is not the same as the rule
+`cmd/balance` already carries. "A mechanic the simulator cannot see is a
+mechanic the balance pass is lying about" covers a missing mechanic. This is a
+*present* mechanic being misread by a second copy of the arithmetic:
+
+> **A policy that estimates what the rules do is a second copy of the rules.**
+
+Both halves always look right on their own, which is why none of these was
+found by reading.
+
+### The retreat, the gamble and the heal were pricing magic at 1.6×
+
+`incomingPerRound` estimates a blow at 0.85 of offence — the mean of
+`MonsterDamage`'s roll. Its magical branch swapped the guard for ward and left
+the roll alone, while `MonsterDamage` scales a magical roll by `magicBite`
+(0.62) first. So the policy priced a caster's swing at 0.85 of offence when the
+caster swings for 0.53.
+
+Worst exactly where it matters: the top of the game, where half the blows
+landing are magical, on the three decisions that decide whether a fight is
+survived.
+
+Fixing it moved the measured shape of the game. At level 13, five levels over,
+a Fighter now flees 8.9% of the time rather than 14.1% and wins 65.3% rather
+than 50.2% — it stops running from damage that was never landing. And the WARD
+section, whose whole subject is ward, roughly tripled what it says the slot is
+worth: nought to 2.7 points before, up to 5.5 after.
+
+### A Fighter cast spells because the swing was described by a guess
+
+`freeSwingWorth` is the bar a paid technique has to clear. Its caster branch
+shares `FocusBolt`'s own arithmetic and is exact. Its melee branch said
+`Str()/2 + Strike()`. `PlayerDamage` rolls between `str*0.65 + strike` and 1.25
+of that: at level thirteen a Fighter's swing averages about 46 and the proxy
+said 36.5.
+
+So techniques worth barely a third of a swing measured as worth a round. And
+because `SpellPower` reads `MaxPsy`, **buying psyche made a Fighter cast more
+and get worse** — EXCHANGE priced a point of psyche for a Fighter at minus one
+at every level it sampled. A stat measuring as a trap, entirely because the
+policy misread the alternative.
+
+`PlayerDamage`'s bounds are `SwingBand` now and `freeSwingWorth` takes its
+mean. Psyche prices at 0.00 to 0.10 for a Fighter and a Thief afterwards and
+stays 0.48 to 1.07 for a Mage, which is what a caster's currency should read.
+
+A Fighter at the top of the game gained six points of win rate on the stretch
+fights from this alone.
+
+### And a pointer into the content tables
+
+`model.Shield.Extra` is a `*Bonus`, so every copy of a shield shares the Bonus
+off the row it came from. Nothing in the game had ever written through it. The
+first thing that did — the new EXCHANGE section, adding six points of ward to
+price the slot — buffed the entire tier a little more on each of four thousand
+iterations, until both sides of the comparison were saturated and ward priced
+out at a flat nought. Nothing failed. The number was plausible.
+
+`Shield.Nudged` is the only sanctioned way to change a shield now, the field
+says so, and a test holds it.
+
+## EXCHANGE: what a point of anything is worth
+
+Three content tables spend in points — shields trade guard for ward or strike,
+charms trade one stat for another, affixes do both — and none of them had ever
+been told the rate. "Fifteen points of ward for three of guard" is neither
+generous nor stingy until the two are in one currency.
+
+EXCHANGE nudges the balanced build by K points of one stat and reads the
+difference off the two bands LANES uses, per point, per class. Two things make
+it able to resolve a point of ward, and both are the interesting part:
+
+**Common random numbers.** Fight *f* forks its generator from the cell and the
+fight number, so the baseline and all seven nudges meet the same subject in the
+same encounter with the same opening rolls. Only the nudge differs. That took
+the error bar from 0.92 per point on the death column to 0.24.
+
+**And then the noise floor had to be replaced.** Pairing makes a nudge that
+changes nothing return a bit-identical stream and a floor of exactly nought,
+which would license believing any number in the table. LANES' trick — read the
+floor off rows where three different-looking builds are secretly the same build
+— is unavailable. The honest replacement is two independent halves of every
+estimate, and how far they disagree is the error bar.
+
+The exact `0.00` rows are worth keeping for a different reason: a Mage swings a
+Focus, so `Weapon.Strike` is read by nothing it does, the paired runs never
+diverge by a die, and the answer is not "small" but *identical*. A stat that
+does nothing says so in a distinctive voice, and one that does not would be a
+plumbing bug this catches.
+
+What it says, at the top of the game, per point of win rate on the stretch
+fights: **strike 1.0, strength 0.7, ward 0.6, speed 0.25, dexterity 0.25,
+defense 0.14.** Guard has collapsed as a currency by level thirteen, because
+on-curve armour already cancels most of a physical roll. That is the whole
+explanation of why the wall lane lost, and it is the number the shield table
+now has to be authored against.
+
+## What the charm bands look like once they are priced
+
+The brief said two of five bands had a right answer rather than a choice.
+Priced against EXCHANGE it was worse than that, and worse in two directions:
+
+| tier | | | |
+|---|---|---|---|
+| 1 | Lucky Tooth −0.8 | Heavy Knucklebone +0.8 | |
+| 2 | Spectacles 0.1 | Anklet −0.4 | |
+| 3 | Licence 1.4 | Fingerbone 3.0 | Quiet Stone −0.8 |
+| 4 | Ring 1.7 | Earplugs 5.2 | Medal 1.1 |
+| 5 | Collar 8.2 | Pendant −0.1 | |
+
+The ward charms dominate because ward carries 6 to 14 points where its rivals
+carry 1 to 4 — the brief's diagnosis, now with a rate under it. And the bands
+*without* a ward charm fail the other way: tier two is a choice between two
+items worth nothing, because dexterity and speed price at 0.17 and 0.29 a point
+against strength and strike at 0.53 and 0.72.
+
+Every charm is re-authored to land inside its band and to differ in which axis
+it buys. Prices are flat within a band, because once the values match a price
+spread is a signal with nothing behind it. On the fights: no band fails, the
+widest is 3.0 against a threshold of 3.0, and the rest run 0.4 to 2.0.
+
+**And `CharmValue`'s weights are measurements now.** They were read off five
+argmax comparisons, and the comment under them was honest that seven continuous
+weights cannot be recovered from five discrete choices. They are EXCHANGE's
+all-class, both-axis means now. The old numbers had ward at 1.0 against a
+measured 0.22 and dexterity at 1.0 against 0.17, which is exactly why the
+balanced build reached for the ward charm in every band that had one.
+
+Still class-blind, and that is now a known cost with a number on it rather than
+an oversight: a point of psyche is worth 0.68 to a Mage at thirteen against
+−0.01 to a Fighter.
+
+## What the sawtooth is, and why "level eleven is soft" was a misreading
+
+The open list said level eleven was soft and blamed mountain's roster. It is
+not, and it was never a roster hole. Averaged across classes, COMBAT's "over"
+column runs:
+
+| levels | 4-6 | 7-9 | 10-12 | 13-14 |
+|---|---|---|---|---|
+| win rate | 90.8 / 91.0 / 90.9 | 97.3 / 96.8 / 84.2 | 86.1 / 81.0 / 72.3 | 80.2 / 77.6 |
+
+About thirteen points of decay *inside* each band, restored by the next gear
+step at 4, 7, 10 and 13. Twelve is the hard level and thirteen is the easy one,
+because twelve is the last level before a band.
+
+That is banded gear meeting a smooth monster curve, and it is the rhythm the
+game is built on — you get stronger when you shop and weaker as you outlevel
+your kit, which is what gives a shop counter a job. It is named here rather
+than fixed, because the alternative is unbanding the gear.
+
+Five creatures were added to the top of the roster all the same, for a
+different reason: the world fix means levels 10 to 14 are reachable for the
+first time, and what is up there was two to four creatures a level. DANGER's
++5 band moved from UNDER by 12.2 to UNDER by 7.2.
+
 ## What is open, and in what order
 
 Written at the end of the session that built the class-identity scheme, while
@@ -3557,19 +3720,30 @@ own value is real but smaller than it looks: a sidearm band steps +2 where a
 weapon band steps +5, and a weapon in that arm is the one legitimate way past
 `TestShieldsStaySecondaryToArmour`, because it is not a shield.
 
-### 4. Two content passes with briefs already written
+### 4. The charm bands are done; the shield cap turns out to be the wrong lever
 
-**The charm bands do not trade.** Two of five have a right answer rather than a
-choice, by more than the noise, on both axes at once — which is the premise of
-`TestTheShelfNeverGradesACharm` failing in the arbiter while passing in the
-suite. The cause is magnitudes, not ward: the ward charms carry six to fourteen
-points of their stat where their rivals carry one to four.
+**The charm bands trade now** — see the section above. Every band comes in
+inside the threshold on the fights, and `CharmValue`'s weights are EXCHANGE's
+measurements rather than a fit to five argmax comparisons.
 
-**The shield cap.** Every shield sits *exactly* at half the body armour of its
-band, zero headroom at every tier, so `TestShieldsStaySecondaryToArmour` is the
-ceiling on how far the arcs can spread. This document has now named it three
-times without acting on it. Widening the arcs means revisiting that rule on
-purpose.
+**The shield cap is not what is holding the off-arm band together, and this is
+worth correcting because the document has named it three times.** Only the wall
+sits at the cap; the other two lanes are one to three points under it in every
+band. So the cap constrains exactly one lane — and it is the lane whose problem
+is not headroom. EXCHANGE prices guard at 0.14 a point at level thirteen
+against strike at 1.0, so doubling the wall's guard would buy it about one point
+of win rate against the spiked lane's six. **Raising the cap cannot make the
+wall competitive at the top of the game**, and the reason is that guard as a
+currency has collapsed there, not that the wall is short of it.
+
+What is left of this item is a real question with a cheap measurement attached:
+does the silvered shield beat the spiked one *against magical attackers
+specifically*? LANES averages over a mixed roster, and WARD says the ward slot
+is worth four to five points at the top. If it does, the off-arm band trades on
+matchup — which is the design as written — and the thing to check is whether
+the world's magical share at the rim is high enough to make that pay. It is
+56% at level eighteen, so the measurement is worth taking before anything in
+the table moves.
 
 ### 5. Things the report can see and nobody has tuned
 
@@ -3578,10 +3752,13 @@ for everybody above level nine and six is a nought; whether that is correct
 depends on how often the world sends them, which `EncounterSize` and the pack
 shape decide and no section reads together.
 
-**Level eleven is soft.** Every class posts its best numbers there because
-mountain's roster near that band is weak. It is the same class of content hole
-the report already catches elsewhere — a band with nothing appropriate to fight
-— and it is currently making one row of every table optimistic.
+**Level eleven is soft** — withdrawn, and it was a misreading. Eleven is not
+soft, the roster was not the cause, and the shape is a sawtooth keyed to the
+gear bands: about thirteen points of decay inside each band, restored at 4, 7,
+10 and 13. Twelve is the hard level. See the section above; it is named rather
+than fixed, because the alternative is unbanding the gear. Five creatures went
+into the top of the roster anyway, for the different reason that the world fix
+made levels 10-14 reachable at all.
 
 **ARCS tests gear builds, not playstyles.** *(Jeremy's: "at some point we might
 need full testing against each class and each flavour of playstyle.")* Three

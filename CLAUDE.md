@@ -59,6 +59,17 @@ numbers mean anything. Two rules follow:
 - **A mechanic the simulator cannot see is a mechanic the balance pass is lying
   about.** When monsters started inflicting poison, `SimulateFight` had to learn
   to apply and tick it.
+- **And a policy that estimates what the rules do is a second copy of the
+  rules.** Different failure, same cost, and harder to see because both halves
+  look right alone. `incomingPerRound` priced a caster's blow at 0.85 of offence
+  where `MonsterDamage` swings for 0.53, so the retreat, the gamble and the heal
+  all over-read magical damage by three fifths at exactly the levels where half
+  the blows are magical. `freeSwingWorth` described a swing as `Str()/2 +
+  Strike()` where `PlayerDamage` rolls half again that — so a Fighter cast
+  techniques worth a third of a swing, and buying psyche made it *worse*, which
+  read as a trap stat until the policy was fixed. Both are now one line calling
+  the real arithmetic. When a stat measures as harmful, suspect the policy that
+  chooses between it and the alternative before suspecting the stat.
 - **`gamedata.Equip` is the "on curve" assumption**, and it is load-bearing. The
   equipment pass moved the entire report without changing a single stat, purely
   by making that assumption richer. If the report shifts, suspect the assumption
@@ -99,9 +110,18 @@ which event fires which trigger, and where it is safe to put a box on screen.
   vending machine as a wall with a slot in it is the joke, and somebody in the
   frame dressed for the machine would be somebody on screen who is in on it. Bawdy, absurd, delivered
   completely straight, in the same flat voice as the damage numbers.
-- **Everything that gives must take.** Lineages, affixes and charms are all
-  authored trade-offs, and tests assert it. A table of pure upgrades makes "did
-  I get the good one" the only question worth asking.
+- **Everything that gives must take, and EXCHANGE is what says how much.**
+  Lineages, affixes and charms are all authored trade-offs, and tests assert it.
+  A table of pure upgrades makes "did I get the good one" the only question
+  worth asking — but so does a table whose trades are priced by eye, because
+  "nine points of ward for two of guard" is neither generous nor stingy until
+  both are in one currency. The EXCHANGE section of `cmd/balance` measures what
+  a point of each stat buys, per class, on both of LANES' bands, and the content
+  tables are authored against it. At the top of the game: strike 1.0, strength
+  0.7, ward 0.6, speed and dexterity 0.25, **defense 0.14** — guard has
+  collapsed as a currency by level thirteen because on-curve armour already
+  cancels most of a physical roll, which is why a lane that sells guard cannot
+  be rescued by selling more of it.
 - **An encounter has a shape, and `PickMonsters` is not it.** `PickEncounter` is
   what the game throws — a composition with a name the transcript says out loud.
   `PickMonsters` still means "n creatures at level L" and every control in
