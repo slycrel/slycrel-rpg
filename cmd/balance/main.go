@@ -928,7 +928,15 @@ three or four is wide enough that one class cannot play the majority of the
 encounter table - SHAPES puts mixed at 42-57% of what the world throws and
 packs at another 21-25%.
 
-Two things the columns do not say for themselves. Four and six creatures are
+Three things the columns do not say for themselves. These are *on-level*
+creatures, and the game's own multi-creature encounters are not: a pack
+shape draws its bodies a tier lower, which is why SHAPES reports a solo
+hero winning 86% at level three while the three-creature column here reads
+18%. So the absolute numbers are a worst case — "ambushed by three of your
+own size" — and the reading is the comparison across a row, where every
+class faces the same thing.
+
+Four and six creatures are
 party-sized rolls measured against one character, because EncounterSize
 scales what the world sends with how many people are walking behind you - so
 those columns are "what a solo hero meets after their company has been

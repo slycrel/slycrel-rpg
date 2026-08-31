@@ -99,6 +99,10 @@ type battleScene struct {
 	hurt      []int // per-monster hit flash timer
 	partyHurt map[*model.Character]int
 
+	// What a talisman took back this action, and who took it. Accumulated
+	// rather than reported as it happens: see damageMonsterBy.
+	siphoned   int
+	siphonedBy *model.Character
 	// guarding is who braced this round. Per member rather than a single flag,
 	// because a companion deciding to cover up must not also halve what the
 	// hero takes. It is not an Effect: bracing is a stance held for one round,
@@ -941,6 +945,9 @@ func (b *battleScene) runRound(g *Game, playerAction func(*Game)) {
 				return
 			}
 			act(g)
+			// One line per action for what a talisman took back, after the
+			// action has finished saying what it did. See saySiphon.
+			b.saySiphon()
 		}
 		if rules.Initiative(g.RNG, member.Spd(), fastest) {
 			before = append(before, queued)
@@ -1569,11 +1576,25 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 // a talisman rebuilds itself out of damage dealt, and "dealt by whom" is the
 // whole of that question.
 func (b *battleScene) damageMonsterBy(g *Game, by *model.Character, idx, dmg int) {
-	if gain := rules.Siphon(by, dmg); gain > 0 {
-		b.log.AddColor(render.ColMagic, "%s draws %d of it back into the ward.",
-			by.Name, gain)
-	}
+	// The pool refills here and is *reported* later, by saySiphon, because a
+	// caller logs its own damage line after this returns — so announcing the
+	// draw here put "draws 8 of it back" above the sentence saying what the 8
+	// was. It also accumulates: one technique hitting three creatures should
+	// say what it took back once, not three times.
+	b.siphoned += rules.Siphon(by, dmg)
+	b.siphonedBy = by
 	b.damageMonster(g, idx, dmg)
+}
+
+// saySiphon reports what a talisman took back, once, after the action that fed
+// it has finished narrating itself. A pool that refills silently is a pool the
+// player never learns they have.
+func (b *battleScene) saySiphon() {
+	if b.siphoned > 0 && b.siphonedBy != nil {
+		b.log.AddColor(render.ColMagic, "%s draws %d of it back into the ward.",
+			b.siphonedBy.Name, b.siphoned)
+	}
+	b.siphoned, b.siphonedBy = 0, nil
 }
 
 func (b *battleScene) damageMonster(g *Game, idx, dmg int) {
