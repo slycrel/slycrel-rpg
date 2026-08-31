@@ -445,6 +445,32 @@ func (m *Monster) Short() string {
 	return head
 }
 
+// SameKind reports whether two live creatures are the same thing, scaled the
+// same way — which is what makes them interchangeable to somebody choosing a
+// target, and therefore what makes them stack.
+//
+// Hit points are deliberately not part of it. Spawn jitters HP by an eighth, so
+// two wolves rolled from one definition at one level are never quite equal
+// there and would never stack if they had to be. Everything else Spawn and the
+// encounter shapes touch — offence, guard, ward, speed — is deterministic given
+// the definition, the level and the scaling, so it is the part that says
+// whether two creatures are the same *kind* of thing rather than two rolls of
+// one.
+//
+// That distinction is doing real work. A pack scales every body it draws, so a
+// pack of six wolves is six of one kind. An escort scales its caster and leaves
+// its guards alone, so a magical wolf leading two ordinary ones is two kinds
+// wearing one name — and they must not stack, because the player choosing
+// between them is choosing between different creatures.
+func SameKind(a, b *Monster) bool {
+	if a == nil || b == nil || a.Def == nil || b.Def == nil {
+		return false
+	}
+	return a.Def.ID == b.Def.ID &&
+		a.Offense == b.Offense && a.Defense == b.Defense &&
+		a.Ward == b.Ward && a.Speed == b.Speed
+}
+
 // HPFrac returns current HP as a fraction of max.
 func (m *Monster) HPFrac() float64 {
 	if m.MaxHP <= 0 {

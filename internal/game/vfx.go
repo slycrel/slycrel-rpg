@@ -118,7 +118,11 @@ func (b *battleScene) playOnMonster(g *Game, idx int, key string) {
 		return
 	}
 	ox, oy := b.cam.Offset()
-	cx, cy, _, _ := monSlot(idx, len(b.mons))
+	// Creature in, slot out: a burst belongs over the place on the field the
+	// player is looking at, and with staggering that is the queue rather than
+	// the body.
+	slot := b.slotOf(idx)
+	cx, cy, _, _ := monSlot(slot, len(b.slots))
 	b.play(g, key, cx+ox, cy+oy, 72, false)
 }
 

@@ -1086,17 +1086,46 @@ func drawFrom(g *core.RNG, pool []*model.MonsterDef, level, count int,
 	return out
 }
 
-// nameGroup disambiguates duplicates in the target list: "Gutter Troll A / B".
+// nameGroup disambiguates the target list, and what needs disambiguating
+// changed when creatures started stacking.
+//
+// It used to letter every duplicate: three wolves were Wolf A, Wolf B and Wolf
+// C. A letter is a label on a *choice*, and identical creatures now share one
+// slot with a count on it, so there is no longer a choice between them to label
+// — "Wolf A" on a plate reading "Wolf x3" invites the player to work out which
+// of the three the transcript means, and the answer is that it does not matter,
+// which is a question the interface should not have asked.
+//
+// So the letter goes on the *kind*, not the body. Two ordinary wolves and one
+// scaled-up wolf are Wolf A twice and Wolf B once — one letter per stack, and
+// only when a name would otherwise appear twice on the field. A swarm of six
+// identical wolves is six Wolves and one slot, with nothing to tell apart.
 func nameGroup(out []*model.Monster) []*model.Monster {
-	letters := map[string]int{}
+	// kinds[def] is one representative per distinct kind sharing that name.
+	kinds := map[string][]*model.Monster{}
 	for _, m := range out {
-		letters[m.Def.ID]++
+		id := m.Def.ID
+		found := false
+		for _, k := range kinds[id] {
+			if model.SameKind(k, m) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			kinds[id] = append(kinds[id], m)
+		}
 	}
-	seen := map[string]int{}
 	for _, m := range out {
-		if letters[m.Def.ID] > 1 {
-			m.Name = fmt.Sprintf("%s %c", m.Def.Name, 'A'+seen[m.Def.ID])
-			seen[m.Def.ID]++
+		ks := kinds[m.Def.ID]
+		if len(ks) < 2 {
+			continue
+		}
+		for i, k := range ks {
+			if model.SameKind(k, m) {
+				m.Name = fmt.Sprintf("%s %c", m.Def.Name, 'A'+i)
+				break
+			}
 		}
 	}
 	return out

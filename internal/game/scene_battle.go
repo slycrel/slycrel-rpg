@@ -52,6 +52,12 @@ type floater struct {
 type battleScene struct {
 	under Scene
 	mons  []*model.Monster
+	// slots is the field as the player sees it: identical creatures collapsed
+	// into one queue with a count on it. Fixed for the life of the fight —
+	// membership never changes, only how many of each are still standing — so
+	// it is computed once and every index the screen draws or points at is an
+	// index into this rather than into mons.
+	slots []rules.Stack
 	where string
 
 	// party is the company as it stood when the fight started, hero first.
@@ -135,6 +141,7 @@ func newBattleScene(g *Game, enc gamedata.Encounter, where string) *battleScene 
 	b := &battleScene{
 		under:       g.Top(),
 		mons:        mons,
+		slots:       rules.Stacks(mons),
 		where:       where,
 		party:       g.Party(),
 		log:         ui.NewLog(60),
@@ -377,6 +384,10 @@ func (b *battleScene) setRootMenu(g *Game) {
 }
 
 // living returns the indices of monsters still standing.
+// living is every creature still in the fight, by field index.
+//
+// Creature space. Anything that has to reach the whole field — the monsters'
+// turns, a spell over everybody, counting what is left — wants this one.
 func (b *battleScene) living() []int {
 	var out []int
 	for i, m := range b.mons {
@@ -392,6 +403,61 @@ func (b *battleScene) firstLiving() int {
 		return l[0]
 	}
 	return -1
+}
+
+// livingSlots is the places on the field the player may point at: one per
+// stack with somebody still standing in it.
+//
+// Slot space. Anything that draws, moves a cursor or picks a target wants this
+// one, and the two are deliberately different functions with different names —
+// a slot index used as a creature index is a wrong monster taking a hit, and
+// nothing about the types would say so.
+func (b *battleScene) livingSlots() []int {
+	var out []int
+	for s, st := range b.slots {
+		if st.Front(b.mons) >= 0 {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// firstSlot is the leftmost slot with anything left standing in it.
+func (b *battleScene) firstSlot() int {
+	if l := b.livingSlots(); len(l) > 0 {
+		return l[0]
+	}
+	return -1
+}
+
+// front is the creature at the head of a slot's queue — what a blow aimed at
+// that slot actually lands on — or -1 if the slot is spent.
+func (b *battleScene) front(slot int) int {
+	if slot < 0 || slot >= len(b.slots) {
+		return -1
+	}
+	return b.slots[slot].Front(b.mons)
+}
+
+// slotOf is where a creature is standing, for the callers holding an index
+// into the field and needing a place on the screen.
+func (b *battleScene) slotOf(idx int) int { return rules.StackOf(b.slots, idx) }
+
+// showing is the creature a slot draws: whoever is at the front, or the first
+// member once they are all down, so a spent slot is a dim portrait rather than
+// a hole in the field.
+func (b *battleScene) showing(slot int) *model.Monster {
+	if slot < 0 || slot >= len(b.slots) {
+		return nil
+	}
+	i := b.slots[slot].Front(b.mons)
+	if i < 0 {
+		i = b.slots[slot].Any()
+	}
+	if i < 0 || i >= len(b.mons) {
+		return nil
+	}
+	return b.mons[i]
 }
 
 func (b *battleScene) Update(g *Game) error {
@@ -488,7 +554,7 @@ func (b *battleScene) updateMenus(g *Game) {
 	if d, ok := MenuDir(); ok {
 		switch b.mode {
 		case modeTarget:
-			l := b.living()
+			l := b.livingSlots()
 			if len(l) > 0 {
 				switch d {
 				case core.DirLeft:
@@ -502,7 +568,7 @@ func (b *battleScene) updateMenus(g *Game) {
 					// a line. Up and down did nothing at all when the monsters
 					// were a single row across the top, which was honest then
 					// and reads as a broken key in front of a two-by-two.
-					step := monCols(len(b.mons))
+					step := monCols(len(b.slots))
 					if d == core.DirUp {
 						step = -step
 					}
@@ -863,7 +929,7 @@ func contains(list []int, v int) bool {
 
 func (b *battleScene) beginTargeting(from battleMode) {
 	b.back = from
-	if l := b.living(); len(l) > 0 {
+	if l := b.livingSlots(); len(l) > 0 {
 		found := false
 		for _, i := range l {
 			if i == b.target {
@@ -878,17 +944,21 @@ func (b *battleScene) beginTargeting(from battleMode) {
 	b.mode = modeTarget
 }
 
+// confirmTarget commits the cursor. The cursor holds a *slot*, and which
+// creature that is gets resolved when the blow lands rather than when it is
+// chosen — a companion acting first can empty the front of the queue, and the
+// swing should meet whoever stepped up rather than a corpse.
 func (b *battleScene) confirmTarget(g *Game) {
 	tgt := b.target
 	if b.back == modeSpell {
 		s := b.pendingCast
 		b.runRound(g, func(g *Game) {
-			b.castSpell(g, cast{by: g.Player, spell: s, foe: tgt})
+			b.castSpell(g, cast{by: g.Player, spell: s, foe: b.front(tgt)})
 		})
 		return
 	}
 	b.runRound(g, func(g *Game) {
-		b.playerAttack(g, g.Player, tgt)
+		b.playerAttack(g, g.Player, b.front(tgt))
 		// And sometimes again. The fighter's active: nothing to decide, it
 		// simply happens, which is the right shape for the class the tropes
 		// want brainless. Only a plain swing repeats — a technique repeating
@@ -896,7 +966,7 @@ func (b *battleScene) confirmTarget(g *Game) {
 		// repeating is not a sentence that means anything.
 		if rules.ExtraSwing(g.RNG, g.Player) && b.firstLiving() >= 0 {
 			b.log.AddColor(render.ColGold, "%s is already swinging again.", g.Player.Name)
-			b.playerAttack(g, g.Player, tgt)
+			b.playerAttack(g, g.Player, b.front(tgt))
 		}
 	})
 }
@@ -996,9 +1066,14 @@ func (b *battleScene) allyTurn(g *Game, c *model.Character) {
 // weakestLiving is the monster a companion goes for: the one closest to
 // falling over. Finishing something off removes an attacker from the round,
 // which is worth more than spreading damage around evenly.
+// weakestLiving is the creature a companion goes for: the one closest to
+// falling over, *among the fronts of the queues*. A companion reaching past a
+// stack to finish something behind it would be doing what the player is
+// forbidden to do, which is the kind of asymmetry nobody would report as a bug
+// and everybody would feel.
 func (b *battleScene) weakestLiving() int {
 	best := -1
-	for _, i := range b.living() {
+	for _, i := range rules.Targets(b.mons, b.slots) {
 		if best < 0 || b.mons[i].HP < b.mons[best].HP {
 			best = i
 		}
@@ -1601,7 +1676,8 @@ func (b *battleScene) damageMonster(g *Game, idx, dmg int) {
 	m := b.mons[idx]
 	m.HP = core.Max(0, m.HP-dmg)
 	b.hurt[idx] = 12
-	b.addFloater(monSlotX(idx, len(b.mons)), monSlotY(idx, len(b.mons)),
+	slot := b.slotOf(idx)
+	b.addFloater(monSlotX(slot, len(b.slots)), monSlotY(slot, len(b.slots)),
 		fmt.Sprintf("-%d", dmg), render.ColGold)
 	if m.HP == 0 && !m.Dead {
 		m.Dead = true
@@ -2088,12 +2164,16 @@ func monSlotY(i, n int) float64 {
 // the maximum each way so the row stays level — portraits of different sizes in
 // one row read as a rendering fault rather than as a fit.
 func (b *battleScene) monPlate() (above, below int) {
-	n := len(b.mons)
+	n := len(b.slots)
 	if n == 0 {
 		return 1, 1
 	}
 	_, _, slotW, _ := monSlot(0, n)
-	for _, m := range b.mons {
+	for i := range b.slots {
+		m := b.showing(i)
+		if m == nil {
+			continue
+		}
 		head, tail := monsterName(m.Name)
 		if l := len(render.Wrap(head, slotW-8)); l > above {
 			above = l
@@ -2271,7 +2351,7 @@ func (b *battleScene) memberFloat(c *model.Character) (float64, float64) {
 // so a row-step onto a corpse or off the end of the grid still lands somewhere
 // the player can hit.
 func (b *battleScene) nearestLiving(want int) int {
-	l := b.living()
+	l := b.livingSlots()
 	if len(l) == 0 {
 		return b.target
 	}
@@ -2316,17 +2396,29 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 	// Them, down the right. The plate is measured once for the whole field so
 	// every portrait in a row is the same size — see monPlate.
 	plateUp, plateDown := b.monPlate()
-	for i, m := range b.mons {
-		bx, top, boxW, boxH := monBox(i, len(b.mons), plateUp, plateDown)
-		_, _, slotW, _ := monSlot(i, len(b.mons))
+	for i := range b.slots {
+		m := b.showing(i)
+		if m == nil {
+			continue
+		}
+		// The flash belongs to the creature at the front, since that is the one
+		// being drawn and the one anything just landed on.
+		hurt := 0
+		if f := b.front(i); f >= 0 {
+			hurt = b.hurt[f]
+		}
+		standing := b.slots[i].Standing(b.mons)
+
+		bx, top, boxW, boxH := monBox(i, len(b.slots), plateUp, plateDown)
+		_, _, slotW, _ := monSlot(i, len(b.slots))
 		cx := bx + boxW/2 + ox
 		top += oy
 
 		tint := color.RGBA{0xFF, 0xFF, 0xFF, 0xFF}
 		switch {
-		case m.Dead:
+		case standing == 0:
 			tint = color.RGBA{0x50, 0x40, 0x50, 0x90}
-		case b.hurt[i] > 0 && (b.hurt[i]/3)%2 == 0:
+		case hurt > 0 && (hurt/3)%2 == 0:
 			tint = color.RGBA{0xFF, 0x90, 0x90, 0xFF}
 		}
 		// The frame goes down first and carries the state, so a dead thing is
@@ -2336,9 +2428,9 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		// stopped saying where anything ended.
 		var edge color.Color
 		switch {
-		case m.Dead:
+		case standing == 0:
 			edge = render.ColInkFaint
-		case b.hurt[i] > 0:
+		case hurt > 0:
 			edge = render.ColBlood
 		}
 		ui.Slot(dst, cx-boxW/2-2, top-2, boxW+4, boxH+4, edge)
@@ -2348,10 +2440,10 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 
 		// Name plate and health.
 		nameCol := render.ColInk
-		if m.Dead {
+		if standing == 0 {
 			nameCol = render.ColInkFaint
 		}
-		if b.mode == modeTarget && b.target == i && !m.Dead {
+		if b.mode == modeTarget && b.target == i && standing > 0 {
 			// Redrawn in gold over the resting frame rather than instead of
 			// it, so the slot never changes size when it is picked.
 			render.Frame(dst, cx-boxW/2-2, top-2, boxW+4, boxH+4, render.ColGold)
@@ -2360,9 +2452,19 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 			}
 			nameCol = render.ColGold
 		}
-		if !m.Dead {
+		if standing > 0 {
 			ui.Bar(dst, cx-boxW/2, top+boxH+2, boxW, 4, m.HPFrac(), render.ColBlood)
 			drawEffectPips(dst, cx-boxW/2, top+boxH+8, m.Active)
+		}
+		// How many are queued behind this one. In the top corner of the frame
+		// rather than in the name, because the name is what the plate is sized
+		// against and a count that grew the longest string in the field would
+		// shrink every portrait on it. It counts down as they fall, which is
+		// the whole readout a swarm needs: one picture, one number, and the
+		// number going down.
+		if standing > 1 {
+			render.Text(dst, fmt.Sprintf("x%d", standing),
+				cx+boxW/2-render.TextW(fmt.Sprintf("x%d", standing))-1, top-1, render.ColGold)
 		}
 		// What it is over the picture, and what sort of one under it.
 		//
@@ -2373,7 +2475,7 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		// species still reads first and the plate still answers "what is that"
 		// before it answers "what sort".
 		sub := render.ColInkDim
-		if m.Dead {
+		if standing == 0 {
 			sub = render.ColInkFaint
 		}
 		head, tail := monsterName(m.Name)
@@ -2455,8 +2557,8 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		// is worth reading: the player is looking at four portraits deciding
 		// which one to hit, and "Territorial" is the entire answer to what sort
 		// of crab this is.
-		if b.target >= 0 && b.target < len(b.mons) {
-			head, tail := monsterName(b.mons[b.target].Name)
+		if m := b.showing(b.target); m != nil {
+			head, tail := monsterName(m.Name)
 			render.Text(dst, render.Trunc(head, cmdPanelW-24), tx, battleBarY+8, render.ColGold)
 			if tail != "" {
 				for i, ln := range render.Wrap(tail, cmdPanelW-24) {
