@@ -1323,8 +1323,9 @@ genuinely is not there. Full detail in [ASSET-MAP.md](ASSET-MAP.md).
    It animates for free: `drawEntity` already ticks a sprite's frames, so
    stacking the five files into a strip was the whole of it.
 
-3. **A spear that exists.** *Still open, and now known to be unclosable from
-   what we own.* Polearms are the one weapon kind with no picture anywhere.
+3. ~~**A spear that exists.**~~ *(Drawn, by a local model, and it is the
+   weakest icon on the shelf.)* Polearms are the one weapon kind with no picture
+   anywhere.
    "Glaive, Overcompensating" borrows an axe head on a haft and reads correctly;
    "Spear, Regrettably Long" borrows a staff with a point and reads as a wand,
    one tier from an actual rod.
@@ -1343,11 +1344,49 @@ genuinely is not there. Full detail in [ASSET-MAP.md](ASSET-MAP.md).
      cuts, and the halberd reads as an axe anyway
    - a filename sweep of all 44 extracted packs and every zip in the bundle
 
-   Composing one was tried too: a haft from `staff`, a blade from `dagger`,
-   joined at the top. It reads as two objects with a gap between them, which is
-   what a collage looks like. The remaining options are to draw sixteen pixels
-   by hand, to buy a pack, or to decide a polearm does not need its own
-   silhouette and say so in this document.
+   Composing one from a `staff` haft and a `dagger` blade was tried too, and
+   reads as two objects with a gap between them.
+
+   So it was drafted by a local language model — `cmd/pixelsmith` — and what
+   was learned doing it is worth more than the icon:
+
+   - **A language model, not an image model.** The target is sixteen pixels on a
+     six-colour palette. Diffusion draws a thousand pixels of something
+     pixel-art-*shaped* and leaves you to reduce it, which is the exact failure
+     the ability icons already demonstrate. A language model emits the grid:
+     right size, right palette, no resampling, every cell inspectable.
+   - **Showing example grids teaches copying, not style.** Seeded with the real
+     icons, qwen3:30b returned `sword1` back almost cell for cell, twice, and
+     devstral spent a batch redrawing `staff3`. Useless as a spear and worse
+     than useless as an artefact: a near-copy of a purchased sprite *is* the
+     purchased sprite, which must not be committed to a public repository.
+   - **Removing the examples removes the ability.** With style described in
+     prose instead, the same models produced unstructured blobs. The grids were
+     doing real work.
+   - **What broke the deadlock was decomposition.** A weapon icon is mostly a
+     straight line, and a straight line is the part a program draws better than
+     a model. So the tool lays the haft on the set's own diagonal and asks the
+     model only for the head — a 6x6 shape, twenty-five cells, a task these
+     models can actually do. Every candidate after that change was a connected,
+     correctly-proportioned hafted weapon.
+   - **The join must be found, not promised.** Telling the model "the haft will
+     meet your bottom-left corner" does not make it draw there. The tool now
+     locates the lowest-leftmost cell the model actually inked and runs the haft
+     from beneath it.
+
+   The result is honest but thin: a pole with a small point, the sparsest icon
+   in the weapon set, and better than the wand it replaces only because it is
+   unmistakably not a wand. Replacing it with a hand-drawn one later would be an
+   improvement and would cost one file.
+
+   What is committed is the *grid*, not a PNG. `assetpipe build` must stay
+   byte-reproducible and a model is not, so `data/art/spear.txt` holds sixteen
+   lines of palette indices and the pipeline renders them — verified by deleting
+   the whole generated tree twice and getting the same file hash. The grid also
+   contains no purchased pixels: it says which of six slots each cell uses, and
+   the palette is read out of the extracted pack at build time by
+   `internal/pixelpal`, which exists because the two tools disagreed about which
+   colour slot 4 was and produced a valid grid that rendered yellow.
 
 ## Since the roadmap
 

@@ -18,11 +18,11 @@ person to have made it.
 
 <!-- BEGIN generated: go run ./cmd/assetpipe map -->
 
-**918 keys across 15 namespaces.**
+**919 keys across 15 namespaces.**
 
 | namespace | keys | sources |
 |---|--:|---|
-| `icon/` | 395 | `_generated/icons` 263, `_generated/bands` 132 |
+| `icon/` | 396 | `_generated/icons` 264, `_generated/bands` 132 |
 | `mob/` | 168 | `mobsavataricons_windows` 133, `sci-ficharactersicons` 35 |
 | `boss/` | 107 | `monstersavataricons_windows` 107 |
 | `portrait/` | 76 | `characteravataricons_windows` 76 |
@@ -267,11 +267,13 @@ This pass is not the last one, and these are the questions it left open.
   the hero sheets — `walk`/`up`/`side` plus three attacks — where every other
   foe carries the flat `idle`/`walk`/`attack`/`hit`/`dead`. Nothing yet reads
   the directional ones: interior foes are drawn from a single pooled key.
-- **Polearms have no shape, and the search for one is finished.** Six sources
-  checked and a composite attempted; the list is in PLAN.md's Phase 5 so nobody
-  spends the afternoon again. What remains is a decision, not a hunt: draw
-  sixteen pixels, buy a pack, or say a polearm does not need its own silhouette.
-  The old note, kept because it still describes what is on screen: There
+- **The spear is drawn rather than sourced, and it shows.** Six sources were
+  checked and none has one (the list is in PLAN.md's Phase 5), so it was drafted
+  by a local model via `cmd/pixelsmith` and committed as a grid. It is the
+  sparsest icon in the weapon set — a pole with a small point — and earns its
+  place only by being unmistakably not the wand it replaces. A hand-drawn
+  replacement would be better and would cost one file.
+- **The old polearm note, kept because it still describes the glaive:** There
   is no spear anywhere on disk — not in the crafting sheet, not in the ability
   set, not in the skill set. "Glaive, Overcompensating" uses `axe2`, which is
   genuinely a broad blade on a haft and reads right. "Spear, Regrettably Long"

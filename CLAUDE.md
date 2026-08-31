@@ -19,6 +19,7 @@ go run ./cmd/slycrel -load saves/fixtures/battered.json   # start from a known s
 go run ./cmd/balance                 # win rates, endurance, progression, economy
 go run ./cmd/genfixtures             # rewrite save fixtures after a world-gen change
 go run ./cmd/assetpipe build         # rebuild all derived art, in order, then the manifest
+go run ./cmd/pixelsmith gen -name x -head 6   # draft an icon with a local model, for shapes the bundle lacks
 go test ./internal/...
 ```
 
@@ -127,6 +128,14 @@ which event fires which trigger, and where it is safe to put a box on screen.
   named. Nothing anywhere says a word. Use `build`; the individual subcommands
   are for working on one step. The tree is disposable — delete
   `assets-raw/_generated` and rebuild, and the manifest comes back byte-identical.
+- **An icon the bundle does not have is drawn as a grid, never as a PNG.**
+  `cmd/pixelsmith` drafts one with a local model and `data/art/<name>.txt` holds
+  the result as sixteen lines of palette indices; `assetpipe drawn` renders it.
+  A model is not deterministic and `build` must stay byte-reproducible, so the
+  model never runs in the pipeline — and the committed grid contains no
+  purchased pixels, only which of six slots each cell uses. Both tools read the
+  palette from `internal/pixelpal`: they once disagreed about slot 4 and
+  rendered a valid grid in the wrong colour, which nothing detects.
 - **A pipeline step wipes its own output directory.** `bands` takes its source
   list from the content, so a picture the table stops naming has to stop
   shipping — the manifest enumerates the directory, and a stale file would keep

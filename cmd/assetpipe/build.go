@@ -43,6 +43,11 @@ var pipeline = []step{
 		what: "twenty-four weapons cut from the same sheet's columns 5-7",
 	},
 	{
+		name: "drawn", run: buildDrawn,
+		writes: "icons/arms/", from: "data/art/ plus the cut weapons' palette",
+		what: "icons authored as grids, for the shapes the bundle does not have",
+	},
+	{
 		name: "poi", run: buildPOI,
 		writes: "icons/poi/", from: "pixelartrogue-likerpg",
 		what: "nine overworld location markers, at native size",

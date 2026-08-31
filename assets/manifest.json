@@ -1437,6 +1437,10 @@
       "file": "assets-raw/_generated/icons/arms/pick3.png"
     },
     {
+      "key": "icon/arms/spear",
+      "file": "assets-raw/_generated/icons/arms/spear.png"
+    },
+    {
       "key": "icon/arms/staff1",
       "file": "assets-raw/_generated/icons/arms/staff1.png"
     },
@@ -1581,6 +1585,30 @@
       "file": "assets-raw/_generated/bands/arms/mace1_t5.png"
     },
     {
+      "key": "icon/band/arms/spear_t0",
+      "file": "assets-raw/_generated/bands/arms/spear_t0.png"
+    },
+    {
+      "key": "icon/band/arms/spear_t1",
+      "file": "assets-raw/_generated/bands/arms/spear_t1.png"
+    },
+    {
+      "key": "icon/band/arms/spear_t2",
+      "file": "assets-raw/_generated/bands/arms/spear_t2.png"
+    },
+    {
+      "key": "icon/band/arms/spear_t3",
+      "file": "assets-raw/_generated/bands/arms/spear_t3.png"
+    },
+    {
+      "key": "icon/band/arms/spear_t4",
+      "file": "assets-raw/_generated/bands/arms/spear_t4.png"
+    },
+    {
+      "key": "icon/band/arms/spear_t5",
+      "file": "assets-raw/_generated/bands/arms/spear_t5.png"
+    },
+    {
       "key": "icon/band/arms/staff1_t0",
       "file": "assets-raw/_generated/bands/arms/staff1_t0.png"
     },
@@ -1627,30 +1655,6 @@
     {
       "key": "icon/band/arms/staff2_t5",
       "file": "assets-raw/_generated/bands/arms/staff2_t5.png"
-    },
-    {
-      "key": "icon/band/arms/staff3_t0",
-      "file": "assets-raw/_generated/bands/arms/staff3_t0.png"
-    },
-    {
-      "key": "icon/band/arms/staff3_t1",
-      "file": "assets-raw/_generated/bands/arms/staff3_t1.png"
-    },
-    {
-      "key": "icon/band/arms/staff3_t2",
-      "file": "assets-raw/_generated/bands/arms/staff3_t2.png"
-    },
-    {
-      "key": "icon/band/arms/staff3_t3",
-      "file": "assets-raw/_generated/bands/arms/staff3_t3.png"
-    },
-    {
-      "key": "icon/band/arms/staff3_t4",
-      "file": "assets-raw/_generated/bands/arms/staff3_t4.png"
-    },
-    {
-      "key": "icon/band/arms/staff3_t5",
-      "file": "assets-raw/_generated/bands/arms/staff3_t5.png"
     },
     {
       "key": "icon/band/arms/sword1_t0",
