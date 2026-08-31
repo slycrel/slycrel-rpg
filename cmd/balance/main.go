@@ -976,6 +976,82 @@ func reportCrowds(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 				class, trails[class])
 		}
 	}
+
+	// What the world actually rolls, which is the column-weighting the table
+	// above has never had.
+	//
+	// The open list said the CROWDS numbers were measured and untuned, and that
+	// whether they are correct "depends on how often the world sends them,
+	// which EncounterSize and the pack shape decide and no section reads
+	// together". This is those two read together. It is a count rather than a
+	// simulation: roll the size exactly as the overworld rolls it — base one or
+	// two, plus nought to the number of allies — hand it to PickEncounter, and
+	// tally how many creatures come back once the shape has had its say. A pack
+	// adds two bodies to whatever it was given, an escort adds its guards, so
+	// the size that goes in is not the number that arrives.
+	fmt.Fprintf(out, "what the world rolls, per company — %% of encounters by creature count\n")
+	fmt.Fprintf(out, "%-12s", "company")
+	for n := 1; n <= 6; n++ {
+		fmt.Fprintf(out, "%7d", n)
+	}
+	fmt.Fprintf(out, "%9s\n", "mean")
+	fmt.Fprintln(out, strings.Repeat("-", 63))
+	for allies := 0; allies <= 2; allies++ {
+		count := map[int]int{}
+		total, bodies := 0, 0
+		for i := 0; i < fights*4; i++ {
+			level := 3 + g.Intn(11)
+			size := party.EncounterSize(g, 1+g.Intn(2), allies)
+			enc := t.PickEncounter(g, biomeForLevel(level), level, size)
+			if len(enc.Monsters) == 0 {
+				continue
+			}
+			count[len(enc.Monsters)]++
+			bodies += len(enc.Monsters)
+			total++
+		}
+		if total == 0 {
+			continue
+		}
+		label := "solo"
+		if allies == 1 {
+			label = "+1 ally"
+		} else if allies > 1 {
+			label = fmt.Sprintf("+%d allies", allies)
+		}
+		fmt.Fprintf(out, "%-12s", label)
+		for n := 1; n <= 6; n++ {
+			if count[n] == 0 {
+				fmt.Fprintf(out, "%7s", ".")
+				continue
+			}
+			fmt.Fprintf(out, "%6.0f%%", float64(count[n])*100/float64(total))
+		}
+		fmt.Fprintf(out, "%9.2f\n", float64(bodies)/float64(total))
+	}
+
+	fmt.Fprint(out, `
+Which is the weighting to read the table above with, and it says the columns
+are not equally interesting. A solo hero meets one or two creatures in three
+quarters of encounters and three or more in the remaining quarter, so the
+right-hand columns are a tail rather than a curiosity — a quarter is often
+enough to be the thing that kills you. Hiring people moves the whole
+distribution rightward, mean 1.90 to 2.62, which is the point of
+EncounterSize: a party is not a discount on the fights, it is a different set
+of them.
+
+And the honest limit of all of this, which is the *actual* content of "CROWDS
+is measured and untuned": every row above is one character against N
+creatures, because there is no party simulator. rules.SimulateGroup takes one
+Character. So the moment the company is what changes the rolls, the report can
+price what the world sends but not what the party does about it, and the four-
+and six-creature columns keep meaning "a solo hero after their company was
+killed" rather than "what a party of three walks into". That is one missing
+instrument, not a tuning pass, and it is the thing to build before anybody
+tunes these numbers.
+
+`)
+
 	fmt.Fprint(out, `
 Read the row across rather than the column down. A class that is level with
 the others one-on-one and far behind at three has a defence that does not
