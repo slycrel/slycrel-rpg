@@ -32,7 +32,7 @@
       "quality": 86,
       "verb": "draw across",
       "tier": 4,
-      "icon": "icon/ab/4_weapon_sword",
+      "icon": "icon/band/arms/sword1_t4",
       "affix": {
         "suffix": "of the Last Word",
         "bonus": {
@@ -48,35 +48,36 @@
       "defense": 16,
       "cost": 560,
       "quality": 90,
-      "verb": "denies",
+      "verb": "denies it",
       "tier": 4,
-      "icon": "icon/loot/turtle_shell",
+      "icon": "icon/band/garb/jerkin4_t4",
       "extra": {
         "speed": -1
       }
     },
     "shield": {
-      "name": "Kite Shield of Modest Convictions",
-      "defense": 5,
-      "cost": 110,
+      "name": "Mirror-Backed Targe",
+      "defense": 3,
+      "cost": 125,
       "tier": 3,
-      "verb": "catches",
-      "icon": "icon/loot/monster_scales",
+      "verb": "returns",
+      "icon": "icon/loot/smoky_quartz",
       "extra": {
-        "speed": -1
+        "speed": -1,
+        "ward": 7
       },
-      "desc": "Broad, dependable, and slower than the argument it is having."
+      "desc": "Whoever silvered the back of it did not explain why, and then left town rather promptly."
     },
     "charm": {
-      "name": "The Quiet Stone",
+      "name": "Saint's Fingerbone, Disputed",
       "bonus": {
-        "strength": -1,
-        "psyche": 4
+        "dexterity": -1,
+        "ward": 6
       },
-      "cost": 120,
+      "cost": 110,
       "tier": 3,
-      "desc": "Holding it, you can hear yourself think. This is not always welcome.",
-      "icon": "icon/loot/moon_stone"
+      "desc": "Somebody's. The paperwork proving whose burned down with the abbey.",
+      "icon": "icon/loot/monster_spine"
     },
     "bag": [
       {
@@ -108,7 +109,7 @@
           "quality": 0,
           "verb": "slap",
           "tier": 0,
-          "icon": "icon/ab/1_weapon_sword"
+          "icon": "icon/band/arms/sword1_t0"
         }
       },
       {
@@ -117,9 +118,9 @@
           "defense": 0,
           "cost": 0,
           "quality": 0,
-          "verb": "flaps",
+          "verb": "flaps at it",
           "tier": 0,
-          "icon": "icon/loot/fur_tuft"
+          "icon": "icon/band/garb/robe1_t0"
         }
       }
     ],
@@ -156,7 +157,7 @@
         "quality": 86,
         "verb": "draw across",
         "tier": 4,
-        "icon": "icon/ab/4_weapon_sword"
+        "icon": "icon/band/arms/sword1_t4"
       },
       "armor": {
         "name": "Full Plate 'Do Not Perceive Me'",
@@ -164,35 +165,36 @@
         "defense": 16,
         "cost": 560,
         "quality": 90,
-        "verb": "denies",
+        "verb": "denies it",
         "tier": 4,
-        "icon": "icon/loot/turtle_shell",
+        "icon": "icon/band/garb/jerkin4_t4",
         "extra": {
           "speed": -1
         }
       },
       "shield": {
-        "name": "Kite Shield of Modest Convictions",
-        "defense": 5,
-        "cost": 110,
+        "name": "Mirror-Backed Targe",
+        "defense": 3,
+        "cost": 125,
         "tier": 3,
-        "verb": "catches",
-        "icon": "icon/loot/monster_scales",
+        "verb": "returns",
+        "icon": "icon/loot/smoky_quartz",
         "extra": {
-          "speed": -1
+          "speed": -1,
+          "ward": 7
         },
-        "desc": "Broad, dependable, and slower than the argument it is having."
+        "desc": "Whoever silvered the back of it did not explain why, and then left town rather promptly."
       },
       "charm": {
-        "name": "The Quiet Stone",
+        "name": "Saint's Fingerbone, Disputed",
         "bonus": {
-          "strength": -1,
-          "psyche": 4
+          "dexterity": -1,
+          "ward": 6
         },
-        "cost": 120,
+        "cost": 110,
         "tier": 3,
-        "desc": "Holding it, you can hear yourself think. This is not always welcome.",
-        "icon": "icon/loot/moon_stone"
+        "desc": "Somebody's. The paperwork proving whose burned down with the abbey.",
+        "icon": "icon/loot/monster_spine"
       },
       "bag": null,
       "ally": true,
@@ -230,7 +232,7 @@
         "quality": 86,
         "verb": "draw across",
         "tier": 4,
-        "icon": "icon/ab/4_weapon_sword"
+        "icon": "icon/band/arms/sword1_t4"
       },
       "armor": {
         "name": "Cuirass of Selective Attention",
@@ -238,35 +240,36 @@
         "defense": 14,
         "cost": 370,
         "quality": 82,
-        "verb": "declines",
+        "verb": "declines it",
         "tier": 4,
-        "icon": "icon/loot/turtle_shell",
+        "icon": "icon/band/garb/jerkin2_t4",
         "extra": {
           "dexterity": 2
         }
       },
       "shield": {
-        "name": "Kite Shield of Modest Convictions",
-        "defense": 5,
-        "cost": 110,
+        "name": "Mirror-Backed Targe",
+        "defense": 3,
+        "cost": 125,
         "tier": 3,
-        "verb": "catches",
-        "icon": "icon/loot/monster_scales",
+        "verb": "returns",
+        "icon": "icon/loot/smoky_quartz",
         "extra": {
-          "speed": -1
+          "speed": -1,
+          "ward": 7
         },
-        "desc": "Broad, dependable, and slower than the argument it is having."
+        "desc": "Whoever silvered the back of it did not explain why, and then left town rather promptly."
       },
       "charm": {
-        "name": "The Quiet Stone",
+        "name": "Saint's Fingerbone, Disputed",
         "bonus": {
-          "strength": -1,
-          "psyche": 4
+          "dexterity": -1,
+          "ward": 6
         },
-        "cost": 120,
+        "cost": 110,
         "tier": 3,
-        "desc": "Holding it, you can hear yourself think. This is not always welcome.",
-        "icon": "icon/loot/moon_stone"
+        "desc": "Somebody's. The paperwork proving whose burned down with the abbey.",
+        "icon": "icon/loot/monster_spine"
       },
       "bag": null,
       "ally": true,

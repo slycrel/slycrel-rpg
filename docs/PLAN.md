@@ -3236,6 +3236,97 @@ arithmetic instead of the same subtraction, and answering it *while* attacking
 in two cases out of three. That is as far as mechanics can carry class
 identity; the rest of it is what the writing already does.
 
+## What is open, and in what order
+
+Written at the end of the session that built the class-identity scheme, while
+it was still fresh. The ordering is a recommendation and the reasons are the
+useful part.
+
+### 1. None of it has been played
+
+Four combat mechanics went in against a simulator in one sitting: a dodge, a
+counter, a refilling barrier and a second swing. Every one of them is measured
+and not one has been felt. The report cannot answer whether a Thief that dodges
+and counters *plays* like a Thief, or whether one round in ten is often enough
+for a second swing to read as a trope rather than a glitch.
+
+The tool for it already exists and is short of what this needs:
+`saves/fixtures/` has no Thief or Mage at a level where these fire. Two
+fixtures — a level-11 Thief and a level-11 Mage with a talisman — would make all
+four playable in a minute rather than an hour.
+
+### 2. The fifth zero value is still live
+
+`gamedata.LaneForLevel` takes a level and no class, and the spiked lane beats
+the silvered one at the top of the game for *both* classes that can hold a
+plank, by up to eleven points. It is documented and deliberately unfixed: the
+constant was originally set off an averaged table, and re-pinning it on another
+thin measurement would be the fourth round of decide-then-measure in a month.
+It wants DANGER's sample, per class, measured before anything is changed.
+
+### 3. Two designs finished and unbuilt
+
+**Staggering identical creatures** into one slot with a count, where only the
+front one can be hit. It solves two problems at once — the crowded field's
+layout, where six creatures at three columns cannot fit their own names, and
+the wallpaper of three identical portraits carrying three copies of one joke —
+and it changes the fight, turning a group into a queue. `SimulateFight` has to
+learn the rule before CROWDS can price it.
+
+**An off-hand weapon for the Thief.** The class already has an offensive off
+arm and the lane rule is not giving it to them, so this is second to item 2. Its
+own value is real but smaller than it looks: a sidearm band steps +2 where a
+weapon band steps +5, and a weapon in that arm is the one legitimate way past
+`TestShieldsStaySecondaryToArmour`, because it is not a shield.
+
+### 4. Two content passes with briefs already written
+
+**The charm bands do not trade.** Two of five have a right answer rather than a
+choice, by more than the noise, on both axes at once — which is the premise of
+`TestTheShelfNeverGradesACharm` failing in the arbiter while passing in the
+suite. The cause is magnitudes, not ward: the ward charms carry six to fourteen
+points of their stat where their rivals carry one to four.
+
+**The shield cap.** Every shield sits *exactly* at half the body armour of its
+band, zero headroom at every tier, so `TestShieldsStaySecondaryToArmour` is the
+ceiling on how far the arcs can spread. This document has now named it three
+times without acting on it. Widening the arcs means revisiting that rule on
+purpose.
+
+### 5. Things the report can see and nobody has tuned
+
+**CROWDS is measured and untouched.** Four creatures on level is single digits
+for everybody above level nine and six is a nought; whether that is correct
+depends on how often the world sends them, which `EncounterSize` and the pack
+shape decide and no section reads together.
+
+**Level eleven is soft.** Every class posts its best numbers there because
+mountain's roster near that band is weak. It is the same class of content hole
+the report already catches elsewhere — a band with nothing appropriate to fight
+— and it is currently making one row of every table optimistic.
+
+**ARCS tests gear builds, not playstyles.** *(Jeremy's: "at some point we might
+need full testing against each class and each flavour of playstyle.")* Three
+archetypes are three ways of spending money. Nothing measures the player who
+leans on items, the one who never flees, or the one who hires two companions
+and fights behind them — and SUPPLIES exists precisely because the first of
+those is invisible to `SimulateFight`.
+
+### 6. The two oldest questions
+
+**Multiplayer**, whose "decide before the save format hardens" deadline has
+passed rather than been met — three versions, two committed compatibility
+fixtures. **World size**, untouched, with two things now leaning on the answer
+that did not exist when it was written.
+
+### Not yet needed, and worth knowing they are cheap
+
+*(Jeremy's list.)* Pets and summoned familiars would cost less than they sound:
+`internal/party` is roster and marching order and is already generic over
+characters. Daze and sleep exist as `model.EffectStun` and want content rather
+than mechanism. Neither is a reason to reach for them, but neither is a
+multi-week job if the classes need more separation after being played.
+
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on

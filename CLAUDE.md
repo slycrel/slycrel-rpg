@@ -266,6 +266,12 @@ which event fires which trigger, and where it is safe to put a box on screen.
   map. Derive the flag from something authored (the skeleton), or carry an
   explicit `On bool` whose zero value is the safe answer — which is what
   `Track` does, having learned it the hard way one commit earlier.
+- **A fixture embeds the gear it was written with, icons and all**, so an art
+  pass or an `Equip` change leaves every one of them stale — and nothing
+  catches it: `TestIconsResolve` walks the tables, not the saves, so a fixture
+  naming a retired icon key shows a placeholder in a playtest and passes the
+  suite. Re-run `cmd/genfixtures` after either, and read the diff: it should be
+  gear and icons only.
 - **`saves/` is gitignored except `saves/fixtures/`**, which is committed: it is
   both the regression net and the set of playtest starting points.
 - **The `autosave` slot is written where the player is safe** — a bed, an

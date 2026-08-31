@@ -32,7 +32,7 @@
       "quality": 72,
       "verb": "chop",
       "tier": 2,
-      "icon": "icon/ab/2_weapon_axe"
+      "icon": "icon/band/arms/axe1_t2"
     },
     "armor": {
       "name": "Ringmail, Secondhand",
@@ -40,18 +40,22 @@
       "defense": 7,
       "cost": 90,
       "quality": 68,
-      "verb": "catches",
+      "verb": "catches it",
       "tier": 2,
-      "icon": "icon/loot/blackbear_pelt"
+      "icon": "icon/band/garb/jerkin4_t2"
     },
     "shield": {
-      "name": "Barrel Lid",
+      "name": "Pot Lid, Dented Twice",
       "defense": 1,
-      "cost": 8,
+      "cost": 22,
       "tier": 1,
-      "verb": "takes",
-      "icon": "icon/loot/turtle_shell",
-      "desc": "It was a barrel this morning. Nobody has asked where the rest of it went."
+      "verb": "clangs against",
+      "icon": "icon/loot/crab_claw",
+      "extra": {
+        "speed": -1,
+        "ward": 1
+      },
+      "desc": "Something was cast at it once and bounced. The cook has not stopped mentioning this."
     },
     "charm": {
       "name": "Heavy Knucklebone",
@@ -94,7 +98,7 @@
           "quality": 0,
           "verb": "slap",
           "tier": 0,
-          "icon": "icon/ab/1_weapon_sword"
+          "icon": "icon/band/arms/sword1_t0"
         }
       },
       {
@@ -103,9 +107,9 @@
           "defense": 0,
           "cost": 0,
           "quality": 0,
-          "verb": "flaps",
+          "verb": "flaps at it",
           "tier": 0,
-          "icon": "icon/loot/fur_tuft"
+          "icon": "icon/band/garb/robe1_t0"
         }
       }
     ],
@@ -142,7 +146,7 @@
         "quality": 72,
         "verb": "chop",
         "tier": 2,
-        "icon": "icon/ab/2_weapon_axe"
+        "icon": "icon/band/arms/axe1_t2"
       },
       "armor": {
         "name": "Ringmail, Secondhand",
@@ -150,18 +154,22 @@
         "defense": 7,
         "cost": 90,
         "quality": 68,
-        "verb": "catches",
+        "verb": "catches it",
         "tier": 2,
-        "icon": "icon/loot/blackbear_pelt"
+        "icon": "icon/band/garb/jerkin4_t2"
       },
       "shield": {
-        "name": "Barrel Lid",
+        "name": "Pot Lid, Dented Twice",
         "defense": 1,
-        "cost": 8,
+        "cost": 22,
         "tier": 1,
-        "verb": "takes",
-        "icon": "icon/loot/turtle_shell",
-        "desc": "It was a barrel this morning. Nobody has asked where the rest of it went."
+        "verb": "clangs against",
+        "icon": "icon/loot/crab_claw",
+        "extra": {
+          "speed": -1,
+          "ward": 1
+        },
+        "desc": "Something was cast at it once and bounced. The cook has not stopped mentioning this."
       },
       "charm": {
         "name": "Heavy Knucklebone",

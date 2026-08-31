@@ -32,7 +32,7 @@
       "quality": 65,
       "verb": "clobber",
       "tier": 1,
-      "icon": "icon/ab/1_weapon_hammer"
+      "icon": "icon/band/arms/mace1_t1"
     },
     "armor": {
       "name": "Boiled Leather",
@@ -40,9 +40,9 @@
       "defense": 3,
       "cost": 30,
       "quality": 55,
-      "verb": "deflects",
+      "verb": "deflects it",
       "tier": 1,
-      "icon": "icon/loot/bear_pelt"
+      "icon": "icon/band/garb/jerkin2_t1"
     },
     "shield": {
       "name": "",
@@ -90,7 +90,7 @@
           "quality": 0,
           "verb": "slap",
           "tier": 0,
-          "icon": "icon/ab/1_weapon_sword"
+          "icon": "icon/band/arms/sword1_t0"
         }
       },
       {
@@ -99,9 +99,9 @@
           "defense": 0,
           "cost": 0,
           "quality": 0,
-          "verb": "flaps",
+          "verb": "flaps at it",
           "tier": 0,
-          "icon": "icon/loot/fur_tuft"
+          "icon": "icon/band/garb/robe1_t0"
         }
       }
     ],

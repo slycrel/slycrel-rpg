@@ -32,7 +32,7 @@
       "quality": 85,
       "verb": "run through",
       "tier": 3,
-      "icon": "icon/ab/3_weapon_sword"
+      "icon": "icon/band/arms/sword1_t3"
     },
     "armor": {
       "name": "Scale of the Overconfident",
@@ -40,29 +40,33 @@
       "defense": 11,
       "cost": 230,
       "quality": 80,
-      "verb": "scatters",
+      "verb": "scatters it",
       "tier": 3,
-      "icon": "icon/loot/monster_scale"
+      "icon": "icon/band/loot/monster_scales_t3"
     },
     "shield": {
-      "name": "Buckler, Previously Owned",
-      "defense": 3,
-      "cost": 48,
+      "name": "Saint's Doorplate",
+      "defense": 1,
+      "cost": 52,
       "tier": 2,
-      "verb": "turns",
-      "icon": "icon/loot/monster_scale",
-      "desc": "Previously owned by somebody who is not using it now, for reasons the seller declines to go into."
+      "verb": "declines",
+      "icon": "icon/loot/moon_stone",
+      "extra": {
+        "speed": -1,
+        "ward": 4
+      },
+      "desc": "Prised off a shrine door. Still refuses things out of habit, which is most of what a saint did."
     },
     "charm": {
-      "name": "Courier's Anklet",
+      "name": "Cracked Spectacles",
       "bonus": {
-        "strength": -1,
-        "speed": 2
+        "dexterity": 2,
+        "speed": -1
       },
-      "cost": 46,
+      "cost": 40,
       "tier": 2,
-      "desc": "Worn by people who are paid to already be elsewhere.",
-      "icon": "icon/loot/bird_feather"
+      "desc": "You see the gap in their guard, and also two of it.",
+      "icon": "icon/loot/smoky_quartz"
     },
     "bag": [
       {
@@ -94,7 +98,7 @@
           "quality": 0,
           "verb": "slap",
           "tier": 0,
-          "icon": "icon/ab/1_weapon_sword"
+          "icon": "icon/band/arms/sword1_t0"
         }
       },
       {
@@ -103,9 +107,9 @@
           "defense": 0,
           "cost": 0,
           "quality": 0,
-          "verb": "flaps",
+          "verb": "flaps at it",
           "tier": 0,
-          "icon": "icon/loot/fur_tuft"
+          "icon": "icon/band/garb/robe1_t0"
         }
       }
     ],
@@ -142,7 +146,7 @@
         "quality": 85,
         "verb": "run through",
         "tier": 3,
-        "icon": "icon/ab/3_weapon_sword"
+        "icon": "icon/band/arms/sword1_t3"
       },
       "armor": {
         "name": "Scale of the Overconfident",
@@ -150,29 +154,33 @@
         "defense": 11,
         "cost": 230,
         "quality": 80,
-        "verb": "scatters",
+        "verb": "scatters it",
         "tier": 3,
-        "icon": "icon/loot/monster_scale"
+        "icon": "icon/band/loot/monster_scales_t3"
       },
       "shield": {
-        "name": "Buckler, Previously Owned",
-        "defense": 3,
-        "cost": 48,
+        "name": "Saint's Doorplate",
+        "defense": 1,
+        "cost": 52,
         "tier": 2,
-        "verb": "turns",
-        "icon": "icon/loot/monster_scale",
-        "desc": "Previously owned by somebody who is not using it now, for reasons the seller declines to go into."
+        "verb": "declines",
+        "icon": "icon/loot/moon_stone",
+        "extra": {
+          "speed": -1,
+          "ward": 4
+        },
+        "desc": "Prised off a shrine door. Still refuses things out of habit, which is most of what a saint did."
       },
       "charm": {
-        "name": "Courier's Anklet",
+        "name": "Cracked Spectacles",
         "bonus": {
-          "strength": -1,
-          "speed": 2
+          "dexterity": 2,
+          "speed": -1
         },
-        "cost": 46,
+        "cost": 40,
         "tier": 2,
-        "desc": "Worn by people who are paid to already be elsewhere.",
-        "icon": "icon/loot/bird_feather"
+        "desc": "You see the gap in their guard, and also two of it.",
+        "icon": "icon/loot/smoky_quartz"
       },
       "bag": null,
       "ally": true,
@@ -210,7 +218,7 @@
         "quality": 85,
         "verb": "run through",
         "tier": 3,
-        "icon": "icon/ab/3_weapon_sword"
+        "icon": "icon/band/arms/sword1_t3"
       },
       "armor": {
         "name": "Brigandine, Reupholstered",
@@ -218,32 +226,36 @@
         "defense": 10,
         "cost": 165,
         "quality": 72,
-        "verb": "swallows",
+        "verb": "swallows it",
         "tier": 3,
-        "icon": "icon/loot/blackbear_pelt",
+        "icon": "icon/band/garb/jerkin5_t3",
         "extra": {
           "dexterity": 1
         }
       },
       "shield": {
-        "name": "Buckler, Previously Owned",
-        "defense": 3,
-        "cost": 48,
+        "name": "Saint's Doorplate",
+        "defense": 1,
+        "cost": 52,
         "tier": 2,
-        "verb": "turns",
-        "icon": "icon/loot/monster_scale",
-        "desc": "Previously owned by somebody who is not using it now, for reasons the seller declines to go into."
+        "verb": "declines",
+        "icon": "icon/loot/moon_stone",
+        "extra": {
+          "speed": -1,
+          "ward": 4
+        },
+        "desc": "Prised off a shrine door. Still refuses things out of habit, which is most of what a saint did."
       },
       "charm": {
-        "name": "Courier's Anklet",
+        "name": "Cracked Spectacles",
         "bonus": {
-          "strength": -1,
-          "speed": 2
+          "dexterity": 2,
+          "speed": -1
         },
-        "cost": 46,
+        "cost": 40,
         "tier": 2,
-        "desc": "Worn by people who are paid to already be elsewhere.",
-        "icon": "icon/loot/bird_feather"
+        "desc": "You see the gap in their guard, and also two of it.",
+        "icon": "icon/loot/smoky_quartz"
       },
       "bag": null,
       "ally": true,

@@ -1,0 +1,415 @@
+{
+  "version": 3,
+  "saved": "2026-08-16T12:00:00Z",
+  "summary": "a level 11 thief and one hireling: dodge, and the counter it earns",
+  "seed": 4242,
+  "player": {
+    "name": "Bosk",
+    "class": "Thief",
+    "epithet": "the Regrettable",
+    "level": 11,
+    "totalXP": 0,
+    "spendXP": 0,
+    "hp": 100,
+    "maxHP": 100,
+    "psyche": 18,
+    "maxPsyche": 18,
+    "strength": 23,
+    "dexterity": 27,
+    "speed": 22,
+    "fame": 10,
+    "renown": 0,
+    "honor": 3,
+    "faith": 2,
+    "shame": 0,
+    "coins": 250,
+    "weapon": {
+      "name": "Sabre of Selective Memory",
+      "kind": "blade",
+      "strike": 17,
+      "range": 0,
+      "cost": 420,
+      "quality": 86,
+      "verb": "draw across",
+      "tier": 4,
+      "icon": "icon/band/arms/sword1_t4"
+    },
+    "armor": {
+      "name": "Cuirass of Selective Attention",
+      "kind": "light",
+      "defense": 14,
+      "cost": 370,
+      "quality": 82,
+      "verb": "declines it",
+      "tier": 4,
+      "icon": "icon/band/garb/jerkin2_t4",
+      "extra": {
+        "dexterity": 2
+      }
+    },
+    "shield": {
+      "name": "Mirror-Backed Targe",
+      "defense": 3,
+      "cost": 125,
+      "tier": 3,
+      "verb": "returns",
+      "icon": "icon/loot/smoky_quartz",
+      "extra": {
+        "speed": -1,
+        "ward": 7
+      },
+      "desc": "Whoever silvered the back of it did not explain why, and then left town rather promptly."
+    },
+    "charm": {
+      "name": "Saint's Fingerbone, Disputed",
+      "bonus": {
+        "dexterity": -1,
+        "ward": 6
+      },
+      "cost": 110,
+      "tier": 3,
+      "desc": "Somebody's. The paperwork proving whose burned down with the abbey.",
+      "icon": "icon/loot/monster_spine"
+    },
+    "bag": [
+      {
+        "name": "Small Beer",
+        "kind": "heal",
+        "power": 8,
+        "value": 6,
+        "count": 3,
+        "desc": "Warm, flat, and load-bearing. Restores a little health and a lot of resolve.",
+        "icon": "icon/loot/health_potion"
+      },
+      {
+        "name": "Smelling Salts, Militant",
+        "kind": "revive",
+        "power": 25,
+        "value": 55,
+        "count": 1,
+        "desc": "Brings a person round by making unconsciousness the worse option.",
+        "icon": "icon/loot/antidote"
+      }
+    ],
+    "carried": [
+      {
+        "weapon": {
+          "name": "Bare Hands",
+          "strike": 1,
+          "range": 0,
+          "cost": 0,
+          "quality": 0,
+          "verb": "slap",
+          "tier": 0,
+          "icon": "icon/band/arms/sword1_t0"
+        }
+      },
+      {
+        "armor": {
+          "name": "Regrettable Rags",
+          "defense": 0,
+          "cost": 0,
+          "quality": 0,
+          "verb": "flaps at it",
+          "tier": 0,
+          "icon": "icon/band/garb/robe1_t0"
+        }
+      }
+    ],
+    "sprite": "",
+    "portrait": ""
+  },
+  "allies": [
+    {
+      "name": "Hireling 1",
+      "class": "Fighter",
+      "epithet": "",
+      "level": 11,
+      "totalXP": 0,
+      "spendXP": 0,
+      "hp": 101,
+      "maxHP": 101,
+      "psyche": 18,
+      "maxPsyche": 18,
+      "strength": 25,
+      "dexterity": 12,
+      "speed": 17,
+      "fame": 10,
+      "renown": 0,
+      "honor": 2,
+      "faith": 2,
+      "shame": 0,
+      "coins": 0,
+      "weapon": {
+        "name": "Sabre of Selective Memory",
+        "kind": "blade",
+        "strike": 17,
+        "range": 0,
+        "cost": 420,
+        "quality": 86,
+        "verb": "draw across",
+        "tier": 4,
+        "icon": "icon/band/arms/sword1_t4"
+      },
+      "armor": {
+        "name": "Full Plate 'Do Not Perceive Me'",
+        "kind": "heavy",
+        "defense": 16,
+        "cost": 560,
+        "quality": 90,
+        "verb": "denies it",
+        "tier": 4,
+        "icon": "icon/band/garb/jerkin4_t4",
+        "extra": {
+          "speed": -1
+        }
+      },
+      "shield": {
+        "name": "Mirror-Backed Targe",
+        "defense": 3,
+        "cost": 125,
+        "tier": 3,
+        "verb": "returns",
+        "icon": "icon/loot/smoky_quartz",
+        "extra": {
+          "speed": -1,
+          "ward": 7
+        },
+        "desc": "Whoever silvered the back of it did not explain why, and then left town rather promptly."
+      },
+      "charm": {
+        "name": "Saint's Fingerbone, Disputed",
+        "bonus": {
+          "dexterity": -1,
+          "ward": 6
+        },
+        "cost": 110,
+        "tier": 3,
+        "desc": "Somebody's. The paperwork proving whose burned down with the abbey.",
+        "icon": "icon/loot/monster_spine"
+      },
+      "bag": null,
+      "ally": true,
+      "cut": 17,
+      "sprite": "hero/druid",
+      "portrait": "portrait/female/f_08"
+    }
+  ],
+  "at": {
+    "X": 78,
+    "Y": 50
+  },
+  "facing": 0,
+  "pois": [
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    },
+    {
+      "discovered": true
+    }
+  ],
+  "fog": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAD4AwAAAAAAAAAAAAAAAAAAAAAAAP4PAAAAAAAAAAAAAAAAAAAAAAAA/x8AAAAAAAAAAAAAAAAAAAAAAAD/HwAAAAAAAAAAAAAAAAAAAAAAgP8/AAAAAAAAAAAAAAAAAAAAAACA/z8AAAAAAAAAAAAAAAAAAAAAAID/PwAAAAAAAAAAAAAAAAAAAAAAwP9/AAAAAAAAAAAAAAAAAAAAAACA/z8AAAAAAAAAAAAAAAAAAAAAAID/PwAAAAAAAAAAAAAAAAAAAAAAgP8/AAAAAAAAAAAAAAAAAAAAAAAA/x8AAAAAAAAAAAAAAAAAAAAAAAD/HwAAAAAAAAAAAAAAAAAAAAAAAP4PAAAAAAAAAAAAAAAAAAAAAAAA+AMAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "sinceFight": 0,
+  "sagas": {
+    "sagas": [
+      {
+        "skeleton": "register",
+        "title": "The Register",
+        "state": "open",
+        "places": [
+          19,
+          11,
+          24,
+          29,
+          41
+        ],
+        "placeNames": [
+          "Hollow of the Wrong King",
+          "Steading of Regrets",
+          "Bellburn",
+          "Thistle Wreck",
+          "Mud Situation"
+        ],
+        "roles": {
+          "{X}": "Hog of Poor Character"
+        },
+        "monsterID": "plains_boar",
+        "at": 1,
+        "have": 0
+      }
+    ]
+  },
+  "track": {
+    "on": true,
+    "poi": 0,
+    "label": "Somewhere"
+  },
+  "lastSpell": "backstab",
+  "clock": {
+    "step": 1348
+  },
+  "quests": [
+    {
+      "id": "delve-0-2816947",
+      "kind": "delve",
+      "state": "active",
+      "title": "Clear Grim Grotto",
+      "ask": "\"Grim Grotto. Nobody's come back from it. That's not a warning, that's a job opening.\"",
+      "nag": "\"Have you been to Grim Grotto yet? No? It hasn't improved.\"",
+      "thank": "\"You went in and came out. That puts you ahead of everyone else who tried.\"",
+      "giver": "Person",
+      "giverPOI": 0,
+      "targetPOI": 22,
+      "targetName": "Grim Grotto",
+      "need": 1,
+      "have": 0,
+      "rewardCoins": 201,
+      "rewardXP": 150
+    }
+  ],
+  "threads": [
+    {
+      "skeleton": "wrong-name",
+      "owner": "Hireling 1",
+      "title": "That Is Not Their Name",
+      "state": "open",
+      "roles": {
+        "{N}": "Hireling 1",
+        "{P}": "Kettlereach"
+      },
+      "placePOI": 12,
+      "homePOI": -1,
+      "at": 0,
+      "have": 0
+    }
+  ]
+}

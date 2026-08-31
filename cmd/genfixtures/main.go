@@ -110,6 +110,17 @@ func main() {
 		}
 	}))
 
+	// The thief's two mechanics only exist on a thief, and nothing here was
+	// one. Level 11 because that is where a Thief's speed is far enough over
+	// what the mountains send for the dodge to be visible in a fight rather
+	// than a statistic — and where the counter it earns is worth watching.
+	write(root, "rogue", buildAs(tables, model.ClassThief, 4242, 11, 1, "", func(f *save.File) {
+		f.Summary = "a level 11 thief and one hireling: dodge, and the counter it earns"
+		for i := range f.POIs {
+			f.POIs[i].Discovered = true
+		}
+	}))
+
 	fmt.Println("wrote", len(names), "fixtures")
 }
 

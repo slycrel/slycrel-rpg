@@ -32,7 +32,7 @@
       "quality": 72,
       "verb": "chop",
       "tier": 2,
-      "icon": "icon/ab/2_weapon_axe"
+      "icon": "icon/band/arms/axe1_t2"
     },
     "armor": {
       "name": "Ringmail, Secondhand",
@@ -40,9 +40,9 @@
       "defense": 7,
       "cost": 90,
       "quality": 68,
-      "verb": "catches",
+      "verb": "catches it",
       "tier": 2,
-      "icon": "icon/loot/blackbear_pelt"
+      "icon": "icon/band/garb/jerkin4_t2"
     },
     "shield": {
       "name": "Barrel Lid",
@@ -94,7 +94,7 @@
           "quality": 0,
           "verb": "slap",
           "tier": 0,
-          "icon": "icon/ab/1_weapon_sword"
+          "icon": "icon/band/arms/sword1_t0"
         }
       },
       {
@@ -103,9 +103,9 @@
           "defense": 0,
           "cost": 0,
           "quality": 0,
-          "verb": "flaps",
+          "verb": "flaps at it",
           "tier": 0,
-          "icon": "icon/loot/fur_tuft"
+          "icon": "icon/band/garb/robe1_t0"
         }
       }
     ],
@@ -142,7 +142,7 @@
         "quality": 72,
         "verb": "chop",
         "tier": 2,
-        "icon": "icon/ab/2_weapon_axe"
+        "icon": "icon/band/arms/axe1_t2"
       },
       "armor": {
         "name": "Ringmail, Secondhand",
@@ -150,9 +150,9 @@
         "defense": 7,
         "cost": 90,
         "quality": 68,
-        "verb": "catches",
+        "verb": "catches it",
         "tier": 2,
-        "icon": "icon/loot/blackbear_pelt"
+        "icon": "icon/band/garb/jerkin4_t2"
       },
       "shield": {
         "name": "Barrel Lid",
