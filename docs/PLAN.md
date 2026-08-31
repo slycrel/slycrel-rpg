@@ -3016,6 +3016,65 @@ subtraction, does not scale into a crowd the way armour does, and no section of
 the report shows per-class group fights at all. Worth a section before anything
 else is tuned for crowds.
 
+### The blind spot, measured: CROWDS
+
+The counterattack probe turned up a hole big enough to stop for, and it is not
+a tuning question. **Two blind spots met.** SHAPES measures compositions but
+rotates the class per fight, so it reports an average and cannot see a class
+that folds in a crowd. And the stretch column — three levels over, which is how
+every build in this document is compared — is *saturated* for groups: three
+creatures three over is a win rate of nought for every class including the
+Fighter. So the comparison every conclusion here rests on says nothing whatever
+about group fights, and groups are most of the game. SHAPES puts mixed at
+42-57% of encounters and packs at another 21-25%.
+
+`CROWDS` measures it: per class, per level, on level, from one creature to six.
+
+| creatures swinging | widest gap between two classes at one level |
+|---|---|
+| 1 | 4.6 points |
+| 2 | 34.6 |
+| 3 | **70.6** |
+| 4 | 54.4 |
+
+The classes sit within five points of each other one-on-one and seventy apart
+against three. Everything this document has concluded about class balance was
+measured in the left-hand column.
+
+**And the class in trouble is the Mage, not the Thief.** At three creatures on
+level it posts 4.0%, 12.4%, 14.8%, 4.4%, 29.2% and 3.2% across the levels,
+against a Fighter's 17.8, 83.0, 52.8, 40.8, 94.4 and 33.8. The section warns on
+it: the Mage is the class left behind in fourteen of the cells where the fight
+is winnable by anybody at all.
+
+That is the design's own prediction arriving as a measurement. Absorb is a pool
+spent once, which is the worst possible unit against a crowd — it is gone after
+the first blow and the next five arrive against nothing. Flat reduction comes
+off *every* blow, so armour is worth more the more blows there are; a chance to
+take nothing is worth the same share whatever the count. Those three units were
+chosen to diverge and they diverge hardest exactly here.
+
+Which makes **vampiric shielding the right next step for a reason better than
+the one it was proposed for**. It was on the list to give the Mage something
+earned by attacking; what CROWDS says is that the Mage's unit does not survive
+contact with more than one creature, and a pool that refills as you deal damage
+is a pool that answers a crowd. The gap this has to close is measurable and
+large, which is a better brief than "the class could use some flavour".
+
+Two caveats the columns cannot state for themselves, both in the section's own
+prose. Four and six creatures are party-sized rolls measured against one
+character, since `EncounterSize` scales what the world sends with how many
+people walk behind you — those columns are "a solo hero after their company
+died", not what a party of three walks into. And level eleven is soft for
+everybody, because mountain's roster near that band is weak: every class posts
+its best numbers there and that is a fact about the monster tables.
+
+The section also had the aggregation defect before it shipped. Its first
+version took the widest gap across every level at once, which compares a
+Fighter at eleven with a Mage at thirteen and calls the difference a fact about
+classes — the same defect this report has been finding all month, written fresh
+into the instrument built to find it.
+
 ### The order, and why it is an order
 
 Every term here changes `PlayerAttack` or `MonsterDamage`, which is what

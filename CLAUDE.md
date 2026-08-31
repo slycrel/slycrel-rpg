@@ -202,6 +202,12 @@ which event fires which trigger, and where it is safe to put a box on screen.
   the constant and the fights disagree. If you add a slot, the question to ask
   is not "does this compile" but "what measured this".
 
+  **And read a group fight before believing a class comparison.** The classes
+  sit within five points of each other one-on-one and seventy apart against
+  three; every section that sets the curve fights one creature at a time, and
+  the stretch column is saturated for groups — three creatures three levels
+  over is a nought for everybody. CROWDS is the section that measures it.
+
   **Five occurrences now, and read a report per class before believing it.**
   The fifth is `LaneForLevel`, which takes a level and no class — and the
   spiked lane, not the silvered one, is the best off arm at the top of the game

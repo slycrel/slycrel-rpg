@@ -63,6 +63,7 @@ func main() {
 	reportCharms(out, core.NewRNG(*seed^0xC4A7), t, *fights/4)
 	// Its own generator too, for the same reason as ARCS above.
 	reportShapes(out, core.NewRNG(*seed^0x5411), t, *fights)
+	reportCrowds(out, core.NewRNG(*seed^0xC70D), t, *fights/8)
 	reportEndurance(out, g, t, *fights/4)
 	reportProgression(out, g, t, *fights/50)
 	reportEconomy(out, t)
@@ -797,6 +798,146 @@ the money is not a verdict on a shape, it is a floor on one.
 `)
 	fmt.Fprintln(out)
 	reportSlotValue(out, t)
+}
+
+// reportCrowds is how each class holds up as the numbers grow, and it exists
+// because nothing else in this report could answer that.
+//
+// Two blind spots met here. SHAPES measures compositions but rotates the class
+// per fight, so it reports an average and cannot see a class that cannot fight
+// a crowd. And the stretch column — three levels over, which is how every build
+// in this document is compared — is *saturated* for groups: three creatures
+// three over is a win rate of nought for every class including the Fighter, so
+// the comparison every conclusion rests on says nothing whatever about group
+// fights. On level is the only place they are legible.
+//
+// It matters because groups are most of the game. SHAPES puts mixed at 42-57%
+// of encounters and packs at 21-25%, so a class that folds against three is a
+// class that folds against the majority of what the world throws.
+//
+// What the table is looking for is whether a defensive unit scales with the
+// number of attackers. Flat reduction comes off *every* blow, so armour is
+// worth more the more blows arrive; a chance to take nothing is worth the same
+// share whatever the count. Those two should diverge as the field fills, and if
+// they diverge too far the scheme has produced a class that cannot play half
+// the encounter table.
+func reportCrowds(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+	fmt.Fprintf(out, "CROWDS — how each class holds up as the numbers grow\n")
+	fmt.Fprintf(out, "on level, because three levels over is a nought for everybody at three\n")
+	fmt.Fprintf(out, "or more; the stretch column cannot see group fights at all\n\n")
+
+	sizes := []int{1, 2, 3, 4, 6}
+	fmt.Fprintf(out, "%-6s %-8s", "level", "class")
+	for _, n := range sizes {
+		fmt.Fprintf(out, " %8s", fmt.Sprintf("%d up", n))
+	}
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, strings.Repeat("-", 60))
+
+	// Per level as well as per size. A "widest gap" taken across every level at
+	// once compares a Fighter at eleven with a Mage at thirteen and calls the
+	// difference a fact about classes — which is the aggregation defect this
+	// report has been finding all month, and this section had it before it
+	// shipped.
+	type cell struct{ level, size int }
+	rate := map[cell]map[model.Class]float64{}
+	trails := map[model.Class]int{}
+	for _, level := range []int{3, 5, 7, 9, 11, 13} {
+		for _, class := range model.AllClasses {
+			fmt.Fprintf(out, "%-6d %-8s", level, class)
+			for _, size := range sizes {
+				var wins, n int
+				for i := 0; i < fights; i++ {
+					c := rules.BuildCharacter(g, class, level)
+					t.Equip(c)
+					mons := t.PickMonsters(g, biomeForLevel(level), level, size)
+					if len(mons) == 0 {
+						continue
+					}
+					fresh := *c
+					r := rules.SimulateGroup(g, &fresh, mons, 60, t.SpellsFor(c))
+					if r.Won {
+						wins++
+					}
+					n++
+				}
+				pct := 0.0
+				if n > 0 {
+					pct = float64(wins) * 100 / float64(n)
+				}
+				fmt.Fprintf(out, " %7.1f%%", pct)
+				k := cell{level, size}
+				if rate[k] == nil {
+					rate[k] = map[model.Class]float64{}
+				}
+				rate[k][class] = pct
+			}
+			fmt.Fprintln(out)
+		}
+		fmt.Fprintln(out)
+	}
+
+	fmt.Fprintf(out, "widest gap between two classes at the same level\n")
+	for _, size := range sizes {
+		gap, at := 0.0, 0
+		for _, level := range []int{3, 5, 7, 9, 11, 13} {
+			row := rate[cell{level, size}]
+			if len(row) == 0 {
+				continue
+			}
+			hi, lo := -1.0, 101.0
+			var low model.Class
+			for _, class := range model.AllClasses {
+				if v := row[class]; v > hi {
+					hi = v
+				} else if v < lo {
+					lo, low = v, class
+				}
+				if row[class] < lo {
+					lo, low = row[class], class
+				}
+			}
+			if hi-lo > gap {
+				gap, at = hi-lo, level
+			}
+			// Only count a trailing class where the fight is still winnable
+			// for somebody: everybody losing is not a fact about a class.
+			if hi > 10 && hi-lo > 15 {
+				trails[low]++
+			}
+		}
+		fmt.Fprintf(out, "  %d up: %.1f points, at level %d\n", size, gap, at)
+	}
+	for _, class := range model.AllClasses {
+		if trails[class] >= 6 {
+			fmt.Fprintf(out, "WARNING: %s is the class left behind in %d of the "+
+				"level-and-size cells where the fight is winnable at all.\n",
+				class, trails[class])
+		}
+	}
+	fmt.Fprint(out, `
+Read the row across rather than the column down. A class that is level with
+the others one-on-one and far behind at three has a defence that does not
+scale with the number of attackers, and that is a real property of the
+arithmetic rather than a tuning error: flat reduction comes off every blow,
+so armour is worth more the more blows arrive, while a chance to take
+nothing is worth the same share whatever the count.
+
+That is the scheme working as designed. It stops being fine if the gap at
+three or four is wide enough that one class cannot play the majority of the
+encounter table - SHAPES puts mixed at 42-57% of what the world throws and
+packs at another 21-25%.
+
+Two things the columns do not say for themselves. Four and six creatures are
+party-sized rolls measured against one character, because EncounterSize
+scales what the world sends with how many people are walking behind you - so
+those columns are "what a solo hero meets after their company has been
+killed", not what a party of three walks into. And level eleven is soft for
+everybody: mountain's roster near that band is weak enough that every class
+posts its best numbers there, which is a fact about the monster tables
+rather than about a class.
+
+`)
 }
 
 // reportSlotValue is the diagnosis behind the verdict above.
