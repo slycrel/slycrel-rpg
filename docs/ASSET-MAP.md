@@ -9,6 +9,8 @@ Third of three asset documents, and the only one about *this game*:
   packs, 56,409 files — whether or not anything uses them.
 - [ASSET-LICENSING.md](ASSET-LICENSING.md) is what may be done with them, and
   remains the authority on every licence question below.
+- [DRAWING-WITH-A-MODEL.md](DRAWING-WITH-A-MODEL.md) is how to make a picture
+  the bundle does not have, which has been needed exactly once.
 - This file is the manifest: the 804 keys the game resolves at runtime.
 
 The table is generated (`go run ./cmd/assetpipe map`) because a hand-counted

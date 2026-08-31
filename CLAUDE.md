@@ -135,7 +135,10 @@ which event fires which trigger, and where it is safe to put a box on screen.
   model never runs in the pipeline — and the committed grid contains no
   purchased pixels, only which of six slots each cell uses. Both tools read the
   palette from `internal/pixelpal`: they once disagreed about slot 4 and
-  rendered a valid grid in the wrong colour, which nothing detects.
+  rendered a valid grid in the wrong colour, which nothing detects. The method,
+  and the five ways it went wrong, are in `docs/DRAWING-WITH-A-MODEL.md` — read
+  it before drafting a second one, and look for the picture in the bundle first
+  regardless.
 - **A pipeline step wipes its own output directory.** `bands` takes its source
   list from the content, so a picture the table stops naming has to stop
   shipping — the manifest enumerates the directory, and a stale file would keep
