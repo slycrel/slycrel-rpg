@@ -580,9 +580,9 @@ func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 		fmt.Fprintf(out, "  %-10s %s\n", a.Name, a.Note)
 	}
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, "%-5s %-10s %7s %9s %8s %8s %9s\n",
-		"level", "build", "cost", "on-level", "over", "rounds", "hp left")
-	fmt.Fprintln(out, strings.Repeat("-", 64))
+	fmt.Fprintf(out, "%-5s %-10s %7s %6s %9s %8s %8s %9s\n",
+		"level", "build", "cost", "spent", "on-level", "over", "rounds", "hp left")
+	fmt.Fprintln(out, strings.Repeat("-", 71))
 
 	// The comparison is made on the stretch fights, three levels over, not on
 	// the on-level ones.
@@ -598,9 +598,28 @@ func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 		over  float64
 	}
 	stretch := map[int][]row{}
+	// How many build-levels came in more than a tenth under the purse, which is
+	// the residue this cannot fix: gear comes in bands and a build whose next
+	// upgrade costs more than it has left simply stops.
+	thin := 0
 
 	for level := 1; level <= maxLevel; level += 2 {
 		biome := biomeForLevel(level)
+
+		// The purse every build shops with: what the baseline costs this class
+		// at this level. Balanced is Archetypes[0] by definition, so this is
+		// the same number the rest of the report is measured against.
+		//
+		// Per class, not one figure for all three. A Thief's on-curve kit is
+		// about a tenth cheaper than a Fighter's and a Mage's sits between
+		// them, so a single purse would hand the cheaper classes spare money
+		// and call the result a fact about their build.
+		budgetFor := func(class model.Class) int {
+			purse := &model.Character{Level: level, Class: class}
+			t.EquipAs(purse, gamedata.Archetypes[0])
+			return gamedata.GearCost(purse)
+		}
+
 		for _, a := range gamedata.Archetypes {
 			var cost int
 			rate := func(biome string, encLevel int) (winPct, rounds float64, hp int) {
@@ -608,7 +627,7 @@ func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 				for _, class := range model.AllClasses {
 					for i := 0; i < fights; i++ {
 						c := rules.BuildCharacter(g, class, level)
-						t.EquipAs(c, a)
+						t.EquipWithin(c, a, budgetFor(class))
 						cost = gamedata.GearCost(c)
 						mons := t.PickMonsters(g, biome, encLevel, 1)
 						if len(mons) == 0 {
@@ -635,8 +654,22 @@ func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 			over, _, _ := rate(biomeForLevel(level+3), level+3)
 
 			stretch[level] = append(stretch[level], row{a.Name, over})
-			fmt.Fprintf(out, "%-5d %-10s %7d %8.1f%% %7.1f%% %8.1f %8d%%\n",
-				level, a.Name, cost, on, over, rounds, hp)
+			// The spend column is the point of this table now. A build that
+			// comes in well under the purse is not losing because of its
+			// shape, and one that came in over — which is what the duelist
+			// used to do, by 15 to 18 per cent at every level — was never
+			// being compared with anything.
+			budget := budgetFor(model.AllClasses[len(model.AllClasses)-1])
+			fmt.Fprintf(out, "%-5d %-10s %7d %5.0f%% %8.1f%% %7.1f%% %8.1f %8d%%\n",
+				level, a.Name, cost, float64(cost)*100/float64(core.Max(1, budget)),
+				on, over, rounds, hp)
+			if cost > budget {
+				fmt.Fprintf(out, "      WARNING: %s outspends the purse by %d.\n",
+					a.Name, cost-budget)
+			}
+			if float64(cost) < float64(budget)*0.9 {
+				thin++
+			}
 		}
 		fmt.Fprintln(out)
 	}
@@ -676,12 +709,37 @@ func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 	for _, a := range gamedata.Archetypes {
 		fmt.Fprintf(out, "%s %d  ", a.Name, wins[a.Name])
 	}
+	// Which builds never took a level. Collected rather than eyeballed, because
+	// the whole question this section asks is whether every shape is playable
+	// and "wins nowhere" is the answer that means no.
+	var never []string
+	for _, a := range gamedata.Archetypes {
+		if wins[a.Name] == 0 {
+			never = append(never, a.Name)
+		}
+	}
 	fmt.Fprintf(out, "\nwidest gap at any level: %.1f points.\n", worstGap)
+	// The residue the purse cannot remove, said out loud rather than left for
+	// somebody to notice in the spend column. A build that stopped a tenth
+	// short of the money is still being measured slightly poor.
+	if thin > 0 {
+		fmt.Fprintf(out, "%d of %d build-levels came in more than a tenth under the purse:\n"+
+			"gear is banded, and a build whose next upgrade costs more than it has\n"+
+			"left simply stops. Read those rows as a floor on the build, not a verdict.\n",
+			thin, len(levels)*len(gamedata.Archetypes))
+	}
 
 	switch {
 	case wins[gamedata.Archetypes[0].Name] == len(levels):
 		fmt.Fprintf(out, "VERDICT: balanced is never beaten. There is one arc, not three —\n"+
 			"the other builds trade a real slot for a bonus too small to pay for it.\n")
+	case len(never) > 0:
+		// A build that never wins is the thing this section was built to find.
+		// The phrase is the plan's own: a build that is never the best one at
+		// any level is not a playstyle, it is a trap with a name.
+		fmt.Fprintf(out, "VERDICT: %s wins at no level at all, and the gap widens with\n"+
+			"level rather than closing. A build that is never the best one anywhere\n"+
+			"is not a playstyle, it is a trap with a name.\n", strings.Join(never, " and "))
 	case worstGap <= 10:
 		fmt.Fprintf(out, "VERDICT: no build is ever far behind and each wins somewhere.\n"+
 			"The content already supports more than one arc.\n")
@@ -709,17 +767,30 @@ func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 		fmt.Fprintln(out)
 		fmt.Fprint(out, `
 Read that against the WARD table below rather than as a list. Nothing that
-attacks with magic exists under level ten, and by thirteen two thirds of the
-blows landing on you are magical — so a shield, which stops steel and nothing
-else, is worth most exactly where there is least magic about, and the silvered
-one is worth most where the plain one has stopped mattering. The two-hander
-sits in between: it buys damage, which works on everything, at the cost of an
-arm that is worth a great deal early and very little late.
+attacks with magic exists under level ten, and by thirteen half the blows
+landing on you are magical - so a shield, which stops steel and nothing
+else, is worth most exactly where there is least magic about.
 
-balanced winning nothing is not a fault to fix. It is the straightforward
-build, it is what Equip means, and every other number in this report is
-measured against it — a middle option that is never best and never worst is
-what a baseline is.
+The cost column is the thing to read first, and it is the reason this table
+now says something different from what it used to. Every build shops with
+the same purse: what balanced costs that class at that level. Before that,
+the duelist carried fifteen to eighteen per cent more gear than the
+baseline at every level from five up and duly won more levels, and both
+rivals outspent balanced by 37% at level one and duly beat it. None of that
+was a fact about a build.
+
+At equal spend the shape stops mattering nearly as much as it appeared to.
+Balanced and duelist come in within a point or two of each other at every
+level - the two-handed lane is not an arc, it is the same power in a
+different silhouette - and attrition loses everywhere, by a margin that
+widens from 4.5 points at level seven to 14.5 at thirteen.
+
+Attrition is also the one build that cannot spend its purse. Its sidearms
+are already at its tier and the next charm band costs more than its cheaper
+weapon saved, so it stops eight to ten per cent short. Some of its deficit
+is that. Not fourteen points of it: the whole charm slot is worth about
+five.
+
 `)
 	}
 	fmt.Fprintln(out)
@@ -1025,13 +1096,12 @@ func reportSlotValue(out *os.File, t *gamedata.Tables) {
 	fmt.Fprintf(out, "every archetype is a trade of bands between slots, so these are the\n")
 	fmt.Fprintf(out, "exchange rates it trades at, read off a Fighter's lane\n\n")
 	fmt.Fprintf(out, "%-6s %14s %14s %14s %14s %14s\n",
-		"tier", "weapon step", "armour step", "shield step", "charm def step", "barrier step")
+		"tier", "weapon step", "armour step", "shield step", "charm step", "barrier step")
 	fmt.Fprintln(out, strings.Repeat("-", 81))
 
-	best := func(tier int) (int, int, int, int, int) {
+	best := func(tier int) (strike, def, shield, barrier int, charm float64) {
 		ws, as := t.StockForClass(tier, model.ClassFighter)
 		ss, cs := t.SidearmsFor(tier)
-		var strike, def, shield, charm, barrier int
 		for _, w := range ws {
 			if w.Strike > strike {
 				strike = w.Strike
@@ -1051,8 +1121,13 @@ func reportSlotValue(out *os.File, t *gamedata.Tables) {
 				shield = sh.Defense
 			}
 		}
+		// The charm the build actually wears, scored the way the build scores
+		// it. This column read `cs[len(cs)-1].Bonus.Defense` — the last row of
+		// the file, on the one axis charms mostly do not carry — and came out
+		// 0, 0, 1, 2 for the life of the report. It was the same bug as the
+		// equipper's, in the instrument that was supposed to catch it.
 		if len(cs) > 0 {
-			charm = cs[len(cs)-1].Bonus.Defense
+			charm = gamedata.CharmValue(gamedata.BestCharm(cs))
 		}
 		// And the caster's arm, which is measured in a different unit: a pool
 		// spent once rather than a reduction on every blow.
@@ -1061,13 +1136,13 @@ func reportSlotValue(out *os.File, t *gamedata.Tables) {
 				barrier = sh.Absorb
 			}
 		}
-		return strike, def, shield, charm, barrier
+		return strike, def, shield, barrier, charm
 	}
 
 	for tier := 2; tier <= 5; tier++ {
-		s0, d0, sh0, ch0, b0 := best(tier - 1)
-		s1, d1, sh1, ch1, b1 := best(tier)
-		fmt.Fprintf(out, "%-6d %13d+ %13d+ %13d+ %13d+ %13d+\n",
+		s0, d0, sh0, b0, ch0 := best(tier - 1)
+		s1, d1, sh1, b1, ch1 := best(tier)
+		fmt.Fprintf(out, "%-6d %13d+ %13d+ %13d+ %13.1f+ %13d+\n",
 			tier, s1-s0, d1-d0, sh1-sh0, ch1-ch0, b1-b0)
 	}
 	fmt.Fprint(out, `
@@ -1086,6 +1161,15 @@ TestShieldsStaySecondaryToArmour in internal/gamedata deliberately holds
 a shield under half the body armour of its own band, so the slot stays a
 sidearm. Widening the arcs means revisiting that rule on purpose, not
 quietly inflating the shield table until the test goes red.
+
+The charm column is in CharmValue's units rather than in points of
+anything, because a charm does not carry one stat: the band's best is a
+ward charm here, a strength charm there, and asking which is bigger
+needs a rate of exchange. It read "charm def step" and measured the
+Defense on the last row of charms.json until recently, which came out
+0, 0, 1, 2 - the equipper's own bug, in the instrument that was meant
+to catch it. Divide by roughly 1.5 to read it against the armour and
+shield columns, which are in flat Defense.
 
 And the barrier column is not in the same unit as the three beside it.
 A shield step is a point off every blow for the rest of the fight; a

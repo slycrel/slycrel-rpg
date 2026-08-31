@@ -64,12 +64,16 @@ numbers mean anything. Two rules follow:
   before the content. `Equip` is `Archetypes[0]`, the balanced build, and must
   stay that way — it dresses hirelings and fixtures as well as the simulator,
   and `TestEquipIsStillTheBalancedArchetype` is what says so.
-- **An archetype that underspends measures the spec, not the content.** The ARCS
-  section compares builds by trading gear bands between slots, so a build that
-  simply buys less loses for uninteresting reasons. Read the cost column before
-  believing a gap. The same goes for the on-level column: every build wins
-  96-100% of on-level fights by design, so comparisons are made on the stretch
-  fights three levels over.
+- **Every build in ARCS shops with the same purse**, which is what balanced
+  costs *that class* at that level; `Tables.EquipWithin` fits a shape to a
+  budget. This is not a refinement, it is the difference between measuring a
+  build and measuring a budget: the duelist used to carry 15-18% more gear than
+  the baseline and duly won more levels. The spend column is printed so the
+  residue is visible — gear is banded, so a build whose next upgrade costs more
+  than it has left stops short, and attrition stops 8-10% short at every level.
+  The on-level column still cannot discriminate: every build wins 96-100% of
+  on-level fights by design, so comparisons are made on the stretch fights
+  three levels over.
 
 The shape of the curve is pinned by tests — `TestDamageHasNoCliff`,
 `TestOnLevelFightsAreWinnable`, `TestDangerRadiatesOutward`,

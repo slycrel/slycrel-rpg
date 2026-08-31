@@ -551,6 +551,74 @@ than a system.
    are read off the measurement rather than reasoned out, and the ordering they
    produce matches the measured ordering in all five bands.
 
+   **And then the table itself turned out to be measuring the wrong thing.**
+   The plan had already written the rule down — *an archetype that underspends
+   measures the spec, not the content; read the cost column before believing a
+   gap* — and ARCS had been failing it at every level since it was written:
+
+   | level | balanced | attrition | duelist |
+   |---|---|---|---|
+   | 1 | 54 | 74 (**+37%**) | 74 (**+37%**) |
+   | 7 | 500 | 448 (−10%) | 575 (**+15%**) |
+   | 11 | 1140 | 1045 (−8%) | 1310 (**+15%**) |
+   | 13 | 2220 | 2260 (+2%) | 2600 (**+17%**) |
+
+   The duelist carried fifteen to eighteen per cent more gear than the baseline
+   at every level from five up and duly won more levels. Both rivals outspent
+   balanced by 37% at level one and both beat it. None of that was a fact about
+   a build. There is no point authoring content to support three arcs while the
+   instrument cannot tell a build from a budget.
+
+   So every build shops with the same purse now — what balanced costs *that
+   class* at that level, per class because a Thief's on-curve kit is about a
+   tenth cheaper than a Fighter's. `Tables.EquipWithin` fits a shape to a
+   budget: bands give way in the order the tables are already described in
+   (flourishes, then the coat, then the weapon last, since a build that sold
+   its weapon has stopped being itself), and leftover money goes into the
+   sidearms only, because letting spare coin buy a better sword would turn
+   "attrition with money left over" into "balanced".
+
+   **At equal spend the answer to this whole roadmap item changes.** It asked
+   whether there is more than one way to be correctly levelled. Measured
+   properly:
+
+   - **Balanced and duelist are the same build.** Within a point or two at
+     every level. The two-handed lane was credited in this document with being
+     the answer to the missing glass cannon and "the trade it was always named
+     for"; at equal spend it is not a trade at all, it is the same power in a
+     different silhouette. Its apparent superiority was the extra 15%.
+   - **Attrition wins at no level at all**, and the gap widens rather than
+     closing — 4.5 points behind at seven, 9.0 at nine, 12.9 at eleven, 14.5 at
+     thirteen. The report has a verdict branch for this now, in the plan's own
+     words: a build that is never the best one anywhere is not a playstyle, it
+     is a trap with a name.
+   - **Attrition is also the one build that cannot spend its purse**, stopping
+     eight to ten per cent short because its sidearms are already at its tier
+     and the next charm band costs more than its cheaper weapon saved. Some of
+     its deficit is that. Not fourteen points of it — the whole charm slot is
+     worth about five.
+
+   So the honest state of the arcs is: one arc, one shape indistinguishable
+   from it, and one trap. That is a worse answer than the report used to give
+   and a much more useful one, and it is the brief for the content half rather
+   than a reason to abandon it. What the tables have to grow is a reason to
+   give up damage that pays — attrition's whole premise is that fights take
+   longer and you are still standing at the end, and the endurance column is
+   where that should show up while the win-rate column does not. Nothing in
+   ARCS currently looks at endurance at all.
+
+   Two smaller things fell out. `EquipWithin`'s first draft assumed a two-handed
+   build has no off arm, which is what `Hands: 2` says — but the arm is closed
+   by the weapon actually obtained, and a Mage cannot hold a two-hander, so
+   three classes' worth of level-one duelists carried a shield the fitter could
+   not take off, eight coins over a purse of sixty-six. The archetype's own
+   comment had recorded that subtlety years earlier and the fitter still walked
+   into it. And the WHY table's charm column was reading
+   `cs[len(cs)-1].Bonus.Defense` — the last row of the file, on the one axis
+   charms mostly do not carry — printing `0, 0, 1, 2` for the life of the
+   report. It reads `1.0, 3.8, 2.6, 4.8` in CharmValue units now. The arbiter
+   had the same bug as the thing it was arbitrating, in two slots out of four.
+
    **The deeper finding is a content one, and it is left open deliberately.**
    Two bands have a right answer rather than a choice — 6.0 and 5.4 points
    between best and worst, on both axes at once — which is the premise of

@@ -701,7 +701,7 @@ func (t *Tables) EquipAs(c *model.Character, a Archetype) {
 	c.Charm = model.Charm{}
 	if tier := a.Charm.tierAt(base); tier >= 1 {
 		if _, cs := t.SidearmsFor(tier); len(cs) > 0 {
-			c.Charm = bestCharm(cs)
+			c.Charm = BestCharm(cs)
 		}
 	}
 }
@@ -765,9 +765,15 @@ func CharmValue(c model.Charm) float64 {
 		charmPsyche*float64(b.Psyche)
 }
 
-// bestCharm is the one a sensible person would wear out of the shop, highest
+// BestCharm is the one a sensible person would wear out of the shop, highest
 // tier first so a band behind is still a band behind.
-func bestCharm(cs []model.Charm) model.Charm {
+//
+// Exported for the report, which has to name the same charm the game does. It
+// was computing the charm slot's exchange rate off `cs[len(cs)-1].Bonus.Defense`
+// — the last row of the file, on the one axis charms mostly do not carry — so
+// the WHY table's charm column read 0, 0, 1, 2 and meant nothing at all. The
+// arbiter had the same bug as the thing it was arbitrating.
+func BestCharm(cs []model.Charm) model.Charm {
 	var best model.Charm
 	found := false
 	for _, c := range cs {
