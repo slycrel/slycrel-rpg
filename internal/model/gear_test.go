@@ -215,3 +215,45 @@ func TestDroppingCarriedGearRemovesIt(t *testing.T) {
 		t.Error("dropping past the end of the pack succeeded")
 	}
 }
+
+// A Shield's Extra is a pointer, so every copy of one shares the Bonus that
+// came off the content table. Nudged is the only sanctioned way to change a
+// shield, and this is the thing it has to be true of.
+//
+// The bug it is standing in for was not hypothetical: the balance report added
+// six points of ward to price the slot, wrote through the pointer, and buffed
+// every shield of that tier a little more on each of four thousand iterations
+// until both sides of the comparison were saturated and ward measured as worth
+// exactly nothing. Nothing failed, nothing warned, and the number looked
+// plausible enough to be believed.
+func TestNudgingAShieldLeavesTheOriginalAlone(t *testing.T) {
+	shelf := model.Shield{Name: "Mirror-Backed Targe", Defense: 3,
+		Extra: &model.Bonus{Ward: 7, Speed: -1}}
+	worn := shelf
+
+	got := worn.Nudged(model.Bonus{Ward: 6})
+
+	if shelf.Extra.Ward != 7 {
+		t.Errorf("the shelf's copy now carries %d ward; Nudged wrote through the pointer",
+			shelf.Extra.Ward)
+	}
+	if got.Extra.Ward != 13 {
+		t.Errorf("the nudged copy carries %d ward, want 13", got.Extra.Ward)
+	}
+	if got.Extra.Speed != -1 {
+		t.Errorf("the nudged copy lost the original's %d speed", got.Extra.Speed)
+	}
+	if got.Extra == shelf.Extra {
+		t.Error("the nudged copy still points at the shelf's own Bonus")
+	}
+
+	// And a shield that does nothing extra must come back holding only the
+	// nudge, rather than nil-dereferencing on the way.
+	plain := model.Shield{Name: "Barrel Lid", Defense: 1}
+	if b := plain.Nudged(model.Bonus{Ward: 2}); b.Extra == nil || b.Extra.Ward != 2 {
+		t.Errorf("nudging a plain shield gave %+v", b.Extra)
+	}
+	if plain.Extra != nil {
+		t.Error("nudging a plain shield gave the original an Extra it never had")
+	}
+}

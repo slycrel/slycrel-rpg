@@ -1135,6 +1135,16 @@ type FightResult struct {
 }
 
 // Died reports the outcome that actually costs a run.
+// Died is the third outcome, and it is defined by exclusion, which means it
+// also swallows a fourth: a fight that simply runs out of rounds with both
+// sides alive is filed here as a death. That is not currently a lie — the
+// stalemate rate was measured at every level and band the report uses and came
+// out at 0.0% of fights, because maxRounds is 60 and nothing survives sixty
+// rounds of anything. It would become one quietly if the round cap ever came
+// down or a creature's guard ever went up far enough to outlast it, and the
+// place it would show is a death rate that rises for no reason a damage table
+// can explain. Named here rather than guarded, because a guard for a case that
+// does not occur is a branch nothing ever tests.
 func (r FightResult) Died() bool { return !r.Won && !r.Fled }
 
 // worstHPFrac is the health of the healthiest thing still standing, which is
@@ -1159,18 +1169,33 @@ func inTrouble(c *model.Character, living []*model.Monster) bool {
 }
 
 // incomingPerRound estimates what is about to be taken off the player, which is
-// the unit both the retreat and the gambit are decided in.
+// the unit the retreat, the gambit and the heal are all decided in.
+//
+// The 0.85 is the mean of MonsterDamage's roll — Between(0.35, 1.35) of
+// offence — so this is that function's own arithmetic and has to stay that way.
+// It did not: the magical branch swapped the guard for ward and left the roll
+// alone, while MonsterDamage scales a magical roll by magicBite first. The
+// policy was therefore estimating a caster's blow at 0.85 of offence when the
+// caster actually swings for 0.53, over-reading magical damage by three fifths
+// — worst at the top of the game, where half the blows landing are magical, and
+// on exactly the three decisions that decide whether a fight is survived: when
+// to run, when to gamble, when to heal.
+//
+// This is the "a mechanic the simulator cannot see" rule wearing a different
+// hat. The mechanic was visible; the *policy* was reading a different game from
+// the one the damage function plays, which is the same defect one layer up and
+// no easier to spot, because both halves look right on their own.
 func incomingPerRound(c *model.Character, living []*model.Monster) int {
 	total := 0
 	for _, m := range living {
 		if m.Dead {
 			continue
 		}
-		guard := c.Defense()
+		swing, guard := float64(m.Offense)*0.85, c.Defense()
 		if m.Def != nil && m.Def.Magic {
-			guard = c.Ward()
+			swing, guard = swing*magicBite, c.Ward()
 		}
-		total += core.Max(1, int(float64(m.Offense)*0.85)-guard)
+		total += core.Max(1, int(swing)-guard)
 	}
 	return total
 }

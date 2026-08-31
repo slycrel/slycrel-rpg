@@ -33,6 +33,21 @@ import (
 // maxLevel is the top of the band content is written for.
 const maxLevel = 14
 
+// The two bands the two sections that price things measure on, and why these
+// two rather than DANGER's whole spread. On level and below, both axes are
+// saturated by design — the brief asks for nought to five per cent deaths and
+// the rest of the report records 96-100% wins — so nothing can show up there
+// however good it is. Three over is the last band where a win rate
+// discriminates; five over is the band where a death rate does.
+//
+// LANES and EXCHANGE share them on purpose: a lane is a bundle of stats and
+// the exchange desk prices the stats, so the two have to be quoting the same
+// fights or the shield table cannot be authored from the pair.
+const (
+	laneStretch = 3
+	laneOver    = 5
+)
+
 func main() {
 	fights := flag.Int("fights", 2000, "fights simulated per data point")
 	seed := flag.Int64("seed", 20260815, "simulation seed")
@@ -60,6 +75,9 @@ func main() {
 	reportLanes(out, core.NewRNG(*seed^0x1A4E), t, *fights)
 	reportDanger(out, core.NewRNG(*seed^0xD1E), t, *fights/3)
 	reportWard(out, core.NewRNG(*seed^0x3A7D), t, *fights)
+	// Twice the sample, because it is measuring a derivative: a difference of
+	// two rates carries both their noise, and the answer is then divided by K.
+	reportExchange(out, core.NewRNG(*seed^0xE7CB), t, *fights*2)
 	reportCharms(out, core.NewRNG(*seed^0xC4A7), t, *fights/4)
 	// Its own generator too, for the same reason as ARCS above.
 	reportShapes(out, core.NewRNG(*seed^0x5411), t, *fights)
@@ -1006,17 +1024,6 @@ func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 	lanes := []model.SidearmLane{model.ArmBlock, model.ArmStrike, model.ArmWard}
 	laneNames := []string{"wall", "spiked", "silvered"}
 
-	// The two bands, and why these two rather than DANGER's whole spread. On
-	// level and below, both axes are saturated by design — the brief asks for
-	// nought to five per cent deaths and the rest of the report records 96-100%
-	// wins — so a lane cannot show up there however good it is. Three over is
-	// the last band where a win rate discriminates; five over is the band where
-	// a death rate does.
-	const (
-		laneStretch = 3
-		laneOver    = 5
-	)
-
 	// The top of the game, averaged, because the last three levels are where
 	// the lanes have separated and any one level of it is a sample.
 	const laneTop = 12
@@ -1438,6 +1445,183 @@ func laneCross(level int) string {
 		return "never"
 	}
 	return fmt.Sprintf("level %d", level)
+}
+
+// reportExchange is what one point in each stat is actually worth, and it
+// exists because three tables in this game are priced in points and none of
+// them was ever told the rate.
+//
+// A shield that pays three points of guard for fifteen of ward is a trade the
+// content author has to price. Until now the pricing was taste: the ward lane
+// carries five to fifteen points of its stat where the strike lane carries two
+// to eight, which looks like the ward one is being generous and is only a
+// statement about which numbers were typed. Whether it is generous depends on
+// the exchange rate, and the exchange rate is measurable — so it is measured
+// here rather than argued about, and the three content tables that spend in
+// these units (shields, charms, affixes) can be authored against it.
+//
+// The method is a nudge. Take the balanced build, add K points of one stat to
+// whatever is already carrying it, and read the difference off the same two
+// bands LANES uses: win rate on the stretch fights, death rate five over. The
+// answer is per point, so the columns compare directly across stats.
+//
+// Three things to be careful of when reading it, all of them the reason the
+// numbers are printed rather than reduced to one figure:
+//
+//   - **It is a local derivative, not a price.** A point of ward is worth
+//     nothing at level five because nothing casts there, and it does not scale
+//     linearly at thirteen either: ward is subtracted from a roll and clamped
+//     at zero, so the tenth point is worth less than the first once it starts
+//     taking whole hits to nothing. K is deliberately small for that reason.
+//   - **It is per class.** A point of speed is not the same purchase for a
+//     Thief who dodges with it as for a Fighter who does not.
+//   - **The bands saturate at both ends.** On level nothing discriminates,
+//     which is why these are the same two bands LANES measures on.
+func reportExchange(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+	fmt.Fprintf(out, "EXCHANGE — what one point in each stat is worth, measured\n")
+	fmt.Fprintf(out, "the balanced build with K points added to one stat, against the same two\n")
+	fmt.Fprintf(out, "bands LANES uses; per point, so the columns compare; %d fights a cell\n\n",
+		fights)
+
+	// K is a nudge rather than a doubling. Big enough to clear the noise floor
+	// the section measures for itself, small enough that the answer is still a
+	// derivative — a stat measured by adding twenty of it reports what the
+	// twentieth point is worth averaged with the first, and the tables buy in
+	// ones and twos. Four was not enough: the first draft printed a floor of
+	// 0.92 per point on the death column and most of the table was inside it.
+	const K = 6
+
+	// The stats a content table can actually spend in, and how to spend them.
+	// Each nudge goes into the slot that stat already lives in, so nothing here
+	// invents a source the game does not have.
+	nudges := []struct {
+		name string
+		add  func(c *model.Character, k int)
+	}{
+		{"strike", func(c *model.Character, k int) { c.Weapon.Strike += k }},
+		{"defense", func(c *model.Character, k int) { c.Armor.Defense += k }},
+		// Through Nudged, not through the pointer. Writing to c.Shield.Extra
+		// directly reaches the row in the content table that every other
+		// character of this tier is also wearing, and the first draft of this
+		// section did exactly that: it buffed the whole tier a little more on
+		// every one of four thousand iterations, so both sides of the
+		// comparison ended up saturated and ward priced out at a flat nought.
+		{"ward", func(c *model.Character, k int) {
+			c.Shield = c.Shield.Nudged(model.Bonus{Ward: k})
+		}},
+		{"strength", func(c *model.Character, k int) { c.Strength += k }},
+		{"dexterity", func(c *model.Character, k int) { c.Dexterity += k }},
+		{"speed", func(c *model.Character, k int) { c.Speed += k }},
+		{"psyche", func(c *model.Character, k int) { c.MaxPsyche += k }},
+	}
+
+	// run fights the balanced build with one nudge applied, in one band —
+	// paired against every other variant of the same cell.
+	//
+	// Fight f draws its character, its monster and its dice from a generator
+	// forked on the cell and the fight number, never from the section's own
+	// stream, so the baseline and all seven nudges meet the *same* subject in
+	// the same encounter with the same opening rolls. Only the nudge differs.
+	// That is common random numbers, and it is the difference between an
+	// instrument that can resolve a point of ward and one that cannot: the
+	// paired difference drops every source of variance the two runs share,
+	// which here is nearly all of it. The streams do diverge once a decision
+	// goes differently — which is the effect being measured, so it is the
+	// variance that should survive.
+	//
+	// It reports each half of its fights separately, because pairing takes the
+	// section's noise floor away with one hand and has to give it back with the
+	// other. LANES reads its floor off rows where three different-looking
+	// builds are secretly the same build; that is unavailable here, since a
+	// nudge which changes nothing produces a bit-identical stream and a floor
+	// of exactly nought — which would license believing any number in the
+	// table. Two independent halves of the same measurement is the honest
+	// replacement: how far they disagree is how far the whole is from the
+	// truth, and it costs nothing but a second counter.
+	run := func(class model.Class, level, delta, k int, add func(*model.Character, int)) (won, died [2]float64) {
+		enc := core.Max(1, level+delta)
+		biome := biomeForLevel(enc)
+		label := fmt.Sprintf("exchange/%s/%d/%d", class, level, delta)
+		var wins, deaths, n [2]int
+		for f := 0; f < fights; f++ {
+			rg := g.Fork(label, int64(f))
+			c := rules.BuildCharacter(rg, class, level)
+			t.Equip(c)
+			if add != nil && k != 0 {
+				add(c, k)
+			}
+			mons := t.PickMonsters(rg, biome, enc, 1)
+			if len(mons) == 0 {
+				continue
+			}
+			fresh := *c
+			r := rules.SimulateFight(rg, &fresh, []*model.MonsterDef{mons[0].Def},
+				enc, 60, t.SpellsFor(c))
+			h := f % 2
+			if r.Won {
+				wins[h]++
+			}
+			if r.Died() {
+				deaths[h]++
+			}
+			n[h]++
+		}
+		for h := range n {
+			if n[h] > 0 {
+				won[h] = float64(wins[h]) * 100 / float64(n[h])
+				died[h] = float64(deaths[h]) * 100 / float64(n[h])
+			}
+		}
+		return
+	}
+
+	fmt.Fprintf(out, "%-6s %-8s %-10s %11s %11s\n",
+		"level", "class", "stat", "won +3 /pt", "died +5 /pt")
+	fmt.Fprintln(out, strings.Repeat("-", 52))
+
+	// wonGap and diedGap are how far the two halves of one estimate disagree,
+	// which is this section's error bar and the nearest thing it has to a floor.
+	var wonGap, diedGap float64
+	for _, level := range []int{5, 9, 13} {
+		for _, class := range model.AllClasses {
+			baseWon, _ := run(class, level, laneStretch, 0, nil)
+			_, baseDied := run(class, level, laneOver, 0, nil)
+			for _, n := range nudges {
+				w, _ := run(class, level, laneStretch, K, n.add)
+				_, d := run(class, level, laneOver, K, n.add)
+				// Per point, per half, then averaged — and the halves' own
+				// disagreement kept, because a number with no error bar on it
+				// is how this report got a crossover four levels early once.
+				won := [2]float64{(w[0] - baseWon[0]) / K, (w[1] - baseWon[1]) / K}
+				died := [2]float64{(baseDied[0] - d[0]) / K, (baseDied[1] - d[1]) / K}
+				wonGap = core.MaxF(wonGap, core.MaxF(won[0]-won[1], won[1]-won[0])/2)
+				diedGap = core.MaxF(diedGap, core.MaxF(died[0]-died[1], died[1]-died[0])/2)
+				fmt.Fprintf(out, "%-6d %-8s %-10s %10.2f %11.2f\n",
+					level, class, n.name, (won[0]+won[1])/2, (died[0]+died[1])/2)
+			}
+			fmt.Fprintln(out)
+		}
+	}
+
+	fmt.Fprintf(out, "the error bar: every figure above is the mean of two independent\n")
+	fmt.Fprintf(out, "halves, and the widest the halves disagreed was %.2f per point on won\n", wonGap)
+	fmt.Fprintf(out, "and %.2f on died. Read anything smaller than that as a zero.\n\n",
+		diedGap)
+	fmt.Fprintf(out, "The exact 0.00 rows are the pairing proving itself rather than a\n")
+	fmt.Fprintf(out, "measurement: a Mage swings a Focus, so Weapon.Strike is read by nothing\n")
+	fmt.Fprintf(out, "it does, the two runs never diverge by a single die, and the answer is\n")
+	fmt.Fprintf(out, "not \"small\" but *identical*. A stat that does nothing should say so in\n")
+	fmt.Fprintf(out, "that voice, and one that does not is a plumbing bug this would catch.\n")
+
+	fmt.Fprint(out, `
+What this is for. Three tables spend in these units and none of them was
+priced against a rate: shields trade guard for ward or strike, charms trade
+one stat for another, affixes do both. "Fifteen points of ward for three of
+guard" is not generous or stingy until the two are in the same currency, and
+this is the exchange desk. Read the row for the level the item's band is
+worn at, and for the class that can hold it.
+
+`)
 }
 
 // reportCharms is the charm slot's LANES: the measurement that decides what

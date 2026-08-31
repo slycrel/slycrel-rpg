@@ -72,7 +72,16 @@ type Shield struct {
 	Verb    string     `json:"verb"` // "catches", "turns"
 	Icon    string     `json:"icon"`
 	Affix   *Affix     `json:"affix,omitempty"`
-	Extra   *Bonus     `json:"extra,omitempty"` // a few shields do more than block
+	// Extra is what a few shields do besides block, and it is a pointer, which
+	// makes every copy of a Shield share one Bonus with the row it came out of
+	// the content table on. Read it freely; never write through it. Anything
+	// that wants to change a shield's bonus has to call Nudged, which is there
+	// because the first thing that ever tried to write through this pointer —
+	// the balance report, adding a few points of ward to price the slot —
+	// silently buffed the entire tier for the rest of the run and reported that
+	// ward makes no difference, because by then both sides of the comparison
+	// were wearing it.
+	Extra *Bonus `json:"extra,omitempty"` // a few shields do more than block
 	// Desc is the anecdote, the same as a charm's. The off arm is the slot a
 	// player spends the least time thinking about, so it is the one that most
 	// needs a reason to be read.
@@ -91,6 +100,23 @@ type Shield struct {
 
 // Barrier reports whether this is worn for the pool rather than the block.
 func (s Shield) Barrier() bool { return s.Absorb > 0 }
+
+// Nudged returns a copy of this shield carrying b on top of whatever it already
+// does, without touching the Bonus the original points at.
+//
+// It exists for the one caller that needs to change a shield rather than read
+// one — the balance report, pricing what a point in each stat buys — and it is
+// a method rather than three lines at that call site because those three lines
+// are the ones that get it wrong. The pointer in Extra is shared with the
+// content table.
+func (s Shield) Nudged(b Bonus) Shield {
+	fresh := b
+	if s.Extra != nil {
+		fresh = s.Extra.Add(b)
+	}
+	s.Extra = &fresh
+	return s
+}
 
 // SidearmLane is what an off-arm item is *for*, which is a different question
 // from how good it is. There are three shields to a band now and they are not
