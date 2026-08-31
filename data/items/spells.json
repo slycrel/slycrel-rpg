@@ -181,7 +181,7 @@
     "kind": "weaken",
     "target": "all",
     "cast": "{A} vanishes theatrically and hits people from inside the cloud.",
-    "icon": "icon/rune/21"
+    "icon": "icon/rune/43"
   },
   {
     "id": "exsanguinate",
@@ -302,7 +302,7 @@
     "kind": "weaken",
     "target": "all",
     "cast": "{A} is briefly the wrong number of things at once.",
-    "icon": "icon/rune/60"
+    "icon": "icon/rune/38"
   },
   {
     "id": "envenom",
@@ -402,7 +402,7 @@
     "kind": "poison",
     "target": "all",
     "cast": "{A} makes the air disagree with everybody in it.",
-    "icon": "icon/rune/33"
+    "icon": "icon/rune/15"
   },
   {
     "id": "caltrops",

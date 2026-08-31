@@ -137,6 +137,14 @@ of stone, so lifted out on its own it is a flat black rectangle that reads on
 grass as a hole punched in the screen. The drawn marker has an outline and a
 contact shadow and was built to sit on any terrain.
 
+**The rune sheet has colour families, and replacements respect them.** Runes 1-6
+are blue, 7-18 green, 19-30 orange through red, 31-42 crimson into void, 43-48
+grey, 49-60 pink into purple, and 61-70 are the same stones with no glyph on
+them. So the three colliding spells did not take the next free number: "Smoke
+and Poor Manners" went to the grey band because that is what smoke is,
+"Comprehensive Blight" went to green so it reads against "Comprehensive
+Scorch" in red, and "Ambient Wrongness" went to the void band.
+
 **A generator wipes its own output.** `bands` takes its source list from
 `armor.json`, so a picture the table stops naming must stop shipping. The
 manifest enumerates the directory, so a stale band would otherwise keep its key
@@ -177,16 +185,21 @@ Counted against the content tables, not guessed:
 | table | entries | distinct icons | sharing |
 |---|--:|--:|---|
 | items | 46 | 46 | none |
-| armour | 19 | 19 | none |
 | weapons | 27 | 27 | none |
+| armour | 19 | 19 | none |
 | shields | 19 | 19 | none |
-| charms | 12 | 10 | 2 |
-| spells | 35 | 32 | 3 |
+| charms | 12 | 12 | none |
+| spells | 35 | 35 | none |
 
-Charms and spells are what is left, and both are small. Neither is banded:
-shields and charms already have one picture each with nothing shared in the
-shield table, and banding a set to fix two collisions would generate art nothing
-asks for.
+**Every shelf in the shop is now distinct.** `TestGearIconsAreDistinct` covers
+all six tables and `TestIconsResolve` checks all six exist — the latter had
+never looked at shields or charms, so two whole shelves could have named art
+that was not there and nothing would have said so.
+
+Charms and spells were closed with icons already in the manifest rather than
+new art: 38 of the 70 runes and most of the 90 loot icons were unused. Neither
+is banded, and neither should be — a charm has no better, only dearer, and a
+rune is a rune.
 
 `prop/` at 6 and `weather/` at 4 look like the thinnest namespaces and are not:
 those keys are *sheets*, not pictures. The six props are Mana Seed tilesheets

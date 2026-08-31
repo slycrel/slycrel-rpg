@@ -58,7 +58,7 @@
     "name": "Saint's Fingerbone, Disputed",
     "cost": 110,
     "tier": 3,
-    "icon": "icon/loot/monster_bone",
+    "icon": "icon/loot/monster_spine",
     "desc": "Somebody's. The paperwork proving whose burned down with the abbey.",
     "bonus": {
       "ward": 6,
@@ -91,7 +91,7 @@
     "name": "Earplugs of the Unmoved",
     "cost": 320,
     "tier": 4,
-    "icon": "icon/loot/moon_stone",
+    "icon": "icon/loot/honey_comb",
     "desc": "You cannot hear the words. It transpires the words were the problem.",
     "bonus": {
       "ward": 9,

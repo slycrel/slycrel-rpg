@@ -325,50 +325,80 @@ func TestIconsResolve(t *testing.T) {
 	for _, s := range tables.Spells {
 		check("spell", s.Name, s.Icon)
 	}
-}
-
-// TestItemIconsAreDistinct keeps the pack readable: two items sharing an icon
-// makes the bag ambiguous at a glance, which is the only reason to have icons.
-func TestItemIconsAreDistinct(t *testing.T) {
-	seen := map[string]string{}
-	for _, it := range load(t).Items {
-		if prev, dup := seen[it.Icon]; dup {
-			t.Errorf("%q and %q share icon %q", prev, it.Name, it.Icon)
-		}
-		seen[it.Icon] = it.Name
+	// Shields and charms were missing from this list for as long as it existed,
+	// which meant two whole shelves of the shop could have named art that was
+	// not there and nothing would have said so.
+	for _, sh := range tables.Shields {
+		check("shield", sh.Name, sh.Icon)
+	}
+	for _, c := range tables.Charms {
+		check("charm", c.Name, c.Icon)
 	}
 }
 
-// TestArmorIconsAreDistinct is the same rule as the items one, and it is a test
-// because the thing it guards is easy to undo by hand.
+// TestGearIconsAreDistinct keeps every shelf readable: two entries sharing a
+// picture makes a list ambiguous at a glance, which is the only reason to have
+// icons at all.
 //
-// Armour spent the project's whole life with nineteen pieces on six pictures:
-// the loot pack has no garments in it, so the entire cloth lane wore a tuft of
-// fur from "Regrettable Rags" to "Shroud of Ongoing Argument". It now draws
-// real coats cut from the crafting sheet, banded by tier — but the band key is
-// just a string in a JSON file, and reusing one is a one-character mistake that
-// nothing else would report.
-func TestArmorIconsAreDistinct(t *testing.T) {
-	seen := map[string]string{}
-	for _, a := range load(t).Armors {
-		if prev, dup := seen[a.Icon]; dup {
-			t.Errorf("%q and %q share icon %q", prev, a.Name, a.Icon)
-		}
-		seen[a.Icon] = a.Name
-	}
-}
+// It covers all six tables because each one reached this state separately and
+// none of them would have been caught by a test on another. Armour spent the
+// project's life with nineteen pieces on six pictures; weapons had twenty-seven
+// on seventeen, with one sword icon doing the work of four; charms and spells
+// each had a couple of pairs left over. The icon key is a string in a JSON file
+// and reusing one is a one-character mistake, so this is a thing that can break
+// rather than a thing that cannot.
+func TestGearIconsAreDistinct(t *testing.T) {
+	tables := load(t)
 
-// TestWeaponIconsAreDistinct is the armour rule applied to the other table that
-// bands its icons. Weapons were the worse of the two: twenty-seven entries on
-// seventeen pictures, with `4_weapon_sword` covering four of them.
-func TestWeaponIconsAreDistinct(t *testing.T) {
-	seen := map[string]string{}
-	for _, w := range load(t).Weapons {
-		if prev, dup := seen[w.Icon]; dup {
-			t.Errorf("%q and %q share icon %q", prev, w.Name, w.Icon)
+	distinct := func(what string, names, icons []string) {
+		t.Helper()
+		seen := map[string]string{}
+		for i, icon := range icons {
+			if prev, dup := seen[icon]; dup {
+				t.Errorf("%s %q and %q share icon %q", what, prev, names[i], icon)
+			}
+			seen[icon] = names[i]
 		}
-		seen[w.Icon] = w.Name
 	}
+
+	var names, icons []string
+	collect := func(n, i string) { names, icons = append(names, n), append(icons, i) }
+
+	names, icons = nil, nil
+	for _, v := range tables.Items {
+		collect(v.Name, v.Icon)
+	}
+	distinct("item", names, icons)
+
+	names, icons = nil, nil
+	for _, v := range tables.Weapons {
+		collect(v.Name, v.Icon)
+	}
+	distinct("weapon", names, icons)
+
+	names, icons = nil, nil
+	for _, v := range tables.Armors {
+		collect(v.Name, v.Icon)
+	}
+	distinct("armor", names, icons)
+
+	names, icons = nil, nil
+	for _, v := range tables.Shields {
+		collect(v.Name, v.Icon)
+	}
+	distinct("shield", names, icons)
+
+	names, icons = nil, nil
+	for _, v := range tables.Charms {
+		collect(v.Name, v.Icon)
+	}
+	distinct("charm", names, icons)
+
+	names, icons = nil, nil
+	for _, v := range tables.Spells {
+		collect(v.Name, v.Icon)
+	}
+	distinct("spell", names, icons)
 }
 
 // --- balance ---------------------------------------------------------------
