@@ -3673,11 +3673,107 @@ different reason: the world fix means levels 10 to 14 are reachable for the
 first time, and what is up there was two to four creatures a level. DANGER's
 +5 band moved from UNDER by 12.2 to UNDER by 7.2.
 
+## Multiplayer: not decided, but inventoried
+
+*(Jeremy's call: leave the question open, and stop it taxing every save-format
+change. So this is the inventory a later decision would otherwise have to start
+by making — what in the format is already owner-agnostic, what is not, and what
+each of the second group would actually cost.)*
+
+The heritage is real: the original was a door game, and `new-slycrel` was built
+session-per-user against a shared store. But nothing has been built for it here
+in three format versions, and the deadline this document set — "decide before
+the save format hardens" — has passed rather than been met. What follows is
+why that is less expensive than it sounds.
+
+### Already owner-agnostic, and free
+
+**The world.** `save.File` stores a `Seed` and nothing else about the terrain,
+and `world.Generate` is pure — same seed, same continent, on any machine. Two
+players on one seed are standing in the same world without a byte being shared.
+This is the expensive half of multiplayer in most games and it is already done,
+for reasons that had nothing to do with multiplayer.
+
+**Everything derived.** The weather is derived from seed, clock and biome and
+deliberately not stored. Location interiors regenerate from `POI.Seed`. The
+monster tables, the gear tables and the writing are content, identical for
+everybody. None of it needs an owner because none of it is per-run state.
+
+**The per-character record.** `model.Character` carries no identity beyond a
+name — no player id, no ownership. A party of four characters and a party of
+one hero plus three hirelings are the same shape to every rule in
+`internal/rules`, which is the observation the "pets and familiars are cheap"
+note already made from the other direction.
+
+### Not owner-agnostic, and what each one costs
+
+**`POIs []POIState` is the hard one.** It is parallel to the generated location
+list and records `Discovered`, `Visited`, `Cleared` and `Used`. Every one of
+those is a fact about *a* player, stored as a fact about *the* world. Two
+players sharing a seed would need them per-player, or would have to agree that
+clearing a dungeon clears it for everybody — which is a design decision, not a
+format one, and it is the decision that actually has to be made first. `Used`
+in particular exists so an emptied chest does not refill: shared, the second
+player finds every chest already looted; per-player, they both loot the same
+chest, which is a different game.
+
+**`Fog`** is the same shape and the easy version of it: plainly per-player,
+plainly cheap, a bitset per player rather than one.
+
+**`Sagas`, `Quests`, `Threads`** are all per-player already in substance —
+they are one run's progress through authored content — and would simply move
+inside whatever per-player record gets introduced. `Threads` is keyed to its
+owner *by name*, which is the one place a second player with an
+identically-named companion would collide.
+
+**The autosave slot** is a single file per profile and would need an owner.
+Trivial, but it is the kind of thing that is trivial only while somebody
+remembers it.
+
+**`Skim` and `Wants`.** A companion's cut goes into their own purse and they
+spend it at the right counter. If party slots become other people, that whole
+mechanism has nothing to do and the economy loses a sink it was tuned with.
+This is the second design decision, and it is not small: *do other players
+occupy the hireling slots, or walk beside them?*
+
+### What that adds up to
+
+The format costs are a per-player struct holding `Fog`, `POIState`, `Sagas`,
+`Quests`, `Threads`, `At`, `Facing`, `Inside` and `Clock`, with `Seed` and the
+version staying at the top level. That is a mechanical refactor, and the two
+committed compatibility fixtures (`v1-solo.json`, `v2-company.json`) would keep
+loading by reading a single-player file as a one-player list — which is the
+same shape of change `Track` already made when it learned to carry an explicit
+`On bool` rather than deriving a flag from a zero value.
+
+The *design* costs are the two questions above, and neither is answerable by
+looking at the code: whether the world's cleared state is shared, and whether
+other players stand where the hirelings stand. Both change what the game is.
+Neither gets cheaper by waiting, and neither gets more expensive either — which
+is the actual answer to why the missed deadline did not cost anything.
+
+**The one thing worth doing now, and it is done:** nothing in this list is
+load-bearing on a decision, so no future save-format change needs to consult
+it. Add fields as the game needs them, keep the zero-value rule (a field added
+today is absent in every file written before today and must unmarshal to the
+safe answer), and if multiplayer ever happens, the work is the per-player
+struct plus two design decisions rather than an archaeology exercise.
+
 ## What is open, and in what order
 
-Written at the end of the session that built the class-identity scheme, while
-it was still fresh. The ordering is a recommendation and the reasons are the
-useful part.
+Rewritten after the session that answered items 2, 4 and half of 6, and found
+that answering them meant fixing the instruments first. The ordering is a
+recommendation and the reasons are the useful part.
+
+Four of the eight things on the original list are closed, one is withdrawn as a
+misreading, and the two biggest are untouched. The pattern in what closed is
+worth naming before the list: **every one of them turned out to be an
+instrument problem wearing content's clothes.** The ward lane looked like a
+badly priced item and was a one-sided derivative. Level eleven looked like a
+roster hole and was a gear-band sawtooth. The world's missing top half looked
+like "make the map bigger" and was a divisor. A stat that made a Fighter worse
+looked like a trade and was a policy comparing against a bad guess. When
+something in this game reads as a content fault, price the instrument first.
 
 ### 1. None of it has been played
 
@@ -3687,38 +3783,49 @@ and not one has been felt. The report cannot answer whether a Thief that dodges
 and counters *plays* like a Thief, or whether one round in ten is often enough
 for a second swing to read as a trope rather than a glitch.
 
-The tool for it already exists and is short of what this needs:
-`saves/fixtures/` has no Thief or Mage at a level where these fire. Two
-fixtures — a level-11 Thief and a level-11 Mage with a talisman — would make all
-four playable in a minute rather than an hour.
+**Still the top of the list, and now with more riding on it.** The fixtures it
+was waiting for exist — `rogue.json` is a level-11 Thief, `caster.json` a Mage
+with a talisman. And a great deal has moved underneath since: the second swing
+was re-entering the technique chooser and casting, so what a Fighter does on
+that round has *never* been what the report described; the retreat policy has
+been rewritten twice; the world reaches its own top band for the first time.
+Everything below this line is arithmetic that has never been felt by anybody.
 
-### 2. The fifth zero value — done, and it left a content question behind
+### 2. The fifth zero value — done, and the ward lane is what it left behind
 
-`LaneForLevel` has been re-pinned: the wall below level ten, the spiked shield
-above it, class-blind because the measurement says the two plank classes cross
-within a level of each other. The section above has the numbers and the three
-things that turned out to be wrong with the instrument rather than the content.
+`LaneForLevel` is re-pinned and has been re-pinned twice more since, each time
+by a rules fix rather than a content change, which is the apparatus working.
+The sections above have the numbers.
 
-What replaces it on this list is smaller and is a content job: **the ward lane
-is never the answer.** It wins one cell in twenty-eight and is the worst arm at
-the top of the game on the axis that kills you. That is the shield table's
-version of the charm-band problem in item 4, and the two should probably be
-done together, since both are "a band of N where one row is not a choice".
+What replaces it is a content job with a measurement in front of it: **the ward
+lane is never the answer.** It is the worst arm at the top of the game on the
+axis that kills you. Before touching the table, take the measurement item 4
+names — whether the silvered shield beats the spiked one *against magical
+attackers specifically*, which LANES currently averages away. The band was
+designed to trade on that matchup and nobody has checked whether it does.
 
-### 3. Two designs finished and unbuilt
+### 3. Two designs finished and unbuilt — still the biggest thing on the list
+
+Untouched, and deliberately: both are multi-day features touching the battle
+screen, and half-building either is worse than not starting. A simulator that
+knows about staggering and a screen that does not is the "mechanic the
+simulator cannot see" rule pointed the other way.
 
 **Staggering identical creatures** into one slot with a count, where only the
 front one can be hit. It solves two problems at once — the crowded field's
 layout, where six creatures at three columns cannot fit their own names, and
 the wallpaper of three identical portraits carrying three copies of one joke —
 and it changes the fight, turning a group into a queue. `SimulateFight` has to
-learn the rule before CROWDS can price it.
+learn the rule before CROWDS can price it, and the screen has to learn it in
+the same pass.
 
 **An off-hand weapon for the Thief.** The class already has an offensive off
-arm and the lane rule is not giving it to them, so this is second to item 2. Its
-own value is real but smaller than it looks: a sidearm band steps +2 where a
-weapon band steps +5, and a weapon in that arm is the one legitimate way past
-`TestShieldsStaySecondaryToArmour`, because it is not a shield.
+arm and the lane rule is not giving it to them. Its own value is real but
+smaller than it looks: a sidearm band steps +2 where a weapon band steps +5,
+and a weapon in that arm is the one legitimate way past
+`TestShieldsStaySecondaryToArmour`, because it is not a shield. Note that
+EXCHANGE now prices what it would buy — strike at about 1.0 a point at the top
+of the game — so the design can be costed before it is built rather than after.
 
 ### 4. The charm bands are done; the shield cap turns out to be the wrong lever
 
@@ -3775,10 +3882,16 @@ against the land, so 41% of the range fell off the edge of the continent and no
 location above level 9 had ever been generated. Making the map bigger would
 have changed nothing, the formula being scale-invariant. See the section above.
 
-**Multiplayer** is still open, and it is now the only thing on this list that
-is a decision rather than a task. Its "decide before the save format hardens"
-deadline has passed rather than been met — three versions, two committed
-compatibility fixtures.
+**Multiplayer** is deliberately still open, and it no longer costs anything to
+leave that way. The section above inventories what in the save format is
+already owner-agnostic (the world, being a seed; everything derived; the
+per-character record) and what is not (`POIs`, `Fog`, and the autosave slot),
+and finds that the format work is a mechanical refactor into a per-player
+struct. What is left is two *design* questions that no amount of reading the
+code will answer — whether a cleared dungeon is cleared for everybody, and
+whether other players stand where the hirelings stand — and neither gets
+cheaper or dearer by waiting. Which is the actual answer to the missed
+deadline: it did not cost anything.
 
 ### Not yet needed, and worth knowing they are cheap
 
