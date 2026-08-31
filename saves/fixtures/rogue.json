@@ -61,15 +61,16 @@
       "desc": "Rimmed in iron and swung like a closing statement."
     },
     "charm": {
-      "name": "Saint's Fingerbone, Disputed",
+      "name": "The Quiet Stone",
       "bonus": {
+        "defense": 2,
         "dexterity": -1,
-        "ward": 6
+        "psyche": 4
       },
-      "cost": 110,
+      "cost": 108,
       "tier": 3,
-      "desc": "Somebody's. The paperwork proving whose burned down with the abbey.",
-      "icon": "icon/loot/monster_spine"
+      "desc": "Holding it, you can hear yourself think. This is not always welcome.",
+      "icon": "icon/loot/moon_stone"
     },
     "bag": [
       {
@@ -178,15 +179,16 @@
         "desc": "Rimmed in iron and swung like a closing statement."
       },
       "charm": {
-        "name": "Saint's Fingerbone, Disputed",
+        "name": "The Quiet Stone",
         "bonus": {
+          "defense": 2,
           "dexterity": -1,
-          "ward": 6
+          "psyche": 4
         },
-        "cost": 110,
+        "cost": 108,
         "tier": 3,
-        "desc": "Somebody's. The paperwork proving whose burned down with the abbey.",
-        "icon": "icon/loot/monster_spine"
+        "desc": "Holding it, you can hear yourself think. This is not always welcome.",
+        "icon": "icon/loot/moon_stone"
       },
       "bag": null,
       "ally": true,

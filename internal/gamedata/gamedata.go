@@ -812,14 +812,34 @@ func (t *Tables) EquipAs(c *model.Character, a Archetype) {
 //   - Strength beats dexterity slightly, which is the whole of why the
 //     tier-one band has a winner at all: the two charms there are mirror
 //     images of each other.
+//
+// **These are measurements now, not a fit.** They used to be read off five
+// argmax comparisons — which charm the fights preferred in each band — and the
+// comment below them was honest that seven continuous weights cannot be
+// recovered from five discrete choices. EXCHANGE measures the thing directly:
+// it nudges the balanced build by K points of one stat and reads what that buys
+// on both of LANES' bands. These are its all-class, both-axis means over levels
+// five, nine and thirteen, rounded, and re-deriving them is a report run rather
+// than an argument.
+//
+// The old weights had ward at 1.0 against a measured 0.22, guard at 1.5 against
+// 0.53 and dexterity at 1.0 against 0.17 — which is why the balanced build kept
+// reaching for the ward charm in every band that had one.
+//
+// Still class-blind, and that is now a known cost rather than an oversight: a
+// point of psyche is worth 0.68 to a Mage at level thirteen and -0.01 to a
+// Fighter, so this single number under-serves the caster and over-serves the
+// two who never spend it. It is the same shape as LaneForLevel's question and
+// it wants the same answer — a measurement per class before a parameter — which
+// EXCHANGE can now supply and this has not spent yet.
 const (
-	charmWard   = 1.0
-	charmStrike = 1.5
-	charmGuard  = 1.5
-	charmStr    = 1.2
-	charmDex    = 1.0
-	charmSpeed  = 0.8
-	charmPsyche = 0.2
+	charmStrike = 0.72
+	charmGuard  = 0.53
+	charmStr    = 0.53
+	charmSpeed  = 0.29
+	charmPsyche = 0.23
+	charmWard   = 0.22
+	charmDex    = 0.17
 )
 
 // CharmValue scores what a charm's trade is worth, positive and negative

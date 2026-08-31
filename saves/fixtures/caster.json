@@ -61,15 +61,16 @@
       "absorb": 14
     },
     "charm": {
-      "name": "Cracked Spectacles",
+      "name": "Courier's Anklet",
       "bonus": {
+        "strength": -1,
         "dexterity": 2,
-        "speed": -1
+        "speed": 4
       },
-      "cost": 40,
+      "cost": 44,
       "tier": 2,
-      "desc": "You see the gap in their guard, and also two of it.",
-      "icon": "icon/loot/smoky_quartz"
+      "desc": "Worn by people who are paid to already be elsewhere.",
+      "icon": "icon/loot/bird_feather"
     },
     "bag": [
       {
@@ -175,15 +176,16 @@
         "desc": "The spikes point the wrong way for defence and exactly the right way for the other thing."
       },
       "charm": {
-        "name": "Cracked Spectacles",
+        "name": "Courier's Anklet",
         "bonus": {
+          "strength": -1,
           "dexterity": 2,
-          "speed": -1
+          "speed": 4
         },
-        "cost": 40,
+        "cost": 44,
         "tier": 2,
-        "desc": "You see the gap in their guard, and also two of it.",
-        "icon": "icon/loot/smoky_quartz"
+        "desc": "Worn by people who are paid to already be elsewhere.",
+        "icon": "icon/loot/bird_feather"
       },
       "bag": null,
       "ally": true,

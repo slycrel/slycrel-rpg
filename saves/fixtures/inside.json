@@ -54,15 +54,16 @@
       "desc": "It was a barrel this morning. Nobody has asked where the rest of it went."
     },
     "charm": {
-      "name": "Heavy Knucklebone",
+      "name": "Lucky Tooth",
       "bonus": {
-        "strength": 1,
-        "dexterity": -1
+        "strike": 1,
+        "strength": -1,
+        "dexterity": 2
       },
-      "cost": 18,
+      "cost": 16,
       "tier": 1,
-      "desc": "Held in the fist. Adds nothing but weight, and weight is enough.",
-      "icon": "icon/loot/monster_bone"
+      "desc": "Somebody's. It has been lucky for exactly one of you so far.",
+      "icon": "icon/loot/canine_tooth"
     },
     "bag": [
       {
@@ -164,15 +165,16 @@
         "desc": "It was a barrel this morning. Nobody has asked where the rest of it went."
       },
       "charm": {
-        "name": "Heavy Knucklebone",
+        "name": "Lucky Tooth",
         "bonus": {
-          "strength": 1,
-          "dexterity": -1
+          "strike": 1,
+          "strength": -1,
+          "dexterity": 2
         },
-        "cost": 18,
+        "cost": 16,
         "tier": 1,
-        "desc": "Held in the fist. Adds nothing but weight, and weight is enough.",
-        "icon": "icon/loot/monster_bone"
+        "desc": "Somebody's. It has been lucky for exactly one of you so far.",
+        "icon": "icon/loot/canine_tooth"
       },
       "bag": null,
       "ally": true,
