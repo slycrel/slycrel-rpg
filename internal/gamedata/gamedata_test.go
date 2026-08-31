@@ -358,6 +358,19 @@ func TestArmorIconsAreDistinct(t *testing.T) {
 	}
 }
 
+// TestWeaponIconsAreDistinct is the armour rule applied to the other table that
+// bands its icons. Weapons were the worse of the two: twenty-seven entries on
+// seventeen pictures, with `4_weapon_sword` covering four of them.
+func TestWeaponIconsAreDistinct(t *testing.T) {
+	seen := map[string]string{}
+	for _, w := range load(t).Weapons {
+		if prev, dup := seen[w.Icon]; dup {
+			t.Errorf("%q and %q share icon %q", prev, w.Name, w.Icon)
+		}
+		seen[w.Icon] = w.Name
+	}
+}
+
 // --- balance ---------------------------------------------------------------
 //
 // These assert the shape of the difficulty curve rather than exact numbers, so

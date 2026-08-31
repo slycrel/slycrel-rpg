@@ -18,11 +18,11 @@ person to have made it.
 
 <!-- BEGIN generated: go run ./cmd/assetpipe map -->
 
-**804 keys across 12 namespaces.**
+**888 keys across 12 namespaces.**
 
 | namespace | keys | sources |
 |---|--:|---|
-| `icon/` | 311 | `_generated/icons` 239, `_generated/bands` 72 |
+| `icon/` | 395 | `_generated/icons` 263, `_generated/bands` 132 |
 | `mob/` | 168 | `mobsavataricons_windows` 133, `sci-ficharactersicons` 35 |
 | `boss/` | 107 | `monstersavataricons_windows` 107 |
 | `portrait/` | 76 | `characteravataricons_windows` 76 |
@@ -48,14 +48,16 @@ of the extraction tree, and `scripts/dist.sh` copies whatever the manifest names
 assetpipe extract <pack>   unzip from the bundle into assets-raw/  (read-only source)
 assetpipe icons            box-reduce every icon set to 16px       -> _generated/icons/
 assetpipe garb             cut garment cells from a paper-doll sheet -> _generated/icons/garb/
+assetpipe arms             cut weapon cells from the same sheet     -> _generated/icons/arms/
 assetpipe props            translucent shadows on Mana Seed props  -> _generated/props/
 assetpipe bands            tier recolours of the gear icons        -> _generated/bands/
 assetpipe manifest         rebuild assets/manifest.json from all of the above
 assetpipe map              rebuild the table in this file
 ```
 
-Order matters in one place: `bands` reads `icons` and `garb` output, and reads
-`data/items/armor.json` to learn *which* pictures to band. Run it after both.
+Order matters in one place: `bands` reads the output of `icons`, `garb` and
+`arms`, and reads `armor.json` and `weapons.json` to learn *which* pictures to
+band. Run it after all three.
 
 ## Decisions on the record
 
@@ -84,6 +86,26 @@ and berries of which exactly one (`monster_scales`) reads as armour. The answer
 was in the bundle: `pixelartminingcrafting` is a paper-doll sheet whose rows 2
 and 3 are five torso jerkins and five dresses. Cutting those beat both
 recolouring a liver and drawing new art.
+
+**The ability set was retired from gear, and that was a legibility fix.**
+`spellsandabilityicons` draws a *spell slot*: a full-bleed square tile with a
+purple magical background and the weapon painted over it. Reduced to the 16px a
+menu row gives an icon, the background is most of what survives, and every
+weapon in the shop was a purple smudge with a hint of grey in a corner. It also
+could not say what it needed to — three shapes (sword, axe, hammer) across four
+tiers against this game's five weapon kinds, so daggers were drawn as throwing
+knives and every wand and staff was drawn as a lightning bolt. Twenty-seven
+weapons shared seventeen pictures. `2dminimalskillicons` and its `Skill_Spear`
+were checked and are the same full-bleed design, so they are no use either.
+
+**Weapons scale to fit; garments crop. The two are opposite on purpose.** A coat
+is 14x17 — one row too tall — so cropping costs a row of hem and leaves every
+other pixel where the artist put it. A staff is 25x27 and a bow 19x21, and for
+those the shape *is* the length: crop them and you get a stub of haft and a
+piece of string. Scaling a long thin diagonal is the lesser damage, and most of
+the weapon set (pick, sword, hammer, axe, dagger) fits untouched anyway. The
+scale is nearest-neighbour, never a smooth kernel, because an averaged downscale
+turns a one-pixel haft into a grey suggestion of a haft.
 
 **Garments are cropped to 16px, never scaled.** The art is 14x17 to 11x22 inside
 a 64px cell — taller than the box. Scaling to fit resamples every garment off
@@ -116,7 +138,7 @@ unopened. They are on disk and in nobody's manifest:
 | `pixelartrogue-likerpg` | two 512x512 sheets at 16px | a full Ultima-style overworld terrain set in six biome colourways, ~17 creatures x 6 poses, and map icons for villages, towns, castles and towers. Same creator as three packs already shipping. |
 | `pixelartdungeonlevel4` | 58 files, 64x64 | a Golem with 24 frames — front/back/side x walk and attack — which is exactly the `foe/` convention. Plus dungeon floors, doors, chests, a 5-frame torch loop. |
 | `pixelartwasteland` | 51 files, 64x64 | cars, stop signs, a sofa, barrels: oddity furniture in the same register as the cyberpunk city pack already wired to `odd/`. |
-| `pixelartminingcrafting` | 3 sheets | rows 2-3 cut for armour. **Columns 5-7 are weapons** — pickaxe, sword, hammer, axe, dagger, bow, staff, mace in three tiers — and are not cut yet. |
+| `pixelartminingcrafting` | 3 sheets | fully mined: rows 2-3 cut for armour, columns 5-7 cut for weapons. Sheet 2 is ores and ingots, sheet 3 terrain and UI frames; neither is wired. |
 | `2dpixelrpgmonsters` | one `.unitypackage` | not unpacked; `assetpipe extract` passes it through untouched. |
 
 `allinonepackrpgmaker` (856 MB) was also extracted and is a poor fit: its Dark
@@ -132,15 +154,15 @@ Counted against the content tables, not guessed:
 |---|--:|--:|---|
 | items | 46 | 46 | none |
 | armour | 19 | 19 | none |
+| weapons | 27 | 27 | none |
 | shields | 19 | 19 | none |
-| **weapons** | **27** | **17** | **7 icons shared; `4_weapon_sword` covers four weapons** |
 | charms | 12 | 10 | 2 |
 | spells | 35 | 32 | 3 |
 
-Weapons are now the worst of these and for the same reason armour was: the
-ability set has three weapon shapes (sword, axe, hammer) across four tiers, and
-the game has five weapon kinds. **Daggers, bows and staves have no icon of their
-own at all** — they borrow swords and lightning glyphs.
+Charms and spells are what is left, and both are small. Neither is banded:
+shields and charms already have one picture each with nothing shared in the
+shield table, and banding a set to fix two collisions would generate art nothing
+asks for.
 
 Thin namespaces: `prop/` at 6 and `weather/` at 4 are the smallest things in the
 manifest by a wide margin, and `vfx/` at 17 is not much better.
@@ -171,6 +193,19 @@ This pass is not the last one, and these are the questions it left open.
   16x16 source into a 16px box, so the fit is identity — but a real frame of the
   armourer would be better evidence, and wants a save fixture rather than a
   patched tour.
+- **Polearms have no shape, and the two in the game are borrowing one.** There
+  is no spear anywhere on disk — not in the crafting sheet, not in the ability
+  set, not in the skill set. "Glaive, Overcompensating" uses `axe2`, which is
+  genuinely a broad blade on a haft and reads right. "Spear, Regrettably Long"
+  uses `staff3`, a long haft with a point, which is the closest silhouette
+  available and still reads as a wand to anyone not looking carefully. It sits
+  at tier 2 next to "Rod of Reasonable Objection" on `staff1`, which is the
+  weakest pairing in the table.
+- **The bow shape is cut and unused.** There is no ranged weapon kind; reach is
+  a polearm's `range`. If one ever arrives, the picture is already there.
+- **"Bare Hands" has an icon nothing draws.** The shop skips anything costing
+  zero and the character sheet prints the weapon as text, so its `sword1_t0` is
+  a formality that exists to satisfy `TestWeaponIconsAreDistinct`.
 - **`_generated` has no provenance record.** A file under it does not say which
   step wrote it or from what. The table above infers it from the directory,
   which works only as long as each step owns a directory.

@@ -62,18 +62,18 @@ var bands = []band{
 // bandRoot holds the generated variants, alongside the reduced icons.
 func bandRoot() string { return filepath.Join(genRoot, "bands") }
 
-// buildBands writes a full ladder for every icon the armour table names.
+// buildBands writes a full ladder for every icon the gear tables name.
 //
 // The source list comes from the content rather than from a hardcoded slice
-// here, so adding a coat that reaches for a new picture regenerates the right
-// files instead of silently producing none.
+// here, so adding a coat or a blade that reaches for a new picture regenerates
+// the right files instead of silently producing none.
 func buildBands() error {
-	icons, err := armorIcons()
+	icons, err := bandedIcons()
 	if err != nil {
 		return err
 	}
 	if len(icons) == 0 {
-		return fmt.Errorf("no armour icons found in data/items/armor.json")
+		return fmt.Errorf("no banded icons found in %v", bandedTables)
 	}
 
 	// Wipe first. The source list comes from the content, so a coat that stops
@@ -114,31 +114,38 @@ func buildBands() error {
 	return nil
 }
 
-// armorIcons reads the distinct icon keys the armour table names, sorted so the
-// pipeline's output does not depend on map iteration order.
-func armorIcons() ([]string, error) {
-	f, err := os.Open(filepath.Join("data", "items", "armor.json"))
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
+// bandedTables are the gear tables whose icons carry a tier band. Shields and
+// charms are not here: both already have one picture each and nothing shared,
+// so banding them would generate art nothing asks for.
+var bandedTables = []string{"armor.json", "weapons.json"}
 
-	var rows []struct {
-		Icon string `json:"icon"`
-	}
-	if err := json.NewDecoder(f).Decode(&rows); err != nil {
-		return nil, err
-	}
+// bandedIcons reads the distinct icon keys those tables name, sorted so the
+// pipeline's output does not depend on map iteration order.
+func bandedIcons() ([]string, error) {
 	seen := map[string]bool{}
 	var out []string
-	for _, r := range rows {
-		set, name, ok := sourceIcon(r.Icon)
-		if !ok {
-			continue
+	for _, table := range bandedTables {
+		f, err := os.Open(filepath.Join("data", "items", table))
+		if err != nil {
+			return nil, err
 		}
-		if src := set + "/" + name; !seen[src] {
-			seen[src] = true
-			out = append(out, r.Icon)
+		var rows []struct {
+			Icon string `json:"icon"`
+		}
+		err = json.NewDecoder(f).Decode(&rows)
+		f.Close()
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", table, err)
+		}
+		for _, r := range rows {
+			set, name, ok := sourceIcon(r.Icon)
+			if !ok {
+				continue
+			}
+			if src := set + "/" + name; !seen[src] {
+				seen[src] = true
+				out = append(out, r.Icon)
+			}
 		}
 	}
 	sort.Strings(out)

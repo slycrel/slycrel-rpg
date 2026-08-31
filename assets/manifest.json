@@ -1323,6 +1323,342 @@
       "file": "assets-raw/_generated/icons/ab/4_weapon_sword.png"
     },
     {
+      "key": "icon/arms/axe1",
+      "file": "assets-raw/_generated/icons/arms/axe1.png"
+    },
+    {
+      "key": "icon/arms/axe2",
+      "file": "assets-raw/_generated/icons/arms/axe2.png"
+    },
+    {
+      "key": "icon/arms/axe3",
+      "file": "assets-raw/_generated/icons/arms/axe3.png"
+    },
+    {
+      "key": "icon/arms/bow1",
+      "file": "assets-raw/_generated/icons/arms/bow1.png"
+    },
+    {
+      "key": "icon/arms/bow2",
+      "file": "assets-raw/_generated/icons/arms/bow2.png"
+    },
+    {
+      "key": "icon/arms/bow3",
+      "file": "assets-raw/_generated/icons/arms/bow3.png"
+    },
+    {
+      "key": "icon/arms/dagger1",
+      "file": "assets-raw/_generated/icons/arms/dagger1.png"
+    },
+    {
+      "key": "icon/arms/dagger2",
+      "file": "assets-raw/_generated/icons/arms/dagger2.png"
+    },
+    {
+      "key": "icon/arms/dagger3",
+      "file": "assets-raw/_generated/icons/arms/dagger3.png"
+    },
+    {
+      "key": "icon/arms/hammer1",
+      "file": "assets-raw/_generated/icons/arms/hammer1.png"
+    },
+    {
+      "key": "icon/arms/hammer2",
+      "file": "assets-raw/_generated/icons/arms/hammer2.png"
+    },
+    {
+      "key": "icon/arms/hammer3",
+      "file": "assets-raw/_generated/icons/arms/hammer3.png"
+    },
+    {
+      "key": "icon/arms/mace1",
+      "file": "assets-raw/_generated/icons/arms/mace1.png"
+    },
+    {
+      "key": "icon/arms/mace2",
+      "file": "assets-raw/_generated/icons/arms/mace2.png"
+    },
+    {
+      "key": "icon/arms/mace3",
+      "file": "assets-raw/_generated/icons/arms/mace3.png"
+    },
+    {
+      "key": "icon/arms/pick1",
+      "file": "assets-raw/_generated/icons/arms/pick1.png"
+    },
+    {
+      "key": "icon/arms/pick2",
+      "file": "assets-raw/_generated/icons/arms/pick2.png"
+    },
+    {
+      "key": "icon/arms/pick3",
+      "file": "assets-raw/_generated/icons/arms/pick3.png"
+    },
+    {
+      "key": "icon/arms/staff1",
+      "file": "assets-raw/_generated/icons/arms/staff1.png"
+    },
+    {
+      "key": "icon/arms/staff2",
+      "file": "assets-raw/_generated/icons/arms/staff2.png"
+    },
+    {
+      "key": "icon/arms/staff3",
+      "file": "assets-raw/_generated/icons/arms/staff3.png"
+    },
+    {
+      "key": "icon/arms/sword1",
+      "file": "assets-raw/_generated/icons/arms/sword1.png"
+    },
+    {
+      "key": "icon/arms/sword2",
+      "file": "assets-raw/_generated/icons/arms/sword2.png"
+    },
+    {
+      "key": "icon/arms/sword3",
+      "file": "assets-raw/_generated/icons/arms/sword3.png"
+    },
+    {
+      "key": "icon/band/arms/axe1_t0",
+      "file": "assets-raw/_generated/bands/arms/axe1_t0.png"
+    },
+    {
+      "key": "icon/band/arms/axe1_t1",
+      "file": "assets-raw/_generated/bands/arms/axe1_t1.png"
+    },
+    {
+      "key": "icon/band/arms/axe1_t2",
+      "file": "assets-raw/_generated/bands/arms/axe1_t2.png"
+    },
+    {
+      "key": "icon/band/arms/axe1_t3",
+      "file": "assets-raw/_generated/bands/arms/axe1_t3.png"
+    },
+    {
+      "key": "icon/band/arms/axe1_t4",
+      "file": "assets-raw/_generated/bands/arms/axe1_t4.png"
+    },
+    {
+      "key": "icon/band/arms/axe1_t5",
+      "file": "assets-raw/_generated/bands/arms/axe1_t5.png"
+    },
+    {
+      "key": "icon/band/arms/axe2_t0",
+      "file": "assets-raw/_generated/bands/arms/axe2_t0.png"
+    },
+    {
+      "key": "icon/band/arms/axe2_t1",
+      "file": "assets-raw/_generated/bands/arms/axe2_t1.png"
+    },
+    {
+      "key": "icon/band/arms/axe2_t2",
+      "file": "assets-raw/_generated/bands/arms/axe2_t2.png"
+    },
+    {
+      "key": "icon/band/arms/axe2_t3",
+      "file": "assets-raw/_generated/bands/arms/axe2_t3.png"
+    },
+    {
+      "key": "icon/band/arms/axe2_t4",
+      "file": "assets-raw/_generated/bands/arms/axe2_t4.png"
+    },
+    {
+      "key": "icon/band/arms/axe2_t5",
+      "file": "assets-raw/_generated/bands/arms/axe2_t5.png"
+    },
+    {
+      "key": "icon/band/arms/dagger1_t0",
+      "file": "assets-raw/_generated/bands/arms/dagger1_t0.png"
+    },
+    {
+      "key": "icon/band/arms/dagger1_t1",
+      "file": "assets-raw/_generated/bands/arms/dagger1_t1.png"
+    },
+    {
+      "key": "icon/band/arms/dagger1_t2",
+      "file": "assets-raw/_generated/bands/arms/dagger1_t2.png"
+    },
+    {
+      "key": "icon/band/arms/dagger1_t3",
+      "file": "assets-raw/_generated/bands/arms/dagger1_t3.png"
+    },
+    {
+      "key": "icon/band/arms/dagger1_t4",
+      "file": "assets-raw/_generated/bands/arms/dagger1_t4.png"
+    },
+    {
+      "key": "icon/band/arms/dagger1_t5",
+      "file": "assets-raw/_generated/bands/arms/dagger1_t5.png"
+    },
+    {
+      "key": "icon/band/arms/hammer1_t0",
+      "file": "assets-raw/_generated/bands/arms/hammer1_t0.png"
+    },
+    {
+      "key": "icon/band/arms/hammer1_t1",
+      "file": "assets-raw/_generated/bands/arms/hammer1_t1.png"
+    },
+    {
+      "key": "icon/band/arms/hammer1_t2",
+      "file": "assets-raw/_generated/bands/arms/hammer1_t2.png"
+    },
+    {
+      "key": "icon/band/arms/hammer1_t3",
+      "file": "assets-raw/_generated/bands/arms/hammer1_t3.png"
+    },
+    {
+      "key": "icon/band/arms/hammer1_t4",
+      "file": "assets-raw/_generated/bands/arms/hammer1_t4.png"
+    },
+    {
+      "key": "icon/band/arms/hammer1_t5",
+      "file": "assets-raw/_generated/bands/arms/hammer1_t5.png"
+    },
+    {
+      "key": "icon/band/arms/mace1_t0",
+      "file": "assets-raw/_generated/bands/arms/mace1_t0.png"
+    },
+    {
+      "key": "icon/band/arms/mace1_t1",
+      "file": "assets-raw/_generated/bands/arms/mace1_t1.png"
+    },
+    {
+      "key": "icon/band/arms/mace1_t2",
+      "file": "assets-raw/_generated/bands/arms/mace1_t2.png"
+    },
+    {
+      "key": "icon/band/arms/mace1_t3",
+      "file": "assets-raw/_generated/bands/arms/mace1_t3.png"
+    },
+    {
+      "key": "icon/band/arms/mace1_t4",
+      "file": "assets-raw/_generated/bands/arms/mace1_t4.png"
+    },
+    {
+      "key": "icon/band/arms/mace1_t5",
+      "file": "assets-raw/_generated/bands/arms/mace1_t5.png"
+    },
+    {
+      "key": "icon/band/arms/staff1_t0",
+      "file": "assets-raw/_generated/bands/arms/staff1_t0.png"
+    },
+    {
+      "key": "icon/band/arms/staff1_t1",
+      "file": "assets-raw/_generated/bands/arms/staff1_t1.png"
+    },
+    {
+      "key": "icon/band/arms/staff1_t2",
+      "file": "assets-raw/_generated/bands/arms/staff1_t2.png"
+    },
+    {
+      "key": "icon/band/arms/staff1_t3",
+      "file": "assets-raw/_generated/bands/arms/staff1_t3.png"
+    },
+    {
+      "key": "icon/band/arms/staff1_t4",
+      "file": "assets-raw/_generated/bands/arms/staff1_t4.png"
+    },
+    {
+      "key": "icon/band/arms/staff1_t5",
+      "file": "assets-raw/_generated/bands/arms/staff1_t5.png"
+    },
+    {
+      "key": "icon/band/arms/staff2_t0",
+      "file": "assets-raw/_generated/bands/arms/staff2_t0.png"
+    },
+    {
+      "key": "icon/band/arms/staff2_t1",
+      "file": "assets-raw/_generated/bands/arms/staff2_t1.png"
+    },
+    {
+      "key": "icon/band/arms/staff2_t2",
+      "file": "assets-raw/_generated/bands/arms/staff2_t2.png"
+    },
+    {
+      "key": "icon/band/arms/staff2_t3",
+      "file": "assets-raw/_generated/bands/arms/staff2_t3.png"
+    },
+    {
+      "key": "icon/band/arms/staff2_t4",
+      "file": "assets-raw/_generated/bands/arms/staff2_t4.png"
+    },
+    {
+      "key": "icon/band/arms/staff2_t5",
+      "file": "assets-raw/_generated/bands/arms/staff2_t5.png"
+    },
+    {
+      "key": "icon/band/arms/staff3_t0",
+      "file": "assets-raw/_generated/bands/arms/staff3_t0.png"
+    },
+    {
+      "key": "icon/band/arms/staff3_t1",
+      "file": "assets-raw/_generated/bands/arms/staff3_t1.png"
+    },
+    {
+      "key": "icon/band/arms/staff3_t2",
+      "file": "assets-raw/_generated/bands/arms/staff3_t2.png"
+    },
+    {
+      "key": "icon/band/arms/staff3_t3",
+      "file": "assets-raw/_generated/bands/arms/staff3_t3.png"
+    },
+    {
+      "key": "icon/band/arms/staff3_t4",
+      "file": "assets-raw/_generated/bands/arms/staff3_t4.png"
+    },
+    {
+      "key": "icon/band/arms/staff3_t5",
+      "file": "assets-raw/_generated/bands/arms/staff3_t5.png"
+    },
+    {
+      "key": "icon/band/arms/sword1_t0",
+      "file": "assets-raw/_generated/bands/arms/sword1_t0.png"
+    },
+    {
+      "key": "icon/band/arms/sword1_t1",
+      "file": "assets-raw/_generated/bands/arms/sword1_t1.png"
+    },
+    {
+      "key": "icon/band/arms/sword1_t2",
+      "file": "assets-raw/_generated/bands/arms/sword1_t2.png"
+    },
+    {
+      "key": "icon/band/arms/sword1_t3",
+      "file": "assets-raw/_generated/bands/arms/sword1_t3.png"
+    },
+    {
+      "key": "icon/band/arms/sword1_t4",
+      "file": "assets-raw/_generated/bands/arms/sword1_t4.png"
+    },
+    {
+      "key": "icon/band/arms/sword1_t5",
+      "file": "assets-raw/_generated/bands/arms/sword1_t5.png"
+    },
+    {
+      "key": "icon/band/arms/sword2_t0",
+      "file": "assets-raw/_generated/bands/arms/sword2_t0.png"
+    },
+    {
+      "key": "icon/band/arms/sword2_t1",
+      "file": "assets-raw/_generated/bands/arms/sword2_t1.png"
+    },
+    {
+      "key": "icon/band/arms/sword2_t2",
+      "file": "assets-raw/_generated/bands/arms/sword2_t2.png"
+    },
+    {
+      "key": "icon/band/arms/sword2_t3",
+      "file": "assets-raw/_generated/bands/arms/sword2_t3.png"
+    },
+    {
+      "key": "icon/band/arms/sword2_t4",
+      "file": "assets-raw/_generated/bands/arms/sword2_t4.png"
+    },
+    {
+      "key": "icon/band/arms/sword2_t5",
+      "file": "assets-raw/_generated/bands/arms/sword2_t5.png"
+    },
+    {
       "key": "icon/band/garb/jerkin1_t0",
       "file": "assets-raw/_generated/bands/garb/jerkin1_t0.png"
     },

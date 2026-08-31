@@ -8,7 +8,7 @@
     "quality": 0,
     "verb": "slap",
     "tier": 0,
-    "icon": "icon/ab/1_weapon_sword"
+    "icon": "icon/band/arms/sword1_t0"
   },
   {
     "name": "Table Leg",
@@ -19,7 +19,7 @@
     "quality": 20,
     "verb": "clout",
     "tier": 1,
-    "icon": "icon/ab/1_weapon_hammer"
+    "icon": "icon/band/arms/hammer1_t1"
   },
   {
     "name": "Farmer's Knife",
@@ -30,7 +30,7 @@
     "quality": 45,
     "verb": "stick",
     "tier": 1,
-    "icon": "icon/ab/1_throwing_1",
+    "icon": "icon/band/arms/dagger1_t1",
     "extra": {
       "dexterity": 1
     }
@@ -45,7 +45,7 @@
     "quality": 15,
     "verb": "zap",
     "tier": 1,
-    "icon": "icon/ab/1_lightning_1"
+    "icon": "icon/band/arms/staff1_t1"
   },
   {
     "name": "Hazel Switch, Overqualified",
@@ -57,7 +57,7 @@
     "quality": 40,
     "verb": "spark at",
     "tier": 1,
-    "icon": "icon/ab/1_lightning_1"
+    "icon": "icon/band/arms/staff2_t1"
   },
   {
     "name": "Notched Blade",
@@ -68,7 +68,7 @@
     "quality": 55,
     "verb": "hack at",
     "tier": 1,
-    "icon": "icon/ab/1_weapon_sword"
+    "icon": "icon/band/arms/sword1_t1"
   },
   {
     "name": "Mace of Modest Ambition",
@@ -79,7 +79,7 @@
     "quality": 65,
     "verb": "clobber",
     "tier": 1,
-    "icon": "icon/ab/1_weapon_hammer"
+    "icon": "icon/band/arms/mace1_t1"
   },
   {
     "name": "Splitting Maul, Borrowed",
@@ -91,7 +91,7 @@
     "quality": 60,
     "verb": "split",
     "tier": 1,
-    "icon": "icon/ab/1_weapon_hammer",
+    "icon": "icon/band/arms/axe1_t1",
     "extra": {
       "speed": -2,
       "dexterity": -1
@@ -106,7 +106,7 @@
     "quality": 70,
     "verb": "perforate",
     "tier": 2,
-    "icon": "icon/ab/2_throwing_1",
+    "icon": "icon/band/arms/dagger1_t2",
     "extra": {
       "dexterity": 1
     }
@@ -121,7 +121,7 @@
     "quality": 66,
     "verb": "object to",
     "tier": 2,
-    "icon": "icon/ab/2_lightning_1"
+    "icon": "icon/band/arms/staff1_t2"
   },
   {
     "name": "Actual Sword",
@@ -132,7 +132,7 @@
     "quality": 75,
     "verb": "slash",
     "tier": 2,
-    "icon": "icon/ab/2_weapon_sword"
+    "icon": "icon/band/arms/sword1_t2"
   },
   {
     "name": "Hand Axe, Sincere",
@@ -143,7 +143,7 @@
     "quality": 72,
     "verb": "chop",
     "tier": 2,
-    "icon": "icon/ab/2_weapon_axe"
+    "icon": "icon/band/arms/axe1_t2"
   },
   {
     "name": "Spear, Regrettably Long",
@@ -155,7 +155,7 @@
     "quality": 68,
     "verb": "skewer",
     "tier": 2,
-    "icon": "icon/ab/2_weapon_sword",
+    "icon": "icon/band/arms/staff3_t2",
     "extra": {
       "speed": -2,
       "dexterity": -1
@@ -170,7 +170,7 @@
     "quality": 78,
     "verb": "open",
     "tier": 3,
-    "icon": "icon/ab/3_throwing_1",
+    "icon": "icon/band/arms/dagger1_t3",
     "extra": {
       "dexterity": 2
     }
@@ -185,7 +185,7 @@
     "quality": 74,
     "verb": "overrule",
     "tier": 3,
-    "icon": "icon/ab/3_lightning_1"
+    "icon": "icon/band/arms/staff1_t3"
   },
   {
     "name": "Longsword of Adequate Repute",
@@ -196,7 +196,7 @@
     "quality": 85,
     "verb": "run through",
     "tier": 3,
-    "icon": "icon/ab/3_weapon_sword"
+    "icon": "icon/band/arms/sword1_t3"
   },
   {
     "name": "Warhammer 'Consequences'",
@@ -208,7 +208,7 @@
     "quality": 80,
     "verb": "flatten",
     "tier": 3,
-    "icon": "icon/ab/3_weapon_hammer",
+    "icon": "icon/band/arms/hammer1_t3",
     "extra": {
       "speed": -2,
       "dexterity": -1
@@ -224,7 +224,7 @@
     "quality": 82,
     "verb": "cleave",
     "tier": 3,
-    "icon": "icon/ab/3_weapon_axe",
+    "icon": "icon/band/arms/axe2_t3",
     "extra": {
       "speed": -2,
       "dexterity": -1
@@ -239,7 +239,7 @@
     "quality": 84,
     "verb": "puncture",
     "tier": 4,
-    "icon": "icon/ab/4_throwing_1",
+    "icon": "icon/band/arms/dagger1_t4",
     "extra": {
       "dexterity": 2
     }
@@ -254,7 +254,7 @@
     "quality": 82,
     "verb": "threaten",
     "tier": 4,
-    "icon": "icon/ab/4_lightning_1"
+    "icon": "icon/band/arms/staff1_t4"
   },
   {
     "name": "Sabre of Selective Memory",
@@ -265,7 +265,7 @@
     "quality": 86,
     "verb": "draw across",
     "tier": 4,
-    "icon": "icon/ab/4_weapon_sword"
+    "icon": "icon/band/arms/sword1_t4"
   },
   {
     "name": "Flamberge 'The Apology'",
@@ -277,7 +277,7 @@
     "quality": 90,
     "verb": "unmake",
     "tier": 4,
-    "icon": "icon/ab/4_weapon_sword",
+    "icon": "icon/band/arms/sword2_t4",
     "extra": {
       "speed": -2,
       "dexterity": -1
@@ -293,7 +293,7 @@
     "quality": 92,
     "verb": "conclude",
     "tier": 4,
-    "icon": "icon/ab/4_weapon_hammer",
+    "icon": "icon/band/arms/mace1_t4",
     "extra": {
       "speed": -2,
       "dexterity": -1
@@ -308,7 +308,7 @@
     "quality": 88,
     "verb": "insist",
     "tier": 5,
-    "icon": "icon/ab/4_throwing_1",
+    "icon": "icon/band/arms/dagger1_t5",
     "extra": {
       "dexterity": 3
     }
@@ -323,7 +323,7 @@
     "quality": 90,
     "verb": "sentence",
     "tier": 5,
-    "icon": "icon/ab/4_lightning_1"
+    "icon": "icon/band/arms/staff1_t5"
   },
   {
     "name": "Rapier 'After You'",
@@ -334,7 +334,7 @@
     "quality": 90,
     "verb": "correct",
     "tier": 5,
-    "icon": "icon/ab/4_weapon_sword"
+    "icon": "icon/band/arms/sword1_t5"
   },
   {
     "name": "Blade of Escalating Poor Decisions",
@@ -346,7 +346,7 @@
     "quality": 95,
     "verb": "resolve",
     "tier": 5,
-    "icon": "icon/ab/4_weapon_sword",
+    "icon": "icon/band/arms/sword2_t5",
     "extra": {
       "speed": -2,
       "dexterity": -1

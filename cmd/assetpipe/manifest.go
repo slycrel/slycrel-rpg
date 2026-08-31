@@ -245,7 +245,7 @@ func buildManifest() error {
 	// a quality ramp so a shop row says which of two coats is the better one
 	// without the player reading the price. Filenames already carry the "_t3",
 	// so the key is just the set and the file.
-	for _, set := range []string{"loot", "rune", "ab", "garb"} {
+	for _, set := range []string{"loot", "rune", "ab", "garb", "arms"} {
 		for _, f := range pngsIn(filepath.Join(bandRoot(), set)) {
 			add("icon/band/"+set+"/"+base(f), f, 0, 0)
 		}
@@ -254,8 +254,10 @@ func buildManifest() error {
 	// Garment icons, cut from the crafting sheet by `assetpipe garb`. Unlike
 	// the sets above there is no original to fall back to — the source is one
 	// sheet, and a cell of it is not a file.
-	for _, f := range pngsIn(filepath.Join(genRoot, "icons", "garb")) {
-		add("icon/garb/"+base(f), f, 0, 0)
+	for _, set := range []string{"garb", "arms"} {
+		for _, f := range pngsIn(filepath.Join(genRoot, "icons", set)) {
+			add("icon/"+set+"/"+base(f), f, 0, 0)
+		}
 	}
 
 	// The loot pack misspells one 32px file as "whetstonel_x.png"; alias it so
