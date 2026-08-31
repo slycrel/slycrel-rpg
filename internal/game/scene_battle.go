@@ -1448,7 +1448,12 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 	verb, with := g.Write.MonsterAttack(g.RNG, m)
 	g.Sound.Play("fight/monster")
 	if dmg == 0 {
-		b.log.Add("%s %s at %s with %s. %s %s it.",
+		// No "at" between the verb and the target. The verb tables are written
+		// complete — forty-three of the hundred and eighty-five already carry
+		// their own preposition — so this produced "Wolf B tears at at
+		// Hendrick Vole", and the hit line two screens down has never added
+		// one. Two templates for one sentence, disagreeing.
+		b.log.Add("%s %s %s with %s. %s %s.",
 			m.Short(), verb, tgt.Name, with, tgt.Armor.Name, tgt.Armor.Verb)
 		return
 	}
@@ -1978,47 +1983,95 @@ func monSlotY(i, n int) float64 {
 	return cy
 }
 
-// monNameLines is how many lines a creature's name plate may take under its
-// portrait: the species, and then what sort of one it is.
+// monPlate is how many lines of name a field needs over its portraits and how
+// many under them.
 //
-// Three when the field is a single row and two when it is stacked, and both
-// numbers exist to fit the *whole* name rather than as much of it as happened
-// to go in. It was two and one, which was enough for the species alone, and a
-// captured frame showed what that actually looked like: five creatures labelled
-// "Goblin Middle" and "Overfamiliar", each the first row of a wrapped name with
-// the rest silently dropped and nothing on screen to say so. That is the
-// transcript's own bug — an entry shown in part, reading as a different and
-// shorter thing — moved under a portrait.
+// The species goes above the picture and the epithet below it. All three lines
+// used to sit underneath, which read as a caption floating between two
+// creatures rather than belonging to one: with five in the field there were as
+// many gaps as labels and no way to tell at a glance which went with which.
+// Splitting the plate puts each icon inside its own name.
 //
-// Four when the field is a single row, three when it is stacked, and the
-// difference is what the vertical room will pay for rather than a preference.
-// A single row hangs its portraits in 176 pixels, so the fourth line is free —
-// the portrait stays at its 96-pixel cap either way. A stacked row has 88, and
-// the third line is what takes the portrait down to 36; a fourth would take the
-// two rows past the field and into each other.
-//
-// Four is not arbitrary either. It is what the widest names in the roster
-// actually need at three columns: "Living Armour" is two lines on its own and
-// "Two People Inside" is another two. At three lines the test that measures
-// this said so, which is the whole reason it exists.
-func monNameLines(n int) int {
-	if (n+monCols(n)-1)/monCols(n) == 1 {
-		return 4
+// Measured from the names actually in this fight rather than fixed per layout,
+// because the two are not the same question. Three wolves and a goblin need two
+// lines above ("Goblin Middle Manager A" does not fit one at three columns) and
+// two below ("Deeply Unimpressed" does not either); two short-named creatures
+// need one and one, and should get a bigger portrait for it. The field takes
+// the maximum each way so the row stays level — portraits of different sizes in
+// one row read as a rendering fault rather than as a fit.
+func (b *battleScene) monPlate() (above, below int) {
+	n := len(b.mons)
+	if n == 0 {
+		return 1, 1
 	}
-	return 3
+	_, _, slotW, _ := monSlot(0, n)
+	for _, m := range b.mons {
+		head, tail := monsterName(m.Name)
+		if l := len(render.Wrap(head, slotW-8)); l > above {
+			above = l
+		}
+		if tail == "" {
+			continue
+		}
+		if l := len(render.Wrap(tail, slotW-8)); l > below {
+			below = l
+		}
+	}
+	return monPlateFits(n, above, below)
 }
+
+// monPlateFits is how many lines a field of n creatures may actually spend
+// above and below its portraits, given how many the names would like.
+//
+// Pure, and separate from the measuring, because this is the half with a right
+// answer: the vertical room is finite and the portrait is what pays for every
+// line. A stacked field has 88 pixels a row, and two lines each way spends 62
+// of them and leaves a 22-pixel creature — a smudge, at the exact moment the
+// player is choosing between smudges. A single row has 176 and can afford
+// whatever the names ask for.
+//
+// When something has to give it is the epithet, because the species is what
+// answers "which one do I hit" and the epithet only answers "what sort of thing
+// is that". The portrait keeps thirty pixels whatever happens.
+func monPlateFits(n, want, wantBelow int) (above, below int) {
+	ceiling := 2
+	if (n+monCols(n)-1)/monCols(n) == 1 {
+		ceiling = 3
+	}
+	above = core.Clamp(want, 1, ceiling)
+	below = core.Clamp(wantBelow, 0, ceiling)
+	_, _, _, ch := monSlot(0, n)
+	for below > 0 && ch-4-monAbove(above)-monBelow(above, below) < monPortraitFloor {
+		below--
+	}
+	// And if the species alone still will not leave room, it gives way too —
+	// a two-line species over a portrait too small to recognise is worse than
+	// a cut one over a picture you can see.
+	for above > 1 && ch-4-monAbove(above)-monBelow(above, below) < monPortraitFloor {
+		above--
+	}
+	return above, below
+}
+
+// monPortraitFloor is the smallest a creature may be drawn. The party panel
+// uses 36 for a face and calls it legible; this is the field where the player
+// is telling four of them apart, so it does not go under thirty.
+const monPortraitFloor = 30
 
 // monBelow is the height of everything under the portrait: the health meter,
 // the condition pips, and the name.
-func monBelow(n int) float64 { return 14 + render.LineH*float64(monNameLines(n)) }
+func monBelow(above, below int) float64 { return 14 + render.LineH*float64(below) }
+
+// monAbove is the height of the species line, or lines, over the portrait.
+func monAbove(above int) float64 { return render.LineH * float64(above) }
 
 // monBox is the portrait rectangle inside a cell, and the baseline the name and
 // meter hang off.
-func monBox(i, n int) (x, top, w, h float64) {
+func monBox(i, n, aboveLines, belowLines int) (x, top, w, h float64) {
 	cx, cy, cw, ch := monSlot(i, n)
-	below := monBelow(n)
+	above, below := monAbove(aboveLines), monBelow(aboveLines, belowLines)
 	w = core.ClampF(cw-16, 40, 104)
-	h = core.ClampF(ch-4-below, 36, 96)
+	h = core.ClampF(ch-4-above-below, 30, 96)
 	// Never wider than it is tall. The art is square and ScreenFit keeps it
 	// that way, so a box 91 across and 36 down is a 36-pixel creature with
 	// twenty-seven pixels of empty frame on either side of it — which reads as
@@ -2028,10 +2081,10 @@ func monBox(i, n int) (x, top, w, h float64) {
 	if w > h {
 		w = h
 	}
-	// The portrait and everything under it are centred as one block, so a lone
-	// creature sits in the middle of the field rather than hanging from the top
-	// of it.
-	top = cy - (h+below)/2
+	// The portrait, the name over it and the meter and epithet under it are
+	// centred as one block, so a lone creature sits in the middle of the field
+	// rather than hanging from the top of it.
+	top = cy - (above+h+below)/2 + above
 	return cx - w/2, top, w, h
 }
 
@@ -2048,53 +2101,34 @@ func partyRowY(i, n int) float64 {
 	return partyPanelY + (partyPanelH-block)/2 + float64(i)*partyRowH
 }
 
-// drawNamePlate writes a creature's name under its portrait: the species, then
-// the epithet in dimmer ink, wrapped into whatever lines the layout affords.
+// drawSpecies writes what a creature is, over its portrait, and drawEpithet
+// writes what sort of one it is, under the meter beneath it.
 //
-// The head is served first and the epithet gets the remainder, because the
-// species is the half that answers "which one do I hit" and the epithet is the
-// half that answers "what am I looking at". A name that needs every line leaves
-// nothing for its epithet, which is correct: those are the whole-phrase names,
-// where the phrase *is* the epithet.
+// Two calls rather than one block, because the picture goes between them. The
+// whole label used to sit underneath and read as a caption floating in the gap
+// between two creatures; with the icon inside its own name there is nothing to
+// misread.
 //
-// Nothing is ever dropped silently. A line that will not fit is truncated,
-// which at least reads as cut; a line quietly not drawn reads as the whole
-// name, and that is how "Goblin Middle Manager" appeared on screen as "Goblin
-// Middle" for as long as it did.
-func (b *battleScene) drawNamePlate(dst *ebiten.Image, cx, y, slotW float64,
-	head, tail string, col color.Color, dead bool) {
-
-	budget := monNameLines(len(b.mons))
-	lines := render.Wrap(head, slotW-8)
+// Nothing is ever dropped silently in either. A line that will not fit is
+// truncated, which at least reads as cut; a line quietly not drawn reads as the
+// whole name, and that is how "Goblin Middle Manager" appeared on screen as
+// "Goblin Middle" for as long as it did.
+func plateLines(text string, slotW float64, budget int) []string {
+	if text == "" || budget <= 0 {
+		return nil
+	}
+	lines := render.Wrap(text, slotW-8)
 	if len(lines) > budget {
 		lines = lines[:budget]
-		// The last line carries the cut rather than the name simply stopping.
-		lines[budget-1] = render.Trunc(lines[budget-1]+" "+wrapTail(head, lines), slotW-6)
+		lines[budget-1] = render.Trunc(lines[budget-1]+" "+wrapTail(text, lines), slotW-6)
 	}
-	headLines := len(lines)
+	return lines
+}
 
-	// The epithet is dimmer than the species, and stays dim when the cursor
-	// lands on the slot: the gold species is already the whole of "this one",
-	// and a second gold line would compete with it for the same job.
-	sub := render.ColInkDim
-	if dead {
-		sub = render.ColInkFaint
-	}
-	var tailLines []string
-	if tail != "" && headLines < budget {
-		tailLines = render.Wrap(tail, slotW-8)
-		if room := budget - headLines; len(tailLines) > room {
-			tailLines = tailLines[:room]
-			tailLines[room-1] = render.Trunc(tailLines[room-1]+" "+wrapTail(tail, tailLines), slotW-6)
-		}
-	}
-
+func drawPlate(dst *ebiten.Image, cx, y, slotW float64, lines []string, col color.Color) {
 	for j, ln := range lines {
-		render.TextCenter(dst, render.Trunc(ln, slotW-6), cx, y+float64(j)*render.LineH, col)
-	}
-	for j, ln := range tailLines {
 		render.TextCenter(dst, render.Trunc(ln, slotW-6), cx,
-			y+float64(headLines+j)*render.LineH, sub)
+			y+float64(j)*render.LineH, col)
 	}
 }
 
@@ -2191,9 +2225,11 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 
 	ox, oy := b.cam.Offset()
 
-	// Them, down the right.
+	// Them, down the right. The plate is measured once for the whole field so
+	// every portrait in a row is the same size — see monPlate.
+	plateUp, plateDown := b.monPlate()
 	for i, m := range b.mons {
-		bx, top, boxW, boxH := monBox(i, len(b.mons))
+		bx, top, boxW, boxH := monBox(i, len(b.mons), plateUp, plateDown)
 		_, _, slotW, _ := monSlot(i, len(b.mons))
 		cx := bx + boxW/2 + ox
 		top += oy
@@ -2240,7 +2276,7 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 			ui.Bar(dst, cx-boxW/2, top+boxH+2, boxW, 4, m.HPFrac(), render.ColBlood)
 			drawEffectPips(dst, cx-boxW/2, top+boxH+8, m.Active)
 		}
-		// What it is, and then what sort of one — both, under every portrait.
+		// What it is over the picture, and what sort of one under it.
 		//
 		// The epithet used to wait for the target cursor, on the grounds that
 		// it was the half that would not fit. It is the half that is funny, and
@@ -2248,8 +2284,19 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		// per fight instead of four times. It is dim rather than absent, so the
 		// species still reads first and the plate still answers "what is that"
 		// before it answers "what sort".
+		sub := render.ColInkDim
+		if m.Dead {
+			sub = render.ColInkFaint
+		}
 		head, tail := monsterName(m.Name)
-		b.drawNamePlate(dst, cx, top+boxH+12, slotW, head, tail, nameCol, m.Dead)
+		// The species hangs from the portrait rather than from the top of the
+		// space reserved for it. The plate is sized to the longest name in the
+		// field, so a one-line name in a two-line plate would otherwise float
+		// a whole line clear of its own picture — which is the gap this layout
+		// was rearranged to close.
+		up := plateLines(head, slotW, plateUp)
+		drawPlate(dst, cx, top-render.LineH*float64(len(up)), slotW, up, nameCol)
+		drawPlate(dst, cx, top+boxH+12, slotW, plateLines(tail, slotW, plateDown), sub)
 	}
 
 	// Effects over the portraits, under everything with a number on it.

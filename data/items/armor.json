@@ -5,7 +5,7 @@
     "defense": 0,
     "cost": 0,
     "quality": 0,
-    "verb": "flaps",
+    "verb": "flaps at it",
     "tier": 0,
     "icon": "icon/band/garb/robe1_t0"
   },
@@ -15,7 +15,7 @@
     "defense": 1,
     "cost": 8,
     "quality": 20,
-    "verb": "catches on",
+    "verb": "catches on it",
     "tier": 1,
     "icon": "icon/band/garb/robe2_t1",
     "extra": {
@@ -28,7 +28,7 @@
     "defense": 2,
     "cost": 20,
     "quality": 35,
-    "verb": "billows against",
+    "verb": "billows against it",
     "tier": 1,
     "icon": "icon/band/garb/robe3_t1",
     "extra": {
@@ -41,7 +41,7 @@
     "defense": 2,
     "cost": 14,
     "quality": 40,
-    "verb": "absorbs",
+    "verb": "absorbs it",
     "tier": 1,
     "icon": "icon/band/garb/jerkin1_t1"
   },
@@ -51,7 +51,7 @@
     "defense": 3,
     "cost": 30,
     "quality": 55,
-    "verb": "deflects",
+    "verb": "deflects it",
     "tier": 1,
     "icon": "icon/band/garb/jerkin2_t1"
   },
@@ -61,7 +61,7 @@
     "defense": 4,
     "cost": 70,
     "quality": 50,
-    "verb": "shrugs at",
+    "verb": "shrugs at it",
     "tier": 2,
     "icon": "icon/band/garb/robe4_t2",
     "extra": {
@@ -75,7 +75,7 @@
     "defense": 6,
     "cost": 66,
     "quality": 62,
-    "verb": "turns aside",
+    "verb": "turns it aside",
     "tier": 2,
     "icon": "icon/band/garb/jerkin3_t2"
   },
@@ -85,7 +85,7 @@
     "defense": 7,
     "cost": 90,
     "quality": 68,
-    "verb": "catches",
+    "verb": "catches it",
     "tier": 2,
     "icon": "icon/band/garb/jerkin4_t2"
   },
@@ -95,7 +95,7 @@
     "defense": 6,
     "cost": 190,
     "quality": 64,
-    "verb": "unravels around",
+    "verb": "unravels around it",
     "tier": 3,
     "icon": "icon/band/garb/robe5_t3",
     "extra": {
@@ -109,7 +109,7 @@
     "defense": 10,
     "cost": 165,
     "quality": 72,
-    "verb": "swallows",
+    "verb": "swallows it",
     "tier": 3,
     "icon": "icon/band/garb/jerkin5_t3",
     "extra": {
@@ -122,7 +122,7 @@
     "defense": 8,
     "cost": 150,
     "quality": 76,
-    "verb": "shrugs off",
+    "verb": "shrugs it off",
     "tier": 3,
     "icon": "icon/band/garb/jerkin1_t3"
   },
@@ -132,7 +132,7 @@
     "defense": 11,
     "cost": 230,
     "quality": 80,
-    "verb": "scatters",
+    "verb": "scatters it",
     "tier": 3,
     "icon": "icon/band/loot/monster_scales_t3"
   },
@@ -142,7 +142,7 @@
     "defense": 8,
     "cost": 420,
     "quality": 78,
-    "verb": "misfiles",
+    "verb": "misfiles it",
     "tier": 4,
     "icon": "icon/band/garb/robe1_t4",
     "extra": {
@@ -156,7 +156,7 @@
     "defense": 14,
     "cost": 370,
     "quality": 82,
-    "verb": "declines",
+    "verb": "declines it",
     "tier": 4,
     "icon": "icon/band/garb/jerkin2_t4",
     "extra": {
@@ -169,7 +169,7 @@
     "defense": 13,
     "cost": 360,
     "quality": 86,
-    "verb": "ignores",
+    "verb": "ignores it",
     "tier": 4,
     "icon": "icon/band/garb/jerkin3_t4"
   },
@@ -179,7 +179,7 @@
     "defense": 16,
     "cost": 560,
     "quality": 90,
-    "verb": "denies",
+    "verb": "denies it",
     "tier": 4,
     "icon": "icon/band/garb/jerkin4_t4",
     "extra": {
@@ -192,7 +192,7 @@
     "defense": 10,
     "cost": 780,
     "quality": 88,
-    "verb": "disputes",
+    "verb": "disputes it",
     "tier": 5,
     "icon": "icon/band/garb/robe2_t5",
     "extra": {
@@ -206,7 +206,7 @@
     "defense": 17,
     "cost": 700,
     "quality": 90,
-    "verb": "sheds",
+    "verb": "sheds it",
     "tier": 5,
     "icon": "icon/band/garb/jerkin5_t5",
     "extra": {
@@ -220,7 +220,7 @@
     "defense": 20,
     "cost": 900,
     "quality": 95,
-    "verb": "laughs off",
+    "verb": "laughs it off",
     "tier": 5,
     "icon": "icon/band/loot/dragon_scale_t5",
     "extra": {

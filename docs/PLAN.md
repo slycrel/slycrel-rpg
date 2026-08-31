@@ -2434,6 +2434,57 @@ battle screen, because the writing needs the same split and two copies of
 "find the comma, keep the group letter with the species" is two copies to
 disagree.
 
+**The icon went inside its own name.** *(Jeremy's, on a frame of five: "we
+should have the first part of the name above, and the other 2 lines below each
+icon. I think properly grouped that would work better.")*
+
+All three lines had been underneath, which is a caption rather than a label: in
+a field of five there were as many gaps as names and nothing said which went
+with which. The species sits over the portrait now and the epithet under the
+health meter, so each creature is inside its own writing.
+
+The plate is measured from the names actually in the fight rather than fixed
+per layout, because the two are different questions. Three wolves and a goblin
+need two lines above — "Goblin Middle Manager A" does not fit one at three
+columns — and two below; two short-named creatures need one and one and should
+get a bigger portrait for it. The field takes the maximum each way so the row
+stays level, since portraits of different sizes in one row read as a rendering
+fault rather than as a fit.
+
+Two details did the actual work. The species hangs *from the portrait* rather
+than from the top of the space reserved for it, or a one-line name in a
+two-line plate floats a whole line clear of its own picture — which is the gap
+the rearrangement was meant to close. And `monPlateFits` is a pure function
+separate from the measuring, because that half has a right answer: the vertical
+room is finite, the portrait pays for every line, and when something has to
+give it is the epithet, since the species answers "which one do I hit" and the
+epithet only answers "what sort of thing is that".
+
+**What it cannot fix is the crowded field**, and that is worth writing down
+because it is the argument for the next idea rather than a defect to patch. A
+stacked layout has 88 pixels a row and three columns of 107. At that width
+neither "Goblin Middle Manager A" nor "Deeply Unimpressed" fits one line, so a
+five- or six-strong pack spends its plate on two lines of species and one
+truncated line of epithet over a 34-pixel portrait. Every part of that is the
+same shortage: too many separate slots for the room available.
+
+**Which is what staggering identical creatures would solve.** *(Jeremy's:
+"instead of A/B/C guys, we could stagger the icons to show how many,
+potentially only allowing the front one to be damaged. We'd have to test, but
+it would add depth to combat.")* Three wolves are three slots, three copies of
+the same picture and three copies of the same joke — the wallpaper argument the
+labels already lost once. One slot with three icons offset behind each other is
+one name, one epithet, one big portrait, and a field of six becomes a field of
+two. The layout problem disappears rather than being managed.
+
+The mechanical half is a real change and not a free one: "only the front one
+can be hit" turns a group into a queue, which is a different fight. It makes
+area attacks worth having, it makes the order the game kills things matter, and
+it takes away the player's choice of which of three identical wolves to finish.
+That is depth and it is also a balance question — `SimulateFight` would have to
+learn the rule before the report could say what it costs. Untried, and worth
+trying in that order: the simulator first, then the screen.
+
 **Labels grew a third band.** Gold used to mean the one thing you were pointed
 directly at and grey meant everything else in range, which made being told which
 shop is which a matter of facing its door. Gold is a radius now.

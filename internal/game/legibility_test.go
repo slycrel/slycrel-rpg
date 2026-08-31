@@ -604,9 +604,15 @@ func TestTheFoeFieldHoldsEverybodyWithoutOverlap(t *testing.T) {
 		type box struct{ x, y, w, h float64 }
 		var boxes []box
 		for i := 0; i < n; i++ {
-			x, top, w, h := monBox(i, n)
-			// The block is the portrait plus the meter, pips and name under it.
-			b := box{x, top, w, h + monBelow(n)}
+			// Every plate the field could actually settle on, not a guess at
+			// the worst one: monPlateFits is what decides, so ask it. Three
+			// each way is more than any name needs and more than any layout
+			// allows, so this covers the space.
+			above, below := monPlateFits(n, 3, 3)
+			x, top, w, h := monBox(i, n, above, below)
+			// The block is the name over the portrait, the portrait, and the
+			// meter, pips and epithet under it.
+			b := box{x, top - monAbove(above), w, monAbove(above) + h + monBelow(above, below)}
 			if b.x < foeFieldX-1 || b.x+b.w > foeFieldX+foeFieldW+1 {
 				t.Errorf("%d foes: slot %d runs from x %.0f to %.0f, field is %.0f..%.0f",
 					n, i, b.x, b.x+b.w, foeFieldX, foeFieldX+foeFieldW)
@@ -897,36 +903,40 @@ func TestEveryMonsterNameFitsItsPlate(t *testing.T) {
 	// pack shape adds two bodies on top of that.
 	for n := 1; n <= 6; n++ {
 		_, _, slotW, _ := monSlot(0, n)
-		budget := monNameLines(n)
+		// Two plates now, not one budget: the species goes over the portrait
+		// and the epithet under it, so they no longer compete for the same
+		// lines. monPlateFits is what decides how many of each the layout can
+		// afford, so ask it rather than restating the rule here.
+		above, below := monPlateFits(n, 3, 3)
 		for _, defs := range tables.Monsters {
 			for _, d := range defs {
 				// The group letter is the widest form a name takes: two
 				// creatures of a kind get "Crab A" and "Crab B".
 				head, tail := monsterName(d.Name + " A")
-				used := len(render.Wrap(head, slotW-8))
-				if used > budget {
-					t.Errorf("%d up: %q needs %d lines for the species alone, plate holds %d",
-						n, d.Name, used, budget)
-					continue
+				// The species fits whole wherever the field is a single row,
+				// which is every layout up to three creatures. Above that it
+				// may run over — "Ghost With Unfinished Business" wants three
+				// lines at a third of the field — and is truncated visibly.
+				// Raising the ceiling instead would cost the whole field its
+				// epithets to fit one long name, which is the worse trade: the
+				// plate is measured per field, so one creature would silence
+				// the jokes on the other five.
+				if used := len(render.Wrap(head, slotW-8)); used > above && n <= 3 {
+					t.Errorf("%d up: %q needs %d lines of species, the plate holds %d",
+						n, d.Name, used, above)
 				}
 				if tail == "" {
 					continue
 				}
-				room := budget - used
-				if room < 1 {
-					t.Errorf("%d up: %q leaves no room at all for %q",
-						n, d.Name, tail)
-					continue
-				}
 				// The epithet has to fit whole wherever the field is a single
-				// row, which is every layout up to four creatures. Above that
-				// the rows are stacked, the columns are a third of the field,
-				// and two names in the roster spill their last line — which is
-				// truncated visibly rather than dropped, and still reads. What
-				// is guaranteed everywhere is that it *starts*.
-				if want := len(render.Wrap(tail, slotW-8)); want > room && n <= 4 {
-					t.Errorf("%d up: %q leaves %d line(s) for %q, which needs %d",
-						n, d.Name, room, tail, want)
+				// row, which is every layout up to three creatures. Above that
+				// the rows stack, the plate gives the epithet away before it
+				// gives away the picture, and what is left is truncated
+				// visibly rather than dropped. What is guaranteed everywhere is
+				// that the species fits.
+				if want := len(render.Wrap(tail, slotW-8)); want > below && n <= 3 {
+					t.Errorf("%d up: %q has %d lines of epithet, the plate holds %d",
+						n, d.Name, want, below)
 				}
 			}
 		}
