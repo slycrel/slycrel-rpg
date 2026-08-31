@@ -1459,6 +1459,17 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 		g.Sound.Play("fight/miss")
 		b.log.AddColor(render.ColInkDim, "%s %s %s, and finds nobody there.",
 			m.Short(), verb, tgt.Name)
+		// And the strike it earns. Defence turned into offence, which is the
+		// framing this class already has — the monster cannot hurt you if it
+		// is not there, and a creature that has just committed to a blow is a
+		// creature with its weight in the wrong place.
+		if rules.CanCounter(tgt) {
+			d := rules.CounterDamage(g.RNG, tgt, m)
+			g.Sound.Play("fight/hit")
+			b.playOnMonster(g, idx, b.nextSlash())
+			b.log.AddColor(render.ColGold, "%s answers for %d.", tgt.Name, d)
+			b.damageMonster(g, idx, d)
+		}
 		return
 	}
 

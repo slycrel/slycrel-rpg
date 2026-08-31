@@ -1356,6 +1356,17 @@ func SimulateGroup(g *core.RNG, c *model.Character, mons []*model.Monster, maxRo
 					// a creature that hits harder every level.
 					if Dodged(g, sim, m.Speed) {
 						res.Dodges++
+						// And the strike it earns. A creature that committed
+						// to a blow and found nobody at the end of it is a
+						// creature with its weight in the wrong place.
+						if CanCounter(sim) {
+							d := CounterDamage(g, sim, m)
+							m.HP = core.Max(0, m.HP-d)
+							res.DamageDealt += d
+							if m.HP == 0 {
+								m.Dead = true
+							}
+						}
 						continue
 					}
 					dmg := core.Max(0, MonsterDamage(g, sim, m)+OffenseMod(m.Active))

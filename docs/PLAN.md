@@ -2918,6 +2918,58 @@ rate may not vary by more than six points across the speed gaps the real
 rosters produce, because a defence that compounds with level is the thing that
 had to be fixed twice.
 
+### Step two, built: the counterattack a dodge earns
+
+Jeremy's, and the shape was right: it converts defence into offence, which is
+the framing this class already had — the monster cannot hurt you if it is not
+there — and a creature that has just committed to a blow is a creature with its
+weight in the wrong place.
+
+It reads `PlayerDamage`, so the counter carries the thief's weapon, its strike
+and the target's armour exactly as an ordinary swing does. It does not carry a
+crit roll: a free hit that can also spike is two pieces of luck on one event.
+And it is worth 55% of a swing rather than a full one, which sits deliberately
+below the feint's bonus — the feint is a decision the player made and paid for
+with a whole round if it fails, and a thing that happens to them for free must
+not hit harder than a thing they chose.
+
+**The measurement said nothing until it was taken against a group**, and that
+is the part worth keeping. One-on-one, every weight from nothing to a full
+swing moves the stretch win rate by one to three points, non-monotonically —
+noise. Which is not surprising once stated: a dodge fires on *incoming* blows,
+so its value scales with how many things are swinging, and every section of the
+report that sets the curve fights one creature at a time.
+
+Against three creatures on level:
+
+| level | Fighter | no counter | at 0.55 | at a full swing |
+|---|---|---|---|---|
+| 5 | 84.0% | 34.7% | 38.3% | 41.9% |
+| 9 | 40.1% | 8.8% | 12.6% | 13.9% |
+| 13 | 33.6% | 31.0% | 34.8% | 39.3% |
+
+About four points at the chosen weight and eight at a full swing. So the
+mechanic is negligible where the curve is set and meaningful where the fantasy
+lives, which is the right way round.
+
+**Two things that probe turned up and did not fix.**
+
+The first is a hole in the measuring rather than the game: three creatures
+*three levels over* is a win rate of nought for every class including the
+Fighter, so the stretch column — which is how every build in this document is
+compared — is saturated and useless for group fights. Nothing here reads it
+that way.
+
+The second is a class gap nobody has looked at. Against three on level at level
+five the Fighter wins 84.0% and the Thief 34.7%; at five creatures it is 9.0%
+against 0.4%. That is a forty-nine point gap and it is not a bug — flat
+reduction comes off *every* hit, so armour is worth more the more hits arrive,
+which is precisely the property the design section claims for block. It is the
+scheme working. But it means the Thief's dodge, being a chance rather than a
+subtraction, does not scale into a crowd the way armour does, and no section of
+the report shows per-class group fights at all. Worth a section before anything
+else is tuned for crowds.
+
 ### The order, and why it is an order
 
 Every term here changes `PlayerAttack` or `MonsterDamage`, which is what
