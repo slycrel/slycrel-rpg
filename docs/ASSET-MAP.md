@@ -18,7 +18,7 @@ person to have made it.
 
 <!-- BEGIN generated: go run ./cmd/assetpipe map -->
 
-**888 keys across 12 namespaces.**
+**897 keys across 13 namespaces.**
 
 | namespace | keys | sources |
 |---|--:|---|
@@ -32,6 +32,7 @@ person to have made it.
 | `odd/` | 22 | `pixelartcyberpunkcity` 22 |
 | `npc/` | 17 | `pixelartrpgnpc` 17 |
 | `vfx/` | 17 | `pixelartrpgvfx` 17 |
+| `poi/` | 9 | `_generated/icons` 9 |
 | `prop/` | 6 | `manaseedpixelarttilesetcollection` 5, `_generated/props` 1 |
 | `weather/` | 4 | `manaseedpixelarttilesetcollection` 4 |
 
@@ -49,6 +50,7 @@ assetpipe extract <pack>   unzip from the bundle into assets-raw/  (read-only so
 assetpipe icons            box-reduce every icon set to 16px       -> _generated/icons/
 assetpipe garb             cut garment cells from a paper-doll sheet -> _generated/icons/garb/
 assetpipe arms             cut weapon cells from the same sheet     -> _generated/icons/arms/
+assetpipe poi              cut overworld location markers          -> _generated/icons/poi/
 assetpipe props            translucent shadows on Mana Seed props  -> _generated/props/
 assetpipe bands            tier recolours of the gear icons        -> _generated/bands/
 assetpipe manifest         rebuild assets/manifest.json from all of the above
@@ -113,6 +115,27 @@ the pixel grid and narrows the dresses to a smear; cropping to the top sixteen
 rows costs a torso one row of hem and a dress the bottom of its skirt, and both
 still read. Decided by rendering the two side by side.
 
+**Location markers are sourced now, and that overturned a written decision.**
+`drawPOIMarker` painted its own rectangles for the project's whole life, with
+the reason beside it: the building art in the bundle is 300-500px hero sprites
+meant for a zoomed-in scene, and reducing one to a 16px cell is mush. That was a
+fact about the packs extracted at the time, not about the bundle.
+`pixelartrogue-likerpg` draws settlements natively at overworld scale, and nine
+of them are wired: capital, town, village, castle, tower, shrine, camp, ruin and
+the oddity's beacon. They are cut at native size — 10x25 to 28x28 against a 16px
+grid — and `Ctx.World` anchors them on their base exactly as it does a
+character, so a castle stands taller than its square instead of being squeezed
+into it. Scaling to 16px was tried first and is precisely the mush the old
+comment predicted.
+
+The rectangles stay as the fallback rather than being deleted, because a marker
+that fails to a coloured box is better than one that fails to nothing — and
+dungeons and caves still use them. The sheet has a cave mouth, and it was cut,
+wired and looked at in a frame: on the sheet it is an opening set into a block
+of stone, so lifted out on its own it is a flat black rectangle that reads on
+grass as a hole punched in the screen. The drawn marker has an outline and a
+contact shadow and was built to sit on any terrain.
+
 **A generator wipes its own output.** `bands` takes its source list from
 `armor.json`, so a picture the table stops naming must stop shipping. The
 manifest enumerates the directory, so a stale band would otherwise keep its key
@@ -135,7 +158,7 @@ unopened. They are on disk and in nobody's manifest:
 
 | pack | what it holds | why it is interesting |
 |---|---|---|
-| `pixelartrogue-likerpg` | two 512x512 sheets at 16px | a full Ultima-style overworld terrain set in six biome colourways, ~17 creatures x 6 poses, and map icons for villages, towns, castles and towers. Same creator as three packs already shipping. |
+| `pixelartrogue-likerpg` | two 512x512 sheets at 16px | map icons are cut and wired. Still unused: a full overworld terrain set in six biome colourways and ~17 creatures x 6 poses. |
 | `pixelartdungeonlevel4` | 58 files, 64x64 | a Golem with 24 frames — front/back/side x walk and attack — which is exactly the `foe/` convention. Plus dungeon floors, doors, chests, a 5-frame torch loop. |
 | `pixelartwasteland` | 51 files, 64x64 | cars, stop signs, a sofa, barrels: oddity furniture in the same register as the cyberpunk city pack already wired to `odd/`. |
 | `pixelartminingcrafting` | 3 sheets | fully mined: rows 2-3 cut for armour, columns 5-7 cut for weapons. Sheet 2 is ores and ingots, sheet 3 terrain and UI frames; neither is wired. |
@@ -206,6 +229,13 @@ This pass is not the last one, and these are the questions it left open.
 - **"Bare Hands" has an icon nothing draws.** The shop skips anything costing
   zero and the character sheet prints the weapon as text, so its `sword1_t0` is
   a formality that exists to satisfy `TestWeaponIconsAreDistinct`.
+- **The terrain half of the rogue-like pack is deliberately unused.** Its six
+  biome colourways are a whole second tileset, and `groundMaterials` is built on
+  one Mana Seed palette on purpose — "so a single palette covers every biome and
+  the whole map reads as one place rather than four tilesets bolted together".
+  `ground/` at 25 keys is a complete seasonal set under a procedural fringing
+  system, not a gap. Anything drawn from the other pack would have to earn its
+  way past that sentence.
 - **`_generated` has no provenance record.** A file under it does not say which
   step wrote it or from what. The table above infers it from the directory,
   which works only as long as each step owns a directory.

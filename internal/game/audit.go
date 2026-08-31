@@ -74,6 +74,14 @@ func (g *Game) Audit(w io.Writer) error {
 		}
 	}
 
+	// Location markers. These are the one entry here with a real fallback —
+	// a missing one draws the procedural rectangle it drew for the project's
+	// whole life rather than a magenta box — so it is listed to be told, not
+	// because the map would break.
+	for _, key := range poiArt {
+		check(key, "location marker (falls back to a drawn one)")
+	}
+
 	total := 0
 	for _, defs := range g.Data.Monsters {
 		total += len(defs)

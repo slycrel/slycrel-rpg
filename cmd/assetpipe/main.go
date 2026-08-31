@@ -10,6 +10,7 @@
 //	assetpipe icons                box-reduce every icon set to 16px
 //	assetpipe garb                 cut armour icons from the crafting sheet
 //	assetpipe arms                 cut weapon icons from the crafting sheet
+//	assetpipe poi                  cut overworld location markers
 //	assetpipe map                  regenerate the table in docs/ASSET-MAP.md
 //	assetpipe bands                write tier recolours of the armour icons
 //	assetpipe extract all          extract everything (the bundle is 16.7 GB; budget disk)
@@ -117,6 +118,8 @@ func main() {
 		must(buildGarb())
 	case "arms":
 		must(buildArms())
+	case "poi":
+		must(buildPOI())
 	case "map":
 		must(buildAssetMap())
 	case "bands":

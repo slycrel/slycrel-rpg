@@ -260,6 +260,13 @@ func buildManifest() error {
 		}
 	}
 
+	// Overworld location markers, cut by `assetpipe poi`. Their own namespace
+	// rather than icon/: these are drawn on the map at native size, not fitted
+	// into a menu row's 16px box.
+	for _, f := range pngsIn(filepath.Join(genRoot, "icons", "poi")) {
+		add("poi/"+base(f), f, 0, 0)
+	}
+
 	// The loot pack misspells one 32px file as "whetstonel_x.png"; alias it so
 	// content can refer to the thing by its name rather than the typo.
 	for _, e := range entries {

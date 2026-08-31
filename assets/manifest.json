@@ -3477,6 +3477,42 @@
       "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/vending machine 04.png"
     },
     {
+      "key": "poi/camp",
+      "file": "assets-raw/_generated/icons/poi/camp.png"
+    },
+    {
+      "key": "poi/capital",
+      "file": "assets-raw/_generated/icons/poi/capital.png"
+    },
+    {
+      "key": "poi/castle",
+      "file": "assets-raw/_generated/icons/poi/castle.png"
+    },
+    {
+      "key": "poi/oddity",
+      "file": "assets-raw/_generated/icons/poi/oddity.png"
+    },
+    {
+      "key": "poi/ruin",
+      "file": "assets-raw/_generated/icons/poi/ruin.png"
+    },
+    {
+      "key": "poi/shrine",
+      "file": "assets-raw/_generated/icons/poi/shrine.png"
+    },
+    {
+      "key": "poi/tower",
+      "file": "assets-raw/_generated/icons/poi/tower.png"
+    },
+    {
+      "key": "poi/town",
+      "file": "assets-raw/_generated/icons/poi/town.png"
+    },
+    {
+      "key": "poi/village",
+      "file": "assets-raw/_generated/icons/poi/village.png"
+    },
+    {
       "key": "portrait/female/05",
       "file": "assets-raw/characteravataricons_windows/characteravataricons/female/05.PNG"
     },

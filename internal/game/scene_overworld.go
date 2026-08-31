@@ -292,7 +292,7 @@ func (s *overworldScene) Draw(g *Game, dst *ebiten.Image) {
 		if p.Pos.X < x0 || p.Pos.X > x1 || p.Pos.Y < y0 || p.Pos.Y > y1 {
 			continue
 		}
-		drawPOIMarker(ctx, p)
+		drawPOIMarker(ctx, g.Assets, p)
 	}
 
 	// The company, then the player, so nothing ever covers the character you
@@ -365,12 +365,46 @@ func (s *overworldScene) drawLabels(g *Game, dst *ebiten.Image, x0, y0, x1, y1 i
 	}
 }
 
-// drawPOIMarker paints the icon for a location. These are drawn rather than
-// sourced: the building art in the bundle is 300-500px hero sprites meant for a
-// zoomed-in scene, and scaling one down to a 16px overworld cell is mush. At
-// this size a location wants a silhouette, not a portrait.
-func drawPOIMarker(ctx *render.Ctx, p *world.POI) {
+// poiArt is the sourced marker for each kind of location, cut by
+// `assetpipe poi`. A kind with no entry, or one whose art is not in the
+// manifest, falls through to the rectangles below.
+var poiArt = map[world.POIKind]string{
+	world.KindCapital: "poi/capital",
+	world.KindTown:    "poi/town",
+	world.KindVillage: "poi/village",
+	world.KindCastle:  "poi/castle",
+	world.KindTower:   "poi/tower",
+	world.KindShrine:  "poi/shrine",
+	world.KindCamp:    "poi/camp",
+	world.KindRuin:    "poi/ruin",
+	world.KindOddity:  "poi/oddity",
+	// Dungeons and caves are deliberately absent: see cmd/assetpipe/poi.go.
+	// They fall through to the procedural hole, which is drawn to read on any
+	// ground and does.
+}
+
+// drawPOIMarker paints the icon for a location.
+//
+// It used to draw its own rectangles, and the reason stood for a long time:
+// the building art in the bundle is 300-500px hero sprites meant for a
+// zoomed-in scene, and scaling one down to a 16px overworld cell is mush. That
+// was a fact about the packs that had been extracted, not about the bundle —
+// `pixelartrogue-likerpg` draws its settlements natively at overworld scale.
+//
+// The markers stand taller than their tile, which is deliberate: `Ctx.World`
+// anchors a sprite on its base exactly as it does a character, so a castle
+// rises off the square it occupies instead of being squeezed into it. The
+// rectangles remain underneath as the fallback, because a marker that fails to
+// a coloured box is better than one that fails to nothing.
+func drawPOIMarker(ctx *render.Ctx, assets *assetsys.Registry, p *world.POI) {
 	const ts = assetsys.TileSize
+
+	if key := poiArt[p.Kind]; key != "" && assets.Has(key) {
+		ctx.World(assets.Get(key), 0,
+			float64(p.Pos.X*ts)+ts/2, float64(p.Pos.Y*ts)+ts, false)
+		return
+	}
+
 	ox, oy := ctx.Cam.Offset()
 	x := float64(p.Pos.X*ts) + ox
 	y := float64(p.Pos.Y*ts) + oy
