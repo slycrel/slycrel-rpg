@@ -18,3 +18,6 @@ assets-raw/
 
 # Scratch screenshot output. The curated set lives in docs/screenshots/.
 /shots/
+
+# Claude Code session scaffolding: worktrees are checkouts, not content.
+.claude/worktrees/
