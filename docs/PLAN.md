@@ -3404,7 +3404,7 @@ multi-week job if the classes need more separation after being played.
 ## Asset budget
 
 The bundle is 78 packs / 56,409 files / 16.7 GB, inventoried in
-[ASSET-INVENTORY.md](ASSET-INVENTORY.md). 44 packs are extracted and 804 keys
+[ASSET-INVENTORY.md](ASSET-INVENTORY.md). 43 packs are extracted and 919 keys
 are indexed. Roughly two thirds of the bundle is sci-fi, cyberpunk, futuristic
 or children's-voice content that this game has no use for — except as an
 over-the-top joke zone, which is exactly what an "oddity" location is for, and

@@ -181,10 +181,11 @@ unopened. They are on disk and in nobody's manifest:
 | `pixelartminingcrafting` | 3 sheets | fully mined: rows 2-3 cut for armour, columns 5-7 cut for weapons. Sheet 2 is ores and ingots, sheet 3 terrain and UI frames; neither is wired. |
 | `2dpixelrpgmonsters` | one `.unitypackage` | not unpacked; `assetpipe extract` passes it through untouched. |
 
-`allinonepackrpgmaker` (856 MB) was also extracted and is a poor fit: its Dark
-Medieval Age set is genuinely fantasy, but the art is native 48px, not 3x-scaled
-16px, so reducing it to this game's grid smears it. Delete it or leave it; it is
-gitignored either way.
+`allinonepackrpgmaker` was extracted, evaluated and deleted again. Its Dark
+Medieval Age set is genuinely fantasy, but the art is native 48px rather than
+3x-scaled 16px, so reducing it to this game's grid smears it — measured, not
+guessed. The 856 MB is not worth keeping for a maybe; the zip is still in the
+bundle if the answer ever changes.
 
 ## Measured gaps
 
