@@ -230,6 +230,20 @@ we own: six sources checked and a composite attempted, all written up in
 
 This pass is not the last one, and these are the questions it left open.
 
+- **The off-hand weapons share the dagger's pictures.** `data/items/sidearms.json`
+  names `icon/band/arms/dagger1_t1` through `_t5` — the same five banded icons
+  the main-hand daggers use. So a thief's smith counter can show "Fang,
+  Unlicensed" and "Parrying Dagger, Insistent" as the same picture in the same
+  tier colour, which is exactly the ambiguity `TestGearIconsAreDistinct` exists
+  to prevent on the other shelves. It is not a coincidence and it is not
+  laziness: every one of the ten banded `arms` bases is already spent on a
+  weapon, so a distinct picture means running `assetpipe build` to mint a new
+  band — and the work was done in a git worktree whose `assets-raw` is a
+  symlink to the main checkout, where another session was playing. Writing a
+  new generated tree and a new manifest into somebody else's running game is
+  not a trade worth making for an icon. The fix is one `assetpipe build` from
+  the main checkout with a base picked out of the arms sheet, and it should
+  happen before anybody calls the shelf finished.
 - **Lane is under-encoded, and the armourer's frame confirms it.** Cloth reads
   as a dress and *both* other lanes as a jerkin, so light and heavy differ only
   by which jerkin and which tier — "Padded Jerkin" and "Ringmail, Secondhand"
