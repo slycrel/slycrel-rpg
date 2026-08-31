@@ -1074,16 +1074,21 @@ func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 
 	type cell struct {
 		won, died, fled float64
-		item            string
-		cost            int
+		// diedSteel and diedMagic split the death rate by what killed you,
+		// which is the only place the ward lane can possibly be worth its
+		// price. See the matchup block at the bottom of the section.
+		diedSteel, diedMagic float64
+		item                 string
+		cost                 int
 	}
 
 	// run fights one lane's build in one band and reports both rates off the
 	// same batch, so a cell's two numbers are never each other's excuse.
-	run := func(a gamedata.Archetype, class model.Class, level, delta int) (won, died, fled float64, item string, cost int) {
+	run := func(a gamedata.Archetype, class model.Class, level, delta int) (won, died, fled, diedSteel, diedMagic float64, item string, cost int) {
 		enc := core.Max(1, level+delta)
 		biome := biomeForLevel(enc)
 		var wins, deaths, flights, n int
+		var steelDeaths, steelN, magicDeaths, magicN int
 		for f := 0; f < fights; f++ {
 			c := rules.BuildCharacter(g, class, level)
 			t.EquipAs(c, a)
@@ -1092,8 +1097,9 @@ func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 			if len(mons) == 0 {
 				continue
 			}
+			def := mons[0].Def
 			fresh := *c
-			r := rules.SimulateFight(g, &fresh, []*model.MonsterDef{mons[0].Def},
+			r := rules.SimulateFight(g, &fresh, []*model.MonsterDef{def},
 				enc, 60, t.SpellsFor(c))
 			if r.Won {
 				wins++
@@ -1104,12 +1110,29 @@ func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 			if r.Fled {
 				flights++
 			}
+			if def.Magic {
+				magicN++
+				if r.Died() {
+					magicDeaths++
+				}
+			} else {
+				steelN++
+				if r.Died() {
+					steelDeaths++
+				}
+			}
 			n++
 		}
 		if n > 0 {
 			won = float64(wins) * 100 / float64(n)
 			died = float64(deaths) * 100 / float64(n)
 			fled = float64(flights) * 100 / float64(n)
+		}
+		if steelN > 0 {
+			diedSteel = float64(steelDeaths) * 100 / float64(steelN)
+		}
+		if magicN > 0 {
+			diedMagic = float64(magicDeaths) * 100 / float64(magicN)
 		}
 		return
 	}
@@ -1123,9 +1146,10 @@ func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 			for i, lane := range lanes {
 				a := gamedata.Archetypes[0]
 				a.Arm = lane
-				won, _, _, item, cost := run(a, class, level, laneStretch)
-				_, died, fled, _, _ := run(a, class, level, laneOver)
-				cs[i] = cell{won: won, died: died, fled: fled, item: item, cost: cost}
+				won, _, _, _, _, item, cost := run(a, class, level, laneStretch)
+				_, died, fled, steel, magic, _, _ := run(a, class, level, laneOver)
+				cs[i] = cell{won: won, died: died, fled: fled,
+					diedSteel: steel, diedMagic: magic, item: item, cost: cost}
 			}
 			grid[level][class] = cs
 		}
@@ -1310,14 +1334,20 @@ func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "%-8s %-8s %8s %8s %8s   %s\n",
 		"class", "axis", "wall", "spiked", "silvered", "best, and by how much")
 	fmt.Fprintln(out, strings.Repeat("-", 72))
+	// Kept, because the matchup block below reads the same averages rather than
+	// recomputing them and risking two answers to one question.
+	top := map[model.Class][]cell{}
 	for _, class := range model.AllClasses {
 		cs := make([]cell, len(lanes))
+		top[class] = cs
 		for i := range lanes {
 			n := float64(maxLevel - laneTop + 1)
 			for level := laneTop; level <= maxLevel; level++ {
 				cs[i].won += grid[level][class][i].won / n
 				cs[i].died += grid[level][class][i].died / n
 				cs[i].fled += grid[level][class][i].fled / n
+				cs[i].diedSteel += grid[level][class][i].diedSteel / n
+				cs[i].diedMagic += grid[level][class][i].diedMagic / n
 				cs[i].item = grid[level][class][i].item
 			}
 		}
@@ -1375,6 +1405,70 @@ func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 			fmt.Fprintf(out, "%-8s %-8s %7.1f%% %7.1f%% %7.1f%%   %s\n",
 				class, row.label, row.vals[0], row.vals[1], row.vals[2], call)
 		}
+	}
+
+	// The matchup, which is the one place the ward lane can be worth its price
+	// and the one place LANES was not looking.
+	//
+	// Every other number in this section averages over whatever the roster
+	// throws, and the roster at the rim is a bit over half magical — so a lane
+	// that only pays against casters is diluted with the fights it was never
+	// for. The design says the ward slot is skippable early and progressively
+	// worse to skip later, which is a claim about a *matchup*, and averaging is
+	// exactly the operation that hides one. The report has been quoting "the
+	// ward lane is never the answer" without ever having asked the question in
+	// the form the design states it.
+	fmt.Fprintf(out, "\nthe matchup — %d-%d, the death rate at +5 split by what is swinging\n",
+		laneTop, maxLevel)
+	fmt.Fprintf(out, "%-8s %-8s %8s %8s %8s   %s\n",
+		"class", "against", "wall", "spiked", "silvered", "best")
+	fmt.Fprintln(out, strings.Repeat("-", 64))
+	wardPays := false
+	for _, class := range model.AllClasses {
+		cs := top[class]
+		if null(cs) {
+			continue
+		}
+		for _, row := range []struct {
+			label string
+			vals  [3]float64
+		}{
+			{"steel", [3]float64{cs[0].diedSteel, cs[1].diedSteel, cs[2].diedSteel}},
+			{"magic", [3]float64{cs[0].diedMagic, cs[1].diedMagic, cs[2].diedMagic}},
+		} {
+			lane := 0
+			for i, v := range row.vals {
+				if v < row.vals[lane] {
+					lane = i
+				}
+			}
+			second := row.vals[0]
+			for i, v := range row.vals {
+				if i != lane && (second == row.vals[lane] || v < second) {
+					second = v
+				}
+			}
+			call := laneNames[lane]
+			if margin := second - row.vals[lane]; margin < worstDied {
+				call = "nothing in it"
+			} else {
+				call = fmt.Sprintf("%s by %.1f", laneNames[lane], margin)
+				if lanes[lane] == model.ArmWard && row.label == "magic" {
+					wardPays = true
+				}
+			}
+			fmt.Fprintf(out, "%-8s %-8s %7.1f%% %7.1f%% %7.1f%%   %s\n",
+				class, row.label, row.vals[0], row.vals[1], row.vals[2], call)
+		}
+	}
+	if wardPays {
+		fmt.Fprintf(out, "\n  The ward lane wins the fight it was designed for. The band trades on\n")
+		fmt.Fprintf(out, "  matchup, which is the design as written, and the open question is\n")
+		fmt.Fprintf(out, "  whether the world sends enough casters to make carrying it pay.\n")
+	} else {
+		fmt.Fprintf(out, "\n  The ward lane does not win even against casters, which is where its\n")
+		fmt.Fprintf(out, "  whole case was. That is not an averaging artefact and no amount of\n")
+		fmt.Fprintf(out, "  reweighting the roster rescues it: the item is mispriced.\n")
 	}
 
 	// What this section exists to check, and it is not the crossover.

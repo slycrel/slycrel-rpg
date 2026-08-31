@@ -3759,6 +3759,69 @@ today is absent in every file written before today and must unmarshal to the
 safe answer), and if multiplayer ever happens, the work is the per-player
 struct plus two design decisions rather than an archaeology exercise.
 
+## The ward lane loses its own matchup, and the reason is structural
+
+The open question left on items 2 and 4 was the one the design states: a player
+is allowed to skip ward, and skipping it is supposed to get progressively worse.
+That is a claim about a *matchup*, and LANES was averaging over a roster that is
+a bit over half magical at the rim — which is exactly the operation that hides
+one. The section had been reporting "the ward lane is never the answer" without
+ever asking the question in the form the design makes it.
+
+LANES splits the death rate at +5 by what is swinging now. Levels 12-14:
+
+| class | against | wall | spiked | silvered |
+|---|---|---|---|---|
+| Fighter | steel | 27.0% | **16.7%** | 27.0% |
+| Fighter | magic | 40.9% | **32.7%** | 42.5% |
+| Thief | steel | 23.6% | **19.2%** | 23.0% |
+| Thief | magic | 29.3% | **28.0%** | 40.0% |
+
+**The silvered shield is the worst of the three against casters.** Not diluted,
+not averaged away — worst, in the one fight it exists for, by 9.8 points for a
+Fighter and 12.0 for a Thief. No reweighting of the roster rescues that.
+
+### Why, and why it is not a number to nudge
+
+The trade at tier four is eleven points of ward against six of strike. Six of
+strike wins, and it wins *on the death rate*, because killing the caster is what
+stops the caster casting. Ward is flat subtraction against a bounded roll: at
+the rim a magical hit rolls `Between(6, 25)` before ward, so the first points of
+ward buy a lot and the eleventh buys almost nothing, and the whole eleven
+cannot buy as much as ending the fight two rounds sooner.
+
+That is a structural property of "flat reduction against a bounded roll",
+not a mispriced constant, and it is the same arithmetic CROWDS already explains
+from the other direction — flat reduction comes off every blow, so it is worth
+more the more blows arrive, and worth less the fewer rounds there are.
+
+SHAPES had found the corroborating half of this independently and it is worth
+reading the two together: the escort shape's matchup axis only ever bites in the
+oddity zone, "because it needs one creature that beats another by three on
+armour while being beaten by three on ward, and the fantasy rosters were never
+written to contrast."
+
+### What the options actually are
+
+Deliberately not chosen here, because all three are design decisions rather
+than tuning:
+
+1. **Change what ward does.** Flat subtraction is the problem; a percentage, or
+   a chance to take nothing, would scale with the size of what it is resisting
+   instead of vanishing against it. This is a rules change and it moves every
+   ward number in the game.
+2. **Give the ward lane a second thing.** The lane is currently guard-for-ward
+   and nothing else. If ward cannot carry a slot alone, the item can carry
+   something else beside it — which is what the *charm* bands were re-authored
+   to do, and it worked there.
+3. **Retire the lane.** Two lanes rather than three, and let the ward slot be
+   the charm's job, where a smaller amount of ward next to another stat does
+   trade. `Shield.Lane()` reads the lane off what the item does, so this costs
+   a content edit and no code.
+
+What is *not* an option is raising the ward number, and the measurement above is
+what says so: eleven is already past the point where more helps.
+
 ## What is open, and in what order
 
 Rewritten after the session that answered items 2, 4 and half of 6, and found
@@ -3797,12 +3860,16 @@ Everything below this line is arithmetic that has never been felt by anybody.
 by a rules fix rather than a content change, which is the apparatus working.
 The sections above have the numbers.
 
-What replaces it is a content job with a measurement in front of it: **the ward
-lane is never the answer.** It is the worst arm at the top of the game on the
-axis that kills you. Before touching the table, take the measurement item 4
-names — whether the silvered shield beats the spiked one *against magical
-attackers specifically*, which LANES currently averages away. The band was
-designed to trade on that matchup and nobody has checked whether it does.
+What replaces it is **the ward lane**, and the measurement it was waiting for
+has been taken: LANES splits the death rate at +5 by what is swinging, and the
+silvered shield is the *worst* of the three against casters — by 9.8 points for
+a Fighter and 12.0 for a Thief. It loses the one fight it exists for.
+
+So this is no longer a tuning job. Eleven points of ward is already past where
+more helps, and the section above lays out the three options, all of which are
+design decisions: change what ward does, give the lane a second stat to carry,
+or retire it to two lanes and let the charm slot sell ward, where a smaller
+amount beside another stat does trade. **Jeremy's call, not a number to nudge.**
 
 ### 3. Two designs finished and unbuilt — still the biggest thing on the list
 
@@ -3843,14 +3910,9 @@ of win rate against the spiked lane's six. **Raising the cap cannot make the
 wall competitive at the top of the game**, and the reason is that guard as a
 currency has collapsed there, not that the wall is short of it.
 
-What is left of this item is a real question with a cheap measurement attached:
-does the silvered shield beat the spiked one *against magical attackers
-specifically*? LANES averages over a mixed roster, and WARD says the ward slot
-is worth four to five points at the top. If it does, the off-arm band trades on
-matchup — which is the design as written — and the thing to check is whether
-the world's magical share at the rim is high enough to make that pay. It is
-56% at level eighteen, so the measurement is worth taking before anything in
-the table moves.
+That measurement has been taken and it came back negative — the silvered shield
+loses to the spiked one against casters too. See the section above; what is left
+of this item now lives under item 2, as a design decision about what ward is.
 
 ### 5. Things the report can see and nobody has tuned
 
