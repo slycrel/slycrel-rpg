@@ -64,8 +64,19 @@ mkdir -p dist
 # reach and reports the ones that would render as a magenta placeholder. That is
 # survivable in development and not something to hand a friend.
 # ---------------------------------------------------------------------------
+# On a Mac whose screen has gone to sleep this cannot run here at all: the game
+# imports Ebitengine, Ebitengine will not initialise without a monitor, and the
+# failure is a segfault in its own darwin code at package init. That is a
+# sleeping display rather than a broken build, and refusing to cut a release
+# over it would be the script mistaking one for the other — so it falls back to
+# the container the test sweep already uses, and only gives up if the audit
+# fails somewhere it could actually run.
 echo "Checking content ..."
-go run ./cmd/slycrel -audit >/dev/null 2>&1 || die "the content audit did not pass. Run: go run ./cmd/slycrel -audit"
+if ! go run ./cmd/slycrel -audit >/dev/null 2>&1; then
+	echo "  no display here; running the audit in the headless container instead."
+	./scripts/test-headless.command go run ./cmd/slycrel -audit >/dev/null 2>&1 ||
+		die "the content audit did not pass. Run: ./scripts/test-headless.command go run ./cmd/slycrel -audit"
+fi
 
 # ---------------------------------------------------------------------------
 # 2. Stage the payload: data, the manifests, and only the files they name.
