@@ -31,9 +31,21 @@ if [ -z "$(docker images -q slycrel-headless 2>/dev/null)" ]; then
     docker build -q -f scripts/headless.Dockerfile -t slycrel-headless . >/dev/null
 fi
 
+# The art bundle, which is gitignored and therefore absent from any worktree.
+# A worktree gets a symlink to the real checkout's copy instead — and a symlink
+# to an absolute host path means nothing inside the container, so the target is
+# bind-mounted where the link points. Without this the tests fail on missing
+# portraits and effects, which reads as a regression and is a mount.
+art=()
+if [ -L assets-raw ]; then
+    target=$(cd "$(dirname "$(readlink assets-raw)")" && pwd)/$(basename "$(readlink assets-raw)")
+    art=(-v "$target":/src/assets-raw)
+fi
+
 run() {
     exec docker run --rm \
         -v "$PWD":/src \
+        "${art[@]}" \
         -v slycrel-gocache:/root/.cache/go-build \
         -v slycrel-gomod:/go/pkg/mod \
         slycrel-headless "$@"

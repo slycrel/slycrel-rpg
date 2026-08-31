@@ -514,6 +514,62 @@ than a system.
    it.** Three of its four slots had been argued over in this document. The off
    arm had a zero value.
 
+   **And then the fourth slot turned out to be worse.** Looking for the same
+   defect elsewhere found the charm slot picking `cs[len(cs)-1]` — the last row
+   of `charms.json`. Not a zero value this time but a defended one, and the
+   defence was a claim about the content: every charm gives with one hand and
+   takes with the other, so there is no better one, so any pick is as good as
+   any other. That claim has a test behind it at the shop counter
+   (`TestTheShelfNeverGradesACharm`, which refuses to mark a charm green on
+   exactly that basis) and it is the reason nobody had ever looked.
+
+   It is measurable, and it is wrong. Measured per class on the stretch fights
+   and again on fights-per-rest:
+
+   | band | winner | what `Equip` wore | worst case |
+   |---|---|---|---|
+   | tier 1 | Heavy Knucklebone | Heavy Knucklebone | — |
+   | tier 2 | Cracked Spectacles | Courier's Anklet | −2.1 |
+   | tier 3 | Saint's Fingerbone | **The Quiet Stone** | −12.5 (Thief, level 11) |
+   | tier 4 | Earplugs of the Unmoved | **Somebody Else's Medal** | −5.8 |
+
+   File order landed on the loser in three bands out of four. At level eleven a
+   Thief was wearing the worst charm on the shelf: 12.5 points of win rate and
+   a third of its fights per rest, given away for nothing, to every hireling as
+   well as to the balanced build.
+
+   The obvious objection is that a single fight cannot see a psyche charm,
+   since psyche is the currency of the *next* fight — so the measurement runs
+   an endurance column too, chains of fights until something drops. It says
+   the same thing, for every class including the Mage: The Quiet Stone's four
+   points of pool are worth 7.0 fights per rest against Saint's Fingerbone's
+   9.1. Four points of pool does not buy a fight. Six points of ward does.
+
+   So `gamedata.CharmValue` scores the trade and `Equip` acts on it, and the
+   **CHARMS** section re-derives the ranking on every run and warns when the
+   scoring and the fights disagree — the same contract LANES has. The weights
+   are read off the measurement rather than reasoned out, and the ordering they
+   produce matches the measured ordering in all five bands.
+
+   **The deeper finding is a content one, and it is left open deliberately.**
+   Two bands have a right answer rather than a choice — 6.0 and 5.4 points
+   between best and worst, on both axes at once — which is the premise of
+   `TestTheShelfNeverGradesACharm` failing in the arbiter while passing in the
+   test suite. The cause is not that ward is overpowered: it is that the ward
+   charms carry six to fourteen points of their stat where their rivals carry
+   one to four of theirs. `Forged Guild Licence` is worth 1.4 against
+   `Saint's Fingerbone`'s 5.0 and they sit on the same shelf at the same tier.
+
+   The brief for the pass that fixes it, written down while the numbers are in
+   hand: **a band should offer charms that win on different axes**, not three
+   charms of which one wins both. Tier three currently has a fight charm, a
+   worse fight charm, and a charm for an axis the game does not reward. What it
+   wants is one that takes the fight, one that takes the afternoon, and one
+   that is cheap — and the magnitudes have to be comparable, which today they
+   are not. Doing that is authoring, and doing it against `CharmValue` rather
+   than against the fights would be shaping the table to its own scoring
+   function, which is the failure mode this whole section exists to avoid.
+
    **Found on the way, and fixed: the report had been understating danger since
    it was written.** Two separate causes, both invisible except as a level that
    looked suspiciously comfortable.

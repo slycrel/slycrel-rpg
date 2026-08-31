@@ -1,6 +1,8 @@
 # Extracted source bundle. Huge, purchased, and reproducible from the zips:
 #   go run ./cmd/assetpipe extract tier1
-assets-raw/
+# The art bundle, and the symlink a worktree points at it with — no trailing
+# slash, so the pattern matches both the directory and the link.
+assets-raw
 
 # Build output. dist/ holds shareable builds, which DO contain the third-party
 # art and audio — shipping that in a game is licensed, committing it is not.

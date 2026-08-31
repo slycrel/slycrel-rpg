@@ -168,6 +168,15 @@ which event fires which trigger, and where it is safe to put a box on screen.
   Mage was already taking half what a Fighter takes from magic and double from
   steel, so a bigger ward would have been an upgrade to the column they were
   winning.
+- **Every slot in `Equip` is an assumption, and two of them were never made.**
+  The off arm took `ArmBlock` because it is the zero value of the field; the
+  charm took `cs[len(cs)-1]` because it is the last row of the file. Both cost
+  real points for years — the charm one cost a level-11 Thief 12.5 points of
+  win rate and a third of its endurance. `LaneForLevel` and `CharmValue` are
+  the decisions that replaced them, and LANES and CHARMS in `cmd/balance` are
+  what keep them honest: each re-derives its answer every run and warns when
+  the constant and the fights disagree. If you add a slot, the question to ask
+  is not "does this compile" but "what measured this".
 - **A companion's cut is a purse, not a subtraction.** `Skim` goes into the
   ally's own `Coins`; `gamedata.Wants` says what they are behind on and
   `Shop` spends it when the company walks into a settlement with the right
@@ -324,6 +333,13 @@ which event fires which trigger, and where it is safe to put a box on screen.
   `go test ./internal/...`, or pass any command (`./scripts/test-headless.command
   go run ./cmd/slycrel -demo`). First run is minutes, the rest are seconds.
   The host path is still faster when the screen is awake.
+- **A worktree has no art.** `assets-raw/` is gitignored, so a `git worktree`
+  gets the manifest and none of the files it points at, and the two tests that
+  probe the registry fail on missing portraits and effects — which reads as a
+  regression and is a missing directory. Symlink it
+  (`ln -s /path/to/checkout/assets-raw assets-raw`); the headless script
+  follows the link and bind-mounts the target, because a symlink to an absolute
+  host path means nothing inside the container.
 
 ## Scope discipline
 

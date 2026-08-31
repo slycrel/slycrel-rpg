@@ -701,9 +701,83 @@ func (t *Tables) EquipAs(c *model.Character, a Archetype) {
 	c.Charm = model.Charm{}
 	if tier := a.Charm.tierAt(base); tier >= 1 {
 		if _, cs := t.SidearmsFor(tier); len(cs) > 0 {
-			c.Charm = cs[len(cs)-1]
+			c.Charm = bestCharm(cs)
 		}
 	}
+}
+
+// Charm weights: what a point in each column of a Bonus is worth to somebody
+// deciding which charm to wear.
+//
+// These exist because the charm slot was picking `cs[len(cs)-1]` — the last
+// row of the file — which is the off-arm bug again in the one slot the design
+// says is *deliberately* unrankable. Every charm gives with one hand and takes
+// with the other, so there is no better one, so any pick is as good as any
+// other: that was the reasoning, and the arbiter disagrees with its premise.
+// Measured on the stretch fights and on fights-per-rest, one charm wins its
+// band on both axes for essentially every class, in three bands out of four —
+// and the file order landed on the loser in three bands out of four. It cost a
+// Thief at level eleven 12.5 points of win rate and a third of its endurance.
+//
+// The numbers are read off that measurement rather than reasoned out, and the
+// CHARMS section of cmd/balance re-derives it on every run and complains when
+// this ranking and the fights disagree. Two of them are worth stating:
+//
+//   - Psyche is worth almost nothing here, and that is not an oversight about
+//     endurance. Psyche is the currency of the *next* fight, so the obvious
+//     objection is that a single-fight measure cannot see it — but the
+//     endurance column says the same thing, for every class including the
+//     Mage. Four points of pool does not buy a fight; six points of ward does.
+//   - Strength beats dexterity slightly, which is the whole of why the
+//     tier-one band has a winner at all: the two charms there are mirror
+//     images of each other.
+const (
+	charmWard   = 1.0
+	charmStrike = 1.5
+	charmGuard  = 1.5
+	charmStr    = 1.2
+	charmDex    = 1.0
+	charmSpeed  = 0.8
+	charmPsyche = 0.2
+)
+
+// CharmValue scores what a charm's trade is worth, positive and negative
+// columns together.
+//
+// It ranks charms, which the shop counter deliberately refuses to do — see
+// TestTheShelfNeverGradesACharm. That is not a contradiction yet: the counter
+// refuses because the *content* is supposed to make them incomparable, and
+// this exists because the balanced build has to put something in the slot and
+// picking by file order is not a decision. If the content is ever made to
+// trade properly, the spread this returns across a band collapses toward zero
+// and the pick stops mattering, which is the outcome to want.
+func CharmValue(c model.Charm) float64 {
+	b := c.Bonus
+	if c.Affix != nil {
+		b = b.Add(c.Affix.Bonus)
+	}
+	return charmWard*float64(b.Ward) +
+		charmStrike*float64(b.Strike) +
+		charmGuard*float64(b.Defense) +
+		charmStr*float64(b.Strength) +
+		charmDex*float64(b.Dexterity) +
+		charmSpeed*float64(b.Speed) +
+		charmPsyche*float64(b.Psyche)
+}
+
+// bestCharm is the one a sensible person would wear out of the shop, highest
+// tier first so a band behind is still a band behind.
+func bestCharm(cs []model.Charm) model.Charm {
+	var best model.Charm
+	found := false
+	for _, c := range cs {
+		switch {
+		case !found, c.Tier > best.Tier,
+			c.Tier == best.Tier && CharmValue(c) > CharmValue(best):
+			best, found = c, true
+		}
+	}
+	return best
 }
 
 // GearCost totals what a character is wearing, which is what makes an archetype

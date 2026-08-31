@@ -60,6 +60,7 @@ func main() {
 	reportLanes(out, core.NewRNG(*seed^0x1A4E), t, *fights/3)
 	reportDanger(out, core.NewRNG(*seed^0xD1E), t, *fights/3)
 	reportWard(out, core.NewRNG(*seed^0x3A7D), t, *fights)
+	reportCharms(out, core.NewRNG(*seed^0xC4A7), t, *fights/4)
 	// Its own generator too, for the same reason as ARCS above.
 	reportShapes(out, core.NewRNG(*seed^0x5411), t, *fights)
 	reportEndurance(out, g, t, *fights/4)
@@ -860,6 +861,163 @@ sells it and a lane nobody ever compares is how the wall stayed the
 default for the life of this report.
 
 `)
+}
+
+// reportCharms is the charm slot's LANES: the measurement that decides what
+// gamedata.CharmValue is allowed to believe.
+//
+// It exists because the balanced build was picking the last row of the charm
+// file, and the reasoning behind that was a claim about the content — every
+// charm gives with one hand and takes with the other, so there is no better
+// one, so any pick is as good as any other. The counter still refuses to grade
+// charms on exactly that basis. The premise is measurable, and it is wrong:
+// one charm wins its band on both axes for essentially every class in three
+// bands out of four, and the file order landed on the loser in three of four.
+//
+// Two axes, because a charm can be for either. Win rate on the stretch fights
+// is what one is worth in a fight; fights-per-rest is what it is worth across
+// an afternoon, and that column exists to answer the obvious objection to the
+// first — that a single fight cannot see a charm which refills a pool. It can
+// see it. It just does not find much.
+func reportCharms(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+	fmt.Fprintf(out, "CHARMS — is the band a choice, and is the game picking well?\n")
+	fmt.Fprintf(out, "every charm the balanced build could wear at this level, against the\n")
+	fmt.Fprintf(out, "stretch fights three over and against fights-per-rest on the level\n\n")
+
+	// spread is how far apart the best and worst of a band may come out before
+	// the band has stopped being a choice and become a right answer. Three points
+	// of win rate is comfortably above the run-to-run wobble at this sample size
+	// and comfortably below the gaps that actually turned up, which reached 12.5.
+	const spread = 3.0
+
+	fmt.Fprintf(out, "%-6s %-30s %8s %9s %9s\n", "level", "charm", "value", "won", "per rest")
+	fmt.Fprintln(out, strings.Repeat("-", 68))
+
+	dominated := 0
+	for _, level := range []int{5, 7, 9, 11, 13} {
+		band := charmBand(t, level)
+		if len(band) < 2 {
+			continue
+		}
+		type row struct {
+			ch   model.Charm
+			won  float64
+			rest float64
+		}
+		rows := make([]row, 0, len(band))
+		for _, ch := range band {
+			var wins, n, rested int
+			for _, class := range model.AllClasses {
+				for i := 0; i < fights; i++ {
+					c := rules.BuildCharacter(g, class, level)
+					t.Equip(c)
+					c.Charm = ch
+					mons := t.PickMonsters(g, biomeForLevel(level+3), level+3, 1)
+					if len(mons) == 0 {
+						continue
+					}
+					fresh := *c
+					r := rules.SimulateFight(g, &fresh, []*model.MonsterDef{mons[0].Def},
+						level+3, 60, t.SpellsFor(c))
+					if r.Won {
+						wins++
+					}
+					n++
+				}
+				// Fewer runs on the endurance axis: one run is a chain of
+				// fights, so it costs what a dozen of the above do.
+				for i := 0; i < charmRuns; i++ {
+					sim := rules.BuildCharacter(g, class, level)
+					t.Equip(sim)
+					sim.Charm = ch
+					sim.HP, sim.Psyche = sim.MaxHP, sim.MaxPsy()
+					spells := t.SpellsFor(sim)
+					for survived := 0; survived < 60; survived++ {
+						mons := t.PickMonsters(g, biomeForLevel(level), level, 1)
+						if len(mons) == 0 {
+							break
+						}
+						r := rules.SimulateFight(g, sim, []*model.MonsterDef{mons[0].Def},
+							level, 60, spells)
+						if !r.Won || sim.HP <= 0 {
+							break
+						}
+						rested++
+					}
+				}
+			}
+			if n == 0 {
+				continue
+			}
+			rows = append(rows, row{ch, float64(wins) * 100 / float64(n),
+				float64(rested) / float64(charmRuns*len(model.AllClasses))})
+		}
+		if len(rows) < 2 {
+			continue
+		}
+		sort.Slice(rows, func(i, j int) bool { return rows[i].won > rows[j].won })
+
+		// What the game actually hands out at this level.
+		worn := &model.Character{Class: model.ClassFighter, Level: level}
+		t.Equip(worn)
+
+		for _, r := range rows {
+			mark := ""
+			if r.ch.Name == worn.Charm.Name {
+				mark = "  <- worn"
+			}
+			fmt.Fprintf(out, "%-6d %-30s %8.1f %8.1f%% %9.1f%s\n",
+				level, r.ch.Name, gamedata.CharmValue(r.ch), r.won, r.rest, mark)
+		}
+
+		// Two questions per band: is it a choice, and is the ranking picking the
+		// same thing the fights do.
+		if gap := rows[0].won - rows[len(rows)-1].won; gap > spread {
+			dominated++
+			fmt.Fprintf(out, "       band is not a choice: %.1f points between best and worst\n", gap)
+		}
+		if rows[0].ch.Name != worn.Charm.Name {
+			fmt.Fprintf(out, "WARNING: the fights want %q and CharmValue picks %q.\n",
+				rows[0].ch.Name, worn.Charm.Name)
+		}
+		fmt.Fprintln(out)
+	}
+
+	fmt.Fprintf(out, `A charm is meant to be a trade, and the shop counter refuses to grade one
+on exactly that basis - see TestTheShelfNeverGradesACharm, which holds that
+marking a charm green would be the interface lying about a system built so
+that "did I get the good one" is not the only question worth asking. %d of
+the bands above disagree with that premise: they have a right answer, by
+more than the noise, on both axes at once.
+
+That is a content finding rather than a fault in the picking. The ward
+charms carry six to fourteen points of their stat where their rivals carry
+one to four of theirs, so the bands are not priced in comparable units -
+which is the same thing LANES found about the off arm, for the same reason.
+This game gets magical at the top and the sidearm tables were written before
+that was true. Until they trade, CharmValue exists so that the balanced
+build is at least choosing rather than reading the last row of a file.
+
+`, dominated)
+}
+
+// charmRuns is how many chains of fights the endurance column averages over.
+const charmRuns = 120
+
+// charmBand is what the balanced build could put in the slot at this level:
+// the top band it can reach, which is one behind its gear tier.
+func charmBand(t *gamedata.Tables, level int) []model.Charm {
+	tier := gamedata.GearTierFor(level) - 1
+	if tier < 1 {
+		tier = 1
+	}
+	var band []model.Charm
+	for _, c := range t.Charms {
+		if c.Tier == tier {
+			band = append(band, c)
+		}
+	}
+	return band
 }
 
 func reportSlotValue(out *os.File, t *gamedata.Tables) {
