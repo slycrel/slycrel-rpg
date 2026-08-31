@@ -232,6 +232,17 @@ which event fires which trigger, and where it is safe to put a box on screen.
   slot and resolves to a creature *when the blow lands*, not when it is chosen,
   so a companion emptying the front of a queue means the swing meets whoever
   stepped up instead of a corpse.
+
+  Two consequences the screen cannot draw its way out of, both answered in
+  words instead. A slot's meter and pips are the *front's*, so a single-target
+  condition on a queue shows as afflicted while the rest swing — the five
+  condition lines append "The other 2 are untouched." rather than the field
+  growing a per-member readout, which is the crowded field staggering exists to
+  un-crowd. And `model.SameKind` decides what shares a slot from
+  `Monster.Build`, the stamp the encounter shape leaves saying how it made a
+  creature, rather than by comparing the scaled stats: the multipliers floor at
+  one, so a quiet enough creature would have made an escort's caster
+  indistinguishable from its own guards.
 - **A caster's off arm holds a talisman, not a shield**, and what it carries is
   `Absorb` rather than `Defense`: a pool spent once per fight against damage of
   any kind. It is not more ward, and that was measured rather than assumed — a
