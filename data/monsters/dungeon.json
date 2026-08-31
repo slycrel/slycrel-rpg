@@ -409,5 +409,51 @@
         "max": 3
       }
     ]
+  },
+  {
+    "id": "dun_armor_empty",
+    "name": "Living Armour, Fully Staffed",
+    "kind": "construct",
+    "level": 14,
+    "hp": 108,
+    "offense": 34,
+    "defense": 20,
+    "ward": 6,
+    "speed": 9,
+    "xp": 455,
+    "coins": 300,
+    "attackWith": [
+      "a poleaxe held by four hands",
+      "a shield edge, swung",
+      "the whole assembly at once"
+    ],
+    "attackVerb": [
+      "fells",
+      "shears",
+      "walks over"
+    ],
+    "defendWith": "plate over plate over plate",
+    "taunt": [
+      "{T} takes a step, and takes rather longer than one person would.",
+      "Something inside {T} is giving directions and being ignored."
+    ],
+    "death": [
+      "{T} comes apart in more pieces than went in. Several of them run."
+    ],
+    "sprite": "mob/living_armor_04",
+    "loot": [
+      {
+        "item": "Salvaged Steel",
+        "chance": 90,
+        "min": 3,
+        "max": 5
+      },
+      {
+        "item": "Hoard Coin",
+        "chance": 60,
+        "min": 1,
+        "max": 3
+      }
+    ]
   }
 ]

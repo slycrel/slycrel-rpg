@@ -377,5 +377,109 @@
         "max": 4
       }
     ]
+  },
+  {
+    "id": "mtn_bear",
+    "name": "Bear, Down For The Winter Stores",
+    "kind": "beast",
+    "level": 10,
+    "hp": 84,
+    "offense": 26,
+    "defense": 10,
+    "ward": 3,
+    "speed": 11,
+    "xp": 205,
+    "coins": 75,
+    "attackWith": [
+      "a paw the width of a door",
+      "the whole of its shoulder",
+      "an embrace it does not intend to end"
+    ],
+    "attackVerb": [
+      "clubs",
+      "shoulders",
+      "gathers up"
+    ],
+    "defendWith": "a winter's worth of fat",
+    "taunt": [
+      "{T} has come down for the stores and is prepared to discuss terms.",
+      "{T} smells the pack, the provisions and the person, in that order."
+    ],
+    "death": [
+      "{T} sits down heavily and does not get up. Somewhere a valley exhales."
+    ],
+    "inflicts": {
+      "kind": "weaken",
+      "power": 4,
+      "rounds": 3,
+      "chance": 30
+    },
+    "sprite": "mob/bear",
+    "loot": [
+      {
+        "item": "Rank Pelt",
+        "chance": 80,
+        "min": 1,
+        "max": 3
+      },
+      {
+        "item": "Greasy Haunch",
+        "chance": 60,
+        "min": 1,
+        "max": 2
+      }
+    ]
+  },
+  {
+    "id": "mtn_wyvern",
+    "name": "Wyvern, Aggressively Regional",
+    "kind": "beast",
+    "level": 12,
+    "hp": 80,
+    "offense": 31,
+    "defense": 9,
+    "ward": 5,
+    "speed": 17,
+    "xp": 315,
+    "coins": 180,
+    "attackWith": [
+      "a stoop out of the sun",
+      "a tail with a point on the end of it",
+      "both feet, arriving together"
+    ],
+    "attackVerb": [
+      "stoops on",
+      "spikes",
+      "carries off"
+    ],
+    "defendWith": "an unwillingness to be where it was",
+    "taunt": [
+      "{T} circles once. It has decided where the border is.",
+      "\"This ridge, that stream, and everything between them.\""
+    ],
+    "death": [
+      "{T} comes down in three places, which settles the border question."
+    ],
+    "inflicts": {
+      "kind": "poison",
+      "power": 7,
+      "rounds": 3,
+      "chance": 45
+    },
+    "sprite": "mob/dragon_05",
+    "loot": [
+      {
+        "item": "Scaled Hide",
+        "chance": 85,
+        "min": 2,
+        "max": 4
+      },
+      {
+        "item": "Venom Sac",
+        "chance": 55,
+        "min": 1,
+        "max": 2
+      }
+    ]
   }
 ]

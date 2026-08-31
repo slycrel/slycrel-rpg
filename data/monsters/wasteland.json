@@ -292,5 +292,104 @@
         "max": 3
       }
     ]
+  },
+  {
+    "id": "waste_probationdemon",
+    "name": "Demon, Probationary",
+    "kind": "demon",
+    "level": 10,
+    "hp": 72,
+    "offense": 25,
+    "defense": 12,
+    "ward": 11,
+    "magic": true,
+    "speed": 12,
+    "xp": 200,
+    "coins": 100,
+    "attackWith": [
+      "a flame it is not yet certified for",
+      "a claw, correctly filed",
+      "a gesture copied from a superior"
+    ],
+    "attackVerb": [
+      "scorches",
+      "rakes",
+      "attempts"
+    ],
+    "defendWith": "hide and a great deal of paperwork",
+    "taunt": [
+      "{T} checks the wording twice before starting.",
+      "\"I am required to offer you the chance to reconsider. There. Done.\""
+    ],
+    "death": [
+      "{T} goes out apologising to nobody in particular."
+    ],
+    "sprite": "mob/demon_01",
+    "loot": [
+      {
+        "item": "Infernal Sigil",
+        "chance": 70,
+        "min": 1,
+        "max": 2
+      },
+      {
+        "item": "Crumpled Writ",
+        "chance": 55,
+        "min": 1,
+        "max": 2
+      }
+    ]
+  },
+  {
+    "id": "waste_revenant",
+    "name": "Revenant, Still Owed",
+    "kind": "undead",
+    "level": 13,
+    "hp": 98,
+    "offense": 33,
+    "defense": 17,
+    "ward": 8,
+    "speed": 10,
+    "xp": 395,
+    "coins": 265,
+    "attackWith": [
+      "a blade it was buried holding",
+      "both hands",
+      "a grip that has had years to practise"
+    ],
+    "attackVerb": [
+      "opens",
+      "seizes",
+      "settles with"
+    ],
+    "defendWith": "the patience of a creditor",
+    "taunt": [
+      "{T} has been counting, and it did not stop while it was down there.",
+      "\"Four hundred and six. Plus interest.\""
+    ],
+    "death": [
+      "{T} goes back down, satisfied on the principle if not the amount."
+    ],
+    "inflicts": {
+      "kind": "weaken",
+      "power": 6,
+      "rounds": 3,
+      "chance": 40
+    },
+    "sprite": "mob/skeleton_06",
+    "loot": [
+      {
+        "item": "Grave Wrappings",
+        "chance": 80,
+        "min": 2,
+        "max": 4
+      },
+      {
+        "item": "Someone's Locket",
+        "chance": 45,
+        "min": 1,
+        "max": 1
+      }
+    ]
   }
 ]
