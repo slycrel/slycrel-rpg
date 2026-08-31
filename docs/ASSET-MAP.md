@@ -18,7 +18,7 @@ person to have made it.
 
 <!-- BEGIN generated: go run ./cmd/assetpipe map -->
 
-**909 keys across 13 namespaces.**
+**917 keys across 14 namespaces.**
 
 | namespace | keys | sources |
 |---|--:|---|
@@ -33,6 +33,7 @@ person to have made it.
 | `npc/` | 17 | `pixelartrpgnpc` 17 |
 | `vfx/` | 17 | `pixelartrpgvfx` 17 |
 | `poi/` | 9 | `_generated/icons` 9 |
+| `wild/` | 8 | `_generated/wild` 8 |
 | `prop/` | 6 | `manaseedpixelarttilesetcollection` 5, `_generated/props` 1 |
 | `weather/` | 4 | `manaseedpixelarttilesetcollection` 4 |
 
@@ -171,7 +172,7 @@ unopened. They are on disk and in nobody's manifest:
 
 | pack | what it holds | why it is interesting |
 |---|---|---|
-| `pixelartrogue-likerpg` | two 512x512 sheets at 16px | map icons are cut and wired. Still unused: a full overworld terrain set in six biome colourways and ~17 creatures x 6 poses. |
+| `pixelartrogue-likerpg` | two 512x512 sheets at 16px | map icons and eight overworld creatures are cut and wired. Still unused: the terrain set in six biome colourways, the remaining creature rows, and every creature's non-standing poses. |
 | `pixelartdungeonlevel4` | 58 files, 64x64 | the Golem's 24 frames are stacked and wired as `foe/golem/*`. Still unused: dungeon floors, doors, chests, and a 5-frame torch loop with no placement system to hang it on. |
 | `pixelartwasteland` | 51 files, 64x64 | six pieces wired to `odd/`: a sofa, a stop sign, a road sign, a car, a barrel, a bin. Its streets, sand and grass are left alone — a second ground palette against a `groundMaterials` that is deliberately one. |
 | `pixelartminingcrafting` | 3 sheets | fully mined: rows 2-3 cut for armour, columns 5-7 cut for weapons. Sheet 2 is ores and ingots, sheet 3 terrain and UI frames; neither is wired. |
@@ -212,10 +213,10 @@ animation strips covering rain, storm and snow at two densities each. Counting
 a sheet as one asset understates both by an order of magnitude. `vfx/` at 17 is
 a genuine count.
 
-These three are roadmapped as Phase 5 in [PLAN.md](PLAN.md), because each needs
-a system rather than a wiring: overworld wandering monsters (which is what would
-give the rogue-like pack's ~17 creatures a home), interior decor placement (the
-torch), and a spear, which is the one gap the bundle cannot close.
+Two of the three Phase 5 items in [PLAN.md](PLAN.md) are still open — interior
+decor placement (the torch) and a spear, which is the one gap the bundle cannot
+close. The third is built: overworld wandering monsters, which gave eight of the
+rogue-like pack's creatures a home under `wild/`, keyed by monster kind.
 
 ## What is not settled
 

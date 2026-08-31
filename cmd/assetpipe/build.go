@@ -53,6 +53,11 @@ var pipeline = []step{
 		what: "per-frame animations stacked into vertical strips",
 	},
 	{
+		name: "wild", run: buildWild,
+		writes: "wild/", from: "pixelartrogue-likerpg",
+		what: "one overworld creature per monster kind",
+	},
+	{
 		name: "bands", run: buildBands,
 		writes: "bands/", from: "icons/ and the gear tables",
 		what: "a six-rung tier recolour of every icon armour and weapons name",

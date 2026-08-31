@@ -267,6 +267,11 @@ func buildManifest() error {
 		}
 	}
 
+	// Overworld creatures, cut by `assetpipe wild`, keyed by monster kind.
+	for _, f := range pngsIn(filepath.Join(genRoot, "wild")) {
+		add("wild/"+base(f), f, 0, 0)
+	}
+
 	// Overworld location markers, cut by `assetpipe poi`. Their own namespace
 	// rather than icon/: these are drawn on the map at native size, not fitted
 	// into a menu row's 16px box.

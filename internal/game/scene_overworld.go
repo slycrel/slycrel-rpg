@@ -7,6 +7,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/slycrel/slycrel-rpg/internal/assetsys"
 	"github.com/slycrel/slycrel-rpg/internal/core"
+	"github.com/slycrel/slycrel-rpg/internal/gamedata"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/sky"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
@@ -27,6 +28,16 @@ type overworldScene struct {
 	// mini is the corner map. Held on the scene rather than on the Game so its
 	// texture goes away with the screen that shows it.
 	mini minimap
+
+	// wander is the rolled encounter, standing in the grass. Held on the scene
+	// and not on the Game because it must never be saved: it is a consequence
+	// of a roll, not a fact about the world, and the save format is seed plus
+	// deltas. At most one at a time, which keeps the encounter rate exactly
+	// what it always was — the roll does not fire again while one is out.
+	wander     *world.Wanderer
+	wanderEnc  gamedata.Encounter
+	wanderIn   string // terrain name, for the battle screen's title
+	wanderTick int
 }
 
 func newOverworldScene(g *Game) *overworldScene {
@@ -116,6 +127,8 @@ func (s *overworldScene) Update(g *Game) error {
 		}
 	}
 
+	s.stepWanderer(g)
+
 	// The bed follows the ground underfoot. Ambience is a no-op when the key
 	// has not changed, so setting it every tick costs nothing.
 	g.Sound.Ambience(ambienceFor(g.World.At(g.Walk.Tile.X, g.Walk.Tile.Y).Biome()))
@@ -166,13 +179,12 @@ func (s *overworldScene) tryStep(g *Game, d core.Dir) {
 
 	// Encounter roll, with a short grace period after the last fight so you
 	// are not immediately re-jumped while limping away.
-	if g.sinceFight > 4 {
+	if g.sinceFight > 4 && s.wander == nil {
 		// The sky multiplies the terrain's own roll rather than replacing it,
 		// so somewhere quiet stays proportionally quiet after dark: the road
 		// home does not become the swamp because the sun went down.
 		if biome, hit := g.World.RollEncounter(g.RNG, next, g.Player.Level,
 			sky.Prowl(g.Clock.Phase(), g.weatherAt(next))); hit {
-			g.sinceFight = 0
 			level := g.encounterLevel(next)
 			count := 1
 			if g.RNG.Chance(0.35) {
@@ -183,10 +195,65 @@ func (s *overworldScene) tryStep(g *Game, d core.Dir) {
 			}
 			enc := g.Data.PickEncounter(g.RNG, biome, level, g.encounterSize(count))
 			if len(enc.Monsters) > 0 {
-				g.Push(newBattleScene(g, enc, g.World.At(next.X, next.Y).Name()))
+				s.spawnWanderer(g, next, enc)
 			}
 		}
 	}
+}
+
+// spawnWanderer turns a hit on the encounter roll into something standing in
+// the grass, rather than into a battle screen.
+//
+// The kind comes off the first monster in the encounter, which is the one the
+// composition is named for, so the silhouette is telling the truth about what
+// is in there. If there is nowhere to stand — a beach, a spit of land, a tile
+// ringed by water — the roll simply does not become a fight. That is the one
+// fight the visible model gives up that the invisible one would have had, and
+// it is a fair price for never lying about what is coming.
+func (s *overworldScene) spawnWanderer(g *Game, at core.Point, enc gamedata.Encounter) {
+	kind := string(enc.Monsters[0].Def.Kind)
+	w := g.World.SpawnWanderer(g.RNG, at, kind)
+	if w == nil {
+		return
+	}
+	s.wander, s.wanderEnc = w, enc
+	s.wanderIn = g.World.At(at.X, at.Y).Name()
+	s.wanderTick = 0
+}
+
+// stepWanderer moves the creature and decides whether it has reached you.
+//
+// It moves on its own slow tick rather than per player step, so standing still
+// is not safety — a thing that only advanced when you did would be a puzzle
+// about not moving rather than a creature.
+func (s *overworldScene) stepWanderer(g *Game) {
+	if s.wander == nil {
+		return
+	}
+	if s.wander.Pos == g.Walk.Tile {
+		s.startWanderFight(g)
+		return
+	}
+	s.wanderTick--
+	if s.wanderTick > 0 {
+		return
+	}
+	s.wanderTick = 20
+	if !s.wander.Step(g.RNG, g.World, g.Walk.Tile) {
+		s.wander = nil // lost interest, or lost you
+		return
+	}
+	if s.wander.Pos == g.Walk.Tile {
+		s.startWanderFight(g)
+	}
+}
+
+// startWanderFight hands the stored encounter to the battle screen.
+func (s *overworldScene) startWanderFight(g *Game) {
+	enc, where := s.wanderEnc, s.wanderIn
+	s.wander, s.wanderEnc, s.wanderIn = nil, gamedata.Encounter{}, ""
+	g.sinceFight = 0
+	g.Push(newBattleScene(g, enc, where))
 }
 
 // ambienceFor maps a monster-table biome to a looping bed. Most of the
@@ -293,6 +360,14 @@ func (s *overworldScene) Draw(g *Game, dst *ebiten.Image) {
 			continue
 		}
 		drawPOIMarker(ctx, g.Assets, p)
+	}
+
+	// The creature the last roll produced, drawn with the things that stand on
+	// the ground rather than after the sky, so the rain falls on it too.
+	if w := s.wander; w != nil && w.Pos.X >= x0 && w.Pos.X <= x1 && w.Pos.Y >= y0 && w.Pos.Y <= y1 {
+		if sp := g.Assets.Get("wild/" + w.Kind); sp != nil {
+			ctx.World(sp, 0, float64(w.Pos.X*ts)+ts/2, float64(w.Pos.Y*ts)+ts, false)
+		}
 	}
 
 	// The company, then the player, so nothing ever covers the character you

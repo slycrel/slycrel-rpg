@@ -13,6 +13,7 @@
 //	assetpipe arms                 cut weapon icons from the crafting sheet
 //	assetpipe poi                  cut overworld location markers
 //	assetpipe foes                 stack per-frame foe animations into strips
+//	assetpipe wild                 cut overworld creatures, one per monster kind
 //	assetpipe map                  regenerate the table in docs/ASSET-MAP.md
 //	assetpipe bands                write tier recolours of the armour icons
 //	assetpipe extract all          extract everything (the bundle is 16.7 GB; budget disk)
@@ -126,6 +127,8 @@ func main() {
 		must(buildPOI())
 	case "foes":
 		must(buildFoes())
+	case "wild":
+		must(buildWild())
 	case "map":
 		must(buildAssetMap())
 	case "bands":

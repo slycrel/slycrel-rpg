@@ -74,6 +74,16 @@ func (g *Game) Audit(w io.Writer) error {
 		}
 	}
 
+	// The overworld creatures, one per monster kind. Enumerated from the
+	// monster tables rather than from a list here, so a kind that gets added to
+	// the content and not to the art is a line in this report rather than a
+	// magenta box standing in a field.
+	for _, defs := range g.Data.Monsters {
+		for _, d := range defs {
+			check("wild/"+string(d.Kind), "overworld creature")
+		}
+	}
+
 	// Location markers. These are the one entry here with a real fallback —
 	// a missing one draws the procedural rectangle it drew for the project's
 	// whole life rather than a magenta box — so it is listed to be told, not

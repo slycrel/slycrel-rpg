@@ -4037,6 +4037,38 @@
       "file": "assets-raw/manaseedpixelarttilesetcollection/20.07b - Weather Effects/packaged/weather effects, snow light anim 32x128.png",
       "frameW": 32,
       "frameH": 128
+    },
+    {
+      "key": "wild/aberrant",
+      "file": "assets-raw/_generated/wild/aberrant.png"
+    },
+    {
+      "key": "wild/beast",
+      "file": "assets-raw/_generated/wild/beast.png"
+    },
+    {
+      "key": "wild/construct",
+      "file": "assets-raw/_generated/wild/construct.png"
+    },
+    {
+      "key": "wild/demon",
+      "file": "assets-raw/_generated/wild/demon.png"
+    },
+    {
+      "key": "wild/fey",
+      "file": "assets-raw/_generated/wild/fey.png"
+    },
+    {
+      "key": "wild/humanoid",
+      "file": "assets-raw/_generated/wild/humanoid.png"
+    },
+    {
+      "key": "wild/ooze",
+      "file": "assets-raw/_generated/wild/ooze.png"
+    },
+    {
+      "key": "wild/undead",
+      "file": "assets-raw/_generated/wild/undead.png"
     }
   ]
 }

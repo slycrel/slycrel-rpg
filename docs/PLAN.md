@@ -1273,7 +1273,7 @@ opposite of the usual problem here and worth keeping separate from it, because
 "look for the capability before building it" does not apply — the capability
 genuinely is not there. Full detail in [ASSET-MAP.md](ASSET-MAP.md).
 
-1. **Wandering monsters on the overworld.** `pixelartrogue-likerpg` holds
+1. ~~**Wandering monsters on the overworld.**~~ *(Built.)* `pixelartrogue-likerpg` holds
    roughly seventeen creatures in six poses each, drawn at 16px — skeletons,
    slimes, crabs, bats, a phoenix, a thing made of rock. There is nowhere to put
    them. Battle art is `mob/`, painted portraits reduced from 128px, and 74 of
@@ -1287,12 +1287,38 @@ genuinely is not there. Full detail in [ASSET-MAP.md](ASSET-MAP.md).
    only lever is walking somewhere else. A visible wanderer turns the same
    encounter into a decision made in advance: go around it, or go at it.
 
-   The design questions to settle before writing any of it: does a wanderer
-   chase, drift, or hold a patch; does touching it start the fight the roll
-   would have started anyway or a different one; does clearing it stay cleared;
-   and — the one that decides whether it is worth doing — does it *replace* the
-   grass roll or sit alongside it. Two encounter systems where there was one is
-   the failure mode.
+   **The answer to all four questions was "keep it one system."** The roll is
+   untouched — same `dangerRoll`, same rate, same tables, same `PickEncounter`
+   — and what changed is what a hit *produces*. Instead of a battle screen it
+   puts a creature four to six tiles off, and the fight happens when the two of
+   you meet. The encounter is decided at the moment it appears and carried on
+   the wanderer, so the silhouette is telling the truth about what is in there;
+   the sprite is keyed by `model.MonsterKind`, which is the one property of a
+   monster worth knowing before you commit.
+
+   It drifts until it notices you (within four tiles) and closes after that,
+   which is the interior foes' rule plus a distance check. It never un-notices,
+   or it would jitter on the boundary. It gives up at fourteen tiles or ninety
+   of its own steps.
+
+   **Nothing about it is saved.** A wanderer is weather, not furniture: the save
+   format is seed plus deltas, and a persistent creature would have to be a
+   delta, which means every file written before today loads with none and every
+   file after carries a list of animals. Walk away and it is gone; come back and
+   the grass rolls you a new one.
+
+   One fight is given up that the old model would have had: if there is nowhere
+   in the ring to stand — a beach, a spit of land — the roll does not become a
+   creature. That is the price of never lying about what is coming, and the rate
+   is otherwise identical because at most one wanderer exists at a time and the
+   roll does not fire again while one is out.
+
+   Two things it cannot do yet. `-demo` cannot show it: `demoWalk` teleports the
+   player rather than stepping, so the tour never runs the encounter roll at
+   all, and the frame that proved this works was staged by hand. And the
+   creature does not animate — the sheet has a walk pose per row and only the
+   standing one is cut, because legibility decides whether the feature works and
+   animation does not.
 
 2. **Decor a room can be dressed with.** `pixelartdungeonlevel4` ships a torch
    as five frames, and the same pack has doors, columns and chests. Interiors
