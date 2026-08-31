@@ -8,6 +8,9 @@
 //	assetpipe audio                regenerate assets/audio.json from the extracted sound packs
 //	assetpipe props                rewrite prop sheets with translucent shadows
 //	assetpipe icons                box-reduce every icon set to 16px
+//	assetpipe garb                 cut armour icons from the crafting sheet
+//	assetpipe map                  regenerate the table in docs/ASSET-MAP.md
+//	assetpipe bands                write tier recolours of the armour icons
 //	assetpipe extract all          extract everything (the bundle is 16.7 GB; budget disk)
 //	assetpipe find <substr>...     grep extracted filenames
 //
@@ -109,6 +112,12 @@ func main() {
 		must(buildProps())
 	case "icons":
 		must(buildIcons())
+	case "garb":
+		must(buildGarb())
+	case "map":
+		must(buildAssetMap())
+	case "bands":
+		must(buildBands())
 	case "find":
 		if len(os.Args) < 3 {
 			usage()

@@ -339,6 +339,25 @@ func TestItemIconsAreDistinct(t *testing.T) {
 	}
 }
 
+// TestArmorIconsAreDistinct is the same rule as the items one, and it is a test
+// because the thing it guards is easy to undo by hand.
+//
+// Armour spent the project's whole life with nineteen pieces on six pictures:
+// the loot pack has no garments in it, so the entire cloth lane wore a tuft of
+// fur from "Regrettable Rags" to "Shroud of Ongoing Argument". It now draws
+// real coats cut from the crafting sheet, banded by tier — but the band key is
+// just a string in a JSON file, and reusing one is a one-character mistake that
+// nothing else would report.
+func TestArmorIconsAreDistinct(t *testing.T) {
+	seen := map[string]string{}
+	for _, a := range load(t).Armors {
+		if prev, dup := seen[a.Icon]; dup {
+			t.Errorf("%q and %q share icon %q", prev, a.Name, a.Icon)
+		}
+		seen[a.Icon] = a.Name
+	}
+}
+
 // --- balance ---------------------------------------------------------------
 //
 // These assert the shape of the difficulty curve rather than exact numbers, so

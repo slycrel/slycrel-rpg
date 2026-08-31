@@ -1323,6 +1323,334 @@
       "file": "assets-raw/_generated/icons/ab/4_weapon_sword.png"
     },
     {
+      "key": "icon/band/garb/jerkin1_t0",
+      "file": "assets-raw/_generated/bands/garb/jerkin1_t0.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin1_t1",
+      "file": "assets-raw/_generated/bands/garb/jerkin1_t1.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin1_t2",
+      "file": "assets-raw/_generated/bands/garb/jerkin1_t2.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin1_t3",
+      "file": "assets-raw/_generated/bands/garb/jerkin1_t3.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin1_t4",
+      "file": "assets-raw/_generated/bands/garb/jerkin1_t4.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin1_t5",
+      "file": "assets-raw/_generated/bands/garb/jerkin1_t5.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin2_t0",
+      "file": "assets-raw/_generated/bands/garb/jerkin2_t0.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin2_t1",
+      "file": "assets-raw/_generated/bands/garb/jerkin2_t1.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin2_t2",
+      "file": "assets-raw/_generated/bands/garb/jerkin2_t2.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin2_t3",
+      "file": "assets-raw/_generated/bands/garb/jerkin2_t3.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin2_t4",
+      "file": "assets-raw/_generated/bands/garb/jerkin2_t4.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin2_t5",
+      "file": "assets-raw/_generated/bands/garb/jerkin2_t5.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin3_t0",
+      "file": "assets-raw/_generated/bands/garb/jerkin3_t0.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin3_t1",
+      "file": "assets-raw/_generated/bands/garb/jerkin3_t1.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin3_t2",
+      "file": "assets-raw/_generated/bands/garb/jerkin3_t2.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin3_t3",
+      "file": "assets-raw/_generated/bands/garb/jerkin3_t3.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin3_t4",
+      "file": "assets-raw/_generated/bands/garb/jerkin3_t4.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin3_t5",
+      "file": "assets-raw/_generated/bands/garb/jerkin3_t5.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin4_t0",
+      "file": "assets-raw/_generated/bands/garb/jerkin4_t0.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin4_t1",
+      "file": "assets-raw/_generated/bands/garb/jerkin4_t1.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin4_t2",
+      "file": "assets-raw/_generated/bands/garb/jerkin4_t2.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin4_t3",
+      "file": "assets-raw/_generated/bands/garb/jerkin4_t3.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin4_t4",
+      "file": "assets-raw/_generated/bands/garb/jerkin4_t4.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin4_t5",
+      "file": "assets-raw/_generated/bands/garb/jerkin4_t5.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin5_t0",
+      "file": "assets-raw/_generated/bands/garb/jerkin5_t0.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin5_t1",
+      "file": "assets-raw/_generated/bands/garb/jerkin5_t1.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin5_t2",
+      "file": "assets-raw/_generated/bands/garb/jerkin5_t2.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin5_t3",
+      "file": "assets-raw/_generated/bands/garb/jerkin5_t3.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin5_t4",
+      "file": "assets-raw/_generated/bands/garb/jerkin5_t4.png"
+    },
+    {
+      "key": "icon/band/garb/jerkin5_t5",
+      "file": "assets-raw/_generated/bands/garb/jerkin5_t5.png"
+    },
+    {
+      "key": "icon/band/garb/robe1_t0",
+      "file": "assets-raw/_generated/bands/garb/robe1_t0.png"
+    },
+    {
+      "key": "icon/band/garb/robe1_t1",
+      "file": "assets-raw/_generated/bands/garb/robe1_t1.png"
+    },
+    {
+      "key": "icon/band/garb/robe1_t2",
+      "file": "assets-raw/_generated/bands/garb/robe1_t2.png"
+    },
+    {
+      "key": "icon/band/garb/robe1_t3",
+      "file": "assets-raw/_generated/bands/garb/robe1_t3.png"
+    },
+    {
+      "key": "icon/band/garb/robe1_t4",
+      "file": "assets-raw/_generated/bands/garb/robe1_t4.png"
+    },
+    {
+      "key": "icon/band/garb/robe1_t5",
+      "file": "assets-raw/_generated/bands/garb/robe1_t5.png"
+    },
+    {
+      "key": "icon/band/garb/robe2_t0",
+      "file": "assets-raw/_generated/bands/garb/robe2_t0.png"
+    },
+    {
+      "key": "icon/band/garb/robe2_t1",
+      "file": "assets-raw/_generated/bands/garb/robe2_t1.png"
+    },
+    {
+      "key": "icon/band/garb/robe2_t2",
+      "file": "assets-raw/_generated/bands/garb/robe2_t2.png"
+    },
+    {
+      "key": "icon/band/garb/robe2_t3",
+      "file": "assets-raw/_generated/bands/garb/robe2_t3.png"
+    },
+    {
+      "key": "icon/band/garb/robe2_t4",
+      "file": "assets-raw/_generated/bands/garb/robe2_t4.png"
+    },
+    {
+      "key": "icon/band/garb/robe2_t5",
+      "file": "assets-raw/_generated/bands/garb/robe2_t5.png"
+    },
+    {
+      "key": "icon/band/garb/robe3_t0",
+      "file": "assets-raw/_generated/bands/garb/robe3_t0.png"
+    },
+    {
+      "key": "icon/band/garb/robe3_t1",
+      "file": "assets-raw/_generated/bands/garb/robe3_t1.png"
+    },
+    {
+      "key": "icon/band/garb/robe3_t2",
+      "file": "assets-raw/_generated/bands/garb/robe3_t2.png"
+    },
+    {
+      "key": "icon/band/garb/robe3_t3",
+      "file": "assets-raw/_generated/bands/garb/robe3_t3.png"
+    },
+    {
+      "key": "icon/band/garb/robe3_t4",
+      "file": "assets-raw/_generated/bands/garb/robe3_t4.png"
+    },
+    {
+      "key": "icon/band/garb/robe3_t5",
+      "file": "assets-raw/_generated/bands/garb/robe3_t5.png"
+    },
+    {
+      "key": "icon/band/garb/robe4_t0",
+      "file": "assets-raw/_generated/bands/garb/robe4_t0.png"
+    },
+    {
+      "key": "icon/band/garb/robe4_t1",
+      "file": "assets-raw/_generated/bands/garb/robe4_t1.png"
+    },
+    {
+      "key": "icon/band/garb/robe4_t2",
+      "file": "assets-raw/_generated/bands/garb/robe4_t2.png"
+    },
+    {
+      "key": "icon/band/garb/robe4_t3",
+      "file": "assets-raw/_generated/bands/garb/robe4_t3.png"
+    },
+    {
+      "key": "icon/band/garb/robe4_t4",
+      "file": "assets-raw/_generated/bands/garb/robe4_t4.png"
+    },
+    {
+      "key": "icon/band/garb/robe4_t5",
+      "file": "assets-raw/_generated/bands/garb/robe4_t5.png"
+    },
+    {
+      "key": "icon/band/garb/robe5_t0",
+      "file": "assets-raw/_generated/bands/garb/robe5_t0.png"
+    },
+    {
+      "key": "icon/band/garb/robe5_t1",
+      "file": "assets-raw/_generated/bands/garb/robe5_t1.png"
+    },
+    {
+      "key": "icon/band/garb/robe5_t2",
+      "file": "assets-raw/_generated/bands/garb/robe5_t2.png"
+    },
+    {
+      "key": "icon/band/garb/robe5_t3",
+      "file": "assets-raw/_generated/bands/garb/robe5_t3.png"
+    },
+    {
+      "key": "icon/band/garb/robe5_t4",
+      "file": "assets-raw/_generated/bands/garb/robe5_t4.png"
+    },
+    {
+      "key": "icon/band/garb/robe5_t5",
+      "file": "assets-raw/_generated/bands/garb/robe5_t5.png"
+    },
+    {
+      "key": "icon/band/loot/dragon_scale_t0",
+      "file": "assets-raw/_generated/bands/loot/dragon_scale_t0.png"
+    },
+    {
+      "key": "icon/band/loot/dragon_scale_t1",
+      "file": "assets-raw/_generated/bands/loot/dragon_scale_t1.png"
+    },
+    {
+      "key": "icon/band/loot/dragon_scale_t2",
+      "file": "assets-raw/_generated/bands/loot/dragon_scale_t2.png"
+    },
+    {
+      "key": "icon/band/loot/dragon_scale_t3",
+      "file": "assets-raw/_generated/bands/loot/dragon_scale_t3.png"
+    },
+    {
+      "key": "icon/band/loot/dragon_scale_t4",
+      "file": "assets-raw/_generated/bands/loot/dragon_scale_t4.png"
+    },
+    {
+      "key": "icon/band/loot/dragon_scale_t5",
+      "file": "assets-raw/_generated/bands/loot/dragon_scale_t5.png"
+    },
+    {
+      "key": "icon/band/loot/monster_scales_t0",
+      "file": "assets-raw/_generated/bands/loot/monster_scales_t0.png"
+    },
+    {
+      "key": "icon/band/loot/monster_scales_t1",
+      "file": "assets-raw/_generated/bands/loot/monster_scales_t1.png"
+    },
+    {
+      "key": "icon/band/loot/monster_scales_t2",
+      "file": "assets-raw/_generated/bands/loot/monster_scales_t2.png"
+    },
+    {
+      "key": "icon/band/loot/monster_scales_t3",
+      "file": "assets-raw/_generated/bands/loot/monster_scales_t3.png"
+    },
+    {
+      "key": "icon/band/loot/monster_scales_t4",
+      "file": "assets-raw/_generated/bands/loot/monster_scales_t4.png"
+    },
+    {
+      "key": "icon/band/loot/monster_scales_t5",
+      "file": "assets-raw/_generated/bands/loot/monster_scales_t5.png"
+    },
+    {
+      "key": "icon/garb/jerkin1",
+      "file": "assets-raw/_generated/icons/garb/jerkin1.png"
+    },
+    {
+      "key": "icon/garb/jerkin2",
+      "file": "assets-raw/_generated/icons/garb/jerkin2.png"
+    },
+    {
+      "key": "icon/garb/jerkin3",
+      "file": "assets-raw/_generated/icons/garb/jerkin3.png"
+    },
+    {
+      "key": "icon/garb/jerkin4",
+      "file": "assets-raw/_generated/icons/garb/jerkin4.png"
+    },
+    {
+      "key": "icon/garb/jerkin5",
+      "file": "assets-raw/_generated/icons/garb/jerkin5.png"
+    },
+    {
+      "key": "icon/garb/robe1",
+      "file": "assets-raw/_generated/icons/garb/robe1.png"
+    },
+    {
+      "key": "icon/garb/robe2",
+      "file": "assets-raw/_generated/icons/garb/robe2.png"
+    },
+    {
+      "key": "icon/garb/robe3",
+      "file": "assets-raw/_generated/icons/garb/robe3.png"
+    },
+    {
+      "key": "icon/garb/robe4",
+      "file": "assets-raw/_generated/icons/garb/robe4.png"
+    },
+    {
+      "key": "icon/garb/robe5",
+      "file": "assets-raw/_generated/icons/garb/robe5.png"
+    },
+    {
       "key": "icon/loot/antidote",
       "file": "assets-raw/_generated/icons/loot/antidote.png"
     },

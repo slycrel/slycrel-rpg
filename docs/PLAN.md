@@ -2306,9 +2306,20 @@ This is the fallback that does not care.
 ## Asset budget
 
 The bundle is 78 packs / 56,409 files / 16.7 GB, inventoried in
-[ASSET-INVENTORY.md](ASSET-INVENTORY.md). 37 packs are extracted and 722 keys
+[ASSET-INVENTORY.md](ASSET-INVENTORY.md). 44 packs are extracted and 804 keys
 are indexed. Roughly two thirds of the bundle is sci-fi, cyberpunk, futuristic
 or children's-voice content that this game has no use for — except as an
 over-the-top joke zone, which is exactly what an "oddity" location is for, and
 that is cashed now rather than promised: two cyberpunk packs are extracted for
 the furniture alone.
+
+What the game *loads*, as opposed to what the bundle holds, is now its own
+document: [ASSET-MAP.md](ASSET-MAP.md), whose table is generated from the
+manifest by `assetpipe map` and whose prose is not. It carries the reasoning for
+every pipeline step that makes art, the packs extracted but not yet wired, the
+icon gaps measured against the content tables, and — the part worth keeping — a
+list of what the last pass left unsettled.
+
+The 40 unopened packs were swept once. Most of it is audio, sci-fi, or GUI kits
+the earlier survey already rejected; five small pixel-art packs were extracted
+because they are on style and on grid, and four of them are still unwired.

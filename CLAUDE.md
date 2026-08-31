@@ -18,6 +18,7 @@ go run ./cmd/slycrel -audit          # content against the art manifest, then ex
 go run ./cmd/slycrel -load saves/fixtures/battered.json   # start from a known state
 go run ./cmd/balance                 # win rates, endurance, progression, economy
 go run ./cmd/genfixtures             # rewrite save fixtures after a world-gen change
+go run ./cmd/assetpipe map           # refresh the table in docs/ASSET-MAP.md
 go test ./internal/...
 ```
 
@@ -103,6 +104,21 @@ which event fires which trigger, and where it is safe to put a box on screen.
   measured in their own SHAPES section against `rules.SimulateGroup`, which
   exists because a composition does not survive being flattened into a list of
   definitions and a level.
+- **Gear icons are banded by tier, and the band is baked.** `assetpipe bands`
+  writes a palette-ramp recolour of a gear icon per tier into
+  `assets-raw/_generated/bands/`, so a shop row says which of two coats is the
+  better one without the player reading the price. Nothing tints at draw time.
+  The band is part of the key — `icon/band/garb/jerkin3_t4` — so a content edit
+  picks the rung, and `TestArmorIconsAreDistinct` refuses two pieces on one
+  picture. **Look in every icon set before concluding art is missing**: armour
+  wore a tuft of fur for the life of the project because the loot pack was the
+  only set anyone checked, and the answer was ten garments on a paper-doll sheet
+  in an unopened pack. `docs/ASSET-MAP.md` is the standing list, with what the
+  last pass deliberately left unsettled.
+- **A pipeline step wipes its own output directory.** `bands` takes its source
+  list from the content, so a picture the table stops naming has to stop
+  shipping — the manifest enumerates the directory, and a stale file would keep
+  its key and ride into every release build.
 - **Flavour is data**, in `data/text/flavor.json` and the per-monster lines, so
   the writing can be revised without touching Go.
 - **Never name something that might not exist.** The quest generator only names
