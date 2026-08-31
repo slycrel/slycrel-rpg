@@ -3916,10 +3916,27 @@ of this item now lives under item 2, as a design decision about what ward is.
 
 ### 5. Things the report can see and nobody has tuned
 
-**CROWDS is measured and untouched.** Four creatures on level is single digits
-for everybody above level nine and six is a nought; whether that is correct
-depends on how often the world sends them, which `EncounterSize` and the pack
-shape decide and no section reads together.
+**CROWDS is measured and untouched** — and reading `EncounterSize` and the pack
+shape together, which nothing did, turned the item into a different one.
+
+The distribution is now printed under the table. A solo hero meets one or two
+creatures in three quarters of encounters and three or more in the rest; hiring
+moves the mean from 1.90 to 2.62. So the right-hand columns are a tail rather
+than a curiosity, and the weighting the item asked for exists.
+
+But the thing that stops this being tunable is not a missing weighting, it is a
+**missing instrument: there is no party simulator.** `rules.SimulateGroup` takes
+one `Character`. Every row in CROWDS is therefore one character against N
+creatures, and the moment the company is what changes the rolls, the report can
+price what the world sends but not what the party does about it — which is why
+the four- and six-creature columns have always had to be read as "a solo hero
+after their company was killed".
+
+That is the job. `ChooseAllyMove` already exists and the battle screen already
+runs a party turn, so the pieces are there; what is missing is the simulator
+that plays them without a screen. Until it exists, tuning these numbers is
+tuning a game nobody plays — a solo hero does not walk into the four-creature
+fights, and a party does, and the party is the thing that cannot be measured.
 
 **Level eleven is soft** — withdrawn, and it was a misreading. Eleven is not
 soft, the roster was not the cause, and the shape is a sawtooth keyed to the
