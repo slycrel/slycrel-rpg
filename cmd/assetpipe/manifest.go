@@ -106,6 +106,13 @@ func buildManifest() error {
 		}
 	}
 
+	// Foes whose frames arrived as separate files and were stacked into strips
+	// by `assetpipe foes`. Same 64x64 slicing as the sheets above, because
+	// that is the point of stacking them.
+	for _, f := range pngsIn(filepath.Join(genRoot, "foes")) {
+		add("foe/"+strings.Replace(base(f), "_", "/", 1), f, 64, 64)
+	}
+
 	// Ground textures. Mana Seed's seasonal "wang tiles" sheets carry a legend
 	// strip of six flat, seamlessly tiling textures at a fixed offset. Those
 	// swatches are what the autotiler composites; its own corner masks handle

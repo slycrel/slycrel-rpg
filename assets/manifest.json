@@ -483,6 +483,42 @@
       "frameH": 64
     },
     {
+      "key": "foe/golem/attack",
+      "file": "assets-raw/_generated/foes/golem_attack.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "foe/golem/attack_side",
+      "file": "assets-raw/_generated/foes/golem_attack_side.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "foe/golem/attack_up",
+      "file": "assets-raw/_generated/foes/golem_attack_up.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "foe/golem/side",
+      "file": "assets-raw/_generated/foes/golem_side.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "foe/golem/up",
+      "file": "assets-raw/_generated/foes/golem_up.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
+      "key": "foe/golem/walk",
+      "file": "assets-raw/_generated/foes/golem_walk.png",
+      "frameW": 64,
+      "frameH": 64
+    },
+    {
       "key": "foe/mage/attack",
       "file": "assets-raw/pixelartrpgtopdownenemies/Pixel Art Top-Down RPG Enemies - AfGameAssets - V2 - Walking/Mage/Mage_Attack.png",
       "frameW": 64,

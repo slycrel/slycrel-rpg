@@ -69,6 +69,7 @@ var foeSprites = []string{
 	"foe/mage/idle",
 	"foe/beaver/walk",
 	"foe/necromancer/walk",
+	"foe/golem/walk",
 }
 
 type localInfo struct {
@@ -642,8 +643,11 @@ func buildDungeon(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 	if !poi.Cleared {
 		l.Entities = append(l.Entities, &Entity{
 			Kind: EBoss, Pos: center(far), Name: "something large",
-			Line:   "It has been waiting. It is not happy about the wait.",
-			Sprite: "foe/necromancer/walk",
+			Line: "It has been waiting. It is not happy about the wait.",
+			// A golem, since the line promises something large and a
+			// necromancer is a man in a robe. It is the only sprite in the
+			// game with a back and a side of its own.
+			Sprite: "foe/golem/walk",
 		})
 	}
 

@@ -18,7 +18,7 @@ person to have made it.
 
 <!-- BEGIN generated: go run ./cmd/assetpipe map -->
 
-**897 keys across 13 namespaces.**
+**903 keys across 13 namespaces.**
 
 | namespace | keys | sources |
 |---|--:|---|
@@ -26,9 +26,9 @@ person to have made it.
 | `mob/` | 168 | `mobsavataricons_windows` 133, `sci-ficharactersicons` 35 |
 | `boss/` | 107 | `monstersavataricons_windows` 107 |
 | `portrait/` | 76 | `characteravataricons_windows` 76 |
+| `foe/` | 29 | `pixelartrpgtopdownenemies` 23, `_generated/foes` 6 |
 | `hero/` | 28 | `pixelartrpgtopdowncharacters` 28 |
 | `ground/` | 25 | `manaseedpixelarttilesetcollection` 25 |
-| `foe/` | 23 | `pixelartrpgtopdownenemies` 23 |
 | `odd/` | 22 | `pixelartcyberpunkcity` 22 |
 | `npc/` | 17 | `pixelartrpgnpc` 17 |
 | `vfx/` | 17 | `pixelartrpgvfx` 17 |
@@ -51,6 +51,7 @@ assetpipe icons            box-reduce every icon set to 16px       -> _generated
 assetpipe garb             cut garment cells from a paper-doll sheet -> _generated/icons/garb/
 assetpipe arms             cut weapon cells from the same sheet     -> _generated/icons/arms/
 assetpipe poi              cut overworld location markers          -> _generated/icons/poi/
+assetpipe foes             stack per-frame foe animations to strips -> _generated/foes/
 assetpipe props            translucent shadows on Mana Seed props  -> _generated/props/
 assetpipe bands            tier recolours of the gear icons        -> _generated/bands/
 assetpipe manifest         rebuild assets/manifest.json from all of the above
@@ -187,8 +188,12 @@ shields and charms already have one picture each with nothing shared in the
 shield table, and banding a set to fix two collisions would generate art nothing
 asks for.
 
-Thin namespaces: `prop/` at 6 and `weather/` at 4 are the smallest things in the
-manifest by a wide margin, and `vfx/` at 17 is not much better.
+`prop/` at 6 and `weather/` at 4 look like the thinnest namespaces and are not:
+those keys are *sheets*, not pictures. The six props are Mana Seed tilesheets
+sliced at 16x16, 16x32 and 32x32, and the four weather keys are 32x128
+animation strips covering rain, storm and snow at two densities each. Counting
+a sheet as one asset understates both by an order of magnitude. `vfx/` at 17 is
+a genuine count.
 
 ## What is not settled
 
@@ -216,6 +221,10 @@ This pass is not the last one, and these are the questions it left open.
   16x16 source into a 16px box, so the fit is identity — but a real frame of the
   armourer would be better evidence, and wants a save fixture rather than a
   patched tour.
+- **The Golem is the only creature with a back and a side.** Its keys follow
+  the hero sheets — `walk`/`up`/`side` plus three attacks — where every other
+  foe carries the flat `idle`/`walk`/`attack`/`hit`/`dead`. Nothing yet reads
+  the directional ones: interior foes are drawn from a single pooled key.
 - **Polearms have no shape, and the two in the game are borrowing one.** There
   is no spear anywhere on disk — not in the crafting sheet, not in the ability
   set, not in the skill set. "Glaive, Overcompensating" uses `axe2`, which is
