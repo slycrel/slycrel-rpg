@@ -2760,6 +2760,100 @@ The order is the one the stagger and dual-wield ideas got, and more so here:
 teach `SimulateFight` the term, run the report, read what moved, and only then
 decide what the number should be.
 
+## Class identity: the shape it should take
+
+*(Jeremy's, opening the design rather than the build: "Assuming we add parry +
+dodge for the thief, parry + block for the fighter, and absorb + reflect for
+the mage. Do we also need additional offensive uniqueness? ... sometimes you
+could gain bonus actions as you leveled ... Maybe we give that to the fighter,
+and a counterattack on parry for the thief? And maybe vampiric shielding or
+healing for the mage?")*
+
+The problem this is answering is real and measured: the classes are
+differentiated almost entirely outside the fight — the thief's item economy,
+the mage's pool, the fighter's two-hander — while inside it all three run one
+loop, roll damage and subtract guard. What follows is the intent, not a build
+order, and the parts of the proposal that were changed are changed for stated
+reasons.
+
+### One unit each, and they must be different arithmetic
+
+**Parry and dodge are the same mechanic under two names.** Both are a chance to
+take zero. Assigning parry+block to the fighter and parry+dodge to the thief
+gives the *fighter* two structurally different defences and the thief the same
+one twice, which is backwards from what the scheme is for. So:
+
+| class | unit | worth most against | how it feels |
+|---|---|---|---|
+| Fighter | **block** — flat −N off every hit | many small hits | predictable chip |
+| Thief | **dodge** — a chance of nothing at all | indifferent to hit size | untouched, then hit hard |
+| Mage | **absorb** — a pool spent once | a single burst | fine until it is not |
+
+Those are three different curves against a spread roll, and they diverge as
+monster Offense grows rather than staying parallel — which is the whole test of
+whether a difference is real or cosmetic. Two of them already exist: `Defense`
+is block, and the talisman's `Absorb` is already defence in its own unit for
+one class. Only dodge is new.
+
+### The active layer hangs off the unit
+
+- **Thief: a counterattack on a successful dodge.** Jeremy's, and the right
+  shape: it converts defence into offence, which is the framing this document
+  already uses for the class — "the monster cannot hurt you if it is not
+  there". It also inverts something: a thief surrounded gets more counters, so
+  being outnumbered stops being uniformly bad for the one class whose plan is
+  not being hit.
+- **Mage: vampiric shielding, not vampiric healing.** Also Jeremy's, and the
+  first half is the better one. The mage already has the deepest psyche pool
+  and the only healing techniques in the game; lifesteal would add sustain to
+  the class that has the most of it. Damage dealt refilling `Absorb` feeds the
+  unit the class already owns, and makes its defence something earned by
+  attacking — a different loop from the other two rather than a bigger number.
+- **Reflect is left out** unless the mage still reads thin after that. Absorb,
+  a vampiric refill and reflect is three defensive terms on the class that is
+  least short of identity.
+
+### Offensive uniqueness: not three, and not yet
+
+The defensive units already produce offensive difference, because each one
+*fails* differently and that changes what a player does about it. The genuine
+gap in the scheme is that the fighter has no active — and bonus actions fill it
+exactly.
+
+**Which is why bonus actions are the one to hold.** A weapon band is +5 strike.
+An extra attack is a second entire swing: on the rounds it fires it is worth
+more than every gear step in the game put together. The arcs work in this
+document just spent itself getting three builds within 7.2 points of each other
+at equal spend, and one class taking occasional double rounds would blow that
+open in a way no gear table could answer — you can re-price a charm, you cannot
+re-price "sometimes twice".
+
+So it is wanted, and it goes last and alone.
+
+### The order, and why it is an order
+
+Every term here changes `PlayerAttack` or `MonsterDamage`, which is what
+DANGER, ENDURANCE, ARCS, LANES and WARD are all built on. Five new terms at
+once means the report cannot attribute anything to anything. This document has
+five separate findings this month of an instrument quietly measuring something
+other than what its prose claimed; the answer is one term at a time, each one
+taught to `SimulateFight` first and read in the report before the next starts.
+
+1. **Dodge for the thief.** Smallest self-contained change, gives the class the
+   unit it is the only one without, and it is the term the rest hang off.
+2. **Counterattack on a dodge.** Rides on 1 and needs no new state.
+3. **Vampiric shielding for the mage.** Feeds an existing unit rather than
+   adding one.
+4. **Bonus actions for the fighter.** Last, alone, and with the arcs table
+   watched closely.
+
+An honest note on where this lands. Even with all four, the loop is still kill
+things and do not die — that was never the thing to fix. What changes is that
+the three classes would be answering "do not die" with three different kinds of
+arithmetic instead of the same subtraction, and answering it *while* attacking
+in two cases out of three. That is as far as mechanics can carry class
+identity; the rest of it is what the writing already does.
+
 ## Open questions
 
 - **How big should the world be?** 160×120 crosses in a couple of minutes on
