@@ -548,10 +548,18 @@ const ArmByLevel = model.SidearmLane(-1)
 // off noise.
 //
 // Measured against a floor taken from those rows, per class, on two axes: the
-// wall is not measurably behind anything until level ten for a Fighter and
-// eleven for a Thief, and the two classes are close enough together that this
-// constant does not want a class parameter — which was the open question, and
-// this is its answer.
+// wall goes behind at level eight for a Thief and level ten for a Fighter, and
+// eight costs the Fighter nothing at either level in between — the spiked lane
+// is already ahead of the wall there, just not yet by more than the floor. So
+// the constant does not want a class parameter, which was the open question
+// and is this line's answer.
+//
+// It has been re-pinned twice in one sitting, and the second time was not a
+// content change: fixing freeSwingWorth — the simulator's policy had been
+// comparing a paid technique against a bad guess at a swing, so a Fighter cast
+// when it should have hit — moved the crossover two levels on its own. Which is
+// the argument for the whole apparatus. A constant nobody re-derives is a
+// constant that is right about the game it was measured in.
 //
 // The two lanes do not cost the same, and the earlier claim here that they came
 // "within five per cent in every band" was wrong in four bands of five — the
@@ -560,7 +568,7 @@ const ArmByLevel = model.SidearmLane(-1)
 // sidearm is a small part of a kit, and LANES now prints that as a number
 // rather than asserting it: the widest gap between the three lanes' whole kits
 // is 1.5% from level seven up, against lane differences reaching fourteen.
-const strikeFromLevel = 10
+const strikeFromLevel = 8
 
 // StrikeFromLevel is the crossover, for the report that has to print it beside
 // the numbers that justify it.

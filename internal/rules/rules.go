@@ -202,6 +202,45 @@ func damageBlend(level int) float64 {
 // rolling each and averaging: averaging two rolls would quietly halve the
 // spread mid-band and make those levels feel oddly consistent.
 func PlayerDamage(g *core.RNG, c *model.Character, m *model.Monster) int {
+	lo, hi := SwingBand(c)
+	dmg := g.Between(lo, hi) - m.Defense
+
+	// The original's mercy floor, retired as the late formula takes over: past
+	// the band a well-armoured monster is supposed to be able to shrug a hit.
+	if damageBlend(c.Level) < 1 && dmg < 2 {
+		dmg = g.Intn(3)
+	}
+	return core.Max(0, dmg)
+}
+
+// SwingBand is what a swing rolls between, before anything is subtracted for
+// what it hits.
+//
+// Split out of PlayerDamage because the simulator's policy needs it and had
+// been making do with a guess. freeSwingWorth — the bar a paid technique has to
+// clear to be worth a round — described a caster's free bolt exactly, by
+// sharing FocusBolt's own arithmetic, and described a swing as `Str()/2 +
+// Strike()`, which is a different and much smaller number than the one this
+// function rolls. At level thirteen a Fighter's real swing averages about 46
+// and the proxy said 36.5, so techniques worth barely more than a third of a
+// swing measured as worth casting, and a Fighter that bought psyche cast more
+// of them and got worse. EXCHANGE priced a point of psyche for a Fighter at
+// minus one, at every level it sampled, which is a stat measuring as a trap
+// because the policy was misreading the alternative.
+//
+// Third instance of the same defect in one session, and the pattern is worth
+// the name: **a policy that estimates what the rules do is a second copy of the
+// rules.** incomingPerRound had it in the other direction. The fix is always
+// the same one — have the policy call the arithmetic instead of approximating
+// it, exactly as the caster branch already did.
+//
+// It is still a comparison of raw magnitudes: neither side subtracts the
+// target's guard, and a spell meets Ward where a swing meets Defense. Those run
+// close together on the top-band roster (ward 16-19 against defense 15-18), so
+// the comparison is honest there; it would stop being honest if the two ever
+// diverged, and the place that would show is a class casting into things it
+// should be hitting.
+func SwingBand(c *model.Character) (lo, hi int) {
 	str := float64(c.Str())
 	strike := float64(c.Strike())
 
@@ -227,17 +266,8 @@ func PlayerDamage(g *core.RNG, c *model.Character, m *model.Monster) int {
 	lateHi := (str*0.65 + strike) * 1.25
 
 	t := damageBlend(c.Level)
-	lo := int(math.Round(earlyLo + (lateLo-earlyLo)*t))
-	hi := int(math.Round(earlyHi + (lateHi-earlyHi)*t))
-
-	dmg := g.Between(lo, hi) - m.Defense
-
-	// The original's mercy floor, retired as the late formula takes over: past
-	// the band a well-armoured monster is supposed to be able to shrug a hit.
-	if t < 1 && dmg < 2 {
-		dmg = g.Intn(3)
-	}
-	return core.Max(0, dmg)
+	return int(math.Round(earlyLo + (lateLo-earlyLo)*t)),
+		int(math.Round(earlyHi + (lateHi-earlyHi)*t))
 }
 
 // Swing is the outcome of one attack, resolved in full.
@@ -1627,7 +1657,8 @@ func freeSwingWorth(c *model.Character) float64 {
 	if c.Casting() {
 		return float64(c.Focus())*focusBite + float64(c.Level)*0.6
 	}
-	return float64(c.Str())/2 + float64(c.Strike())
+	lo, hi := SwingBand(c)
+	return float64(lo+hi) / 2
 }
 
 // bestSpell picks what a competent solo player would cast this round: a heal

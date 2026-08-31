@@ -45,13 +45,17 @@
       "icon": "icon/band/loot/monster_scales_t3"
     },
     "shield": {
-      "name": "Buckler, Previously Owned",
-      "defense": 3,
-      "cost": 48,
+      "name": "Spiked Boss, Regrettable",
+      "defense": 2,
+      "cost": 55,
       "tier": 2,
-      "verb": "turns",
-      "icon": "icon/loot/monster_scale",
-      "desc": "Previously owned by somebody who is not using it now, for reasons the seller declines to go into."
+      "verb": "shoves",
+      "icon": "icon/loot/snake_fang",
+      "extra": {
+        "strike": 2,
+        "dexterity": -1
+      },
+      "desc": "The spikes point the wrong way for defence and exactly the right way for the other thing."
     },
     "charm": {
       "name": "Cracked Spectacles",
@@ -155,13 +159,17 @@
         "icon": "icon/band/loot/monster_scales_t3"
       },
       "shield": {
-        "name": "Buckler, Previously Owned",
-        "defense": 3,
-        "cost": 48,
+        "name": "Spiked Boss, Regrettable",
+        "defense": 2,
+        "cost": 55,
         "tier": 2,
-        "verb": "turns",
-        "icon": "icon/loot/monster_scale",
-        "desc": "Previously owned by somebody who is not using it now, for reasons the seller declines to go into."
+        "verb": "shoves",
+        "icon": "icon/loot/snake_fang",
+        "extra": {
+          "strike": 2,
+          "dexterity": -1
+        },
+        "desc": "The spikes point the wrong way for defence and exactly the right way for the other thing."
       },
       "charm": {
         "name": "Cracked Spectacles",
@@ -226,13 +234,17 @@
         }
       },
       "shield": {
-        "name": "Buckler, Previously Owned",
-        "defense": 3,
-        "cost": 48,
+        "name": "Spiked Boss, Regrettable",
+        "defense": 2,
+        "cost": 55,
         "tier": 2,
-        "verb": "turns",
-        "icon": "icon/loot/monster_scale",
-        "desc": "Previously owned by somebody who is not using it now, for reasons the seller declines to go into."
+        "verb": "shoves",
+        "icon": "icon/loot/snake_fang",
+        "extra": {
+          "strike": 2,
+          "dexterity": -1
+        },
+        "desc": "The spikes point the wrong way for defence and exactly the right way for the other thing."
       },
       "charm": {
         "name": "Cracked Spectacles",
