@@ -1844,35 +1844,63 @@ func TestATwoHandedWeaponEmptiesTheOffArm(t *testing.T) {
 	}
 }
 
-// An escort's caster must never stack with its own guards, and the thing that
-// currently stops it is a property of the content rather than of the code.
+// An escort's caster must never share a slot with its own guards, and this
+// checks the mechanism rather than the margin.
 //
-// model.SameKind compares offence, guard, ward and speed — everything Spawn and
-// the encounter shapes scale deterministically — and deliberately not hit
-// points, which Spawn jitters. An escort scales its caster's hit points and
-// leaves its guards alone, so the two differ *only* in HP, and they are told
-// apart by the guards being drawn a band lower and coming out with different
-// offence. That holds until a creature's offence is small enough for the
-// scaling to round back onto itself: the guard multiplier floors at one, so a
-// magical creature with offence 1 would produce a guard indistinguishable from
-// the caster it is guarding, and the two would share a slot. The player would
-// be told one thing was two of the same thing when one of them is a scaled boss.
+// The first version asserted a property of the *content*: every magical
+// creature swings for at least 2, so the guard multiplier could never round a
+// guard onto its own caster's offence. That was true — the quietest swings for
+// 24 — and it was the wrong thing to hold. It made a stacking rule depend on
+// nobody ever writing a whispering magical thing, and it would have failed as a
+// puzzle about monster stats rather than as what it actually is.
 //
-// Nothing in the tables is anywhere near that today — the quietest magical
-// creature swings for 24 — so this asserts the margin rather than the mechanism,
-// and it fails loudly the day somebody writes a whispering magical thing that
-// hits for one.
-func TestNoMagicalCreatureIsQuietEnoughToStackWithItsOwnEscort(t *testing.T) {
+// model.Monster.Build is the fix: whoever builds the encounter stamps what it
+// built, so a caster and a guard differ by construction whatever their numbers
+// do. This probes at the extreme where the old inference broke — a creature
+// swinging for 1, which the content does not have and no longer needs to avoid.
+func TestAnEscortsCasterNeverStacksWithItsGuards(t *testing.T) {
 	tables := load(t)
-	for biome, defs := range tables.Monsters {
-		for _, d := range defs {
-			if !d.Magic {
-				continue
+
+	quiet := &model.MonsterDef{
+		ID: "test_whisper", Name: "Whisper", Level: 9, Magic: true,
+		HP: 40, Offense: 1, Defense: 5, Ward: 5, Speed: 8,
+	}
+	g := core.NewRNG(7)
+	caster := quiet.Spawn(g, 9)
+	guard := quiet.Spawn(g, 9)
+	caster.Build, guard.Build = "caster", "guard"
+	if caster.Offense != guard.Offense {
+		t.Fatalf("the probe is not probing: offence %d against %d",
+			caster.Offense, guard.Offense)
+	}
+	if model.SameKind(caster, guard) {
+		t.Error("a caster and a guard off one definition came out the same kind, " +
+			"which puts a scaled boss in a slot with its own escort")
+	}
+
+	// And two of one role still stack, or the stamp has broken the thing it
+	// was added to protect.
+	other := quiet.Spawn(g, 9)
+	other.Build = "guard"
+	if !model.SameKind(guard, other) {
+		t.Error("two guards off one definition no longer stack")
+	}
+
+	// And the shapes really do stamp, rather than the stamp being a field
+	// nothing sets. Escorts are the shape that mixes two roles, so both of its
+	// stamps have to turn up in a run of real encounters.
+	seen := map[string]bool{}
+	for _, biome := range []string{"mountain", "dungeon", "swamp"} {
+		for i := 0; i < 400; i++ {
+			for _, m := range tables.PickEncounter(g, biome, 9, 3).Monsters {
+				seen[m.Build] = true
 			}
-			if d.Offense < 2 {
-				t.Errorf("%s: %q is magical and swings for %d — an escort of it would "+
-					"stack its caster with its own guards", biome, d.Name, d.Offense)
-			}
+		}
+	}
+	for _, want := range []string{"caster", "guard"} {
+		if !seen[want] {
+			t.Errorf("no creature in 1200 encounters was stamped %q; either the shape "+
+				"stopped rolling or the stamp stopped being applied", want)
 		}
 	}
 }

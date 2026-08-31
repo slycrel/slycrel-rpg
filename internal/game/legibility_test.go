@@ -942,3 +942,51 @@ func TestEveryMonsterNameFitsItsPlate(t *testing.T) {
 		}
 	}
 }
+
+// A condition that lands on one creature out of a queue has to say so, because
+// the portrait cannot: a slot draws the front's pips, so stunning a stack of
+// three shows "stunned" and then two of them swing anyway.
+//
+// The note is only true of a technique that stopped at the front. Anything over
+// the whole field reached every member, so there is nobody it missed.
+func TestAQueueSaysWhoTheConditionMissed(t *testing.T) {
+	wolf := &model.MonsterDef{ID: "wolf", Name: "Wolf", Sprite: "mob/wolf"}
+	crab := &model.MonsterDef{ID: "crab", Name: "Crab", Sprite: "mob/crab"}
+	mob := func(d *model.MonsterDef) *model.Monster {
+		return &model.Monster{Def: d, Name: d.Name, HP: 10, MaxHP: 10, Offense: 3}
+	}
+
+	b := &battleScene{mons: []*model.Monster{mob(wolf), mob(wolf), mob(wolf), mob(crab)}}
+	b.slots = rules.Stacks(b.mons)
+
+	if got := b.restOfQueue(0); got != " The other 2 are untouched." {
+		t.Errorf("three wolves gave %q", got)
+	}
+	// Alone in its slot: nothing to say, and an ordinary fight has to read
+	// exactly as it always did.
+	if got := b.restOfQueue(3); got != "" {
+		t.Errorf("a lone crab gave %q, want nothing", got)
+	}
+
+	// The queue shortens as it falls, and the sentence has to follow it down
+	// rather than describing the field as it was rolled.
+	b.mons[1].Dead = true
+	if got := b.restOfQueue(0); got != " The other one is untouched." {
+		t.Errorf("two wolves standing gave %q", got)
+	}
+	b.mons[2].Dead = true
+	if got := b.restOfQueue(0); got != "" {
+		t.Errorf("the last wolf standing gave %q, want nothing", got)
+	}
+
+	// And a technique over the whole field missed nobody.
+	b.mons[1].Dead, b.mons[2].Dead = false, false
+	one := model.Spell{Target: model.TargetOne}
+	all := model.Spell{Target: model.TargetAll}
+	if got := b.queueNote(one, 0); got == "" {
+		t.Error("a single-target technique on a queue of three said nothing")
+	}
+	if got := b.queueNote(all, 0); got != "" {
+		t.Errorf("a technique over the whole field said %q; it missed nobody", got)
+	}
+}

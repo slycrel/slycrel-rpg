@@ -129,7 +129,7 @@ func (t *Tables) PickEncounter(g *core.RNG, biome string, level, size int) Encou
 		lower := t.poolFor(biome, core.Max(1, level-1))
 		mons = drawFrom(g, lower, core.Max(1, level-1), size+packBodies,
 			func(d *model.MonsterDef) int { return 1 + core.Max(0, d.Speed-d.Defense) })
-		scale(mons, packHP, packOffense)
+		scale(mons, packHP, packOffense, "pack")
 
 	case ShapeBrute:
 		// Scaled rather than drawn from above its band. Picking a level+2
@@ -139,22 +139,22 @@ func (t *Tables) PickEncounter(g *core.RNG, biome string, level, size int) Encou
 		// dungeon boss has worked this way since it was written.
 		mons = drawFrom(g, pool, level, 1,
 			func(d *model.MonsterDef) int { return 1 + d.HP/8 })
-		scale(mons, bruteHP, bruteOffense)
+		scale(mons, bruteHP, bruteOffense, "brute")
 		mons[0].Name = "A Very Large " + mons[0].Def.Name
 
 	case ShapeEscort:
 		casters := filter(pool, func(d *model.MonsterDef) bool { return d.Magic })
 		mons = drawFrom(g, casters, level, 1, nil)
-		scale(mons, casterHP, 1)
+		scale(mons, casterHP, 1, "caster")
 		front := drawFrom(g, pool, core.Max(1, level-1), guards,
 			func(d *model.MonsterDef) int { return 1 + core.Max(0, d.Defense-d.Ward) })
-		scale(front, guardHP, guardOffense)
+		scale(front, guardHP, guardOffense, "guard")
 		mons = append(mons, front...)
 
 	case ShapeMismatch:
 		plated, warded := contrast(pool, level)
 		mons = []*model.Monster{plated.Spawn(g, level), warded.Spawn(g, level)}
-		scale(mons, mismatchHP, mismatchOffense)
+		scale(mons, mismatchHP, mismatchOffense, "mismatch")
 
 	default:
 		shape = ShapeMixed
@@ -265,10 +265,19 @@ func filter(pool []*model.MonsterDef, ok func(*model.MonsterDef) bool) []*model.
 // scale resizes a spawned creature in place. Hit points move the length of the
 // fight and offense moves what it costs; a shape usually wants one and not the
 // other.
-func scale(mons []*model.Monster, hp, offense float64) {
+// scale resizes a group and stamps what it was resized *as*.
+//
+// The stamp is the point of the second parameter existing at all. Two creatures
+// off one definition scaled differently must never share a slot on the field —
+// see model.SameKind — and working that out by comparing the numbers afterwards
+// is an inference that holds only while no two scalings can land on the same
+// answer. The multipliers floor at one, so a quiet enough creature defeats it.
+// Here is where the fact is known, so here is where it is recorded.
+func scale(mons []*model.Monster, hp, offense float64, build string) {
 	for _, m := range mons {
 		m.MaxHP = core.Max(1, int(float64(m.MaxHP)*hp))
 		m.HP = m.MaxHP
 		m.Offense = core.Max(1, int(float64(m.Offense)*offense))
+		m.Build = build
 	}
 }

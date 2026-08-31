@@ -439,6 +439,47 @@ func (b *battleScene) front(slot int) int {
 	return b.slots[slot].Front(b.mons)
 }
 
+// restOfQueue is the sentence a condition needs when it lands on one creature
+// out of a stack, and it is a sentence rather than a mechanism on purpose.
+//
+// A slot draws one portrait and one row of pips, and those belong to the
+// creature at the front — the only one anything single-target can reach. So
+// stunning a slot of three stuns one wolf, the other two swing that same round,
+// and the screen has no way to say "one of these is stunned" without becoming
+// the crowded field staggering exists to un-crowd. What it can do is say so in
+// the transcript, which is where this game explains itself.
+//
+// Empty when there is nobody behind, so an ordinary fight reads exactly as it
+// always did.
+// queueNote is restOfQueue, but only for a technique that stopped at the front.
+// Anything over the whole field reached every member of every queue, so there
+// is nobody it missed and nothing to say.
+func (b *battleScene) queueNote(s model.Spell, idx int) string {
+	if s.Target == model.TargetAll {
+		return ""
+	}
+	return b.restOfQueue(idx)
+}
+
+func (b *battleScene) restOfQueue(idx int) string {
+	s := b.slotOf(idx)
+	if s < 0 {
+		return ""
+	}
+	// "Untouched" rather than a negation of the sentence before it, because
+	// the sentence before it is one of five and none of them negate the same
+	// way — "hits noticeably softer now. The other one is not" completes
+	// nothing.
+	switch n := b.slots[s].Standing(b.mons) - 1; {
+	case n <= 0:
+		return ""
+	case n == 1:
+		return " The other one is untouched."
+	default:
+		return fmt.Sprintf(" The other %d are untouched.", n)
+	}
+}
+
 // slotOf is where a creature is standing, for the callers holding an index
 // into the field and needing a place on the screen.
 func (b *battleScene) slotOf(idx int) int { return rules.StackOf(b.slots, idx) }
@@ -1312,22 +1353,22 @@ func (b *battleScene) castOnFoes(g *Game, c cast) {
 			m.Active = rules.Apply(m.Active, model.Effect{
 				Kind: model.EffectWeaken, Power: s.Power, Rounds: model.Forever,
 			})
-			b.log.Add("%s hits noticeably softer now.", m.Short())
+			b.log.Add("%s hits noticeably softer now.%s", m.Short(), b.queueNote(s, i))
 		case model.SpellStun:
 			m.Active = rules.Apply(m.Active, model.Effect{
 				Kind: model.EffectStun, Power: 1, Rounds: 1,
 			})
-			b.log.Add("%s loses track of the fight entirely.", m.Short())
+			b.log.Add("%s loses track of the fight entirely.%s", m.Short(), b.queueNote(s, i))
 		case model.SpellPoison:
 			m.Active = rules.Apply(m.Active, model.Effect{
 				Kind: model.EffectPoison, Power: s.Power, Rounds: 4,
 			})
-			b.log.Add("%s has been given something it cannot metabolise.", m.Short())
+			b.log.Add("%s has been given something it cannot metabolise.%s", m.Short(), b.queueNote(s, i))
 		case model.SpellBurn:
 			m.Active = rules.Apply(m.Active, model.Effect{
 				Kind: model.EffectBurn, Power: s.Power, Rounds: 3,
 			})
-			b.log.Add("%s is on fire, and has noticed.", m.Short())
+			b.log.Add("%s is on fire, and has noticed.%s", m.Short(), b.queueNote(s, i))
 		case model.SpellSap:
 			// Half the exchange. The other half lands on the caster once,
 			// below, rather than once per target — otherwise pointing it at
@@ -1337,7 +1378,7 @@ func (b *battleScene) castOnFoes(g *Game, c cast) {
 			m.Active = rules.Apply(m.Active, model.Effect{
 				Kind: model.EffectWeaken, Power: s.Power, Rounds: model.Forever,
 			})
-			b.log.Add("%s has less of whatever that was.", m.Short())
+			b.log.Add("%s has less of whatever that was.%s", m.Short(), b.queueNote(s, i))
 		case model.SpellPact:
 			d := rules.AfterWard(rules.SpellDamage(g.RNG, p, s), m.Ward)
 			b.damageMonsterBy(g, p, i, d)

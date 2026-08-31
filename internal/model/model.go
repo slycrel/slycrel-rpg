@@ -476,6 +476,29 @@ type Monster struct {
 	// Active is what the monster is currently suffering. Monsters are spawned
 	// fresh for every encounter and never stored, so this needs no exclusion.
 	Active Effects
+
+	// Build is how this creature was made, and it exists so that SameKind can
+	// answer from a fact rather than from an inference.
+	//
+	// The encounter shapes take one definition and produce different creatures
+	// from it: a pack scales every body it draws, a brute doubles one, an
+	// escort scales its caster and leaves its guards alone. Two of those in one
+	// field must never share a slot, because a player choosing between them is
+	// choosing between different things wearing one name.
+	//
+	// SameKind used to work that out by comparing offence, guard, ward and
+	// speed — everything the scaling touches deterministically — and that is an
+	// inference that happens to be right rather than a fact. It is right only
+	// while no two scalings of one definition can land on the same numbers, and
+	// the guard multiplier floors at one: a magical creature swinging for 1
+	// would produce a guard indistinguishable from the caster it guards, and the
+	// two would quietly share a slot. Nothing in the tables is near that today
+	// and nothing should have to stay near it.
+	//
+	// So whoever builds the encounter stamps what it built. Empty means "as the
+	// definition drew it", which is what an ordinary creature and every save
+	// written before this is, and is the answer that groups them correctly.
+	Build string
 }
 
 // Short is what a creature is called in prose: the species and its group
@@ -498,22 +521,23 @@ func (m *Monster) Short() string {
 //
 // Hit points are deliberately not part of it. Spawn jitters HP by an eighth, so
 // two wolves rolled from one definition at one level are never quite equal
-// there and would never stack if they had to be. Everything else Spawn and the
-// encounter shapes touch — offence, guard, ward, speed — is deterministic given
-// the definition, the level and the scaling, so it is the part that says
-// whether two creatures are the same *kind* of thing rather than two rolls of
-// one.
+// there and would never stack if they had to be.
 //
-// That distinction is doing real work. A pack scales every body it draws, so a
-// pack of six wolves is six of one kind. An escort scales its caster and leaves
-// its guards alone, so a magical wolf leading two ordinary ones is two kinds
-// wearing one name — and they must not stack, because the player choosing
-// between them is choosing between different creatures.
+// What does the work is Build — the stamp the encounter shape leaves saying how
+// it made this creature — plus the stats the scaling moves. A pack scales every
+// body it draws, so a pack of six wolves is six of one kind. An escort scales
+// its caster and leaves its guards alone, so a magical wolf leading two ordinary
+// ones is two kinds wearing one name, and they must not stack because the
+// player choosing between them is choosing between different creatures.
 func SameKind(a, b *Monster) bool {
 	if a == nil || b == nil || a.Def == nil || b.Def == nil {
 		return false
 	}
-	return a.Def.ID == b.Def.ID &&
+	// Build first, because it is the fact. The stats are kept as well rather
+	// than replaced: they catch anything that makes two creatures differ
+	// without going through a shape at all, and a definition whose spawn ever
+	// stops being deterministic would show up here rather than in a fight.
+	return a.Def.ID == b.Def.ID && a.Build == b.Build &&
 		a.Offense == b.Offense && a.Defense == b.Defense &&
 		a.Ward == b.Ward && a.Speed == b.Speed
 }
