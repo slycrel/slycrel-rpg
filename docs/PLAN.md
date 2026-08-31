@@ -598,14 +598,54 @@ than a system.
      its deficit is that. Not fourteen points of it — the whole charm slot is
      worth about five.
 
-   So the honest state of the arcs is: one arc, one shape indistinguishable
-   from it, and one trap. That is a worse answer than the report used to give
-   and a much more useful one, and it is the brief for the content half rather
-   than a reason to abandon it. What the tables have to grow is a reason to
-   give up damage that pays — attrition's whole premise is that fights take
-   longer and you are still standing at the end, and the endurance column is
-   where that should show up while the win-rate column does not. Nothing in
-   ARCS currently looks at endurance at all.
+   That read as: one arc, one shape indistinguishable from it, and one trap.
+   Two things were wrong with it, and finding them took one more measurement
+   and one more zero value.
+
+   **ARCS had never looked at endurance.** Attrition's whole premise is that
+   fights take longer and you are still standing at the end, which a single
+   fight cannot show by construction — so the section was asking a build to
+   prove itself on the one axis its design gives away. It has a fights-per-rest
+   column now, on-level, at the same purse.
+
+   That was necessary and not sufficient: with the column in, attrition won it
+   at exactly one level out of seven. Which is the useful kind of negative
+   result, because it meant the build was not merely invisible to the
+   measurement. It was actually failing.
+
+   **And then the third zero value.** `attrition` had no `Arm` field, so it took
+   the zero value — `ArmBlock`, the plain shield — in the one build whose
+   entire identity is the off arm, at exactly the levels LANES says the plain
+   shield is the worst of the three. The same defect as `Equip`'s off arm and
+   `Equip`'s charm, third time, and this time in a build defined by the slot it
+   was getting wrong. "The wall" is a description of a playstyle, not a claim
+   about which lane; a build that spends most on the arm should spend it on the
+   arm that is worth something.
+
+   With `Arm: ArmByLevel` on it, the build does what it always said it did:
+
+   | level | | balanced | attrition | duelist |
+   |---|---|---|---|---|
+   | 11 | won | **67.0%** | 59.8% | 66.2% |
+   | 11 | per rest | 9.5 | **10.8** | 7.1 |
+   | 13 | won | **66.3%** | 60.2% | 65.0% |
+   | 13 | per rest | 4.1 | **4.1** | 3.5 |
+
+   It loses the fight and wins the afternoon, which is the trade it was written
+   to be — and it does it while spending eight to ten per cent *under* the
+   purse. The widest gap at any level fell from 16.0 points to 7.2, every build
+   now wins somewhere, and the verdict moved to the branch that says the
+   content already supports more than one arc.
+
+   So the answer to the roadmap item is yes, and it was yes all along: what was
+   missing was a column and a field. The content half — writing new gear so the
+   arcs pull further apart — is not needed to make three builds viable, which
+   is worth knowing before spending a week on it. What it would buy is *wider*
+   arcs rather than merely real ones, and the ceiling on that is the rule in
+   `TestShieldsStaySecondaryToArmour`: every shield in the table already sits
+   exactly at its cap of half the body armour of its band, with zero headroom at
+   every tier. Widening the arcs means revisiting that rule on purpose, which
+   this document has said twice and is still the right sequence.
 
    Two smaller things fell out. `EquipWithin`'s first draft assumed a two-handed
    build has no off arm, which is what `Hands: 2` says — but the arm is closed

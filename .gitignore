@@ -1,12 +1,20 @@
 # Extracted source bundle. Huge, purchased, and reproducible from the zips:
 #   go run ./cmd/assetpipe extract tier1
-# The art bundle, and the symlink a worktree points at it with — no trailing
-# slash, so the pattern matches both the directory and the link.
+# No trailing slash, so this also covers the symlink a git worktree points at
+# the real checkout's copy with — a worktree gets the manifest and none of the
+# files it names, and the tests that probe the registry fail on missing art.
 assets-raw
+
+# Binaries dropped by `go build ./cmd/...` in the repo root. One name per
+# command and anchored, so this never swallows a source directory of the same
+# name: cmd/balance is a package, ./balance is a leftover.
+/slycrel
+/balance
+/genfixtures
+/assetpipe
 
 # Build output. dist/ holds shareable builds, which DO contain the third-party
 # art and audio — shipping that in a game is licensed, committing it is not.
-/slycrel
 /dist/
 
 # Save games. Play saves are scratch; the hand-curated fixtures under

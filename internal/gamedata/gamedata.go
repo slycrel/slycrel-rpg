@@ -600,12 +600,19 @@ var Archetypes = []Archetype{
 	},
 	{
 		Name: "attrition",
-		Note: "armour and shield of your tier, weapon a band behind",
+		Note: "armour and off arm of your tier, weapon a band behind",
 		// The wall. Fights take longer and are meant to; what this build buys
 		// is the ability to still be standing at the end of one.
 		Weapon: Slot{Back: 1},
 		Charm:  Slot{Back: 1},
 		Hands:  1,
+		// The right arm for the level, like the baseline. This was the zero
+		// value — ArmBlock, the plain shield — in the one build whose entire
+		// identity is the off arm, at exactly the levels LANES says the plain
+		// shield is the worst of the three. "The wall" is a description of a
+		// playstyle, not a claim about which lane: a build that spends most on
+		// the arm should spend it on the arm that is worth something.
+		Arm: ArmByLevel,
 	},
 	{
 		Name: "duelist",

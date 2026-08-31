@@ -189,6 +189,13 @@ which event fires which trigger, and where it is safe to put a box on screen.
   what keep them honest: each re-derives its answer every run and warns when
   the constant and the fights disagree. If you add a slot, the question to ask
   is not "does this compile" but "what measured this".
+
+  Three occurrences now, and the third is the one worth remembering: the
+  `attrition` archetype had no `Arm` field either, so the build whose entire
+  identity is the off arm carried the worst off-arm lane from level six up. It
+  read as a trap — losing every level, by a margin that widened to 14.5 points
+  — and it was a zero value. Naming the field moved the widest gap in ARCS from
+  16.0 points to 7.2 and turned "one arc and a trap" into three live builds.
 - **A companion's cut is a purse, not a subtraction.** `Skim` goes into the
   ally's own `Coins`; `gamedata.Wants` says what they are behind on and
   `Shop` spends it when the company walks into a settlement with the right

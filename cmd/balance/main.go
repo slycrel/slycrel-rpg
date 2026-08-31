@@ -572,6 +572,11 @@ func bestWardCharm(t *gamedata.Tables, tier int) (model.Charm, bool) {
 // simulator fights one character, so a company build shows up only as worse
 // personal gear and would read as strictly bad. That is a real gap and not one
 // to paper over with a guess — it needs SimulateFight to take a party first.
+// arcRuns is how many chains of on-level fights the endurance column averages
+// over, per class. A chain costs what a dozen single fights do, so this is much
+// smaller than the fight count beside it.
+const arcRuns = 80
+
 func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "ARCS — is there more than one way to be correctly levelled?\n")
 	fmt.Fprintf(out, "win rates averaged across the three classes, on-level where you are and\n")
@@ -580,9 +585,9 @@ func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 		fmt.Fprintf(out, "  %-10s %s\n", a.Name, a.Note)
 	}
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, "%-5s %-10s %7s %6s %9s %8s %8s %9s\n",
-		"level", "build", "cost", "spent", "on-level", "over", "rounds", "hp left")
-	fmt.Fprintln(out, strings.Repeat("-", 71))
+	fmt.Fprintf(out, "%-5s %-10s %7s %6s %9s %8s %8s %8s %9s\n",
+		"level", "build", "cost", "spent", "on-level", "over", "rounds", "hp left", "per rest")
+	fmt.Fprintln(out, strings.Repeat("-", 81))
 
 	// The comparison is made on the stretch fights, three levels over, not on
 	// the on-level ones.
@@ -596,6 +601,7 @@ func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 	type row struct {
 		build string
 		over  float64
+		rest  float64
 	}
 	stretch := map[int][]row{}
 	// How many build-levels came in more than a tenth under the purse, which is
@@ -653,16 +659,50 @@ func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 			on, rounds, hp := rate(biome, level)
 			over, _, _ := rate(biomeForLevel(level+3), level+3)
 
-			stretch[level] = append(stretch[level], row{a.Name, over})
+			// How far one rest goes, which is the axis attrition's whole
+			// premise lives on — fights take longer and you are still standing
+			// at the end — and which this section had never looked at. A win
+			// rate is one fight, and a build that trades damage for staying
+			// power cannot show a profit in one fight by construction. If
+			// attrition is a real arc rather than a trap, this is the column
+			// where it has to say so.
+			perRest := 0.0
+			total, chains := 0, 0
+			for _, class := range model.AllClasses {
+				for i := 0; i < arcRuns; i++ {
+					sim := rules.BuildCharacter(g, class, level)
+					t.EquipWithin(sim, a, budgetFor(class))
+					sim.HP, sim.Psyche = sim.MaxHP, sim.MaxPsy()
+					spells := t.SpellsFor(sim)
+					for survived := 0; survived < 60; survived++ {
+						mons := t.PickMonsters(g, biome, level, 1)
+						if len(mons) == 0 {
+							break
+						}
+						r := rules.SimulateFight(g, sim, []*model.MonsterDef{mons[0].Def},
+							level, 60, spells)
+						if !r.Won || sim.HP <= 0 {
+							break
+						}
+						total++
+					}
+					chains++
+				}
+			}
+			if chains > 0 {
+				perRest = float64(total) / float64(chains)
+			}
+
+			stretch[level] = append(stretch[level], row{a.Name, over, perRest})
 			// The spend column is the point of this table now. A build that
 			// comes in well under the purse is not losing because of its
 			// shape, and one that came in over — which is what the duelist
 			// used to do, by 15 to 18 per cent at every level — was never
 			// being compared with anything.
 			budget := budgetFor(model.AllClasses[len(model.AllClasses)-1])
-			fmt.Fprintf(out, "%-5d %-10s %7d %5.0f%% %8.1f%% %7.1f%% %8.1f %8d%%\n",
+			fmt.Fprintf(out, "%-5d %-10s %7d %5.0f%% %8.1f%% %7.1f%% %8.1f %7d%% %9.1f\n",
 				level, a.Name, cost, float64(cost)*100/float64(core.Max(1, budget)),
-				on, over, rounds, hp)
+				on, over, rounds, hp, perRest)
 			if cost > budget {
 				fmt.Fprintf(out, "      WARNING: %s outspends the purse by %d.\n",
 					a.Name, cost-budget)
