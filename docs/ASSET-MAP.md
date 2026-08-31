@@ -47,20 +47,24 @@ of the extraction tree, and `scripts/dist.sh` copies whatever the manifest names
 
 ```
 assetpipe extract <pack>   unzip from the bundle into assets-raw/  (read-only source)
-assetpipe icons            box-reduce every icon set to 16px       -> _generated/icons/
-assetpipe garb             cut garment cells from a paper-doll sheet -> _generated/icons/garb/
-assetpipe arms             cut weapon cells from the same sheet     -> _generated/icons/arms/
-assetpipe poi              cut overworld location markers          -> _generated/icons/poi/
-assetpipe foes             stack per-frame foe animations to strips -> _generated/foes/
-assetpipe props            translucent shadows on Mana Seed props  -> _generated/props/
-assetpipe bands            tier recolours of the gear icons        -> _generated/bands/
-assetpipe manifest         rebuild assets/manifest.json from all of the above
-assetpipe map              rebuild the table in this file
+assetpipe build            run every step below, in order          <- the only one to remember
 ```
 
-Order matters in one place: `bands` reads the output of `icons`, `garb` and
-`arms`, and reads `armor.json` and `weapons.json` to learn *which* pictures to
-band. Run it after all three.
+`build` is the whole derived-art pipeline: props, icons, garb, arms, poi, foes,
+bands, manifest, audio, map. Each still exists as its own subcommand for working
+on one of them, but the order between them is real and getting it wrong is
+silent — `bands` reads what `icons`, `garb` and `arms` write plus the gear
+tables, `manifest` enumerates everything above it, and `map` reads the manifest
+back. Run `bands` before `arms` and it bands last run's weapons; run `manifest`
+before `bands` and the new keys are simply absent, the game falls back, and the
+audit still says "all referenced art resolves" because the content names what it
+always named. Nothing anywhere reports it. So the order lives in
+`cmd/assetpipe/build.go` as a list rather than in a paragraph as advice.
+
+The tree is disposable and reproducible: deleting `assets-raw/_generated`
+entirely and running `build` produces a byte-identical `manifest.json`.
+`PROVENANCE.txt` is written beside the output saying which step made which
+directory and from which pack.
 
 ## Decisions on the record
 
@@ -212,11 +216,16 @@ a genuine count.
 
 This pass is not the last one, and these are the questions it left open.
 
-- **Lane is not encoded in armour art.** Cloth reads as a dress and everything
-  else as a jerkin, so light and heavy are told apart only by which jerkin and
-  which tier. `model.CanWear` gates who may wear what, and "never offer a choice
-  you are about to refuse" argues the picture should say so. The alternative is
-  banding on two axes, which doubles the output.
+- **Lane is under-encoded, and the armourer's frame confirms it.** Cloth reads
+  as a dress and *both* other lanes as a jerkin, so light and heavy differ only
+  by which jerkin and which tier — "Padded Jerkin" and "Ringmail, Secondhand"
+  are the same silhouette. `model.CanWear` gates who may wear what, and "never
+  offer a choice you are about to refuse" argues the picture should say so.
+  There is no cheap fix in hand: the crafting sheet has torsos and dresses and
+  no third shape, and the only mail-like pictures anywhere are the two scale
+  icons already spent on the two scale coats. It wants either a third
+  silhouette that does not exist yet or banding on two axes, which doubles the
+  output and muddies tier.
 - **Six ramp rungs is a guess that happens to fit.** Gear tiers run 0-5 today.
   If the tier band ever widens, the ramp needs rungs that stay distinguishable
   at 16px, and six is already close to the limit of what a palette can say.
@@ -228,12 +237,15 @@ This pass is not the last one, and these are the questions it left open.
   Fondly" and "Full Plate 'Do Not Perceive Me'" are `jerkin3` and `jerkin4`
   banded gold, and they differ by a strap versus a clasp. Distinguishable on a
   close look, subtle at a glance.
-- **None of this has been seen in an armourer's shop.** The `-demo` tour lands
-  on a Blacksmith, and the character sheet lists armour as text with no icon.
-  The icons were verified at pixel level and by `-audit`, and the menu fits a
-  16x16 source into a 16px box, so the fit is identity — but a real frame of the
-  armourer would be better evidence, and wants a save fixture rather than a
-  patched tour.
+- **Seen now, and the shelf is a colour block.** `demoOpenShop` takes the first
+  shop in the interior and that is the smith under every seed tried, so the
+  armourer was staged by patching the tour to prefer it, taking the frame, and
+  reverting — which is what the scope note in CLAUDE.md allows. The frame is
+  worth more than the contact sheet was: sorted by price, the shelf opens with
+  four tier-1 pieces, and four tier-1 pieces are four brown blobs. Tier as
+  colour is working exactly as designed, and the design's weakness is that a
+  tier with several pieces in it hands them all the same colour and leaves the
+  silhouette to carry the rest.
 - **The oddity's groups are named, so art has to match the name.** Adding the
   wasteland road signs to `oddSigns` would have had the game call a matte red
   octagon "a lit sign", because the group is placed under one description and
@@ -264,6 +276,8 @@ This pass is not the last one, and these are the questions it left open.
   `ground/` at 25 keys is a complete seasonal set under a procedural fringing
   system, not a gap. Anything drawn from the other pack would have to earn its
   way past that sentence.
-- **`_generated` has no provenance record.** A file under it does not say which
-  step wrote it or from what. The table above infers it from the directory,
-  which works only as long as each step owns a directory.
+- **The generated tree is stamped, but only at directory granularity.**
+  `PROVENANCE.txt` now says which step wrote which directory and from which
+  pack. An individual file still does not carry its own origin, which is fine
+  while every step owns a directory and would stop being fine if one ever
+  wrote into another's.

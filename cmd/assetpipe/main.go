@@ -1,6 +1,7 @@
 // Command assetpipe inventories and extracts the Humble "Complete RPG Creator
 // Bundle" archives into assets-raw/ so the game can cherry-pick from them.
 //
+//	assetpipe build                run the whole derived-art pipeline, in order
 //	assetpipe inventory            write docs/ASSET-INVENTORY.md from the zip indexes
 //	assetpipe extract tier1        extract the packs listed in tier1 (see tiers below)
 //	assetpipe extract <pack>...    extract named packs
@@ -100,6 +101,8 @@ func main() {
 	}
 
 	switch os.Args[1] {
+	case "build":
+		must(buildAll())
 	case "inventory":
 		must(inventory(root))
 	case "extract":

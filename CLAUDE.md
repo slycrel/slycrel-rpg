@@ -18,7 +18,7 @@ go run ./cmd/slycrel -audit          # content against the art manifest, then ex
 go run ./cmd/slycrel -load saves/fixtures/battered.json   # start from a known state
 go run ./cmd/balance                 # win rates, endurance, progression, economy
 go run ./cmd/genfixtures             # rewrite save fixtures after a world-gen change
-go run ./cmd/assetpipe map           # refresh the table in docs/ASSET-MAP.md
+go run ./cmd/assetpipe build         # rebuild all derived art, in order, then the manifest
 go test ./internal/...
 ```
 
@@ -115,6 +115,14 @@ which event fires which trigger, and where it is safe to put a box on screen.
   only set anyone checked, and the answer was ten garments on a paper-doll sheet
   in an unopened pack. `docs/ASSET-MAP.md` is the standing list, with what the
   last pass deliberately left unsettled.
+- **`assetpipe build` is the pipeline, and the order in it is load-bearing.**
+  Ten steps, and running them out of order fails silently in the worst way:
+  `bands` before `arms` bands last run's weapons, and `manifest` before `bands`
+  leaves the new keys absent, whereupon the game falls back and `-audit` still
+  reports "all referenced art resolves" because the content names what it always
+  named. Nothing anywhere says a word. Use `build`; the individual subcommands
+  are for working on one step. The tree is disposable — delete
+  `assets-raw/_generated` and rebuild, and the manifest comes back byte-identical.
 - **A pipeline step wipes its own output directory.** `bands` takes its source
   list from the content, so a picture the table stops naming has to stop
   shipping — the manifest enumerates the directory, and a stale file would keep
