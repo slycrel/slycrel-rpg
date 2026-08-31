@@ -1449,6 +1449,19 @@ func (b *battleScene) monsterTurn(g *Game, idx int) {
 	}
 	tgt := core.Pick(g.RNG, living)
 
+	// Nobody there. The thief's unit of defence, rolled before anything is
+	// subtracted, and narrated rather than folded into a damage number — a blow
+	// that landed for nothing and a blow that never arrived are the same figure
+	// and completely different sentences, and the transcript is where a player
+	// finds out they have a defence at all.
+	if rules.Dodged(g.RNG, tgt, m.Speed) {
+		verb, _ := g.Write.MonsterAttack(g.RNG, m)
+		g.Sound.Play("fight/miss")
+		b.log.AddColor(render.ColInkDim, "%s %s %s, and finds nobody there.",
+			m.Short(), verb, tgt.Name)
+		return
+	}
+
 	dmg := rules.MonsterDamage(g.RNG, tgt, m) + rules.OffenseMod(m.Active)
 	if dmg < 0 {
 		dmg = 0

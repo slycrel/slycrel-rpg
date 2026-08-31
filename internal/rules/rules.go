@@ -1120,6 +1120,11 @@ type FightResult struct {
 	// to say what the fight refunded.
 	HPBack     int
 	PsycheBack int
+	// Dodges is how many incoming blows found nobody there. Counted so the
+	// report can say what the Thief's unit actually did rather than only that
+	// the numbers moved — a mechanic whose effect can only be inferred from a
+	// win rate is one nobody can tune.
+	Dodges int
 }
 
 // Died reports the outcome that actually costs a run.
@@ -1345,6 +1350,14 @@ func SimulateGroup(g *core.RNG, c *model.Character, mons []*model.Monster, maxRo
 				default:
 					// The other half of the same hole: a weakened monster hits
 					// softer in the game and hit full strength in the report.
+					// Nobody there. The Thief's unit, rolled before anything is
+					// subtracted, because a dodge is not a small hit — it is
+					// the absence of one, and the two curve differently against
+					// a creature that hits harder every level.
+					if Dodged(g, sim, m.Speed) {
+						res.Dodges++
+						continue
+					}
 					dmg := core.Max(0, MonsterDamage(g, sim, m)+OffenseMod(m.Active))
 					if punished {
 						dmg = FeintPunish(dmg)

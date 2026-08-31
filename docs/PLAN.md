@@ -2851,6 +2851,73 @@ re-price "sometimes twice".
 
 So it is wanted, and it goes last and alone.
 
+### Step one, built: dodge
+
+*(Jeremy: "let's build your proposal and see how it shakes out in practice.")*
+
+`rules.DodgeChance` is Thief-only and reads **Speed**, which until now did
+nothing defensive at all — initiative and the flee roll were its whole job —
+and which the Thief rolls highest by a clear margin, 9-13 against a Fighter's
+6-9. Dexterity was the alternative and is already spoken for: the player's own
+miss chance, the crit roll and the feint, whose note is explicit that footwork
+of the deceptive kind is dexterity. Getting out of the way is not a lie, it is
+a race.
+
+The mechanic went into `SimulateFight` before the battle screen, and the
+constant was chosen from a sweep rather than picked and confirmed. **Both of
+those mattered, because the first two attempts were wrong.**
+
+**The first sweep measured nothing.** It varied `dodgeBase` and reported almost
+no effect — because the speed term dominates the base, so "base 0%" was already
+a 16% dodge at level seven and "base 20%" was the 30% cap. A sweep that never
+varied the thing it was sweeping, which is the same defect this document has
+spent a month finding in other instruments. Sweeping the finished probability
+from nothing to full is what actually priced it.
+
+**Then it was measured on the wrong axis.** The Thief is behind on endurance —
+5.9 fights to a rest against a Fighter's 9.3 at level seven — so endurance is
+where dodge was tuned, and at full strength it brought the class to parity
+there. It also took the Thief's stretch win rate from 68.3% to 82.8% at level
+eleven and 71.2% to 86.7% at thirteen, making it the best survivor in the game
+by eighteen points over the Fighter. A dodge is worth far more in one fight
+than across an afternoon: thirty per cent of blows missing is thirty per cent
+less damage *now*, while over a chain the Thief's small pool and absent healing
+reassert. The constant has to be set on the axis that binds and checked on the
+other.
+
+**And the endurance gap was the wrong target anyway.** ENDURANCE says "no
+potions" in its own header, and the Thief's sustain *is* potions — it has no
+healing technique at all and buys two restoratives for one, which SUPPLIES
+measures precisely because the fight simulator cannot. So the gap dodge was
+being aimed at is understated by construction in the only table that reports
+it.
+
+**The third shape is the one that shipped.** The original scaled at two points
+of chance per point of speed, so it grew from 16% at level three to a pinned
+30% from eleven — a defence that compounded fastest exactly where the class was
+already strongest and did least where it was weakest. Flattened to 8% base,
+0.4% a point, capped at 12%, it runs 9-12% across the whole game and is worth
++3.3 to +7.3 points of stretch win rate at every level rather than +15 at the
+top.
+
+Where that leaves the Thief, against the Fighter, on the stretch fights:
+
+| level | 3 | 5 | 7 | 9 | 11 | 13 |
+|---|---|---|---|---|---|---|
+| Fighter | 80.2% | 96.5% | 99.3% | 88.8% | 71.6% | 68.2% |
+| Thief, no dodge | 66.5% | 65.4% | 85.0% | 71.4% | 68.2% | 72.2% |
+| Thief, with | 70.8% | 72.7% | 88.3% | 74.7% | 74.7% | 78.0% |
+
+Behind at four levels of six and ahead at the top two, where it was already
+ahead before the change. That is a class arc rather than a buff: squishier
+early, and coming into its own as the speed advantage compounds — which is the
+fantasy the class is named for.
+
+`TestDodgeStaysFlatAcrossTheLevels` pins the shape rather than the numbers: the
+rate may not vary by more than six points across the speed gaps the real
+rosters produce, because a defence that compounds with level is the thing that
+had to be fixed twice.
+
 ### The order, and why it is an order
 
 Every term here changes `PlayerAttack` or `MonsterDamage`, which is what
