@@ -1320,21 +1320,47 @@ genuinely is not there. Full detail in [ASSET-MAP.md](ASSET-MAP.md).
    standing one is cut, because legibility decides whether the feature works and
    animation does not.
 
-2. **Decor a room can be dressed with.** `pixelartdungeonlevel4` ships a torch
-   as five frames, and the same pack has doors, columns and chests. Interiors
-   place entities — shops, foes, chests, signs — and nothing that is only
-   scenery. A torch on a dungeon wall needs a pass that knows a wall from a
-   floor and can put something on it without making it walkable or interactive.
-   Small, and worth it mostly because a lit dungeon reads as a place rather than
-   a maze.
+2. ~~**Decor a room can be dressed with.**~~ *(Built, and smaller than it
+   looked.)* The "torch" is not a torch. The five frames are a stone brazier
+   standing on the floor — 19x38 of art inside a 64-tall frame — so the pass
+   that knows a wall from a floor and mounts something on it was never needed.
+   A brazier is just a thing that stands somewhere.
 
-3. **A spear that exists.** Polearms are the one weapon kind with no picture
-   anywhere in the bundle. "Glaive, Overcompensating" borrows an axe head on a
-   haft and reads correctly; "Spear, Regrettably Long" borrows a staff with a
-   point and reads as a wand, one tier away from an actual rod. The honest
-   options are to draw one, to find a pack that has one, or to decide the kind
-   does not need its own silhouette and say so. It is the only gap in the whole
-   asset pass that the bundle cannot close.
+   What it did need was an entity that nothing interacts with. `EDecor` is
+   solid, drawn, and has no case in `interact`; it is excluded from the bump
+   that would call one, alongside `ESign`. Dungeon rooms get one on a coin
+   flip, placed by the same room-rectangle rule the chests use rather than by
+   `findOpen`, because a brazier is solid and one dropped in a one-tile
+   corridor would wall off whatever is past it.
+
+   It animates for free: `drawEntity` already ticks a sprite's frames, so
+   stacking the five files into a strip was the whole of it.
+
+3. **A spear that exists.** *Still open, and now known to be unclosable from
+   what we own.* Polearms are the one weapon kind with no picture anywhere.
+   "Glaive, Overcompensating" borrows an axe head on a haft and reads correctly;
+   "Spear, Regrettably Long" borrows a staff with a point and reads as a wand,
+   one tier from an actual rod.
+
+   Six places were checked, and the point of writing them down is so nobody
+   spends the afternoon again:
+
+   - the crafting sheet — eight weapon shapes, no spear
+   - the ability set — sword, axe and hammer across four tiers, nothing else
+   - `2dminimalskillicons` — ships a `Skill_Spear`, which is a full-bleed tile
+     with a purple background and is not a spear, it is a flame
+   - the rogue-like sheet — two character rows *are* holding spears, and the
+     spear is part of the figure's own connected component, not liftable
+   - GUI Pro's 361 PictoIcons — has a `halberd`, but they are flat white
+     anti-aliased silhouettes that blur to nothing at 16px beside the shaded
+     cuts, and the halberd reads as an axe anyway
+   - a filename sweep of all 44 extracted packs and every zip in the bundle
+
+   Composing one was tried too: a haft from `staff`, a blade from `dagger`,
+   joined at the top. It reads as two objects with a gap between them, which is
+   what a collage looks like. The remaining options are to draw sixteen pixels
+   by hand, to buy a pack, or to decide a polearm does not need its own
+   silhouette and say so in this document.
 
 ## Since the roadmap
 

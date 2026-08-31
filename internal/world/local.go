@@ -112,6 +112,11 @@ const (
 	EBoss    EntityKind = "boss"    // the thing the dungeon is about
 	EAltar   EntityKind = "altar"   // shrines: a blessing with strings attached
 	ERecruit EntityKind = "recruit" // someone outside the inn, available for money
+	// EDecor is scenery. It stands there, it is solid, and walking into it does
+	// nothing — there is no case for it in `interact` and it is excluded from
+	// the bump that would call one. It exists so a dungeon can have a fire in
+	// it without the fire being a thing to press at.
+	EDecor EntityKind = "decor"
 )
 
 // Entity is something standing in a local map.
@@ -682,6 +687,17 @@ func buildDungeon(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 				l.Entities = append(l.Entities, &Entity{
 					Kind: EChest, Pos: p, Name: "a chest",
 					Line: wr.SignText(g),
+				})
+			}
+		}
+		// Somebody lit these, once. Placed inside a room by the same rule the
+		// chests use rather than by findOpen, because a brazier is solid and one
+		// dropped in a one-tile corridor would wall off whatever is past it.
+		if g.Chance(0.5) {
+			p := core.Point{X: g.Between(r.x, r.x+r.w-1), Y: g.Between(r.y, r.y+r.h-1)}
+			if l.EntityAt(p.X, p.Y) == nil {
+				l.Entities = append(l.Entities, &Entity{
+					Kind: EDecor, Pos: p, Name: "a brazier", Sprite: "decor/brazier",
 				})
 			}
 		}

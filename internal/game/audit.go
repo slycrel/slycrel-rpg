@@ -84,6 +84,11 @@ func (g *Game) Audit(w io.Writer) error {
 		}
 	}
 
+	// Scenery with art of its own. One key today, and it is checked for the
+	// same reason the oddity's furniture is: a brazier that failed to resolve
+	// would be a magenta box standing in a dungeon.
+	check("decor/brazier", "scenery")
+
 	// Location markers. These are the one entry here with a real fallback —
 	// a missing one draws the procedural rectangle it drew for the project's
 	// whole life rather than a magenta box — so it is listed to be told, not

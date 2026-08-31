@@ -46,15 +46,39 @@ var golemDir = []string{
 	"pixelartdungeonlevel4", "Pixel Art Dungeon Level 4-By Acasas-", "PNGs", "Golem",
 }
 
-// buildFoes stacks per-frame animations into strips under _generated/foes/.
+// stackedDecor is scenery that arrives the same way — a sequence of files that
+// wants to be one animated strip.
+//
+// The brazier is the only one so far, and it is worth having because a dungeon
+// with a fire in it reads as a place somebody built rather than as a maze. Note
+// that it is a brazier and not the wall torch the filenames suggest: the art is
+// a stone basin standing on the floor, 19x38 inside a 64-tall frame, which is
+// why it needs no wall-mounting pass and can simply stand somewhere.
+var stackedDecor = []frameSet{
+	{"brazier", []string{
+		"pixelartdungeonlevel4", "Pixel Art Dungeon Level 4-By Acasas-", "PNGs", "Torch Frames",
+	}, "torch"},
+}
+
+// buildFoes stacks per-frame animations into strips under _generated/foes/,
+// and the scenery ones under _generated/decor/.
 func buildFoes() error {
-	outDir := filepath.Join(genRoot, "foes")
+	if err := stackInto(stackedFoes, "foes"); err != nil {
+		return err
+	}
+	return stackInto(stackedDecor, "decor")
+}
+
+// stackInto builds one list of frame sets into a directory under the generated
+// tree.
+func stackInto(sets []frameSet, into string) error {
+	outDir := filepath.Join(genRoot, into)
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return err
 	}
 
 	total := 0
-	for _, fs := range stackedFoes {
+	for _, fs := range sets {
 		dir := filepath.Join(append([]string{rawRoot}, fs.dir...)...)
 		var files []string
 		for _, f := range pngsIn(dir) {
@@ -83,9 +107,9 @@ func buildFoes() error {
 		total++
 	}
 	if total == 0 {
-		return fmt.Errorf("no frame sets built; run `assetpipe extract pixelartdungeonlevel4` first")
+		return fmt.Errorf("no frame sets built for %s; run `assetpipe extract pixelartdungeonlevel4` first", into)
 	}
-	fmt.Printf("ok     foes   %3d animations stacked\n", total)
+	fmt.Printf("ok     %-6s %3d animations stacked\n", into, total)
 	return nil
 }
 

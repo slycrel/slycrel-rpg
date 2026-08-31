@@ -126,7 +126,7 @@ func (s *localScene) tryStep(g *Game, d core.Dir) {
 	if e := g.Local.EntityAt(next.X, next.Y); e != nil && !g.abed(e) {
 		g.LocalWalk.Face(d)
 		s.moveDelay = 8
-		if e.Kind != world.ESign {
+		if e.Kind != world.ESign && e.Kind != world.EDecor {
 			g.interact(e)
 		}
 		return

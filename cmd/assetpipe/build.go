@@ -49,8 +49,8 @@ var pipeline = []step{
 	},
 	{
 		name: "foes", run: buildFoes,
-		writes: "foes/", from: "pixelartdungeonlevel4",
-		what: "per-frame animations stacked into vertical strips",
+		writes: "foes/, decor/", from: "pixelartdungeonlevel4",
+		what: "per-frame animations stacked into vertical strips: the golem, and a brazier",
 	},
 	{
 		name: "wild", run: buildWild,

@@ -113,6 +113,18 @@ func buildManifest() error {
 		add("foe/"+strings.Replace(base(f), "_", "/", 1), f, 64, 64)
 	}
 
+	// Scenery that animates, stacked by `assetpipe foes`. The frame geometry is
+	// spelled out rather than inferred: a strip on disk is just a tall image,
+	// and nothing in the file says where one frame ends.
+	for _, d := range []struct {
+		key    string
+		fw, fh int
+	}{
+		{"brazier", 19, 64},
+	} {
+		add("decor/"+d.key, filepath.Join(genRoot, "decor", d.key+".png"), d.fw, d.fh)
+	}
+
 	// Ground textures. Mana Seed's seasonal "wang tiles" sheets carry a legend
 	// strip of six flat, seamlessly tiling textures at a fixed offset. Those
 	// swatches are what the autotiler composites; its own corner masks handle

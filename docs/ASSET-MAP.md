@@ -18,7 +18,7 @@ person to have made it.
 
 <!-- BEGIN generated: go run ./cmd/assetpipe map -->
 
-**917 keys across 14 namespaces.**
+**918 keys across 15 namespaces.**
 
 | namespace | keys | sources |
 |---|--:|---|
@@ -36,6 +36,7 @@ person to have made it.
 | `wild/` | 8 | `_generated/wild` 8 |
 | `prop/` | 6 | `manaseedpixelarttilesetcollection` 5, `_generated/props` 1 |
 | `weather/` | 4 | `manaseedpixelarttilesetcollection` 4 |
+| `decor/` | 1 | `_generated/decor` 1 |
 
 <!-- END generated -->
 
@@ -173,7 +174,7 @@ unopened. They are on disk and in nobody's manifest:
 | pack | what it holds | why it is interesting |
 |---|---|---|
 | `pixelartrogue-likerpg` | two 512x512 sheets at 16px | map icons and eight overworld creatures are cut and wired. Still unused: the terrain set in six biome colourways, the remaining creature rows, and every creature's non-standing poses. |
-| `pixelartdungeonlevel4` | 58 files, 64x64 | the Golem's 24 frames are stacked and wired as `foe/golem/*`. Still unused: dungeon floors, doors, chests, and a 5-frame torch loop with no placement system to hang it on. |
+| `pixelartdungeonlevel4` | 58 files, 64x64 | the Golem's 24 frames are stacked as `foe/golem/*`, and the five "torch" frames as `decor/brazier` — it is a floor-standing brazier, not a wall torch. Still unused: dungeon floors, doors and chests. |
 | `pixelartwasteland` | 51 files, 64x64 | six pieces wired to `odd/`: a sofa, a stop sign, a road sign, a car, a barrel, a bin. Its streets, sand and grass are left alone — a second ground palette against a `groundMaterials` that is deliberately one. |
 | `pixelartminingcrafting` | 3 sheets | fully mined: rows 2-3 cut for armour, columns 5-7 cut for weapons. Sheet 2 is ores and ingots, sheet 3 terrain and UI frames; neither is wired. |
 | `2dpixelrpgmonsters` | one `.unitypackage` | not unpacked; `assetpipe extract` passes it through untouched. |
@@ -213,10 +214,14 @@ animation strips covering rain, storm and snow at two densities each. Counting
 a sheet as one asset understates both by an order of magnitude. `vfx/` at 17 is
 a genuine count.
 
-Two of the three Phase 5 items in [PLAN.md](PLAN.md) are still open — interior
-decor placement (the torch) and a spear, which is the one gap the bundle cannot
-close. The third is built: overworld wandering monsters, which gave eight of the
-rogue-like pack's creatures a home under `wild/`, keyed by monster kind.
+Two of the three Phase 5 items in [PLAN.md](PLAN.md) are built: overworld
+wandering monsters, which gave eight of the rogue-like pack's creatures a home
+under `wild/` keyed by monster kind, and interior scenery, which turned out to
+need no wall-mounting pass because the "torch" is a floor-standing brazier.
+
+The spear is the one still open, and it is now known to be unclosable from what
+we own: six sources checked and a composite attempted, all written up in
+[PLAN.md](PLAN.md) so nobody repeats the search.
 
 ## What is not settled
 
@@ -262,7 +267,11 @@ This pass is not the last one, and these are the questions it left open.
   the hero sheets — `walk`/`up`/`side` plus three attacks — where every other
   foe carries the flat `idle`/`walk`/`attack`/`hit`/`dead`. Nothing yet reads
   the directional ones: interior foes are drawn from a single pooled key.
-- **Polearms have no shape, and the two in the game are borrowing one.** There
+- **Polearms have no shape, and the search for one is finished.** Six sources
+  checked and a composite attempted; the list is in PLAN.md's Phase 5 so nobody
+  spends the afternoon again. What remains is a decision, not a hunt: draw
+  sixteen pixels, buy a pack, or say a polearm does not need its own silhouette.
+  The old note, kept because it still describes what is on screen: There
   is no spear anywhere on disk — not in the crafting sheet, not in the ability
   set, not in the skill set. "Glaive, Overcompensating" uses `axe2`, which is
   genuinely a broad blade on a haft and reads right. "Spear, Regrettably Long"

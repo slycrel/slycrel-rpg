@@ -429,6 +429,12 @@
       "file": "assets-raw/monstersavataricons_windows/monstersavataricons/99.png"
     },
     {
+      "key": "decor/brazier",
+      "file": "assets-raw/_generated/decor/brazier.png",
+      "frameW": 19,
+      "frameH": 64
+    },
+    {
       "key": "foe/beaver/attack_idle",
       "file": "assets-raw/pixelartrpgtopdownenemies/Pixel Art Top-Down RPG Enemies - AfGameAssets - V2 - Walking/Beaver/Beaver_Attack_Idle.png",
       "frameW": 64,
