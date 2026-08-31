@@ -18,7 +18,7 @@ person to have made it.
 
 <!-- BEGIN generated: go run ./cmd/assetpipe map -->
 
-**903 keys across 13 namespaces.**
+**909 keys across 13 namespaces.**
 
 | namespace | keys | sources |
 |---|--:|---|
@@ -28,8 +28,8 @@ person to have made it.
 | `portrait/` | 76 | `characteravataricons_windows` 76 |
 | `foe/` | 29 | `pixelartrpgtopdownenemies` 23, `_generated/foes` 6 |
 | `hero/` | 28 | `pixelartrpgtopdowncharacters` 28 |
+| `odd/` | 28 | `pixelartcyberpunkcity` 22, `pixelartwasteland` 6 |
 | `ground/` | 25 | `manaseedpixelarttilesetcollection` 25 |
-| `odd/` | 22 | `pixelartcyberpunkcity` 22 |
 | `npc/` | 17 | `pixelartrpgnpc` 17 |
 | `vfx/` | 17 | `pixelartrpgvfx` 17 |
 | `poi/` | 9 | `_generated/icons` 9 |
@@ -160,8 +160,8 @@ unopened. They are on disk and in nobody's manifest:
 | pack | what it holds | why it is interesting |
 |---|---|---|
 | `pixelartrogue-likerpg` | two 512x512 sheets at 16px | map icons are cut and wired. Still unused: a full overworld terrain set in six biome colourways and ~17 creatures x 6 poses. |
-| `pixelartdungeonlevel4` | 58 files, 64x64 | a Golem with 24 frames — front/back/side x walk and attack — which is exactly the `foe/` convention. Plus dungeon floors, doors, chests, a 5-frame torch loop. |
-| `pixelartwasteland` | 51 files, 64x64 | cars, stop signs, a sofa, barrels: oddity furniture in the same register as the cyberpunk city pack already wired to `odd/`. |
+| `pixelartdungeonlevel4` | 58 files, 64x64 | the Golem's 24 frames are stacked and wired as `foe/golem/*`. Still unused: dungeon floors, doors, chests, and a 5-frame torch loop with no placement system to hang it on. |
+| `pixelartwasteland` | 51 files, 64x64 | six pieces wired to `odd/`: a sofa, a stop sign, a road sign, a car, a barrel, a bin. Its streets, sand and grass are left alone — a second ground palette against a `groundMaterials` that is deliberately one. |
 | `pixelartminingcrafting` | 3 sheets | fully mined: rows 2-3 cut for armour, columns 5-7 cut for weapons. Sheet 2 is ores and ingots, sheet 3 terrain and UI frames; neither is wired. |
 | `2dpixelrpgmonsters` | one `.unitypackage` | not unpacked; `assetpipe extract` passes it through untouched. |
 
@@ -221,6 +221,12 @@ This pass is not the last one, and these are the questions it left open.
   16x16 source into a 16px box, so the fit is identity — but a real frame of the
   armourer would be better evidence, and wants a save fixture rather than a
   patched tour.
+- **The oddity's groups are named, so art has to match the name.** Adding the
+  wasteland road signs to `oddSigns` would have had the game call a matte red
+  octagon "a lit sign", because the group is placed under one description and
+  the cyberpunk signs in it are neon. They went to `oddClutter` — "something
+  left here" — which claims nothing. Any new piece has to be read against its
+  group's sentence before it goes in, and there are only five sentences.
 - **The Golem is the only creature with a back and a side.** Its keys follow
   the hero sheets — `walk`/`up`/`side` plus three attacks — where every other
   foe carries the flat `idle`/`walk`/`attack`/`hit`/`dead`. Nothing yet reads

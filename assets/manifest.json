@@ -3425,6 +3425,10 @@
       "frameH": 64
     },
     {
+      "key": "odd/barrel",
+      "file": "assets-raw/pixelartwasteland/Pixel Art Waste Land -by Acasas-/PNG/barrell.png"
+    },
+    {
       "key": "odd/barrier1",
       "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/barrier 01.png"
     },
@@ -3449,8 +3453,16 @@
       "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/trash 04.png"
     },
     {
+      "key": "odd/bin5",
+      "file": "assets-raw/pixelartwasteland/Pixel Art Waste Land -by Acasas-/PNG/trash 01.png"
+    },
+    {
       "key": "odd/car",
       "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/car01.png"
+    },
+    {
+      "key": "odd/car2",
+      "file": "assets-raw/pixelartwasteland/Pixel Art Waste Land -by Acasas-/PNG/car 02.png"
     },
     {
       "key": "odd/daub1",
@@ -3495,6 +3507,18 @@
     {
       "key": "odd/sign5",
       "file": "assets-raw/pixelartcyberpunkcity/Pixel Art Cyberpunk City - The Game Assets Mine -/PNG/sign 16.png"
+    },
+    {
+      "key": "odd/sign6",
+      "file": "assets-raw/pixelartwasteland/Pixel Art Waste Land -by Acasas-/PNG/sign 01.png"
+    },
+    {
+      "key": "odd/sofa",
+      "file": "assets-raw/pixelartwasteland/Pixel Art Waste Land -by Acasas-/PNG/sofa.png"
+    },
+    {
+      "key": "odd/stopsign",
+      "file": "assets-raw/pixelartwasteland/Pixel Art Waste Land -by Acasas-/PNG/stop sign.png"
     },
     {
       "key": "odd/vending1",

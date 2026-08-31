@@ -437,10 +437,19 @@ func buildSettlement(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 // on screen who knows it is funny.
 var (
 	oddVending = []string{"odd/vending1", "odd/vending2", "odd/vending3", "odd/vending4"}
-	oddSigns   = []string{"odd/sign1", "odd/sign2", "odd/sign3", "odd/sign4", "odd/sign5"}
-	oddDaubs   = []string{"odd/daub1", "odd/daub2", "odd/daub3", "odd/daub4"}
-	oddBins    = []string{"odd/bin1", "odd/bin2", "odd/bin3", "odd/bin4"}
-	oddClutter = []string{"odd/barrier1", "odd/barrier2", "odd/lanterns", "odd/car"}
+	// Lit ones only. The group is placed under the name "a lit sign", so the
+	// wasteland pack's road signs are not in it however much they look the
+	// part: a matte red octagon on a post is not lit, and the one thing this
+	// zone cannot afford is a description that does not match the picture.
+	// They stand in the clutter instead, where nothing is claimed about them.
+	oddSigns = []string{"odd/sign1", "odd/sign2", "odd/sign3", "odd/sign4", "odd/sign5"}
+	oddDaubs = []string{"odd/daub1", "odd/daub2", "odd/daub3", "odd/daub4"}
+	oddBins  = []string{"odd/bin1", "odd/bin2", "odd/bin3", "odd/bin4", "odd/bin5", "odd/barrel"}
+	// "Something left here", which is true of all of it. A sofa sitting
+	// outdoors on a paved strip is the best thing in this list, because it is
+	// the one nobody can even mistake for architecture.
+	oddClutter = []string{"odd/barrier1", "odd/barrier2", "odd/lanterns",
+		"odd/car", "odd/car2", "odd/sofa", "odd/stopsign", "odd/sign6"}
 )
 
 // OddityArt is every sprite the joke zone can put on the ground, for the audit.

@@ -346,6 +346,26 @@ func buildManifest() error {
 		add(key, filepath.Join(odd, file), 0, 0)
 	}
 
+	// The oddity's second supplier. The cyberpunk pack is a lit city at night;
+	// this one is a roadside after everybody left, and the two overlap exactly
+	// where the joke lives — a sofa, a stop sign, a parked car and a barrel are
+	// the wrong century in a way a neon hoarding is not, because a villager has
+	// no word for any of them either. Nothing scenic is taken: the pack's
+	// streets, sand and grass are a whole second ground palette and
+	// groundMaterials is deliberately one.
+	waste := filepath.Join(rawRoot, "pixelartwasteland",
+		"Pixel Art Waste Land -by Acasas-", "PNG")
+	for key, file := range map[string]string{
+		"odd/sofa":     "sofa.png",
+		"odd/stopsign": "stop sign.png",
+		"odd/sign6":    "sign 01.png",
+		"odd/car2":     "car 02.png",
+		"odd/barrel":   "barrell.png",
+		"odd/bin5":     "trash 01.png",
+	} {
+		add(key, filepath.Join(waste, file), 0, 0)
+	}
+
 	// Townspeople.
 	npcRoot := filepath.Join(rawRoot, "pixelartrpgnpc", "Pixel Art Top-Down RPG NPC - AfGameAssets - V1")
 	for _, f := range pngsIn(npcRoot) {
