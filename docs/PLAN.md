@@ -1225,6 +1225,51 @@ than a system.
     game's own code rather than a copy of the maths, which is the only reason
     any of its numbers mean anything.
 
+### Phase 5 — art with nowhere to go
+
+Three things came out of the asset work, and all three are the same shape: the
+picture exists and the game has no place that could show it. That is the
+opposite of the usual problem here and worth keeping separate from it, because
+"look for the capability before building it" does not apply — the capability
+genuinely is not there. Full detail in [ASSET-MAP.md](ASSET-MAP.md).
+
+1. **Wandering monsters on the overworld.** `pixelartrogue-likerpg` holds
+   roughly seventeen creatures in six poses each, drawn at 16px — skeletons,
+   slimes, crabs, bats, a phoenix, a thing made of rock. There is nowhere to put
+   them. Battle art is `mob/`, painted portraits reduced from 128px, and 74 of
+   its 168 keys are in use, so it is not short. Interior foes are `foe/`, 64px
+   walkers. The overworld draws no creatures at all: an encounter is a dice roll
+   in tall grass with nothing on screen before it fires.
+
+   So the art is not the feature. The feature is **a creature you can see
+   coming**, and the case for it is that the current model gives the player no
+   information and no agency — walking through grass is a slot machine, and the
+   only lever is walking somewhere else. A visible wanderer turns the same
+   encounter into a decision made in advance: go around it, or go at it.
+
+   The design questions to settle before writing any of it: does a wanderer
+   chase, drift, or hold a patch; does touching it start the fight the roll
+   would have started anyway or a different one; does clearing it stay cleared;
+   and — the one that decides whether it is worth doing — does it *replace* the
+   grass roll or sit alongside it. Two encounter systems where there was one is
+   the failure mode.
+
+2. **Decor a room can be dressed with.** `pixelartdungeonlevel4` ships a torch
+   as five frames, and the same pack has doors, columns and chests. Interiors
+   place entities — shops, foes, chests, signs — and nothing that is only
+   scenery. A torch on a dungeon wall needs a pass that knows a wall from a
+   floor and can put something on it without making it walkable or interactive.
+   Small, and worth it mostly because a lit dungeon reads as a place rather than
+   a maze.
+
+3. **A spear that exists.** Polearms are the one weapon kind with no picture
+   anywhere in the bundle. "Glaive, Overcompensating" borrows an axe head on a
+   haft and reads correctly; "Spear, Regrettably Long" borrows a staff with a
+   point and reads as a wand, one tier away from an actual rod. The honest
+   options are to draw one, to find a pack that has one, or to decide the kind
+   does not need its own silhouette and say so. It is the only gap in the whole
+   asset pass that the bundle cannot close.
+
 ## Since the roadmap
 
 **A followed destination, and a compass.** *(Jeremy's, on seeing the saga

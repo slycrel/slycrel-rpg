@@ -212,6 +212,11 @@ animation strips covering rain, storm and snow at two densities each. Counting
 a sheet as one asset understates both by an order of magnitude. `vfx/` at 17 is
 a genuine count.
 
+These three are roadmapped as Phase 5 in [PLAN.md](PLAN.md), because each needs
+a system rather than a wiring: overworld wandering monsters (which is what would
+give the rogue-like pack's ~17 creatures a home), interior decor placement (the
+torch), and a spear, which is the one gap the bundle cannot close.
+
 ## What is not settled
 
 This pass is not the last one, and these are the questions it left open.
