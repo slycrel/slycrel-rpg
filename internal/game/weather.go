@@ -159,6 +159,17 @@ var fallSheets = map[sky.Weather][]fallSheet{
 // that regular instantly. Stepping the frame per column costs nothing, since
 // every frame is already loaded, and turns the same eight pictures into
 // something with no period the eye can catch.
+//
+// Down a column it is the *same* frame, and that is the half this got wrong.
+// Each row used to be stepped as well, on the same reasoning — but the sheet is
+// drawn to loop vertically, its top row continuing its bottom, so repeating one
+// frame down a column is a seamless strip of falling water and putting a
+// different frame in the row below breaks every streak at the join. At 270
+// pixels tall the joins land at y=0, 128 and 256, and the one at 128 is a
+// horizontal line straight across the middle of the screen: the eye finds
+// *that* instantly too, and it reads as a rendering fault rather than as
+// weather. The columns are what carry the irregularity; the rows have to stay
+// in step to carry the rain.
 func (g *Game) drawFalling(dst *ebiten.Image, w sky.Weather) {
 	const (
 		sheetW = 32
@@ -172,12 +183,8 @@ func (g *Game) drawFalling(dst *ebiten.Image, w sky.Weather) {
 		frame := g.Tick() / core.Max(1, f.every)
 		col := 0
 		for x := 0; x < render.ScreenW; x += sheetW {
-			// Two coprime strides — three across, five down — so neither the
-			// columns nor the rows fall back into step with each other.
-			row := 0
 			for y := -sheetH; y < render.ScreenH; y += sheetH {
-				render.ScreenTinted(dst, sp, frame+col*3+row*5, float64(x), float64(y), f.tint)
-				row++
+				render.ScreenTinted(dst, sp, frame+col*3, float64(x), float64(y), f.tint)
 			}
 			col++
 		}

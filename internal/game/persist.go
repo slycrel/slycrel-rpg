@@ -218,3 +218,19 @@ func (g *Game) LoadPath(path string) error {
 	}
 	return g.Restore(f)
 }
+
+// heroID names the character this run belongs to, closely enough to tell two
+// runs apart, and it is the same pair save.File uses for the same purpose:
+// name and epithet, because the generator hands out the same first name again
+// eventually and the pair almost never repeats.
+//
+// One function rather than the expression written out wherever it is needed.
+// It was written out in two places — the death prompt and the slot screen —
+// and a rule for "is this the same person" that exists twice is a rule that
+// will one day disagree with itself about whose save it is looking at.
+func (g *Game) heroID() string {
+	if g.Player == nil {
+		return ""
+	}
+	return g.Player.Name + " " + g.Player.Epithet
+}

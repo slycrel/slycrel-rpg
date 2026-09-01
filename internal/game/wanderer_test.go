@@ -41,7 +41,7 @@ func TestARolledEncounterBecomesACreatureRatherThanAFight(t *testing.T) {
 
 	s.spawnWanderer(g, g.Walk.Tile, fakeEncounter(t, g))
 
-	if s.wander == nil {
+	if len(s.wanderers) == 0 {
 		t.Fatal("a hit on the roll produced no creature")
 	}
 	if len(g.stack) != depth {
@@ -49,7 +49,7 @@ func TestARolledEncounterBecomesACreatureRatherThanAFight(t *testing.T) {
 	}
 	// King-move distance, computed here because world's own is unexported and
 	// this is asserting the contract rather than borrowing the implementation.
-	dx, dy := s.wander.Pos.X-g.Walk.Tile.X, s.wander.Pos.Y-g.Walk.Tile.Y
+	dx, dy := s.wanderers[0].w.Pos.X-g.Walk.Tile.X, s.wanderers[0].w.Pos.Y-g.Walk.Tile.Y
 	if dx < 0 {
 		dx = -dx
 	}
@@ -72,15 +72,14 @@ func TestARolledEncounterBecomesACreatureRatherThanAFight(t *testing.T) {
 // already out would stack them — and the balance report's assumptions about how
 // often a player fights would quietly stop describing the game. The guard is a
 // single condition in tryStep and nothing else enforces it.
-func TestOnlyOneEncounterIsEverOut(t *testing.T) {
+func TestNoMoreThanTheCapIsEverOut(t *testing.T) {
 	g := storyGame(t)
 	s := &overworldScene{}
 	enc := fakeEncounter(t, g)
 	s.spawnWanderer(g, g.Walk.Tile, enc)
-	if s.wander == nil {
+	if len(s.wanderers) == 0 {
 		t.Skip("nowhere to stand near the start tile")
 	}
-	first := s.wander
 
 	// Walk about. Every step rolls, and every hit would replace the creature if
 	// the guard were not there.
@@ -89,8 +88,8 @@ func TestOnlyOneEncounterIsEverOut(t *testing.T) {
 			s.tryStep(g, d)
 		}
 	}
-	if s.wander != nil && s.wander != first {
-		t.Error("a second creature replaced the first; the roll is not guarded")
+	if len(s.wanderers) > wanderCap {
+		t.Errorf("%d creatures are out against a cap of %d", len(s.wanderers), wanderCap)
 	}
 }
 
@@ -107,19 +106,19 @@ func TestTouchingACreatureStartsTheFightItWasCarrying(t *testing.T) {
 	s := &overworldScene{}
 	enc := fakeEncounter(t, g)
 	s.spawnWanderer(g, g.Walk.Tile, enc)
-	if s.wander == nil {
+	if len(s.wanderers) == 0 {
 		t.Skip("nowhere to stand near the start tile")
 	}
 
 	// Walk it onto the player.
-	s.wander.Pos = g.Walk.Tile
+	s.wanderers[0].w.Pos = g.Walk.Tile
 	depth := len(g.stack)
 	s.stepWanderer(g)
 
 	if len(g.stack) != depth+1 {
 		t.Fatalf("contact pushed %d scenes, want 1", len(g.stack)-depth)
 	}
-	if s.wander != nil {
+	if len(s.wanderers) != 0 {
 		t.Error("the creature is still standing there after starting its own fight")
 	}
 	if g.sinceFight != 0 {
@@ -135,15 +134,15 @@ func TestACreatureThatLosesYouIsGone(t *testing.T) {
 	g := storyGame(t)
 	s := &overworldScene{}
 	s.spawnWanderer(g, g.Walk.Tile, fakeEncounter(t, g))
-	if s.wander == nil {
+	if len(s.wanderers) == 0 {
 		t.Skip("nowhere to stand near the start tile")
 	}
 
-	s.wander.Life = 0 // out of patience
+	s.wanderers[0].w.Life = 0 // out of patience
 	s.wanderTick = 0
 	s.stepWanderer(g)
 
-	if s.wander != nil {
+	if len(s.wanderers) != 0 {
 		t.Error("a creature that gave up is still out, and is blocking the roll")
 	}
 }

@@ -2064,7 +2064,7 @@ func (g *Game) offerRewind() {
 	// last slept an hour ago should be offered the ten minutes — and the
 	// autosave outlives the run that wrote it, so reaching for it by name could
 	// hand somebody back a character who is not theirs.
-	sl, ok := save.LatestForRun(g.Root, g.Seed, g.Player.Name+" "+g.Player.Epithet)
+	sl, ok := save.LatestForRun(g.Root, g.Seed, g.heroID())
 	if !ok {
 		toTitle(g)
 		return
@@ -2113,16 +2113,21 @@ func (g *Game) offerRewind() {
 // it — a fight is a comparison, and a comparison wants both halves side by side.
 const (
 	// The left column: the company, one above another.
+	//
+	// 156 rather than 176 because three members at partyRowH fill exactly 156,
+	// and the twenty pixels that used to sit under them are worth more to the
+	// command panel below — see cmdPanelY. A fourth member would not have fitted
+	// at either height.
 	partyPanelX = 6.0
 	partyPanelY = 6.0
 	partyPanelW = 140.0
-	partyPanelH = 176.0
+	partyPanelH = 156.0
 
 	// The right field: whatever is in front of you.
 	foeFieldX = 152.0
 	foeFieldY = 6.0
 	foeFieldW = render.ScreenW - foeFieldX - 6
-	foeFieldH = 176.0
+	foeFieldH = 156.0
 
 	// The bottom strip: what just happened, all the way across.
 	battleBarY = 186.0
@@ -2130,16 +2135,31 @@ const (
 	logPanelX  = 6.0
 	logPanelW  = render.ScreenW - 12.0
 
-	// The command panel overdraws the left end of it rather than sitting
-	// beside it.
+	// The command panel stands *up* out of the bar rather than eating its
+	// width.
 	//
-	// Two boxes down there meant the transcript was permanently two thirds of
-	// a screen wide, including while it was being written to — which is the one
-	// moment anybody reads it. As an overlay it only takes the room while there
-	// is a command to give: when the round is resolving there is nothing to
-	// press, so there is no panel, and the transcript has the whole bar.
+	// It has always overdrawn rather than sat beside — two permanent boxes down
+	// there meant the transcript was two thirds of a screen wide even while it
+	// was being written to, which is the one moment anybody reads it. But an
+	// overlay 210 wide inside a 78-tall bar still left the transcript 236
+	// pixels and four cramped lines, and a playthrough said so: the fight was
+	// legible and the thing telling you what happened in it was not.
+	//
+	// So it is narrower and taller. It starts above the bar, which is where the
+	// twenty pixels came from, and the transcript keeps 298 — a quarter wider,
+	// for the same five lines. A list of five short labels never needed the
+	// width; the sentences beside it always did.
+	//
+	// Full width for the transcript is not available and it is worth writing
+	// down why, because it is the obvious next idea. The screen is 480 across.
+	// A command list on the left and a transcript that starts at the left edge
+	// are the same pixels, so one of them covers the other — and hidden text is
+	// worse than indented text, since indented text is at least whole sentences
+	// starting where you can see them.
 	cmdPanelX = 6.0
-	cmdPanelW = 210.0
+	cmdPanelW = 152.0
+	cmdPanelY = 162.0
+	cmdPanelH = battleBarY + battleBarH - cmdPanelY
 	// What is left of the bar beside the command panel, for the transcript to
 	// indent into and for the technique popover to open in.
 	barSideX = cmdPanelX + cmdPanelW + 4
@@ -2297,8 +2317,22 @@ const monPortraitFloor = 30
 // the condition pips, and the name.
 func monBelow(above, below int) float64 { return 14 + render.LineH*float64(below) }
 
+// platePad is the gap between the species and the top of the portrait frame.
+//
+// It exists because render.LineH is 12 and a line of text inks thirteen pixels
+// — TextInkTop 2 through TextInkH 11 — so a plate laid out on line heights
+// alone puts the bottom of its glyphs one pixel *below* the y it was given.
+// The frame is drawn two pixels above the portrait, so the species was landing
+// three pixels inside its own frame and reading as text sitting on the box
+// rather than over it. Five clears the frame with a pixel to spare.
+//
+// Reserved in monAbove rather than only subtracted at the draw, so the space it
+// needs is part of the layout: taking it at drawing time alone would push the
+// name up out of the band monBox measured for it and into the slot above.
+const platePad = 5
+
 // monAbove is the height of the species line, or lines, over the portrait.
-func monAbove(above int) float64 { return render.LineH * float64(above) }
+func monAbove(above int) float64 { return render.LineH*float64(above) + platePad }
 
 // monBox is the portrait rectangle inside a cell, and the baseline the name and
 // meter hang off.
@@ -2564,7 +2598,7 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		// a whole line clear of its own picture — which is the gap this layout
 		// was rearranged to close.
 		up := plateLines(head, slotW, plateUp)
-		drawPlate(dst, cx, top-render.LineH*float64(len(up)), slotW, up, nameCol)
+		drawPlate(dst, cx, top-platePad-render.LineH*float64(len(up)), slotW, up, nameCol)
 		drawPlate(dst, cx, top+boxH+12, slotW, plateLines(tail, slotW, plateDown), sub)
 	}
 
@@ -2588,7 +2622,8 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 	ui.TitledPanel(dst, logTitle, logPanelX, battleBarY, logPanelW, battleBarH)
 	// Indented past the command panel while there is one, so the lines are
 	// whole sentences starting where you can see them rather than the tails of
-	// sentences beginning underneath a box.
+	// sentences beginning underneath a box. The panel is narrower than it was,
+	// so this indent costs 60 pixels less than it used to.
 	lx, lw := logPanelX+8, logPanelW-18
 	if b.commandsUp() {
 		lx, lw = barSideX+8, barSideW-14
@@ -2625,12 +2660,12 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 	// A solid ground under it first. ui.Panel is a little translucent, which is
 	// right over the world and wrong over four lines of transcript: the two
 	// read through each other and neither is legible.
-	render.Rect(dst, cmdPanelX, battleBarY, cmdPanelW, battleBarH, color.RGBA{0x14, 0x10, 0x1C, 0xFF})
-	ui.TitledPanel(dst, title, cmdPanelX, battleBarY, cmdPanelW, battleBarH)
+	render.Rect(dst, cmdPanelX, cmdPanelY, cmdPanelW, cmdPanelH, color.RGBA{0x14, 0x10, 0x1C, 0xFF})
+	ui.TitledPanel(dst, title, cmdPanelX, cmdPanelY, cmdPanelW, cmdPanelH)
 	const tx = cmdPanelX + 10
 	switch b.mode {
 	case modeRoot, modeSpell, modeItem:
-		b.menu.Draw(dst, cmdPanelX+12, battleBarY+6, cmdPanelW-24)
+		b.menu.Draw(dst, cmdPanelX+12, cmdPanelY+6, cmdPanelW-24)
 	case modeTarget:
 		// The epithet, here, where there is room for it. This is the moment it
 		// is worth reading: the player is looking at four portraits deciding
@@ -2638,20 +2673,25 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		// of crab this is.
 		if m := b.showing(b.target); m != nil {
 			head, tail := monsterName(m.Name)
-			render.Text(dst, render.Trunc(head, cmdPanelW-24), tx, battleBarY+8, render.ColGold)
+			render.Text(dst, render.Trunc(head, cmdPanelW-24), tx, cmdPanelY+8, render.ColGold)
 			if tail != "" {
 				for i, ln := range render.Wrap(tail, cmdPanelW-24) {
-					if i > 1 {
+					if i > 2 {
 						break
 					}
-					render.Text(dst, ln, tx, battleBarY+22+float64(i)*render.LineH, render.ColInk)
+					render.Text(dst, ln, tx, cmdPanelY+22+float64(i)*render.LineH, render.ColInk)
 				}
 			}
 		}
-		render.Text(dst, "Arrows choose - Z commits", tx, battleBarY+52, render.ColInkFaint)
+		// Pinned to the bottom of the panel rather than measured down from its
+		// top, so it cannot land on the epithet above it however many lines
+		// that wrapped to.
+		render.Text(dst, "Arrows choose", tx, cmdPanelY+cmdPanelH-30, render.ColInkFaint)
+		render.Text(dst, "Z commits", tx, cmdPanelY+cmdPanelH-17, render.ColInkFaint)
 	case modeAllyPick:
-		render.Text(dst, "Up / Down to choose.", tx, battleBarY+16, render.ColInk)
-		render.Text(dst, "Z commits. X reconsiders.", tx, battleBarY+30, render.ColInkDim)
+		render.Text(dst, "Up / Down to choose.", tx, cmdPanelY+16, render.ColInk)
+		render.Text(dst, "Z commits.", tx, cmdPanelY+30, render.ColInkDim)
+		render.Text(dst, "X reconsiders.", tx, cmdPanelY+43, render.ColInkDim)
 	}
 
 	b.drawFloaters(dst)

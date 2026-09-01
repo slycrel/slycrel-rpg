@@ -990,3 +990,49 @@ func TestAQueueSaysWhoTheConditionMissed(t *testing.T) {
 		t.Errorf("a technique over the whole field said %q; it missed nobody", got)
 	}
 }
+
+// Saving over your own run is one keypress; saving over somebody else's asks.
+//
+// A slot holds a whole character, and the only thing separating "save" from
+// "delete that person" is which row the cursor was on. The ordinary case has to
+// stay silent or the prompt becomes something to dismiss without reading, which
+// is worse than no prompt at all.
+func TestSavingOverAnotherCharacterAsksFirst(t *testing.T) {
+	g := storyGame(t)
+	s := &slotScene{mode: slotSave}
+
+	// Nothing on disk: no question to ask.
+	if who, ok := s.occupant(g, "1"); ok {
+		t.Errorf("an empty slot claimed to hold %q", who)
+	}
+
+	// This run's own save: still no question.
+	if err := g.SaveTo("1"); err != nil {
+		t.Fatalf("could not write the first save: %v", err)
+	}
+	if who, ok := s.occupant(g, "1"); ok {
+		t.Errorf("the player's own slot asked about %q", who)
+	}
+
+	// Somebody else entirely. Same seed on purpose — the guard has to be
+	// looking at who the character is, not merely which world they are in,
+	// because two runs of one seed are exactly the case a player creates by
+	// starting over.
+	them := g.heroID()
+	g.Player.Name, g.Player.Epithet = "Somebody", "Else"
+	if them == g.heroID() {
+		t.Fatal("the probe did not actually change who the hero is")
+	}
+	who, ok := s.occupant(g, "1")
+	if !ok {
+		t.Fatal("saving over a different character asked nothing")
+	}
+	if !strings.Contains(who, "Brannoch") && who == "" {
+		t.Errorf("the question named %q, which tells the player nothing", who)
+	}
+
+	// And a slot that is still empty stays silent even now.
+	if _, ok := s.occupant(g, "3"); ok {
+		t.Error("an empty slot asked a question")
+	}
+}

@@ -164,12 +164,30 @@ func (s *slotScene) Update(g *Game) error {
 	slot := it.Data.(string)
 
 	if s.mode == slotSave {
-		if err := g.SaveTo(slot); err != nil {
-			s.note = "Could not save: " + err.Error()
+		// Overwriting somebody else's run asks first.
+		//
+		// A slot holds a whole character, and the only thing distinguishing
+		// "save" from "delete that person" is which row the cursor happened to
+		// be on. The cursor already opens on the slot this player has been
+		// using, so the ordinary case — saving over your own last save — is
+		// silent and stays one keypress; it is the case where the file belongs
+		// to a *different* character that gets a question, because that is the
+		// one where a keypress is destroying a run nobody meant to touch.
+		//
+		// Seed and hero together, not the name alone: the generator will hand
+		// out the same first name again eventually, and two Brannochs on one
+		// disk should still be told apart.
+		if other, ok := s.occupant(g, slot); ok {
+			g.Ask("", "Slot "+slot+" holds "+other+". Save over them?",
+				[]string{"Save over it", "Leave it alone"},
+				func(g *Game, choice int) {
+					if choice == 0 {
+						s.writeTo(g, slot)
+					}
+				})
 			return nil
 		}
-		s.note = "Saved to slot " + slot + "."
-		s.refresh(g)
+		s.writeTo(g, slot)
 		return nil
 	}
 
@@ -179,6 +197,35 @@ func (s *slotScene) Update(g *Game) error {
 	}
 	// Restore has already rebuilt the stack, so this scene is gone with it.
 	return nil
+}
+
+// occupant names the run already in a slot when it is not this one, so the
+// caller can ask before writing over it. Empty slots and this player's own
+// saves both answer no.
+func (s *slotScene) occupant(g *Game, slot string) (string, bool) {
+	for _, sl := range save.List(g.Root) {
+		if sl.Name != slot {
+			continue
+		}
+		if sl.Seed == g.Seed && sl.Hero == g.heroID() {
+			return "", false
+		}
+		who := sl.Hero
+		if who == "" {
+			who = sl.Summary
+		}
+		return who, true
+	}
+	return "", false
+}
+
+func (s *slotScene) writeTo(g *Game, slot string) {
+	if err := g.SaveTo(slot); err != nil {
+		s.note = "Could not save: " + err.Error()
+		return
+	}
+	s.note = "Saved to slot " + slot + "."
+	s.refresh(g)
 }
 
 func (s *slotScene) Draw(g *Game, dst *ebiten.Image) {

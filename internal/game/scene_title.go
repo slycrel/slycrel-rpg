@@ -130,8 +130,17 @@ func (t *titleScene) Draw(g *Game, dst *ebiten.Image) {
 	render.TextCenter(dst, "comic violence, and adults behaving exactly as expected",
 		render.ScreenW/2, 88, render.ColInkFaint)
 
-	ui.Panel(dst, render.ScreenW/2-104, 116, 208, 52)
-	t.menu.Draw(dst, render.ScreenW/2-84, 124, 176)
+	// Wide enough for the longest row, which is "Settings" against "keys,
+	// sound, pace". At 176 the detail column — which is served first, because
+	// it is the half a player is reading the row *for* — left the label
+	// forty-odd pixels and "Settings" came out as "Sett.", a truncation with
+	// no ellipsis in a four-row menu on a 480-pixel screen with two hundred
+	// spare either side. The panel is measured against its own contents now
+	// rather than set to a number that happened to fit when the rows were
+	// shorter.
+	const menuW = 260
+	ui.Panel(dst, render.ScreenW/2-menuW/2-16, 116, menuW+32, 52)
+	t.menu.Draw(dst, render.ScreenW/2-menuW/2, 124, menuW)
 
 	render.TextCenter(dst, "arrows / WASD to move - Z or Enter to confirm - X to go back",
 		render.ScreenW/2, 232, render.ColInkFaint)
