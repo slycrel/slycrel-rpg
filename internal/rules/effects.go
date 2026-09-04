@@ -161,6 +161,35 @@ type Tick struct {
 	Damage int
 }
 
+// tickBand is what one round of a condition rolls between, and TickMean is the
+// middle of it.
+//
+// Split out because a policy has to be able to price a poison without rolling
+// one, and the alternative is the defect this package keeps re-learning: a
+// second copy of the arithmetic, in the one place that decides whether the
+// arithmetic ever runs. A burn that the chooser thinks is worth Power and the
+// roller pays out at Power and a quarter is a technique quietly mispriced by
+// twenty-five per cent, in the direction that stops it being cast.
+func tickBand(e model.Effect) (lo, hi int, ok bool) {
+	switch e.Kind {
+	case model.EffectPoison:
+		return e.Power * 3 / 4, e.Power * 5 / 4, true
+	case model.EffectBurn:
+		return e.Power, e.Power * 3 / 2, true
+	}
+	return 0, 0, false
+}
+
+// TickMean is what a round of this condition is worth on average, for anything
+// deciding whether to apply one.
+func TickMean(e model.Effect) float64 {
+	lo, hi, ok := tickBand(e)
+	if !ok {
+		return 0
+	}
+	return float64(core.Max(1, lo)+core.Max(1, hi)) / 2
+}
+
 // TickDamage rolls what the lingering conditions cost their host this round.
 //
 // Poison and burning are rolled rather than fixed so that a long fight is not
@@ -169,16 +198,11 @@ type Tick struct {
 func TickDamage(g *core.RNG, list model.Effects) []Tick {
 	var out []Tick
 	for _, e := range list {
-		var d int
-		switch e.Kind {
-		case model.EffectPoison:
-			d = g.Between(e.Power*3/4, e.Power*5/4)
-		case model.EffectBurn:
-			d = g.Between(e.Power, e.Power*3/2)
-		default:
+		lo, hi, ok := tickBand(e)
+		if !ok {
 			continue
 		}
-		out = append(out, Tick{Kind: e.Kind, Damage: core.Max(1, d)})
+		out = append(out, Tick{Kind: e.Kind, Damage: core.Max(1, g.Between(lo, hi))})
 	}
 	return out
 }

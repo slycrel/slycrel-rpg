@@ -122,3 +122,38 @@ func TestAPactIsGatedOnWhatIsLeftOfIt(t *testing.T) {
 	}
 	t.Skip("no pact power separates the raw and net cases at these coefficients")
 }
+
+// A fight of one blow lasts one round.
+//
+// FightResult.Rounds counted the round that *discovers* the fight is over, so
+// every won fight in the report was one round longer than it was — "3.0 rounds"
+// in COMBAT at level one for a fight of two. Nothing caught it because a rounds
+// column has no independent check: it is plausible at any value, and the only
+// way to see it is to build a fight whose length you already know.
+func TestAFightOfOneBlowLastsOneRound(t *testing.T) {
+	g := core.NewRNG(1)
+	c := rules.BuildCharacter(g, model.ClassFighter, 5)
+	c.Weapon = model.Weapon{Name: "Sword", Strike: 40}
+	c.Psyche = 0 // nothing to cast, so the round is certainly a swing
+
+	paper := func() *model.Monster {
+		return &model.Monster{Def: &model.MonsterDef{Name: "Paper"}, Name: "Paper",
+			HP: 1, MaxHP: 1, Offense: 0, Defense: 0, Ward: 0, Speed: 1}
+	}
+	fresh := *c
+	r := rules.SimulateGroup(g, &fresh, []*model.Monster{paper()}, 40, nil)
+	if !r.Won {
+		t.Fatal("lost to a creature with one hit point and no attack")
+	}
+	if r.Rounds != 1 || r.Swings != 1 {
+		t.Errorf("one blow took %d rounds and %d swings", r.Rounds, r.Swings)
+	}
+
+	// And three of them take three, so the fix is not "subtract one from
+	// everything" — the count has to track the fight.
+	fresh = *c
+	r = rules.SimulateGroup(g, &fresh, []*model.Monster{paper(), paper(), paper()}, 40, nil)
+	if !r.Won || r.Rounds != 3 || r.Swings != 3 {
+		t.Errorf("three blows took %d rounds and %d swings (won=%v)", r.Rounds, r.Swings, r.Won)
+	}
+}

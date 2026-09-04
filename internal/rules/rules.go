@@ -1195,6 +1195,19 @@ type FightResult struct {
 	// the numbers moved — a mechanic whose effect can only be inferred from a
 	// win rate is one nobody can tune.
 	Dodges int
+	// CastsBy counts the rounds spent on each kind of technique, indexed by
+	// CastKinds.
+	//
+	// Casts below says whether the list was opened; this says what was on it.
+	// They are different questions and the second is the one a player is
+	// actually asking — "no playstyle beats auto-attacks" is a claim about what
+	// the rounds went on, and a report that could only say whether the fight was
+	// won had no way to answer it either way.
+	CastsBy [castKindCount]int
+	// Swings counts the rounds that went on the weapon, so the two together
+	// account for the fight rather than one of them being inferred by
+	// subtraction — a round can also go on a flee, a feint or a guard.
+	Swings int
 	// Casts is how many rounds went on a technique rather than a swing, and it
 	// is the counter that says whether a technique list is participating at
 	// all.
@@ -1448,6 +1461,14 @@ func SimulateGroupAs(g *core.RNG, c *model.Character, mons []*model.Monster, max
 	for res.Rounds = 1; res.Rounds <= maxRounds; res.Rounds++ {
 		living := livingMonsters(mons)
 		if len(living) == 0 {
+			// The round that finds the fight already over was not fought, and
+			// counting it inflated every rounds figure in the report by exactly
+			// one on every win. At the level-one end that is "3.0 rounds" for a
+			// fight of two, which is not a rounding error — it is half again.
+			//
+			// The other two exits are correct as they stand: fleeing and dying
+			// both happen inside a round that was fought.
+			res.Rounds--
 			res.Won = true
 			break
 		}
@@ -1495,6 +1516,7 @@ func SimulateGroupAs(g *core.RNG, c *model.Character, mons []*model.Monster, max
 			// game and nothing in the report — and it is the whole payload of
 			// the two-sided techniques below, which would otherwise have been
 			// measured as an attack that does nothing.
+			res.Swings++
 			sw := PlayerAttack(g, sim, target, OffenseMod(sim.Active), DexterityMod(sim.Active))
 			if sw.Miss {
 				return
@@ -1519,43 +1541,38 @@ func SimulateGroupAs(g *core.RNG, c *model.Character, mons []*model.Monster, max
 				sim.Psyche -= cost
 				spent += cost
 				res.Casts++
-				switch s.Kind {
-				case model.SpellHeal:
-					sim.HP = core.Clamp(sim.HP+SpellDamage(g, sim, s), 0, sim.MaxHP)
-				case model.SpellDrain:
-					d := AfterWard(SpellDamage(g, sim, s), target.Ward)
-					hurt(target, d)
-					sim.HP = core.Clamp(sim.HP+d/2, 0, sim.MaxHP)
-				case model.SpellSap:
-					// Off them and onto you, once, however many it reached.
-					for _, m := range sapTargets(s, living, target) {
-						m.Active = Apply(m.Active, model.Effect{
-							Kind: model.EffectWeaken, Power: s.Power, Rounds: model.Forever,
-						})
+				if i := castIndex(s.Kind); i >= 0 {
+					res.CastsBy[i]++
+				}
+				// The same three functions the battle screen calls, so the
+				// report is measuring the game rather than a description of it.
+				//
+				// The switch that used to be here resolved four kinds and sent
+				// everything else through a `default` that treated it as
+				// damage. That was harmless only because bestSpell could not
+				// return anything else — a policy hole and a resolution hole
+				// covering for each other, which is how both survived. Opening
+				// the first without closing the second would have had a stun
+				// land as a damage roll.
+				//
+				// It also rolled a technique over the whole field *once* and
+				// applied the same number to everybody, where the screen rolls
+				// per creature. Same mean, less variance, and a divergence
+				// nobody would find by reading either side alone.
+				if s.Kind.Side() == model.SideParty {
+					CastOnAlly(g, sim, s, sim)
+					return
+				}
+				for _, m := range sapTargets(s, living, target) {
+					landed := CastAtFoe(g, sim, s, m)
+					if landed.Damage > 0 {
+						hurt(m, landed.Damage)
 					}
-					sim.Active = Apply(sim.Active, model.Effect{
-						Kind: model.EffectBless, Power: s.Power, Rounds: model.Forever,
-					})
-				case model.SpellPact:
-					raw := SpellDamage(g, sim, s)
-					for _, m := range sapTargets(s, living, target) {
-						hurt(m, AfterWard(raw, m.Ward))
-					}
-					sim.Active = Apply(sim.Active, model.Effect{
-						Kind: model.EffectWeaken, Power: PactCost(s), Rounds: model.Forever,
-					})
-				default:
-					raw := SpellDamage(g, sim, s)
-					if s.Target == model.TargetAll {
-						for _, m := range living {
-							if !m.Dead {
-								hurt(m, AfterWard(raw, m.Ward))
-							}
-						}
-					} else {
-						hurt(target, AfterWard(raw, target.Ward))
+					if landed.Drained > 0 {
+						sim.HP = core.Clamp(sim.HP+landed.Drained, 0, sim.MaxHP)
 					}
 				}
+				CastOnCaster(sim, s)
 				return
 			}
 			// Buffs and weakenings, which the simulator used to pass as zero.
@@ -1830,28 +1847,24 @@ func isAttack(s model.Spell) bool {
 // Castable reports whether the simulator's policy is capable of choosing this
 // technique at all, ever, under any circumstances.
 //
-// It is exported because the answer is "no" for half the roster and nothing
-// said so. bestSpell offers exactly three doors — a heal, a sap, and the
-// attack — so a technique that weakens, stuns, poisons, burns, blesses or
-// raises the dead is never chosen by any fight in the balance report, on any
-// class, at any level. That is not a small hole: five of the Thief's nine
-// techniques and three of the Fighter's are invisible to every number in that
-// report, under headings that say "techniques used".
+// It exists because the answer used to be "no" for half the roster and nothing
+// said so: bestSpell offered three doors — a heal, a sap, and the attack — so a
+// technique that weakened, stunned, poisoned, burned, blessed or raised the
+// dead was never chosen by any fight in the balance report, on any class, at
+// any level. Five of the Thief's nine techniques and three of the Fighter's
+// were invisible to every number in it, under headings that say "techniques
+// used".
 //
-// **A mechanic the simulator cannot see is a mechanic the balance pass is
-// lying about** is already the first rule in this file's brief, and it was
-// written about monsters inflicting poison. The same sentence applies to the
-// player's own list and nobody had turned it around. The honest thing until
-// the policy grows those doors is to print which techniques are unmeasured, so
-// a reader knows which half of a class they are looking at — which is what the
-// UNREACHABLE block under SWINGS ONLY does.
+// **A mechanic the simulator cannot see is a mechanic the balance pass is lying
+// about** is the first rule in this file's brief and it was written about
+// monsters inflicting poison; nobody had turned it around on the player's own
+// list. Nine of the ten kinds are priced now and the tenth is named rather than
+// hidden.
 //
-// It is derived from the three predicates the policy actually uses rather than
-// listed beside them, so a policy that learns a new door stops reporting that
-// door as shut without anybody remembering to come here.
-func Castable(s model.Spell) bool {
-	return isAttack(s) || s.Kind == model.SpellHeal || s.Kind == model.SpellSap
-}
+// It is one call to priced rather than a list beside one, because the first
+// version of this was a second copy and duly went stale the moment the doors
+// opened.
+func Castable(s model.Spell) bool { return priced(s.Kind) }
 
 // techniqueWorth is what casting this costs the round to buy: what lands on the
 // creature in front, less whatever the caster wears for the rest of the fight.
@@ -1969,21 +1982,53 @@ func bestSpell(c *model.Character, spells []model.Spell, living []*model.Monster
 	if len(living) == 0 {
 		return model.Spell{}, false
 	}
+	// Triage first and it is not priced against anything, because it is not a
+	// trade. A heal two rounds from death is not worth "what it restores" — it
+	// is worth the rest of the run, and a policy that weighed it in hit points
+	// would find a bigger number on the attack every time and die holding a
+	// full pool.
 	if heal, ok := bestHeal(c, spells); ok {
 		incoming := incomingPerRound(c, living)
 		if c.HP <= incoming*2 && c.HP < c.MaxHP*3/4 {
 			return heal, true
 		}
 	}
-	// A sap goes first or not at all: it pays out over the rest of the fight,
-	// so a round spent on it late buys almost nothing, and casting a second one
-	// would only stack a blessing the caster already has. Both conditions are
-	// read off the board rather than remembered, which is what keeps this a
-	// policy rather than a piece of state the simulator has to carry.
-	if s, ok := worthSapping(c, spells, living); ok {
-		return s, true
+
+	// Then everything else, in one currency.
+	//
+	// This used to be a sap check and then the attack, which was two doors out
+	// of nine — a technique that stuns, poisons, burns, weakens or blesses was
+	// not weighed and found wanting, it was never seen. techniqueValue prices
+	// all of them in hit points over the rest of the fight, so they can be
+	// compared with each other and with a swing at all.
+	//
+	// The bar is still the free swing, and it has to be: a round is a round,
+	// and the alternative to every technique on this list is hitting something
+	// for nothing. What changed is that a poison now clears it on its ticks
+	// rather than failing a comparison it was never entered into.
+	target := living[0]
+	floor := freeSwingWorth(c, target)
+	var best model.Spell
+	bestV := 0.0
+	for _, s := range spells {
+		if !s.Known(c) || PsycheCost(c, s) > c.Psyche {
+			continue
+		}
+		// The heal is above, on its own terms. Reviving nobody and blessing a
+		// corpse are handled by the valuation returning nothing.
+		if s.Kind == model.SpellHeal {
+			continue
+		}
+		v := techniqueValue(c, s, living, target)
+		if v <= floor || v <= bestV {
+			continue
+		}
+		best, bestV = s, v
 	}
-	return bestAttack(c, spells, living[0])
+	if bestV > 0 {
+		return best, true
+	}
+	return model.Spell{}, false
 }
 
 // worthSapping picks a two-sided debuff to open with, when there is a fight

@@ -1376,54 +1376,40 @@ func (b *battleScene) castOnFoes(g *Game, c cast) {
 		// thing the transcript is worst at saying — three lines of "takes 6"
 		// read as three separate events.
 		b.playOnMonster(g, i, vfxForSpell(s))
+		// What it does is rules.CastAtFoe's; what it says about it is this
+		// screen's. The switch that used to be here was the second of two
+		// implementations of the same six kinds, and the simulator's was the
+		// one missing four of them.
+		//
+		// Ward is applied per creature rather than to the roll, which falls out
+		// of calling this once per target: a fireball that hits three things is
+		// resisted three times, once by each of them.
+		res := rules.CastAtFoe(g.RNG, p, s, m)
+		if res.Damage > 0 {
+			b.damageMonsterBy(g, p, i, res.Damage)
+		}
 		switch s.Kind {
-		case model.SpellDamage:
-			// Ward is what the target has instead of armour against this, and
-			// it is applied per target rather than to the roll: a fireball that
-			// hits three things is resisted three times, once by each of them.
-			d := rules.AfterWard(rules.SpellDamage(g.RNG, p, s), m.Ward)
-			b.damageMonsterBy(g, p, i, d)
-			b.log.Add("%s takes %d.", m.Short(), d)
+		case model.SpellDamage, model.SpellPact:
+			b.log.Add("%s takes %d.", m.Short(), res.Damage)
 		case model.SpellDrain:
-			d := rules.AfterWard(rules.SpellDamage(g.RNG, p, s), m.Ward)
-			b.damageMonsterBy(g, p, i, d)
-			healed := p.Heal(d / 2)
-			b.log.Add("%s takes %d; %s recovers %d of it.", m.Short(), d, p.Name, healed)
+			healed := p.Heal(res.Drained)
+			b.log.Add("%s takes %d; %s recovers %d of it.", m.Short(), res.Damage, p.Name, healed)
 			b.addFloater(hx, hy, fmt.Sprintf("+%d", healed), render.ColHeal)
 		case model.SpellWeaken:
-			m.Active = rules.Apply(m.Active, model.Effect{
-				Kind: model.EffectWeaken, Power: s.Power, Rounds: model.Forever,
-			})
 			b.log.Add("%s hits noticeably softer now.%s", m.Short(), b.queueNote(s, i))
 		case model.SpellStun:
-			m.Active = rules.Apply(m.Active, model.Effect{
-				Kind: model.EffectStun, Power: 1, Rounds: 1,
-			})
 			b.log.Add("%s loses track of the fight entirely.%s", m.Short(), b.queueNote(s, i))
 		case model.SpellPoison:
-			m.Active = rules.Apply(m.Active, model.Effect{
-				Kind: model.EffectPoison, Power: s.Power, Rounds: 4,
-			})
 			b.log.Add("%s has been given something it cannot metabolise.%s", m.Short(), b.queueNote(s, i))
 		case model.SpellBurn:
-			m.Active = rules.Apply(m.Active, model.Effect{
-				Kind: model.EffectBurn, Power: s.Power, Rounds: 3,
-			})
 			b.log.Add("%s is on fire, and has noticed.%s", m.Short(), b.queueNote(s, i))
 		case model.SpellSap:
-			// Half the exchange. The other half lands on the caster once,
-			// below, rather than once per target — otherwise pointing it at
-			// three things would be three blessings, and a technique whose
+			// Half the exchange. The other half lands on the caster once, in
+			// settleUpWith, rather than once per target — otherwise pointing it
+			// at three things would be three blessings, and a technique whose
 			// value scales with how outnumbered you are is the wrong shape for
 			// the one that is meant to even a fight up.
-			m.Active = rules.Apply(m.Active, model.Effect{
-				Kind: model.EffectWeaken, Power: s.Power, Rounds: model.Forever,
-			})
 			b.log.Add("%s has less of whatever that was.%s", m.Short(), b.queueNote(s, i))
-		case model.SpellPact:
-			d := rules.AfterWard(rules.SpellDamage(g.RNG, p, s), m.Ward)
-			b.damageMonsterBy(g, p, i, d)
-			b.log.Add("%s takes %d.", m.Name, d)
 		}
 	}
 

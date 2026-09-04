@@ -2382,7 +2382,89 @@ columns mean "a solo hero after their company was killed".
 `)
 
 	reportSwingsOnly(out, run)
+	reportRounds(out, g, t, fights/4)
 	reportUnreachable(out, t)
+}
+
+// reportRounds says what a fight is actually made of.
+//
+// Every other section in this report answers "did they win". This one answers
+// "with what", which is the question a player asking why no playstyle beats
+// auto-attacks is really asking — and until the counters existed the report
+// could not have answered it either way. A class that wins 90% of its fights by
+// swinging and a class that wins 90% by stunning and poisoning produce the same
+// row everywhere else in this document.
+//
+// Percentages of rounds rather than counts per fight, because the fights are
+// different lengths by class and by level and the interesting number is the
+// share. The rounds that go on neither — a flee, a feint, a guard — are the
+// remainder, and are left out rather than padded to a hundred: a Thief's
+// missing five per cent is its false retreat, which is a real thing it does and
+// not a rounding error. A row can also run *over* a hundred, and that is the
+// Fighter's second swing putting two actions in one round — which is worth
+// seeing rather than normalising away, since it is the mechanic that makes the
+// class's rounds worth more than anybody else's.
+func reportRounds(out io.Writer, g *core.RNG, t *gamedata.Tables, fights int) {
+	fmt.Fprintf(out, "ROUNDS — what the fight was actually made of\n")
+	fmt.Fprintf(out, "share of rounds by what they were spent on, against the stretch fights\n")
+	fmt.Fprintf(out, "three levels over. Short of 100%% is fleeing, feinting and guarding; over\n")
+	fmt.Fprintf(out, "it is the second swing, which puts two actions in one round\n\n")
+
+	kinds := rules.CastKinds()
+	fmt.Fprintf(out, "%-6s %-8s %7s", "level", "class", "swing")
+	for _, k := range kinds {
+		fmt.Fprintf(out, " %7s", short(string(k)))
+	}
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, strings.Repeat("-", 16+8*(len(kinds)+1)))
+
+	for _, level := range []int{1, 5, 9, 13} {
+		for _, class := range model.AllClasses {
+			enc := core.Max(1, level+laneStretch)
+			biome := biomeForLevel(enc)
+			var swings, rounds int
+			var by [16]int
+			for f := 0; f < fights; f++ {
+				rg := g.Fork(fmt.Sprintf("rounds/%s/%d", class, level), int64(f))
+				c := rules.BuildCharacter(rg, class, level)
+				equip(t, c)
+				mons := t.PickMonsters(rg, biome, enc, 1)
+				if len(mons) == 0 {
+					continue
+				}
+				fresh := *c
+				r := rules.SimulateFight(rg, &fresh, []*model.MonsterDef{mons[0].Def},
+					enc, 60, t.SpellsFor(c))
+				swings += r.Swings
+				rounds += r.Rounds
+				for i := range kinds {
+					by[i] += r.CastsBy[i]
+				}
+			}
+			if rounds == 0 {
+				continue
+			}
+			pct := func(n int) float64 { return float64(n) * 100 / float64(rounds) }
+			fmt.Fprintf(out, "%-6d %-8s %6.1f%%", level, class, pct(swings))
+			for i := range kinds {
+				if by[i] == 0 {
+					fmt.Fprintf(out, " %7s", "-")
+					continue
+				}
+				fmt.Fprintf(out, " %6.1f%%", pct(by[i]))
+			}
+			fmt.Fprintln(out)
+		}
+		fmt.Fprintln(out)
+	}
+}
+
+// short trims a kind's name to the column it has to fit in.
+func short(s string) string {
+	if len(s) > 7 {
+		return s[:7]
+	}
+	return s
 }
 
 // reportUnreachable names the techniques no fight in this report ever casts.
@@ -2404,8 +2486,8 @@ columns mean "a solo hero after their company was killed".
 // that only reads off the names.
 func reportUnreachable(out io.Writer, t *gamedata.Tables) {
 	fmt.Fprintf(out, "UNREACHABLE — techniques no fight in this report ever casts\n")
-	fmt.Fprintf(out, "the policy has three doors: a heal, a sap, and the best attack worth its\n")
-	fmt.Fprintf(out, "psyche. Anything else is not measured, here or in any section above.\n\n")
+	fmt.Fprintf(out, "the policy prices every kind in one currency now: hit points over the rest\n")
+	fmt.Fprintf(out, "of the fight. Anything still listed here is not measured, here or above.\n\n")
 
 	for _, class := range model.AllClasses {
 		// The whole list the class will ever know, which is what a player sees
@@ -2431,12 +2513,16 @@ func reportUnreachable(out io.Writer, t *gamedata.Tables) {
 	}
 
 	fmt.Fprint(out, `
-The fix is doors, not columns: a policy that knows when a weakening is worth a
-round is the only thing that can price one. Until it has them, read every
-"techniques used" heading in this report as "the attacking, healing and sapping
-techniques used", and read a class's numbers as a floor rather than a measure —
-whatever those unmeasured rows are worth, the fights above were fought without
-them.
+This block used to list twelve. The policy could choose a heal, a sap or an
+attack, so a technique that weakened, stunned, poisoned, burned or blessed was
+not weighed and found wanting — it was never seen, and every class number in
+this report was a floor under a heading that said "techniques used".
+
+What is left is the one that needs a second character to point at. Standing
+somebody up is worth a great deal and there is nobody to stand up: every fight
+in this report is one character, so a revive has no target that is not the
+caster, and a caster who needs reviving has already lost. It becomes measurable
+when this report can fight a party, and not before.
 
 `)
 }
