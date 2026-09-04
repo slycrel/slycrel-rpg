@@ -12,14 +12,20 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"math"
 	"os"
 	"os/exec"
+	"runtime"
+	"runtime/debug"
 	"sort"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/slycrel/slycrel-rpg/internal/content"
 	"github.com/slycrel/slycrel-rpg/internal/core"
@@ -86,6 +92,7 @@ func provenance(root string, fights int, seed int64) string {
 func main() {
 	fights := flag.Int("fights", 2000, "fights simulated per data point")
 	seed := flag.Int64("seed", 20260815, "simulation seed")
+	timings := flag.Bool("timings", false, "print wall clock per section")
 	flag.Parse()
 
 	root, err := gamedata.FindRoot()
@@ -97,43 +104,254 @@ func main() {
 		log.Fatalf("balance: %v", err)
 	}
 
-	g := core.NewRNG(*seed)
+	// The collector, not the scheduler, was what this report was waiting for.
+	//
+	// Running the sections concurrently took it from 66 seconds to 48 and spent
+	// 150 seconds of CPU to do it — more than twice the serial run's total, for
+	// a 27% saving. That is the signature of garbage collection rather than
+	// contention: a fight allocates a character, an encounter and a spell list,
+	// four million of them go through here, and ten goroutines allocating at
+	// once make the collector run far more often against a heap that is barely
+	// growing. The same run at GOGC=800 is 14 seconds and 184MB.
+	//
+	// So it is set here rather than left as something the reader has to know.
+	// An explicit GOGC in the environment still wins: somebody measuring memory
+	// deliberately should not have it quietly overridden by a default chosen
+	// for speed.
+	if os.Getenv("GOGC") == "" {
+		debug.SetGCPercent(800)
+	}
+
 	out := os.Stdout
 
 	fmt.Fprintf(out, "%s\n\n", provenance(root, *fights, *seed))
 
-	reportOpening(out, core.NewRNG(*seed^0x09E4), t, *fights)
-	reportCombat(out, g, t, *fights)
-	// Its own generator, not the shared one. That keeps this section's
-	// placement in the report free: dropping it in the middle of the sequence
-	// would otherwise shift every number after it and cost the cheapest check
-	// there is, which is diffing the report against the last one.
-	reportArcs(out, core.NewRNG(*seed^0x5ACB), t, *fights/2)
-	reportLanes(out, core.NewRNG(*seed^0x1A4E), t, *fights)
-	reportDanger(out, core.NewRNG(*seed^0xD1E), t, *fights/3)
-	reportWard(out, core.NewRNG(*seed^0x3A7D), t, *fights)
-	// Twice the sample, because it is measuring a derivative: a difference of
-	// two rates carries both their noise, and the answer is then divided by K.
-	// Twice the sample, because it is measuring a derivative: a difference of
-	// two rates carries both their noise, and the answer is then divided by K.
-	// The seed goes in as a value rather than only through the generator —
-	// core.RNG.Fork never reads its receiver, so a section that only ever forks
-	// would run bit-identical streams at every -seed and could never be checked
-	// by replication. Which is the gotcha this repo already had written down.
-	reportExchange(out, t, *fights*2, *seed^0xE7CB)
-	reportPlaystyles(out, core.NewRNG(*seed^0x9147), t, *fights)
-	reportCharms(out, core.NewRNG(*seed^0xC4A7), t, *fights/4)
-	// Its own generator too, for the same reason as ARCS above.
-	reportShapes(out, core.NewRNG(*seed^0x5411), t, *fights)
-	reportCrowds(out, core.NewRNG(*seed^0xC70D), t, *fights/8)
-	reportEndurance(out, g, t, *fights/4)
-	reportProgression(out, g, t, *fights/50)
-	reportEconomy(out, t)
-	reportSaga(out, t)
-	reportSky(out)
-	reportSupplies(out, t)
-	reportCompany(out, core.NewRNG(*seed^0xC017), t)
-	reportMonsterSpread(out, t)
+	// The report is written concurrently and printed in order.
+	//
+	// It is one long series of independent experiments and it was running them
+	// on one core out of ten, which is not a performance complaint — it is what
+	// decides how much simulator there can be. Every question this report
+	// cannot afford to ask is a question it does not ask, and the two biggest
+	// ones outstanding both cost fights: a policy that can choose every kind of
+	// technique has more branches to sample, and a party fight is three
+	// characters where a solo fight is one.
+	//
+	// **No number moves.** Each section already carries its own generator,
+	// derived from the seed, precisely so that its placement in the sequence is
+	// free — the note that used to sit above ARCS explaining why is now the
+	// rule for all of them. Sections write into their own buffer and the
+	// buffers are emptied in declared order, so the output is byte-identical to
+	// the serial run and the cheapest check there is — diffing this against the
+	// last one — still works.
+	//
+	// The three that share the main generator are the exception and they are
+	// chained rather than freed. COMBAT, ENDURANCE and PROGRESSION draw from
+	// `g` in that order; giving each its own stream would have been one line
+	// and would have moved three sections' numbers for a speedup worth less
+	// than the baselines it spent. They run in sequence, on one worker, into
+	// three separate buffers that land at three separate places in the report.
+	// The main generator, kept for the three sections that draw from it in
+	// sequence. It is the same stream and the same order it always was.
+	chained := core.NewRNG(*seed)
+	sections := []section{
+		{"OPENING", func(w io.Writer) { reportOpening(w, core.NewRNG(*seed^0x09E4), t, *fights) }},
+		{"COMBAT", nil}, // chained, see below
+		{"ARCS", func(w io.Writer) { reportArcs(w, core.NewRNG(*seed^0x5ACB), t, *fights/2) }},
+		{"LANES", func(w io.Writer) { reportLanes(w, core.NewRNG(*seed^0x1A4E), t, *fights) }},
+		{"DANGER", func(w io.Writer) { reportDanger(w, core.NewRNG(*seed^0xD1E), t, *fights/3) }},
+		{"WARD", func(w io.Writer) { reportWard(w, core.NewRNG(*seed^0x3A7D), t, *fights) }},
+		// Twice the sample, because it is measuring a derivative: a difference
+		// of two rates carries both their noise, and the answer is then divided
+		// by K. The seed goes in as a value rather than only through the
+		// generator — core.RNG.Fork never reads its receiver, so a section that
+		// only ever forks would run bit-identical streams at every -seed and
+		// could never be checked by replication. Which is the gotcha this repo
+		// already had written down.
+		{"EXCHANGE", func(w io.Writer) { reportExchange(w, t, *fights*2, *seed^0xE7CB) }},
+		{"PLAYSTYLES", func(w io.Writer) { reportPlaystyles(w, core.NewRNG(*seed^0x9147), t, *fights) }},
+		{"CHARMS", func(w io.Writer) { reportCharms(w, core.NewRNG(*seed^0xC4A7), t, *fights/4) }},
+		{"SHAPES", func(w io.Writer) { reportShapes(w, core.NewRNG(*seed^0x5411), t, *fights) }},
+		{"CROWDS", func(w io.Writer) { reportCrowds(w, core.NewRNG(*seed^0xC70D), t, *fights/8) }},
+		{"ENDURANCE", nil},   // chained
+		{"PROGRESSION", nil}, // chained
+		{"ECONOMY", func(w io.Writer) { reportEconomy(w, t) }},
+		{"SAGA", func(w io.Writer) { reportSaga(w, t) }},
+		{"SKY", func(w io.Writer) { reportSky(w) }},
+		{"SUPPLIES", func(w io.Writer) { reportSupplies(w, t) }},
+		{"COMPANY", func(w io.Writer) { reportCompany(w, core.NewRNG(*seed^0xC017), t) }},
+		{"SPREAD", func(w io.Writer) { reportMonsterSpread(w, t) }},
+	}
+	// The chain, in the order it drew in when it was serial.
+	chain := []struct {
+		name string
+		run  func(io.Writer)
+	}{
+		{"COMBAT", func(w io.Writer) { reportCombat(w, chained, t, *fights) }},
+		{"ENDURANCE", func(w io.Writer) { reportEndurance(w, chained, t, *fights/4) }},
+		{"PROGRESSION", func(w io.Writer) { reportProgression(w, chained, t, *fights/50) }},
+	}
+	runSections(out, sections, chain, *timings)
+}
+
+// parallelFor runs body(i) for every i below n, across the cores.
+//
+// **Only ever called where the work is order-independent, and that is a
+// property of the generator rather than of the loop.** A section that draws
+// from one stream in sequence produces different numbers the moment two
+// iterations swap places, and half of this report does exactly that. The other
+// half forks a fresh stream per iteration from a label and an index — and
+// core.RNG.Fork never reads its receiver, so fight f draws the same dice
+// whenever it runs and whoever runs it. Those loops, and no others, come
+// through here.
+//
+// The check that it is honest is cheap and was run: the whole report, before
+// and after, byte for byte.
+func parallelFor(n int, body func(i int)) {
+	if n <= 0 {
+		return
+	}
+	// The caller is holding a slot and is about to stop working, so it gives it
+	// up before asking for more. That is what keeps this from deadlocking when
+	// every slot is held by a section that wants to fan out, and it is also
+	// what keeps the two levels of parallelism from adding up: sections and the
+	// cells inside them draw on one budget, so the machine runs NumCPU pieces
+	// of work whichever shape they arrive in.
+	//
+	// Without it the report ran twenty goroutines on ten cores — ten sections
+	// each spawning ten workers — and spent 149 seconds of CPU to save 14
+	// seconds of wall clock. Contention is not parallelism.
+	release()
+	defer hold()
+
+	var wg sync.WaitGroup
+	next := make(chan int)
+	for w := 0; w < cap(cores); w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := range next {
+				hold()
+				body(i)
+				release()
+			}
+		}()
+	}
+	for i := 0; i < n; i++ {
+		next <- i
+	}
+	close(next)
+	wg.Wait()
+}
+
+// cores is the whole machine's budget, and everything that does work holds one
+// slot of it: a whole section, or one cell of a section that has fanned out.
+var cores = make(chan struct{}, runtime.NumCPU())
+
+func hold()    { cores <- struct{}{} }
+func release() { <-cores }
+
+// section is one block of the report and the buffer it writes into.
+//
+// run is nil for the three that share the main generator; those are driven by
+// the chain instead, which is the only ordering constraint left in here.
+type section struct {
+	name string
+	run  func(io.Writer)
+}
+
+// runSections plays every section concurrently and prints them in order.
+//
+// The workers are bounded by the number of cores rather than let loose: each
+// section holds a whole simulated character and its encounter, and twenty of
+// those at once on a four-core machine is more contention than parallelism.
+//
+// A panic in a worker is re-raised on the main goroutine rather than swallowed.
+// A report that silently lost a section would be worse than one that crashed —
+// the missing block reads as "this was not measured" rather than as "this
+// broke", and the two want telling apart.
+func runSections(out io.Writer, sections []section, chain []struct {
+	name string
+	run  func(io.Writer)
+}, timings bool) {
+	bufs := make([]bytes.Buffer, len(sections))
+	at := map[string]int{}
+	for i, s := range sections {
+		at[s.name] = i
+	}
+
+	type timing struct {
+		name string
+		dur  time.Duration
+	}
+	var mu sync.Mutex
+	var took []timing
+	note := func(name string, start time.Time) {
+		mu.Lock()
+		took = append(took, timing{name, time.Since(start)})
+		mu.Unlock()
+	}
+
+	var wg sync.WaitGroup
+	fail := make(chan any, len(sections)+1)
+
+	// The chained three, in order, on one worker.
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer func() {
+			if r := recover(); r != nil {
+				fail <- r
+			}
+		}()
+		hold()
+		defer release()
+		for _, c := range chain {
+			start := time.Now()
+			c.run(&bufs[at[c.name]])
+			note(c.name, start)
+		}
+	}()
+
+	for i := range sections {
+		if sections[i].run == nil {
+			continue
+		}
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					fail <- r
+				}
+			}()
+			hold()
+			defer release()
+			start := time.Now()
+			sections[i].run(&bufs[i])
+			note(sections[i].name, start)
+		}(i)
+	}
+	wg.Wait()
+	close(fail)
+	if r := <-fail; r != nil {
+		panic(r)
+	}
+
+	for i := range bufs {
+		_, _ = out.Write(bufs[i].Bytes())
+	}
+
+	if !timings {
+		return
+	}
+	sort.Slice(took, func(i, j int) bool { return took[i].dur > took[j].dur })
+	fmt.Fprintf(out, "TIMINGS — wall clock per section, slowest first\n")
+	fmt.Fprintf(out, "the longest one is the floor on the whole report, which is what\n")
+	fmt.Fprintf(out, "decides whether the next question is affordable\n\n")
+	for _, tk := range took {
+		fmt.Fprintf(out, "  %-12s %8.2fs\n", tk.name, tk.dur.Seconds())
+	}
+	fmt.Fprintln(out)
 }
 
 // equip fits a character with the best gear of their expected tier, which is
@@ -161,7 +379,7 @@ func biomeForLevel(level int) string {
 	}
 }
 
-func reportCombat(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+func reportCombat(out io.Writer, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "COMBAT — on-curve gear, techniques used, no potions\n")
 	fmt.Fprintf(out, "win rates against an encounter at your level, two under, and three over\n")
 	fmt.Fprintf(out, "the biome column is where you are; \"over\" is measured in the region three\n")
@@ -257,7 +475,7 @@ var dangerTargets = []struct {
 // Rags at defence 0. So the report was describing a level-one character
 // carrying a mace and wearing boiled leather while the actual one had neither,
 // and the opening of the game was the only part of it never measured.
-func reportOpening(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+func reportOpening(out io.Writer, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "OPENING — the first fight, with what you actually start holding\n")
 	fmt.Fprintf(out, "against what every other section assumes you are wearing\n\n")
 
@@ -370,7 +588,7 @@ func openingRoll(g *core.RNG) (string, int) {
 // Win rate is what the rest of the report shows; this shows the complement,
 // because "deaths relatively rare" is a statement about losing and a 92% win
 // rate reads as fine right up until you notice it means one run in twelve ends.
-func reportDanger(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+func reportDanger(out io.Writer, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "DANGER — death rate by how far over your head you are\n")
 	fmt.Fprintf(out, "on-curve gear, fought in the region that far out, one row per class because\n")
 	fmt.Fprintf(out, "an average across three classes hides a class that never dies\n\n")
@@ -511,7 +729,7 @@ func reportDanger(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
 // DANGER table because both are averaged away there. Magical attackers have to
 // be rare at the bottom of the game and common at the top. And wearing ward has
 // to be worth the slot when they are common, without being mandatory.
-func reportWard(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+func reportWard(out io.Writer, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "WARD — what skipping the anti-magic slot costs\n")
 	fmt.Fprintf(out, "death rate three levels over, against magical attackers only, with the\n")
 	fmt.Fprintf(out, "on-curve charm and with the best ward charm of the same tier\n\n")
@@ -640,7 +858,7 @@ func bestWardCharm(t *gamedata.Tables, tier int) (model.Charm, bool) {
 // smaller than the fight count beside it.
 const arcRuns = 80
 
-func reportArcs(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+func reportArcs(out io.Writer, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "ARCS — is there more than one way to be correctly levelled?\n")
 	fmt.Fprintf(out, "one row per class, on the stretch fights three levels over, every build\n")
 	fmt.Fprintf(out, "shopping with the same purse: what balanced costs that class at that level\n\n")
@@ -883,7 +1101,7 @@ the money is not a verdict on a shape, it is a floor on one.
 // share whatever the count. Those two should diverge as the field fills, and if
 // they diverge too far the scheme has produced a class that cannot play half
 // the encounter table.
-func reportCrowds(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+func reportCrowds(out io.Writer, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "CROWDS — how each class holds up as the numbers grow\n")
 	fmt.Fprintf(out, "on level, because three levels over is a nought for everybody at three\n")
 	fmt.Fprintf(out, "or more; the stretch column cannot see group fights at all\n\n")
@@ -1135,7 +1353,7 @@ the easy one, and neither is a fact about a class.
 // Anything that moves the shield tables, the monster rosters' magic, or the
 // level bands will show up here as the crossover moving, and the constant in
 // gamedata has to move with it.
-func reportLanes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+func reportLanes(out io.Writer, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "LANES — which off-arm lane is right, for whom, and from when\n")
 	fmt.Fprintf(out, "identical builds differing in one slot, on both of DANGER's legible\n")
 	fmt.Fprintf(out, "bands: won three levels over, died five levels over, %d fights a cell\n\n",
@@ -1779,7 +1997,7 @@ func laneCross(level int) string {
 //     Thief who dodges with it as for a Fighter who does not.
 //   - **The bands saturate at both ends.** On level nothing discriminates,
 //     which is why these are the same two bands LANES measures on.
-func reportExchange(out *os.File, t *gamedata.Tables, fights int, seed int64) {
+func reportExchange(out io.Writer, t *gamedata.Tables, fights int, seed int64) {
 	fmt.Fprintf(out, "EXCHANGE — what one point in each stat is worth, measured\n")
 	fmt.Fprintf(out, "the balanced build nudged a few points either way in one stat, against the\n")
 	fmt.Fprintf(out, "same two bands LANES uses; per point, so the columns compare; %d fights\n",
@@ -1936,31 +2154,57 @@ func reportExchange(out *os.File, t *gamedata.Tables, fights int, seed int64) {
 		"level", "class", "stat", "won +3 /pt", "died +5 /pt")
 	fmt.Fprintln(out, strings.Repeat("-", 64))
 
+	// Every cell of the table, computed before any of it is printed.
+	//
+	// This is the section the whole report waits for — fifty-five seconds of a
+	// sixty-four second run, because it is measuring a derivative and pays two
+	// batches a cell to do it. The cells do not depend on each other and every
+	// fight inside them draws from a stream forked on its own index, so they
+	// can be computed in any order by anybody, and then printed in this one.
+	type cellKey struct {
+		level int
+		class model.Class
+		nudge int
+	}
+	var keys []cellKey
+	for _, level := range []int{5, 9, 13} {
+		for _, class := range model.AllClasses {
+			for ni := range nudges {
+				keys = append(keys, cellKey{level, class, ni})
+			}
+		}
+	}
+	type outRow struct{ won, wonSE, died, diedSE float64 }
+	got := make([]outRow, len(keys))
+	parallelFor(len(keys), func(i int) {
+		k := keys[i]
+		add := nudges[k.nudge].add
+		// No baseline batch: a central difference is measured between the two
+		// nudged runs, and the unnudged build is not one of its terms.
+		w, _ := run(k.class, k.level, laneStretch, K/2, add)
+		_, d := run(k.class, k.level, laneOver, K/2, add)
+		// Central: the whole span from -K/2 to +K/2 over K, which is the slope
+		// *through* the operating point rather than away from it. Dying less is
+		// worth more, so that column's sign is flipped to keep every number in
+		// the table "good is bigger".
+		got[i] = outRow{(w.up - w.down) / K, w.se / K, (d.down - d.up) / K, d.se / K}
+	})
+
 	// told counts the rows whose sign the sample can actually support, which is
 	// the only honest summary of a table this size.
 	told, rows := 0, 0
-	for _, level := range []int{5, 9, 13} {
-		for _, class := range model.AllClasses {
-			// No baseline batch: a central difference is measured between the
-			// two nudged runs, and the unnudged build is not one of its terms.
-			for _, n := range nudges {
-				w, _ := run(class, level, laneStretch, K/2, n.add)
-				_, d := run(class, level, laneOver, K/2, n.add)
-				// Central: the whole span from -K/2 to +K/2 over K, which is
-				// the slope *through* the operating point rather than away
-				// from it. Dying less is worth more, so that column's sign is
-				// flipped to keep every number in the table "good is bigger".
-				won, wonSE := (w.up-w.down)/K, w.se/K
-				died, diedSE := (d.down-d.up)/K, d.se/K
-				for _, v := range []struct{ est, se float64 }{{won, wonSE}, {died, diedSE}} {
-					rows++
-					if v.est > 2*v.se || v.est < -2*v.se {
-						told++
-					}
-				}
-				fmt.Fprintf(out, "%-6d %-8s %-10s %10.2f ±%.2f %10.2f ±%.2f\n",
-					level, class, n.name, won, wonSE, died, diedSE)
+	for i, k := range keys {
+		r := got[i]
+		for _, v := range []struct{ est, se float64 }{{r.won, r.wonSE}, {r.died, r.diedSE}} {
+			rows++
+			if v.est > 2*v.se || v.est < -2*v.se {
+				told++
 			}
+		}
+		fmt.Fprintf(out, "%-6d %-8s %-10s %10.2f ±%.2f %10.2f ±%.2f\n",
+			k.level, k.class, nudges[k.nudge].name, r.won, r.wonSE, r.died, r.diedSE)
+		// A blank line between classes, as the nested loops used to give.
+		if i+1 == len(keys) || keys[i+1].class != k.class || keys[i+1].level != k.level {
 			fmt.Fprintln(out)
 		}
 	}
@@ -2032,7 +2276,7 @@ worn at, and for the class that can hold it.
 // does not — SUPPLIES prices the counter instead — and the player who fights
 // behind two companions needs a party simulator, which does not exist at all.
 // Both are named in the closing text rather than faked.
-func reportPlaystyles(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+func reportPlaystyles(out io.Writer, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "PLAYSTYLES — what a way of playing costs, as opposed to a way of spending\n")
 	fmt.Fprintf(out, "on-curve gear, the same fights, one behaviour changed\n\n")
 
@@ -2158,7 +2402,7 @@ columns mean "a solo hero after their company was killed".
 // Printed as a roster rather than a count because the count is the boring half.
 // The useful half is which levels a class goes without anything measurable, and
 // that only reads off the names.
-func reportUnreachable(out *os.File, t *gamedata.Tables) {
+func reportUnreachable(out io.Writer, t *gamedata.Tables) {
 	fmt.Fprintf(out, "UNREACHABLE — techniques no fight in this report ever casts\n")
 	fmt.Fprintf(out, "the policy has three doors: a heal, a sap, and the best attack worth its\n")
 	fmt.Fprintf(out, "psyche. Anything else is not measured, here or in any section above.\n\n")
@@ -2218,7 +2462,7 @@ them.
 // The bands are on-level and three over rather than the retreat's +3/+5, and
 // the levels reach down to 1, because "techniques do nothing" is a complaint
 // about the early game and the retreat table starts at 5.
-func reportSwingsOnly(out *os.File, run func(model.Class, int, int, rules.Policy) (float64, float64, float64, float64)) {
+func reportSwingsOnly(out io.Writer, run func(model.Class, int, int, rules.Policy) (float64, float64, float64, float64)) {
 	fmt.Fprintf(out, "SWINGS ONLY — what the technique list is worth, if anything\n")
 	fmt.Fprintf(out, "the same fights with no psyche spent at all: no attack, no heal, no blessing\n\n")
 	fmt.Fprintf(out, "%-6s %-8s %-9s %8s %8s   %-24s %s\n",
@@ -2299,7 +2543,7 @@ func joinInts(v []int) string {
 // an afternoon, and that column exists to answer the obvious objection to the
 // first — that a single fight cannot see a charm which refills a pool. It can
 // see it. It just does not find much.
-func reportCharms(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+func reportCharms(out io.Writer, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "CHARMS — is the band a choice, and is the game picking well?\n")
 	fmt.Fprintf(out, "every charm the balanced build could wear at this level, against the\n")
 	fmt.Fprintf(out, "stretch fights three over and against fights-per-rest on the level\n\n")
@@ -2463,7 +2707,7 @@ func charmBand(t *gamedata.Tables, level int) []model.Charm {
 // band of a main slot. This table is where to look when it is not — it compares
 // what stepping up a band buys against what the entire off-hand or charm slot
 // buys at the same tier, and no simulation is needed to read the answer off it.
-func reportSlotValue(out *os.File, t *gamedata.Tables) {
+func reportSlotValue(out io.Writer, t *gamedata.Tables) {
 	fmt.Fprintf(out, "WHY — what one band is worth in each slot\n")
 	fmt.Fprintf(out, "every archetype is a trade of bands between slots, so these are the\n")
 	fmt.Fprintf(out, "exchange rates it trades at, read off a Fighter's lane\n\n")
@@ -2557,7 +2801,7 @@ the shield column.
 // reportEndurance is the number that actually governs the overworld loop: how
 // far you get from an inn before you have to turn back. One fight on a full
 // psyche pool flatters a caster; a run of them on the same pool does not.
-func reportEndurance(out *os.File, g *core.RNG, t *gamedata.Tables, runs int) {
+func reportEndurance(out io.Writer, g *core.RNG, t *gamedata.Tables, runs int) {
 	fmt.Fprintf(out, "ENDURANCE — on-level fights survived on one rest, no potions\n\n")
 	fmt.Fprintf(out, "%-5s %-9s %10s %10s %12s\n", "level", "class", "median", "average", "died on 1st")
 	fmt.Fprintln(out, strings.Repeat("-", 52))
@@ -2620,7 +2864,7 @@ func reportEndurance(out *os.File, g *core.RNG, t *gamedata.Tables, runs int) {
 // enough apart on how they get there to be worth telling apart. A shape that
 // wins ten points more than mixed is a shape the player should always want, and
 // a shape that wins thirty less is a death sentence wearing a description.
-func reportShapes(out *os.File, g *core.RNG, t *gamedata.Tables, fights int) {
+func reportShapes(out io.Writer, g *core.RNG, t *gamedata.Tables, fights int) {
 	fmt.Fprintf(out, "SHAPES — what an encounter is made of\n")
 	fmt.Fprintf(out, "on-curve gear, on-level fights, the party-scaled size a solo hero rolls\n\n")
 	fmt.Fprintf(out, "%-12s %-10s %8s %8s %8s %8s %8s\n",
@@ -2712,7 +2956,7 @@ this is it being stated rather than guessed at.
 `)
 }
 
-func reportProgression(out *os.File, g *core.RNG, t *gamedata.Tables, runs int) {
+func reportProgression(out io.Writer, g *core.RNG, t *gamedata.Tables, runs int) {
 	fmt.Fprintf(out, "PROGRESSION — experience needed against experience offered,\n")
 	fmt.Fprintf(out, "and what that costs in trips back to an inn\n\n")
 	fmt.Fprintf(out, "%-5s %10s %10s %10s %8s %8s %8s\n",
@@ -2789,7 +3033,7 @@ func enduranceAt(g *core.RNG, t *gamedata.Tables, level, runs int) float64 {
 	return float64(total) / float64(runs)
 }
 
-func reportEconomy(out *os.File, t *gamedata.Tables) {
+func reportEconomy(out io.Writer, t *gamedata.Tables) {
 	fmt.Fprintf(out, "ECONOMY — what the tier you should be wearing costs\n")
 	fmt.Fprintf(out, "one row per class, because the shelf a class can read is not the shelf\n\n")
 	fmt.Fprintf(out, "%-8s %-5s %5s %30s %7s %30s %7s\n",
@@ -2830,7 +3074,7 @@ var shopStock = []string{
 // cannot see it. Measuring it here rather than teaching SimulateFight to drink
 // is the honest trade — modelling potion use would re-tune every endurance
 // number in the report to answer a question about prices.
-func reportSupplies(out *os.File, t *gamedata.Tables) {
+func reportSupplies(out io.Writer, t *gamedata.Tables) {
 	fmt.Fprintf(out, "SUPPLIES — what the pack costs, and what the thief pays for it\n\n")
 	fmt.Fprintf(out, "%-26s %-8s %6s %7s %9s %9s\n",
 		"item", "kind", "power", "price", "per point", "as thief")
@@ -2879,7 +3123,7 @@ func reportSupplies(out *os.File, t *gamedata.Tables) {
 // What the column has to do is climb. A leg that is further out and no more
 // dangerous is a leg the geography is not pacing, and enough of those would
 // mean the spine needs a gate after all.
-func reportSaga(out *os.File, t *gamedata.Tables) {
+func reportSaga(out io.Writer, t *gamedata.Tables) {
 	fmt.Fprintf(out, "SAGA — how far out each leg is, and how rough the country there is\n\n")
 	fmt.Fprintf(out, "%-18s %-5s %s\n", "story", "leg", "distance / region level, per seed")
 	fmt.Fprintln(out, strings.Repeat("-", 74))
@@ -2979,7 +3223,7 @@ func reportSaga(out *os.File, t *gamedata.Tables) {
 // already has the numbers. What it is really for is the shape: night and
 // weather have to pull opposite ways, and a table where every row moved the
 // same direction would mean the correct play is always "wait for a clear noon".
-func reportSky(out *os.File) {
+func reportSky(out io.Writer) {
 	fmt.Fprintf(out, "SKY — what the light and the weather do to a step\n\n")
 	fmt.Fprintf(out, "%-9s %8s %8s %7s   %s\n", "phase", "sight", "prowl", "level", "share of the day")
 	fmt.Fprintln(out, strings.Repeat("-", 62))
@@ -3045,7 +3289,7 @@ func reportSky(out *os.File) {
 // What it deliberately does not do is convert to coins: that would need a model
 // of what a haul is worth per level, and inventing one to put a confident
 // number under it is how a report starts measuring a fiction.
-func reportCompany(out *os.File, g *core.RNG, t *gamedata.Tables) {
+func reportCompany(out io.Writer, g *core.RNG, t *gamedata.Tables) {
 	fmt.Fprintf(out, "THE COMPANY'S SHARE — what honour is worth at the hiring board\n\n")
 
 	// The band Recruit rolls in. Named rather than repeated so this section
@@ -3104,7 +3348,7 @@ func reportCompany(out *os.File, g *core.RNG, t *gamedata.Tables) {
 // cannot see it. The question it answers is one question: hire somebody at the
 // bottom of a gear tier, walk them to the top of it, and can what they skimmed
 // on the way pay for the next tier's kit.
-func reportCutBuys(out *os.File, g *core.RNG, t *gamedata.Tables) {
+func reportCutBuys(out io.Writer, g *core.RNG, t *gamedata.Tables) {
 	fmt.Fprintf(out, "WHAT THE CUT BUYS — a companion's savings against the kit the curve expects\n")
 	fmt.Fprintf(out, "one 13%% cut of the coin from company-sized fights, off the tables the game rolls\n\n")
 
@@ -3233,7 +3477,7 @@ the longer it lasts, and by the top band the cut alone is most of a kit.
 // reportMonsterSpread shows how the rosters are distributed by level, which is
 // where holes in the content show up: a band with nothing to fight in it makes
 // PickMonsters fall back to something wildly off-level.
-func reportMonsterSpread(out *os.File, t *gamedata.Tables) {
+func reportMonsterSpread(out io.Writer, t *gamedata.Tables) {
 	fmt.Fprintf(out, "MONSTER SPREAD — count by level, per biome\n\n")
 	biomes := make([]string, 0, len(t.Monsters))
 	for b := range t.Monsters {
