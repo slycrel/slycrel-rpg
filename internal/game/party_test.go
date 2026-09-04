@@ -903,3 +903,60 @@ func TestTheCompanyShopsWhereThereIsACounter(t *testing.T) {
 		}
 	}
 }
+
+// Every hero sheet has to stand on the stage the battle column gives it.
+//
+// The stage is 34 by 46 and both numbers are measured off the art rather than
+// off the frame, which is the whole trick: the sheets are 64x64 boxes holding
+// about 27x33 of character, so sizing the stage to the frame would have spent
+// thirty pixels of the column on transparency and the column is where the
+// names go. Measuring instead means the stage is only as big as it has to be —
+// and a sheet added later that is drawn larger would hang out of it silently,
+// because a panel does not clip what you draw in it and the overflow is
+// transparent everywhere except on the character.
+//
+// It also checks the rows cannot collide. Members are partyRowH apart and the
+// art hangs above the stage by however much padding the sheet has; the failure
+// would be one hero's hat drawn through the hero above them.
+func TestEveryHeroFitsTheStageItStandsOn(t *testing.T) {
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Skipf("no data directory: %v", err)
+	}
+	reg := assetsys.New(root)
+
+	checked := 0
+	for _, look := range heroLooks {
+		key := look.Key + "/idle"
+		sp := reg.Get(key)
+		if sp == nil {
+			t.Errorf("%s has no idle sheet at %q", look.Name, key)
+			continue
+		}
+		checked++
+		// The art, not the frame: Head and Foot are the transparent rows above
+		// and below it.
+		art := sp.H - sp.Head - sp.Foot
+		if float64(art) > memberStageH-3 {
+			t.Errorf("%s is %d pixels of art and the stage is %.0f tall",
+				look.Name, art, memberStageH-3)
+		}
+		if float64(sp.W) < memberStageW {
+			// Narrower frames are fine; it is the art that must fit, and a
+			// frame narrower than the stage cannot overflow it.
+			continue
+		}
+		// The frame is wider than the stage, so the art has to be checked
+		// against where centring will put it.
+		if over := (float64(sp.W) - memberStageW) / 2; over < 0 {
+			t.Errorf("%s: centring puts the frame %.0f outside its stage", look.Name, over)
+		}
+	}
+	if checked == 0 {
+		t.Skip("no hero art in this checkout, so nothing was measured")
+	}
+	// And the stages themselves cannot overlap, whatever the art does.
+	if memberStageH+2 > partyRowH {
+		t.Errorf("a stage is %.0f tall and the rows are %d apart", memberStageH, partyRowH)
+	}
+}

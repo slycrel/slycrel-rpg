@@ -518,15 +518,14 @@ func (g *Game) drawPartyPanel(dst *ebiten.Image, x, y, w, h float64, hurt map[*m
 		// with a fourteen-pixel portrait in it, which at this scale is a smudge
 		// with a hat — and the column has the height to do better now that it
 		// is a column.
-		ui.Slot(dst, x+5, ry+2, 36, 36, nil)
-		render.ScreenFit(dst, g.Assets.Get(portraitOf(c)), 0, x+7, ry+4, 32, 32, tint)
+		g.drawMember(dst, c, x+5, ry+2, tint)
 
 		name := render.ColInk
 		if !c.Alive() {
 			name = render.ColInkFaint
 		}
-		tx := x + 46
-		tw := w - 52
+		tx := x + memberStageW + 9
+		tw := w - (memberStageW + 15)
 		render.Text(dst, render.Trunc(c.Name, tw), tx, ry+2, name)
 
 		// Numbers as well as meters. A bar says roughly how bad it is and the
@@ -537,6 +536,76 @@ func (g *Game) drawPartyPanel(dst *ebiten.Image, x, y, w, h float64, hurt map[*m
 		ui.Bar(dst, tx, ry+36, tw*2/3, 4, c.PsycheFrac(), render.ColMagic)
 		drawEffectPips(dst, tx, ry+43, c.Active)
 	}
+}
+
+// The stage a company member stands on in the battle column.
+//
+// It replaced a 36-pixel box with a 32-pixel painted bust in it. A bust is a
+// good picture and it was the wrong picture: the creatures opposite are
+// full-length and the company was a row of faces, so the two halves of the
+// screen were not obviously the same kind of thing — the monsters were in the
+// fight and the party was a status readout beside it.
+//
+// 34 wide is measured, not chosen: the widest hero art in the game is the
+// Viking at 27 pixels across and the tallest is the Blood Mage at 39, both
+// inside 64-pixel frames that are mostly nothing. Sizing the stage to the frame
+// would have spent thirty pixels of the column on transparency, and the column
+// is where the names go — it is the difference between "Marisol the." and
+// "Marisol the Yo.".
+const (
+	memberStageW = 34.0
+	memberStageH = 46.0
+)
+
+// drawMember stands a company member on their stage, facing the enemy.
+//
+// **At 1:1, anchored on the feet.** Character art in this game is drawn into a
+// generous box — a 64-pixel frame holding about 27x33 of Viking — so fitting
+// the frame to the stage would scale the art down to fit padding that is not
+// there, and the party would come out smaller than the faces they replaced.
+// Scaling *up* to fill the stage is worse: these are pixels, and 1.39 of one is
+// a smear. So the frame is drawn at native size with the empty rows above and
+// below simply hanging outside the stage, which costs nothing because they are
+// transparent, and the art lands where Foot says the feet are.
+//
+// The rows are 52 apart and the art is 33 tall, so no member's frame can reach
+// another's art however much padding hangs out of the box.
+//
+// Facing right is the whole reason this reads as a line-up rather than as a
+// list with pictures: the company looks at the creatures, and the creatures are
+// on the right.
+func (g *Game) drawMember(dst *ebiten.Image, c *model.Character, x, y float64, tint color.Color) {
+	ui.Slot(dst, x, y, memberStageW, memberStageH, nil)
+	sp := g.Assets.Get(heroSpriteKey(c, core.DirRight, false))
+	if sp == nil || sp.Frame(0) == nil {
+		// No sheet for this look. The bust is the fallback rather than an empty
+		// box, since it is what the party column drew for the life of the
+		// project and is certainly present.
+		render.ScreenFit(dst, g.Assets.Get(portraitOf(c)), 0, x+2, y+2,
+			memberStageW-4, memberStageH-4, tint)
+		return
+	}
+	// Feet on the floor of the stage, centred across it. Foot counts the
+	// transparent rows below the artwork, which is the only thing that says
+	// where the floor is — a fixed offset lands the tall sheets underground and
+	// the short ones in mid-air.
+	sx := x + (memberStageW-float64(sp.W))/2
+	sy := y + memberStageH - 3 - float64(sp.H-sp.Foot)
+
+	// The idle sheets carry three frames and the column had been showing the
+	// first of them forever. Cycling them costs nothing and is the difference
+	// between a line-up and a row of statues — and it stays inside the stage,
+	// which a lunge on the attack would not: the frame around each member is
+	// what the ally cursor lands on, so anything that moves a character sideways
+	// walks them through their own border.
+	//
+	// Slow. This is somebody standing still, not somebody jogging on the spot,
+	// and at four frames a second the whole column reads as agitated.
+	frame := 0
+	if c.Alive() {
+		frame = g.Tick() / 22
+	}
+	render.ScreenTinted(dst, sp, frame, sx, sy, tint)
 }
 
 // effectColour is the pip a condition draws as. They are read at three pixels

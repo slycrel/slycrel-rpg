@@ -293,6 +293,13 @@ func ScreenFit(dst *ebiten.Image, sp *assetsys.Sprite, frame int, x, y, w, h flo
 // ScreenTinted is Screen with a colour multiplied through it, for art that has
 // to sit in a palette it was not drawn for. The alpha of the tint carries, so a
 // weather sheet can be laid over a scene at partial strength.
+//
+// A nil tint means "draw it as it is", which is what ScreenFit beside it has
+// always meant and what this one used to answer with a segfault: ebiten's
+// ScaleWithColor dereferences the colour without checking, so the first caller
+// to pass an untinted sprite through here took the game down. Every existing
+// caller happened to have a colour in hand, so it had never come up — which is
+// the shape of bug that waits for the next feature rather than the next frame.
 func ScreenTinted(dst *ebiten.Image, sp *assetsys.Sprite, frame int, x, y float64, tint color.Color) {
 	img := sp.Frame(frame)
 	if img == nil {
@@ -300,7 +307,9 @@ func ScreenTinted(dst *ebiten.Image, sp *assetsys.Sprite, frame int, x, y float6
 	}
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(round(x), round(y))
-	op.ColorScale.ScaleWithColor(tint)
+	if tint != nil {
+		op.ColorScale.ScaleWithColor(tint)
+	}
 	dst.DrawImage(img, op)
 }
 
