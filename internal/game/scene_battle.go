@@ -767,8 +767,8 @@ func (b *battleScene) chooseRoot(g *Game) {
 		// Item from row two on the second item, for no reason anybody chose.
 		b.menu.Index = 0
 		b.menu.SetItems(items)
-		// Icon rows are taller, so fewer fit the command panel.
-		b.menu.Visible = 3
+		// Icon rows are taller, so fewer fit than the root menu's plain ones.
+		b.menu.Visible = spellRows
 		// Open on whatever was cast last, if it is still castable. A fight is
 		// mostly the same two or three moves in some order, and scrolling past
 		// the same four techniques every round to reach the one being used is
@@ -798,7 +798,7 @@ func (b *battleScene) chooseRoot(g *Game) {
 		}
 		b.menu.Icons = g.Assets
 		b.menu.SetItems(items)
-		b.menu.Visible = 3
+		b.menu.Visible = spellRows
 		b.mode = modeItem
 	case cmdDefend:
 		b.runRound(g, func(g *Game) {
@@ -1283,13 +1283,14 @@ func castLine(s model.Spell, caster string) string {
 	return strings.ReplaceAll(s.Cast, "{A}", caster)
 }
 
-// drawBlurb puts what the highlighted technique does over the transcript.
+// drawBlurb puts what the highlighted technique does beside the list.
 //
-// Over the transcript rather than beside the list, because the command panel is
-// holding the list itself and every other pixel on this screen already belongs
-// to something. The transcript is the one panel a player is not reading while
-// they are choosing what to do — and now that the two sit side by side along
-// the bottom, the explanation appears directly beside the row it explains.
+// It used to open over the transcript, on the grounds that the transcript is
+// the one panel nobody is reading while they choose — which was true, and was
+// still the wrong place. It was there because the command panel sat along the
+// bottom and there was nowhere else. With the list standing over the field, the
+// rest of the field is free, so the explanation now sits immediately to the
+// right of the row it explains and the transcript keeps all six of its lines.
 func (b *battleScene) drawBlurb(g *Game, dst *ebiten.Image) {
 	it, ok := b.menu.Selected()
 	if !ok {
@@ -1303,14 +1304,14 @@ func (b *battleScene) drawBlurb(g *Game, dst *ebiten.Image) {
 	// is right for a box over the world and wrong for one over the transcript:
 	// three lines of combat log reading through three lines of explanation is
 	// two things and neither of them legible.
-	render.Rect(dst, barSideX, battleBarY, barSideW, battleBarH, color.RGBA{0x14, 0x10, 0x1C, 0xFF})
-	ui.TitledPanel(dst, render.Trunc(s.Name, barSideW-24), barSideX, battleBarY, barSideW, battleBarH)
-	y := battleBarY + 9
-	for _, ln := range techniqueBlurb(g.Player, s, barSideW-22) {
-		if y > battleBarY+battleBarH-12 {
+	render.Rect(dst, blurbX, blurbY, blurbW, blurbH, color.RGBA{0x14, 0x10, 0x1C, 0xFF})
+	ui.TitledPanel(dst, render.Trunc(s.Name, blurbW-24), blurbX, blurbY, blurbW, blurbH)
+	y := blurbY + 11
+	for _, ln := range techniqueBlurb(g.Player, s, blurbW-22) {
+		if y > blurbY+blurbH-12 {
 			break
 		}
-		render.Text(dst, ln, barSideX+10, y, render.ColInk)
+		render.Text(dst, ln, blurbX+10, y, render.ColInk)
 		y += render.LineH
 	}
 }
@@ -2123,10 +2124,11 @@ func (g *Game) offerRewind() {
 const (
 	// The left column: the company, one above another.
 	//
-	// 156 rather than 176 because three members at partyRowH fill exactly 156,
-	// and the twenty pixels that used to sit under them are worth more to the
-	// command panel below — see cmdPanelY. A fourth member would not have fitted
-	// at either height.
+	// 156 rather than 176 because three members at partyRowH fill exactly 156.
+	// The twenty pixels under them used to belong to a command panel rising out
+	// of the bar; the command panel has moved over the field and the bar has
+	// taken the space instead, which is worth more to it than a fourth member
+	// would have been — and a fourth would not have fitted at either height.
 	partyPanelX = 6.0
 	partyPanelY = 6.0
 	partyPanelW = 140.0
@@ -2138,51 +2140,80 @@ const (
 	foeFieldW = render.ScreenW - foeFieldX - 6
 	foeFieldH = 156.0
 
-	// The bottom strip: what just happened, all the way across.
-	battleBarY = 186.0
+	// The bottom strip: what just happened, all the way across, always.
+	//
+	// "Always" is the whole of this layout and it is what the previous one
+	// could not manage. The command panel used to stand up out of this bar and
+	// eat its left third, so the transcript was 298 pixels wide and indented
+	// past a box during every round in which anybody was choosing anything —
+	// which is every round. The note above it conceded that full width "is not
+	// available" and explained why: a command list on the left and a transcript
+	// starting at the left edge are the same pixels.
+	//
+	// They are the same pixels only while the command list is down here. It is
+	// not any more. The bar starts 18 pixels higher as well, reclaiming the
+	// gap the command panel used to rise into, so the transcript runs the full
+	// 468 across and six rows deep in every mode the game has.
+	battleBarY = 168.0
 	battleBarH = render.ScreenH - battleBarY - 6
 	logPanelX  = 6.0
 	logPanelW  = render.ScreenW - 12.0
+	// Rendered rows, not entries — see Log.DrawWrapped.
+	logRows = 6
 
-	// The command panel stands *up* out of the bar rather than eating its
-	// width.
+	// The command panel stands over the field it is asking about.
 	//
-	// It has always overdrawn rather than sat beside — two permanent boxes down
-	// there meant the transcript was two thirds of a screen wide even while it
-	// was being written to, which is the one moment anybody reads it. But an
-	// overlay 210 wide inside a 78-tall bar still left the transcript 236
-	// pixels and four cramped lines, and a playthrough said so: the fight was
-	// legible and the thing telling you what happened in it was not.
+	// Choosing what to do is the one moment the portraits are not the thing
+	// being read: the player has already looked at what is in front of them and
+	// is now looking at a list. So the list borrows that space and gives it
+	// straight back — it is up while a choice is open and gone the instant one
+	// is made, which is the opposite of the transcript, whose job is to be
+	// readable exactly when something has just happened.
 	//
-	// So it is narrower and taller. It starts above the bar, which is where the
-	// twenty pixels came from, and the transcript keeps 298 — a quarter wider,
-	// for the same five lines. A list of five short labels never needed the
-	// width; the sentences beside it always did.
+	// Left of the field rather than right, so the eye runs company, then
+	// command, then transcript down one column, and so the panel is adjacent to
+	// the party it belongs to rather than floating in the middle of the enemy.
+	cmdPanelX = foeFieldX
+	cmdPanelY = foeFieldY
+	// 168 rather than the 152 it inherited from the bottom bar. Down there the
+	// width was whatever was left over; up here it is a choice, and the list is
+	// the thing being read — "Second Wind" and "Loud Encouragement" were both
+	// arriving as "Second W." and "Loud Enc." beside a detail column quoting
+	// their cost. The popover keeps 150, which is still above the floor the
+	// layout test holds it to.
+	cmdPanelW = 168.0
+	cmdPanelH = foeFieldH
+
+	// What is left of the field beside it, which is where a technique explains
+	// itself. It used to open over the transcript, for want of anywhere else;
+	// it now sits directly beside the row it belongs to and costs the
+	// transcript nothing.
+	blurbX = cmdPanelX + cmdPanelW + 4
+	blurbY = foeFieldY
+	blurbW = render.ScreenW - 6 - blurbX
+	blurbH = foeFieldH
+
+	// How many rows of an icon list fit the command panel.
 	//
-	// Full width for the transcript is not available and it is worth writing
-	// down why, because it is the obvious next idea. The screen is 480 across.
-	// A command list on the left and a transcript that starts at the left edge
-	// are the same pixels, so one of them covers the other — and hidden text is
-	// worse than indented text, since indented text is at least whole sentences
-	// starting where you can see them.
-	cmdPanelX = 6.0
-	cmdPanelW = 152.0
-	cmdPanelY = 162.0
-	cmdPanelH = battleBarY + battleBarH - cmdPanelY
-	// What is left of the bar beside the command panel, for the transcript to
-	// indent into and for the technique popover to open in.
-	barSideX = cmdPanelX + cmdPanelW + 4
-	barSideW = render.ScreenW - 6 - barSideX
+	// Derived rather than typed, because it is the one number in this block
+	// that has to move when the panel does and the one nobody would remember
+	// to. It was 3 while the panel was 102 tall down in the bar, which meant
+	// a Mage at level twelve scrolled a list of eleven techniques three at a
+	// time. The panel is 156 tall over the field now and the same arithmetic
+	// says seven.
+	spellRows = int(cmdPanelH-16) / (ui.IconSize + 2)
 )
 
-// commandsUp reports whether the command panel is covering the left of the bar.
+// commandsUp reports whether a command panel is standing over the foe field.
 //
-// Only the modes that have something to press. Busy and done have "..." and
-// "Press Z" respectively, and neither is worth a box over the transcript at the
-// exact moment the transcript is saying what happened.
+// Only the modes holding a list. Targeting and ally-picking are choices made
+// *on* something already drawn — a portrait, a party row — so a box over the
+// field would cover the thing being chosen, which is the one arrangement this
+// layout must never produce. Their hints go in the transcript's heading
+// instead. Busy and done have nothing to press.
 func (b *battleScene) commandsUp() bool {
 	switch b.mode {
-	case modeRoot, modeSpell, modeItem, modeTarget, modeAllyPick:
+	case modeRoot, modeSpell, modeItem:
 		return true
 	}
 	return false
@@ -2620,43 +2651,36 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 		b.drawAllyCursor(g, dst)
 	}
 
-	// The transcript, across the whole bottom.
+	// The transcript, across the whole bottom, at full width in every mode.
 	//
-	// Its heading carries the popover's hint, because the panel being
-	// advertised is the space the explanation opens in.
-	logTitle := ""
-	if b.mode == modeSpell && !b.blurb {
-		logTitle = "left/right explains one"
-	}
-	ui.TitledPanel(dst, logTitle, logPanelX, battleBarY, logPanelW, battleBarH)
-	// Indented past the command panel while there is one, so the lines are
-	// whole sentences starting where you can see them rather than the tails of
-	// sentences beginning underneath a box. The panel is narrower than it was,
-	// so this indent costs 60 pixels less than it used to.
-	lx, lw := logPanelX+8, logPanelW-18
-	if b.commandsUp() {
-		lx, lw = barSideX+8, barSideW-14
-	}
-	b.log.DrawWrapped(dst, lx, battleBarY+6, lw, 5)
+	// Its heading carries whatever the current mode needs to say in one line —
+	// the popover's hint while a technique is highlighted, and the controls for
+	// the two modes that deliberately have no panel of their own. A heading is
+	// the right home for those: it is one line, it is already drawn, and it
+	// costs the field nothing at the exact moment the field is what the player
+	// is reading.
+	ui.TitledPanel(dst, b.barTitle(), logPanelX, battleBarY, logPanelW, battleBarH)
+	// Ten rather than six, because a heading is ink and not just a rule.
+	// TitledPanel draws its caption at y-4, which inks down to y+8 — so a
+	// transcript starting at y+6 put its first row through the bottom of the
+	// heading, and only in the two modes that have a heading. Which is the
+	// worst version: the collision appears when the player is targeting and
+	// vanishes when they commit.
+	b.log.DrawWrapped(dst, logPanelX+8, battleBarY+10, logPanelW-18, logRows)
 
 	// The effects that land on the party panel, which has just been drawn over
 	// where they are.
 	b.drawBursts(g, dst, true)
 
-	// The technique popover, over the transcript. Drawn before the command
-	// panel so the list it belongs to stays on top of it.
+	// The technique popover, beside the list rather than under it.
 	if b.mode == modeSpell && b.blurb {
 		b.drawBlurb(g, dst)
 	}
 
-	// Command panel.
-	title := map[battleMode]string{
-		modeRoot: "", modeSpell: "technique", modeItem: "pack",
-		modeTarget: "target", modeAllyPick: "on whom", modeBusy: "", modeDone: "",
-	}[b.mode]
+	// The command panel, over the field it is asking about.
 	if !b.commandsUp() {
-		// Nothing to press. Say so at the end of the bar rather than in a box
-		// over it — a panel here would cover the line it is reacting to.
+		// Nothing holding a list. The one thing left to say is that the fight
+		// is over, and it goes at the end of the bar rather than in a box.
 		if b.mode == modeDone && b.fade == 0 {
 			render.TextRight(dst, "Press Z", render.ScreenW-14,
 				battleBarY+battleBarH-14, render.ColGold)
@@ -2667,44 +2691,39 @@ func (b *battleScene) Draw(g *Game, dst *ebiten.Image) {
 	}
 
 	// A solid ground under it first. ui.Panel is a little translucent, which is
-	// right over the world and wrong over four lines of transcript: the two
-	// read through each other and neither is legible.
+	// right over the world and wrong over a portrait: the creature reads
+	// through the list and neither is legible.
 	render.Rect(dst, cmdPanelX, cmdPanelY, cmdPanelW, cmdPanelH, color.RGBA{0x14, 0x10, 0x1C, 0xFF})
-	ui.TitledPanel(dst, title, cmdPanelX, cmdPanelY, cmdPanelW, cmdPanelH)
-	const tx = cmdPanelX + 10
-	switch b.mode {
-	case modeRoot, modeSpell, modeItem:
-		b.menu.Draw(dst, cmdPanelX+12, cmdPanelY+6, cmdPanelW-24)
-	case modeTarget:
-		// The epithet, here, where there is room for it. This is the moment it
-		// is worth reading: the player is looking at four portraits deciding
-		// which one to hit, and "Territorial" is the entire answer to what sort
-		// of crab this is.
-		if m := b.showing(b.target); m != nil {
-			head, tail := monsterName(m.Name)
-			render.Text(dst, render.Trunc(head, cmdPanelW-24), tx, cmdPanelY+8, render.ColGold)
-			if tail != "" {
-				for i, ln := range render.Wrap(tail, cmdPanelW-24) {
-					if i > 2 {
-						break
-					}
-					render.Text(dst, ln, tx, cmdPanelY+22+float64(i)*render.LineH, render.ColInk)
-				}
-			}
-		}
-		// Pinned to the bottom of the panel rather than measured down from its
-		// top, so it cannot land on the epithet above it however many lines
-		// that wrapped to.
-		render.Text(dst, "Arrows choose", tx, cmdPanelY+cmdPanelH-30, render.ColInkFaint)
-		render.Text(dst, "Z commits", tx, cmdPanelY+cmdPanelH-17, render.ColInkFaint)
-	case modeAllyPick:
-		render.Text(dst, "Up / Down to choose.", tx, cmdPanelY+16, render.ColInk)
-		render.Text(dst, "Z commits.", tx, cmdPanelY+30, render.ColInkDim)
-		render.Text(dst, "X reconsiders.", tx, cmdPanelY+43, render.ColInkDim)
-	}
+	ui.TitledPanel(dst, map[battleMode]string{
+		modeSpell: "technique", modeItem: "pack",
+	}[b.mode], cmdPanelX, cmdPanelY, cmdPanelW, cmdPanelH)
+	b.menu.Draw(dst, cmdPanelX+12, cmdPanelY+8, cmdPanelW-24)
 
 	b.drawFloaters(dst)
 	b.drawFade(dst)
+}
+
+// barTitle is the one line the transcript's heading carries, which depends on
+// what the player is in the middle of.
+//
+// Targeting and ally-picking have no panel by design — the thing being chosen
+// is already on screen and a box would cover it — so this is where their
+// controls live. The target's name is not repeated here: the plate under its
+// portrait carries both halves at all times and has since the epithet stopped
+// waiting for the cursor, so saying it again in the heading would be the same
+// words twice on one screen.
+func (b *battleScene) barTitle() string {
+	switch b.mode {
+	case modeSpell:
+		if !b.blurb {
+			return "left/right explains one"
+		}
+	case modeTarget:
+		return "arrows choose  -  Z commits  -  X reconsiders"
+	case modeAllyPick:
+		return "up/down chooses  -  Z commits  -  X reconsiders"
+	}
+	return ""
 }
 
 // drawFloaters paints the damage and healing numbers rising off whoever earned

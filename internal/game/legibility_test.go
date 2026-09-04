@@ -651,25 +651,44 @@ func TestTheFoeFieldHoldsEverybodyWithoutOverlap(t *testing.T) {
 	}
 }
 
-// The bottom bar and the panel that overdraws it both have to fit the frame.
+// The bottom bar and the panels that overdraw the field both have to fit.
 //
-// The command panel deliberately sits *on* the transcript rather than beside
-// it, so the thing to check is not that they miss each other but that the
-// overlay stays inside the bar it is covering and leaves usable room beside it
-// — a negative remainder there would wrap the transcript to nothing and print
-// one character per line.
+// The arrangement this checks is the one the layout was rebuilt around: the
+// transcript owns the whole bottom strip in every mode, and the command panel
+// borrows the *field* while a choice is open rather than borrowing the bar. So
+// the thing to assert is no longer that an overlay leaves usable room in the
+// bar — nothing overlays the bar any more — but that nothing has crept back
+// into it, and that what stands over the field stays on the field.
 func TestTheBottomStripFits(t *testing.T) {
-	if cmdPanelX < logPanelX || cmdPanelX+cmdPanelW > logPanelX+logPanelW {
-		t.Errorf("the command panel runs %.0f..%.0f, outside the bar at %.0f..%.0f",
-			cmdPanelX, cmdPanelX+cmdPanelW, logPanelX, logPanelX+logPanelW)
+	// The command panel and the popover both live on the field, and the strip
+	// below is nobody's but the transcript's.
+	if cmdPanelY+cmdPanelH > battleBarY {
+		t.Errorf("the command panel reaches %.0f, into the bar at %.0f",
+			cmdPanelY+cmdPanelH, battleBarY)
 	}
-	if barSideX+barSideW > logPanelX+logPanelW {
-		t.Errorf("the space beside the command panel ends at %.0f, past the bar at %.0f",
-			barSideX+barSideW, logPanelX+logPanelW)
+	if blurbY+blurbH > battleBarY {
+		t.Errorf("the technique popover reaches %.0f, into the bar at %.0f",
+			blurbY+blurbH, battleBarY)
+	}
+	if cmdPanelX < foeFieldX || cmdPanelX+cmdPanelW > foeFieldX+foeFieldW {
+		t.Errorf("the command panel runs %.0f..%.0f, outside the field at %.0f..%.0f",
+			cmdPanelX, cmdPanelX+cmdPanelW, foeFieldX, foeFieldX+foeFieldW)
+	}
+	if blurbX < cmdPanelX+cmdPanelW || blurbX+blurbW > foeFieldX+foeFieldW {
+		t.Errorf("the popover runs %.0f..%.0f; it must sit beside the list and inside the field %.0f..%.0f",
+			blurbX, blurbX+blurbW, foeFieldX+foeFieldW-blurbW, foeFieldX+foeFieldW)
 	}
 	// Enough to wrap a sentence into rather than a column of single letters.
-	if barSideW < 120 {
-		t.Errorf("only %.0f pixels beside the command panel; a transcript needs more", barSideW)
+	// Both boxes now carry prose, so both have the floor the bar used to.
+	if blurbW < 120 {
+		t.Errorf("only %.0f pixels for a technique's explanation; that needs more", blurbW)
+	}
+	// The transcript is the width of the strip, always, and the strip is the
+	// width of the screen. This is the property the whole rearrangement bought
+	// and the one a future layout is most likely to spend again.
+	if logPanelW-18 < 400 {
+		t.Errorf("the transcript wraps at %.0f, which is not the full width it was moved for",
+			logPanelW-18)
 	}
 	if logPanelX+logPanelW > render.ScreenW {
 		t.Errorf("the transcript ends at %.0f, past a %d-pixel screen",
@@ -679,12 +698,46 @@ func TestTheBottomStripFits(t *testing.T) {
 		t.Errorf("the bottom strip ends at %.0f, past a %d-pixel screen",
 			battleBarY+battleBarH, render.ScreenH)
 	}
+	// The rows the transcript claims must actually fit the box drawn for them,
+	// or the oldest is clipped by the panel edge with nothing saying so.
+	if want := 6 + float64(logRows)*render.LineH; want > battleBarH {
+		t.Errorf("%d rows need %.0f pixels, the bar is %.0f", logRows, want, battleBarH)
+	}
 	// And the field above it must not reach into it.
 	if partyPanelY+partyPanelH > battleBarY || foeFieldY+foeFieldH > battleBarY {
 		t.Error("the field overlaps the bottom strip")
 	}
 	if partyPanelX+partyPanelW > foeFieldX {
 		t.Error("the company column overlaps the foe field")
+	}
+}
+
+// Targeting and ally-picking must never put a box over the field.
+//
+// It is the one rule the new layout has that the old one did not need, and it
+// is exactly the rule a later change would break without noticing: the command
+// panel is a pleasant place to put a hint, and both of these modes have hints,
+// and both of them are choices made by pointing at something the panel would
+// be standing on. Their words go in the transcript's heading, so the assertion
+// is that the heading has some and the panel does not.
+func TestChoosingATargetLeavesTheFieldVisible(t *testing.T) {
+	b := &battleScene{}
+	for _, mode := range []battleMode{modeTarget, modeAllyPick} {
+		b.mode = mode
+		if b.commandsUp() {
+			t.Errorf("mode %v puts a panel over the field it is choosing from", mode)
+		}
+		if b.barTitle() == "" {
+			t.Errorf("mode %v has no panel and says nothing in the heading either", mode)
+		}
+	}
+	// And the modes that do hold a list still raise one, or the rule above has
+	// been satisfied by removing the panel altogether.
+	for _, mode := range []battleMode{modeRoot, modeSpell, modeItem} {
+		b.mode = mode
+		if !b.commandsUp() {
+			t.Errorf("mode %v holds a list and does not draw it", mode)
+		}
 	}
 }
 
