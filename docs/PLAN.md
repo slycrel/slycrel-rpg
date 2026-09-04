@@ -50,12 +50,21 @@ Built and running:
   chests and a boss; small sites for ruins, towers, shrines, camps and oddities
 - Turn-based battle: initiative, targeting, techniques, items, defend, flee,
   monster AI that turtles and bolts when nearly dead, damage floaters, hit
-  flashes, screen shake, a paced combat transcript, disposition narration
+  flashes, screen shake, a paced combat transcript, disposition narration. The
+  company stands in the field as sprites facing the creatures rather than
+  sitting beside it as portraits; command lists stand over the field while a
+  choice is open and clear the moment one is made, so the transcript keeps the
+  full width of the bottom in every mode
 - Loot, XP, banked level-ups, shops (buy/sell, stock scaling with settlement
   size), inns, chests, altars
 - Character sheet and pack with out-of-combat item use
+- Dialogue and the combat transcript arrive a character at a time, at a rate
+  derived from the existing combat-pace setting; a key press buys the rest of
+  the line rather than the box
 - Quests: four kinds — fetch, cull, delve, deliver — generated from nearby
-  locations, biomes and drop tables, with a log, hand-in, and rewards
+  locations, biomes and drop tables, with a log, hand-in, and rewards. Every
+  errand names where it happens and carries a computed objective line that
+  counts down; the giver's own voice sits under it rather than in place of it
 - Party: up to two hirelings, standing outside inns, rolled at the hero's level
   for a fee and a standing cut of every haul. They act on their own policy —
   the one the balance simulator plays — take a share of the incoming damage,
@@ -3916,6 +3925,128 @@ symlink to the main checkout in this worktree, and minting a new banded icon
 would write into the tree the other session is playing from. Deliberate, and
 recorded in ASSET-MAP's unsettled list.
 
+## The playthrough pass: six complaints, and what was under them
+
+A playthrough produced six things, and the useful pattern is that four of them
+were the instrument again. This document has said "when something reads as a
+content fault, price the instrument first" once already; it holds here too, and
+the two that were genuinely content had been content for a long time without
+anybody noticing.
+
+### Nothing on the technique list was ever worth casting, and nothing could say so
+
+The report is "no playstyle beats auto-attacks", and it is correct. Measured as
+landed damage against the biome roster, a Fighter's Lunge runs 0.33 to 0.79 of
+a free swing at every level; the capstone Haymaker peaks at 1.31 and falls back
+under 1.0 by level thirteen. At levels one and five the simulator cast nothing
+at all, ever, on any seed — so those rows of COMBAT were swings-only runs
+printed under a heading that says "techniques used".
+
+**The report had no control.** Every section was headed "techniques used" and
+nothing anywhere checked that any were. `Policy.NeverCast` and
+`FightResult.Casts` are that control now, and SWINGS ONLY prints the difference
+per class per level. It is the same argument as `Dodges` and `Siphoned` one rung
+up: those count what a mechanic did, this counts whether a subsystem was reached
+at all.
+
+Three defects under it, and all three are the same defect this file keeps
+re-learning — **a policy that estimates what the rules do is a second copy of
+the rules**, now at five occurrences.
+
+The gate compared raw magnitudes across two different defences. `freeSwingWorth`
+conceded in its own comment that a swing meets Defense and a technique meets
+Ward, and argued the comparison was honest anyway because the two run close
+together on the top-band roster. They do — *there*. A level-one Thief's Backstab
+prices at 0.79 of a swing raw and 1.19 after the crab's shell takes six off the
+sword and its ward takes two off the knife, so the gate was refusing the better
+blow at exactly the levels where a player decides whether the list is worth
+learning. Fixing it is worth 4.9 to 7.9 points of stretch win rate to the Thief
+at levels two through seven, purely from being allowed to use what it had.
+
+The ranking and the gate were two copies estimating *each other*. `attackWorth`
+discounted a pact by what it charges the caster and the gate did not, so a
+Fighter who had just spent eleven psyche on a Haymaker would follow it with a
+Reckless One priced at 1.07 of a free swing and pay for it in offence for the
+rest of the fight. That is the version of this bug that survives review, because
+each half is correct beside the thing it was written next to.
+
+And `SpellPower` had no term for the weapon. `focusStudy` exists so a caster has
+something to spend money on, and this document says so; the martial classes had
+the identical hole and nobody saw it, because the term that would have filled it
+is named after the thing only casters hold. A Fighter's `Focus()` is zero at
+every level. **The symptom is a sawtooth rather than a slope** — Lunge is worth
+0.75 of a swing at level nine, 0.63 the moment the sabre arrives and 0.52 the
+moment the rapier does — which is what "techniques never become more useful"
+feels like from inside a playthrough: you buy a sword and the rest of your kit
+quietly gets worse. `strikeStudy` is 0.55 and the value was swept rather than
+chosen; at 0.80 and above the two-psyche opener stops retiring and becomes
+spam, at 0.30 the level-thirteen inversion survives.
+
+**And half the list is still outside the question.** `bestSpell` offers three
+doors — a heal, a sap, and the best attack worth its psyche — so a technique
+that weakens, stuns, poisons, burns, blesses or raises the dead is not weighed
+and found wanting, it is never seen. Five of the Thief's nine techniques, three
+of the Fighter's, four of the Mage's. UNREACHABLE prints the roster so a reader
+knows which half of a class they are looking at, and every number above it is a
+floor rather than a measure. **The fix is doors, not columns**, and it is the
+largest single thing this document now knows is missing from the simulator.
+
+### The errands never said where
+
+Two of the four kinds point at a POI and two happen in a region, and the second
+pair named no location of any kind — the journal's Where row was populated from
+`TargetName`, which a fetch and a cull do not have, so it did not draw. Half the
+errands in the game told the player to go and get four of something without
+saying where any of it was.
+
+`Quest.Where` is a phrase filled at generation from the biome the generator
+already computes; `Quest.Objective()` is the imperative line the journal never
+had, computed rather than stored so it counts down and cannot rot in an old
+save. The nag was quoting `Need` rather than what is left, so somebody holding
+three of four was told "Still 4 Chitin Scrap. The number has not changed."
+
+And prose was interpolating the whole creature name. This file's own rule —
+prose uses `Monster.Short()` — was written for the battle transcript and the
+quest generator never learned it, so a cull errand read "There's Wolf, Deeply
+Unimpressed out there". Sixty-eight of seventy-nine creatures carry a comma, so
+it was the common case.
+
+### Half the roster was using a licence meant for one joke
+
+`SplitName` treats a name with no comma as all species, which is right for "Owl
+That Knows". Thirty-six of seventy-six monsters were taking that licence,
+including three entire biomes, so the plate had been drawing an empty second
+line for half the creatures in the game. Twenty-five are turned around, eleven
+stay and are listed with reasons, and the list is now a test — a new monster
+either carries both halves or is added to it.
+
+### What the tests were doing to the saves directory
+
+`storyGame` handed tests the real checkout as their `Root`, and `Root` is two
+jobs wearing one field: where content is read from, and where saves, shots and
+settings are *written*. `TestSavingOverAnotherCharacterAsksFirst` duly wrote its
+level-one Bosk into `saves/1.json` — over a real level-fourteen character, on
+this machine, with `saves/` gitignored so there was nothing to restore from.
+The test looks entirely innocent: it asserts an empty slot asks no question and
+then writes one, and it only fails on a machine where that slot was occupied.
+
+### The sixteen character sheets, and why they are not being used
+
+`miniadventureheroeshumans` and `miniadventureheroeselves` hold eight sheets
+each, already extracted, already covered in ASSET-LICENSING.md, already credited
+in CREDITS.md. Each is a 4x4 grid with a matching fallen frame, and since the
+game only ever draws `idle` plus the four directions — `hero/*/attack` and
+`hero/*/dead` are in the manifest and nothing has ever drawn them — they cover
+everything it asks for.
+
+They are half scale, and this is the number to keep: measured art in the first
+frame is Viking 27x33, Blood Mage 24x39, mini knight 15x15, mini elf 14x15. At
+1x a mini hero comes up to the Viking's waist. Doubled, it matches on height and
+not on the pixel grid, and a 2-pixel character beside a 1-pixel one in the same
+party row reads as two different games. **This is the standing answer to "we do
+not have enough character art"**: we have twenty sheets and four of them are at
+the scale the game is drawn at.
+
 ## What is open, and in what order
 
 Rewritten after the session that answered items 2, 4 and half of 6, and found
@@ -3931,6 +4062,34 @@ roster hole and was a gear-band sawtooth. The world's missing top half looked
 like "make the map bigger" and was a divisor. A stat that made a Fighter worse
 looked like a trade and was a policy comparing against a bad guess. When
 something in this game reads as a content fault, price the instrument first.
+
+**And now one of them was not.** The playthrough pass above found two things
+that were content all the way down — errands that named no place, and half the
+monster roster quietly opting out of the naming convention — and neither had an
+instrument that could have caught them, because neither is a number. The rule
+holds for anything the report measures; it says nothing about the writing, and
+the writing had been drifting for as long as anybody had been reading numbers.
+
+### 0. The simulator can only choose three kinds of technique
+
+New, and above everything else on this list that is measured by
+`cmd/balance`, because it bounds all of it. `bestSpell` can pick a heal, a sap
+or an attack; a technique that weakens, stuns, poisons, burns, blesses or
+raises the dead is never chosen by any fight in the report. Five of the Thief's
+nine, three of the Fighter's, four of the Mage's — UNREACHABLE prints the
+roster every run.
+
+Every class number in this document is therefore a floor. The Thief's is the
+floor with the most missing from underneath it: it is the class whose list is
+mostly conditions, and it is the class the report keeps finding slightly
+behind.
+
+The fix is doors, not columns, and each door is a judgement rather than a
+lookup: when is a weakening worth a round, when is a poison worth it against a
+creature that is nearly dead anyway, when does a blessing beat a swing. Those
+are the same shape as the retreat policy, which took two attempts and had two
+bugs in it that nothing else in the report could see. Expect the same here, and
+expect PLAYSTYLES to be where it is visible.
 
 ### 1. None of it has been played
 

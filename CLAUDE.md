@@ -176,9 +176,21 @@ which event fires which trigger, and where it is safe to put a box on screen.
   both lines, always, because an epithet that waits for the target cursor is a
   joke that lands once a fight. Prose uses `Monster.Short()` — "Wolf B bites
   Bosk", not "Wolf, Deeply Unimpressed B bites Bosk", and a taunt naming the
-  creature twice made that unreadable. `TestEveryMonsterNameFitsItsPlate` walks
-  the roster against every layout, so a new monster with a long name fails a
-  test rather than appearing on screen as "Goblin Middle".
+  creature twice made that unreadable — and *quest* prose says the species too,
+  which it did not for the life of the project: a cull errand read "There's
+  Wolf, Deeply Unimpressed out there" on the sixty-eight of seventy-nine
+  creatures that carry a comma. `TestEveryMonsterNameFitsItsPlate` walks the
+  roster against every layout, so a new monster with a long name fails a test
+  rather than appearing on screen as "Goblin Middle".
+
+  **The comma is not optional, and the exceptions are a list.** Thirty-six of
+  seventy-six monsters had quietly stopped carrying one — three entire biomes of
+  them — so the plate was drawing an empty second line for half the creatures in
+  the game. `TestEveryMonsterNameCarriesBothHalves` refuses a name with no
+  epithet unless it is in `namesWithoutAnEpithet`, and refuses an entry there
+  naming a monster that has left the roster. A new creature either carries both
+  halves or is added to that list with a reason, which is a decision on the
+  record rather than a comma somebody did not type.
 - **Never write `a %s` around a generated name.** Monsters, gear and places are
   all generated, so "a Actual Sword of Mild Regret" and "a Owl That Knows" are
   the default outcome, not the unlucky one. Use `article()` in `internal/game`,
@@ -367,6 +379,24 @@ which event fires which trigger, and where it is safe to put a box on screen.
   is to be old saves — v1 predates the party, v2 predates the backstories — and
   rewriting either at the current version deletes the only evidence that the
   loader still reads the earlier format. `cmd/genfixtures` skips both.
+- **The combat pace sets two clocks, not one.** It is how long a battle step
+  holds *and*, through `Game.typeRate`, how fast a message box and the battle
+  transcript fill — one setting because both answer "how fast does this game
+  hand you something to read", and a player who slowed combat down to keep up
+  with the transcript should not have to find a second row for the dialogue
+  they are equally behind on. `-demo` gets a rate of zero: the tour takes one
+  frame per screen and a screen photographed mid-sentence documents nothing.
+  The guard is inside `typeRate` so it travels to any new call site, which is
+  where `autosave`'s lives and for the same reason.
+- **A test must never write into the real `saves/`.** `Root` is two jobs wearing
+  one field — where content is read from, and where saves, shots and settings
+  are *written* — so a `Game` built with the checkout as its Root will save into
+  it. `storyGame` moves the writing half to a temp directory for exactly this:
+  `TestSavingOverAnotherCharacterAsksFirst` wrote its level-one Bosk over a real
+  level-fourteen character in slot 1, and `saves/` is gitignored so there was
+  nothing to restore from. The test looks innocent — it asserts an empty slot
+  asks no question and then writes one — and only fails on a machine where that
+  slot was occupied.
 - **Preferences live in `internal/prefs`, and nothing else owns that file.**
   `saves/settings.json` holds volume, combat pace and key bindings; the audio
   bank is *told* its settings and writes back through a callback rather than
