@@ -1084,11 +1084,20 @@ func (b *battleScene) runRound(g *Game, playerAction func(*Game)) {
 // allyTurn plays one companion's move. They are never commanded: the policy in
 // rules picks, and the screen narrates it.
 func (b *battleScene) allyTurn(g *Game, c *model.Character) {
-	move := rules.ChooseAllyMove(g.RNG, c, g.Data.SpellsFor(c), b.party)
+	// Whoever they are about to hit, chosen before the move rather than after
+	// it: the gate on the attack half compares where two blows land, which it
+	// cannot do without knowing what they land on. It is the same creature the
+	// swing and the cast below both go to.
+	foe := b.weakestLiving()
+	var mark *model.Monster
+	if foe >= 0 && foe < len(b.mons) {
+		mark = b.mons[foe]
+	}
+	move := rules.ChooseAllyMove(g.RNG, c, g.Data.SpellsFor(c), b.party, mark)
 	switch move.Kind {
 	case rules.AllyCast:
 		b.castSpell(g, cast{
-			by: c, spell: move.Spell, foe: b.weakestLiving(), ally: move.Ally,
+			by: c, spell: move.Spell, foe: foe, ally: move.Ally,
 		})
 	case rules.AllyUse:
 		b.useItemFrom(g, c, move.Item, c)

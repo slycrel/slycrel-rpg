@@ -36,16 +36,23 @@ fi
 # to an absolute host path means nothing inside the container, so the target is
 # bind-mounted where the link points. Without this the tests fail on missing
 # portraits and effects, which reads as a regression and is a mount.
-art=()
+#
+# Declared with a placeholder first element rather than empty, because this runs
+# under `set -u` and macOS ships bash 3.2, where expanding an empty array as
+# "${art[@]}" is an unbound variable and aborts the script before it reaches
+# Docker. The message is `art[@]: unbound variable`, which names the array and
+# not the reason, and it fires on every checkout that is not a worktree — which
+# is every checkout most of the time.
+art=(--rm)
 if [ -L assets-raw ]; then
     target=$(cd "$(dirname "$(readlink assets-raw)")" && pwd)/$(basename "$(readlink assets-raw)")
-    art=(-v "$target":/src/assets-raw)
+    art=(--rm -v "$target":/src/assets-raw)
 fi
 
 run() {
-    exec docker run --rm \
-        -v "$PWD":/src \
+    exec docker run \
         "${art[@]}" \
+        -v "$PWD":/src \
         -v slycrel-gocache:/root/.cache/go-build \
         -v slycrel-gomod:/go/pkg/mod \
         slycrel-headless "$@"

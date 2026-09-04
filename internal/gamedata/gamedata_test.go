@@ -499,34 +499,66 @@ func TestDangerRadiatesOutward(t *testing.T) {
 // TestEnduranceHoldsAcrossLevels: how many fights you get from one rest governs
 // how far you can wander, and it should not collapse as the game goes on. It
 // used to run twelve fights at level 1 and two by level 9.
+//
+// **Averaged over seeds, because the bound it checks is smaller than the wobble
+// of one.** This read a single stream against a hard ceiling of 20, and the
+// level-one row is the one that decides whether the ceiling ever fires: it ran
+// at 18.9 on seed 13 and anywhere from 18.1 to 19.8 across eight others. A
+// tenth of a point of drift anywhere in the rules could fail it, and the
+// failure would be a sampling accident wearing the words "resting has stopped
+// mattering". It duly did — a change that made a level-one Fighter cast Lunge
+// seven times in two thousand four hundred fights moved the mean by 0.3 and
+// carried the one sampled seed across the line.
+//
+// The fix is the instrument rather than the number. A bound on "how many fights
+// per rest does the game give" is a claim about the mean, and one seed is a
+// sample of it; five is enough that the quantity asserted is the quantity
+// measured. The bound stays at 20 — it was never the half that was wrong, and
+// moving a threshold to admit the run in front of you is how a threshold stops
+// meaning anything.
+//
+// What the fix does not do is make the level-one row comfortable. It sits at
+// 19.3 against a ceiling of 20, which is a finding rather than a passing test:
+// a level-one Fighter very nearly does not need the inn. That was true before
+// any of this and the noise was hiding it.
 func TestEnduranceHoldsAcrossLevels(t *testing.T) {
 	tables := load(t)
-	g := core.NewRNG(13)
-	for _, level := range []int{1, 5, 9, 13} {
-		probe := rules.BuildCharacter(g, model.ClassFighter, level)
-		geared(tables, probe)
-		spells := tables.SpellsFor(probe)
+	// Seeds rather than one, and fewer runs on each: the total sample is close
+	// to what it was, redistributed across streams so that what varies between
+	// them is averaged rather than drawn once.
+	seeds := []int64{13, 101, 202, 303, 404}
+	const runs = 24
 
-		total := 0
-		const runs = 60
-		for i := 0; i < runs; i++ {
-			sim := rules.BuildCharacter(g, model.ClassFighter, level)
-			geared(tables, sim)
-			survived := 0
-			for survived < 40 {
-				mons := tables.PickMonsters(g, balanceBiome(level), level, 1)
-				if len(mons) == 0 {
-					break
+	for _, level := range []int{1, 5, 9, 13} {
+		var sum float64
+		for _, seed := range seeds {
+			g := core.NewRNG(seed)
+			probe := rules.BuildCharacter(g, model.ClassFighter, level)
+			geared(tables, probe)
+			spells := tables.SpellsFor(probe)
+
+			total := 0
+			for i := 0; i < runs; i++ {
+				sim := rules.BuildCharacter(g, model.ClassFighter, level)
+				geared(tables, sim)
+				survived := 0
+				for survived < 40 {
+					mons := tables.PickMonsters(g, balanceBiome(level), level, 1)
+					if len(mons) == 0 {
+						break
+					}
+					r := rules.SimulateFight(g, sim, []*model.MonsterDef{mons[0].Def}, level, 60, spells)
+					if !r.Won || sim.HP <= 0 {
+						break
+					}
+					survived++
 				}
-				r := rules.SimulateFight(g, sim, []*model.MonsterDef{mons[0].Def}, level, 60, spells)
-				if !r.Won || sim.HP <= 0 {
-					break
-				}
-				survived++
+				total += survived
 			}
-			total += survived
+			sum += float64(total) / runs
 		}
-		avg := float64(total) / runs
+		avg := sum / float64(len(seeds))
+
 		if avg < 2.5 {
 			t.Errorf("level %d fighter manages only %.1f fights per rest; "+
 				"the overworld becomes a walk back to the inn", level, avg)

@@ -2044,11 +2044,11 @@ func reportPlaystyles(out *os.File, g *core.RNG, t *gamedata.Tables, fights int)
 	// the same trick EXCHANGE uses: the fight number seeds the stream, so both
 	// styles meet the same subject in the same encounter and the difference is
 	// the behaviour rather than the luck.
-	run := func(class model.Class, level, delta int, pol rules.Policy) (won, fled, died float64) {
+	run := func(class model.Class, level, delta int, pol rules.Policy) (won, fled, died, casts float64) {
 		enc := core.Max(1, level+delta)
 		biome := biomeForLevel(enc)
 		label := fmt.Sprintf("playstyle/%s/%d/%d", class, level, delta)
-		var wins, flights, deaths, n int
+		var wins, flights, deaths, n, spells int
 		for f := 0; f < fights; f++ {
 			rg := g.Fork(label, int64(f))
 			c := rules.BuildCharacter(rg, class, level)
@@ -2069,12 +2069,14 @@ func reportPlaystyles(out *os.File, g *core.RNG, t *gamedata.Tables, fights int)
 			if r.Died() {
 				deaths++
 			}
+			spells += r.Casts
 			n++
 		}
 		if n > 0 {
 			won = float64(wins) * 100 / float64(n)
 			fled = float64(flights) * 100 / float64(n)
 			died = float64(deaths) * 100 / float64(n)
+			casts = float64(spells) / float64(n)
 		}
 		return
 	}
@@ -2090,8 +2092,8 @@ func reportPlaystyles(out *os.File, g *core.RNG, t *gamedata.Tables, fights int)
 	for _, level := range []int{5, 9, 13} {
 		for _, class := range model.AllClasses {
 			for _, b := range bands {
-				baseWon, baseFled, baseDied := run(class, level, b.delta, rules.Policy{})
-				w, fl, d := run(class, level, b.delta, rules.Policy{NeverFlee: true})
+				baseWon, baseFled, baseDied, _ := run(class, level, b.delta, rules.Policy{})
+				w, fl, d, _ := run(class, level, b.delta, rules.Policy{NeverFlee: true})
 
 				// Holding the ground converts flights into something. The
 				// question is which, and the answer is the whole section.
@@ -2134,6 +2136,151 @@ fight in this report is one character, which is also why CROWDS' wider
 columns mean "a solo hero after their company was killed".
 
 `)
+
+	reportSwingsOnly(out, run)
+	reportUnreachable(out, t)
+}
+
+// reportUnreachable names the techniques no fight in this report ever casts.
+//
+// It is the other half of SWINGS ONLY and it is the more uncomfortable half. That
+// table asks what the list is worth and answers with a win rate; this one asks
+// how much of the list was in the measurement at all, and the answer is about
+// half of it. bestSpell offers three doors — a heal, a sap, and the strongest
+// attack worth its psyche — so a technique that weakens, stuns, poisons, burns,
+// blesses or raises the dead is not weighed and found wanting, it is never seen.
+//
+// Which makes every row above it a partial reading rather than a wrong one, and
+// the difference matters when the reader is a player asking why no way of
+// playing beats swinging: on the Thief, five of nine techniques are outside the
+// question this report is capable of asking.
+//
+// Printed as a roster rather than a count because the count is the boring half.
+// The useful half is which levels a class goes without anything measurable, and
+// that only reads off the names.
+func reportUnreachable(out *os.File, t *gamedata.Tables) {
+	fmt.Fprintf(out, "UNREACHABLE — techniques no fight in this report ever casts\n")
+	fmt.Fprintf(out, "the policy has three doors: a heal, a sap, and the best attack worth its\n")
+	fmt.Fprintf(out, "psyche. Anything else is not measured, here or in any section above.\n\n")
+
+	for _, class := range model.AllClasses {
+		// The whole list the class will ever know, which is what a player sees
+		// on the level-up screen — not what they know at some sampled level.
+		top := rules.BuildCharacter(core.NewRNG(1), class, 20)
+		known := t.SpellsFor(top)
+		var dark []model.Spell
+		for _, s := range known {
+			if !rules.Castable(s) {
+				dark = append(dark, s)
+			}
+		}
+		fmt.Fprintf(out, "  %-8s %d of %d unmeasured", class, len(dark), len(known))
+		if len(dark) == 0 {
+			fmt.Fprintf(out, "\n")
+			continue
+		}
+		fmt.Fprintf(out, ":\n")
+		sort.Slice(dark, func(i, j int) bool { return dark[i].Level < dark[j].Level })
+		for _, s := range dark {
+			fmt.Fprintf(out, "    L%-3d %-9s %s\n", s.Level, s.Kind, s.Name)
+		}
+	}
+
+	fmt.Fprint(out, `
+The fix is doors, not columns: a policy that knows when a weakening is worth a
+round is the only thing that can price one. Until it has them, read every
+"techniques used" heading in this report as "the attacking, healing and sapping
+techniques used", and read a class's numbers as a floor rather than a measure —
+whatever those unmeasured rows are worth, the fights above were fought without
+them.
+
+`)
+}
+
+// reportSwingsOnly is the second playstyle, and it is a control rather than a
+// flourish.
+//
+// Every heading in this report says "techniques used" and until now nothing
+// checked that any were. The gate in bestAttack retires a technique the moment
+// a free swing prices above it, so a class whose whole list sits under its own
+// weapon plays this report identically with the list and without it — and
+// every number would have read the same either way, with nothing anywhere
+// saying which of the two had been measured. A player reported precisely that
+// about the Fighter and there was no column in which to check them.
+//
+// Two columns answer it and they answer different halves. "won/died" is what
+// swinging every round costs, against the competent player who casts; "casts"
+// is how many rounds that competent player actually spent on the list. A zero
+// there is the stronger finding of the two, because it says the difference is
+// not small — it says there was no difference to measure, and the row above it
+// was a swings-only run wearing the other heading.
+//
+// The bands are on-level and three over rather than the retreat's +3/+5, and
+// the levels reach down to 1, because "techniques do nothing" is a complaint
+// about the early game and the retreat table starts at 5.
+func reportSwingsOnly(out *os.File, run func(model.Class, int, int, rules.Policy) (float64, float64, float64, float64)) {
+	fmt.Fprintf(out, "SWINGS ONLY — what the technique list is worth, if anything\n")
+	fmt.Fprintf(out, "the same fights with no psyche spent at all: no attack, no heal, no blessing\n\n")
+	fmt.Fprintf(out, "%-6s %-8s %-9s %8s %8s   %-24s %s\n",
+		"level", "class", "band", "won", "died", "vs the player who casts", "casts/fight")
+	fmt.Fprintln(out, strings.Repeat("-", 82))
+
+	bands := []struct {
+		label string
+		delta int
+	}{{"on-level", 0}, {"+3", laneStretch}}
+
+	// The narrowest gap on a row where the competent player did cast, and the
+	// levels at which the list was never opened at all. Both are printed under
+	// the table because both are findings and neither is visible in any single
+	// row.
+	idle := map[model.Class][]int{}
+	for _, level := range []int{1, 3, 5, 9, 13} {
+		for _, class := range model.AllClasses {
+			everCast := false
+			for _, b := range bands {
+				baseWon, _, baseDied, casts := run(class, level, b.delta, rules.Policy{})
+				w, _, d, _ := run(class, level, b.delta, rules.Policy{NeverCast: true})
+				if casts > 0 {
+					everCast = true
+				}
+				note := fmt.Sprintf("%+.1f won, %+.1f died", w-baseWon, d-baseDied)
+				// A run in which nothing was ever cast is marked rather than
+				// printed as 0.0, because the two mean different things: 0.0
+				// casts is a list that exists and is never worth opening, and
+				// it is the whole answer to the row beside it.
+				spent := fmt.Sprintf("%.2f", casts)
+				if casts == 0 {
+					spent = "never"
+				}
+				fmt.Fprintf(out, "%-6d %-8s %-9s %7.1f%% %7.1f%%   %-24s %s\n",
+					level, class, b.label, w, d, note, spent)
+			}
+			if !everCast {
+				idle[class] = append(idle[class], level)
+			}
+		}
+		fmt.Fprintln(out)
+	}
+
+	for _, class := range model.AllClasses {
+		if levels := idle[class]; len(levels) > 0 {
+			fmt.Fprintf(out, "WARNING: %s never casts anything at level %s — at those levels every\n",
+				class, joinInts(levels))
+			fmt.Fprintf(out, "  other section of this report is measuring a swings-only player under a\n")
+			fmt.Fprintf(out, "  heading that says techniques were used.\n")
+		}
+	}
+	fmt.Fprintln(out)
+}
+
+// joinInts renders a level list for a warning line.
+func joinInts(v []int) string {
+	out := make([]string, len(v))
+	for i, n := range v {
+		out[i] = fmt.Sprint(n)
+	}
+	return strings.Join(out, ", ")
 }
 
 // reportCharms is the charm slot's LANES: the measurement that decides what

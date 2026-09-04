@@ -28,6 +28,19 @@ var selfOnly = []model.Spell{
 // solo is the party a lone character is in.
 func solo(c *model.Character) []*model.Character { return []*model.Character{c} }
 
+// mark is the creature a companion is deciding what to do about.
+//
+// It is a parameter rather than a nil because the gate on the attack half
+// compares where two blows land — a swing meets Defense, a technique meets
+// Ward — and it cannot do that without something to land on. Passing nil would
+// still compile and would quietly test the degenerate no-mitigation case,
+// which is not the case the game ever runs. The numbers are the middle of the
+// roster rather than a particular monster: a companion's brain should not be
+// pinned to whichever creature happened to be in a file.
+func mark() *model.Monster {
+	return &model.Monster{Name: "Something", HP: 40, MaxHP: 40, Offense: 10, Defense: 8, Ward: 6, Speed: 8}
+}
+
 func TestRecruitIsAnOrdinaryCharacterOfThatLevel(t *testing.T) {
 	g := core.NewRNG(7)
 	for _, level := range []int{1, 5, 12} {
@@ -80,7 +93,7 @@ func TestCompanionNeverCastsWhatItCannotAfford(t *testing.T) {
 		c.Psyche = psyche
 		for hp := 1; hp <= c.MaxHP; hp++ {
 			c.HP = hp
-			move := rules.ChooseAllyMove(g, c, spellbook, solo(c))
+			move := rules.ChooseAllyMove(g, c, spellbook, solo(c), mark())
 			if move.Kind != rules.AllyCast {
 				continue
 			}
@@ -104,7 +117,7 @@ func TestCompanionMostlyAttacks(t *testing.T) {
 	const rounds = 400
 	for i := 0; i < rounds; i++ {
 		c.HP = c.MaxHP
-		if rules.ChooseAllyMove(g, c, spellbook, solo(c)).Kind == rules.AllySwing {
+		if rules.ChooseAllyMove(g, c, spellbook, solo(c), mark()).Kind == rules.AllySwing {
 			swings++
 		}
 	}
@@ -124,7 +137,7 @@ func TestCompanionHealsItselfWhenBadlyHurt(t *testing.T) {
 	c.HP = 1 // as hurt as it gets while still upright
 
 	for i := 0; i < 50; i++ {
-		move := rules.ChooseAllyMove(g, c, selfOnly, solo(c))
+		move := rules.ChooseAllyMove(g, c, selfOnly, solo(c), mark())
 		if move.Kind != rules.AllyCast || move.Spell.Kind != model.SpellHeal {
 			t.Fatalf("at 1 hit point the companion chose %+v instead of healing", move)
 		}
@@ -202,7 +215,7 @@ func TestCompanionHealsWhoeverIsWorstOff(t *testing.T) {
 	other := rules.BuildCharacter(g, model.ClassThief, 6)
 
 	party := []*model.Character{hero, medic, other}
-	move := rules.ChooseAllyMove(g, medic, spellbook, party)
+	move := rules.ChooseAllyMove(g, medic, spellbook, party, mark())
 	if move.Kind != rules.AllyCast || move.Spell.Kind != model.SpellHeal {
 		t.Fatalf("with the hero nearly dead the medic chose %+v", move)
 	}
@@ -225,7 +238,7 @@ func TestCompanionRevivesBeforeHealing(t *testing.T) {
 	bleeding.HP = 1
 
 	party := []*model.Character{fallen, bleeding, medic}
-	move := rules.ChooseAllyMove(g, medic, spellbook, party)
+	move := rules.ChooseAllyMove(g, medic, spellbook, party, mark())
 	if move.Kind != rules.AllyCast || move.Spell.Kind != model.SpellRevive {
 		t.Fatalf("with somebody down the medic chose %+v", move)
 	}
@@ -246,7 +259,7 @@ func TestPartySideCastsAlwaysNameATarget(t *testing.T) {
 		mate := rules.BuildCharacter(g, model.ClassFighter, 6)
 		mate.HP = g.Between(0, mate.MaxHP)
 
-		move := rules.ChooseAllyMove(g, c, spellbook, []*model.Character{c, mate})
+		move := rules.ChooseAllyMove(g, c, spellbook, []*model.Character{c, mate}, mark())
 		if move.Kind != rules.AllyCast || move.Spell.Kind.Side() != model.SideParty {
 			continue
 		}
@@ -274,7 +287,7 @@ func TestCompanionDoesNotBlessWhileSomeoneIsHurt(t *testing.T) {
 
 	party := []*model.Character{c, mate}
 	for i := 0; i < 300; i++ {
-		if move := rules.ChooseAllyMove(g, c, spellbook, party); move.Spell.Kind == model.SpellBless {
+		if move := rules.ChooseAllyMove(g, c, spellbook, party, mark()); move.Spell.Kind == model.SpellBless {
 			t.Fatalf("a companion blessed the party while %s was at %d/%d",
 				mate.Name, mate.HP, mate.MaxHP)
 		}
@@ -441,14 +454,14 @@ func TestCompanionDrinksItsOwnSuppliesSensibly(t *testing.T) {
 
 	// A scratch: nothing should be drunk at all.
 	c.HP = c.MaxHP - 2
-	if move := rules.ChooseAllyMove(g, c, nil, party); move.Kind == rules.AllyUse {
+	if move := rules.ChooseAllyMove(g, c, nil, party, mark()); move.Kind == rules.AllyUse {
 		t.Errorf("a companion drank %q over a scratch", c.Bag[move.Item].Name)
 	}
 
 	// Badly hurt, and by roughly a Small Beer's worth: take the Small Beer
 	// rather than the Poultice that would also cover it.
 	c.MaxHP, c.HP = 12, 5 // 42% left, seven points missing
-	move := rules.ChooseAllyMove(g, c, nil, party)
+	move := rules.ChooseAllyMove(g, c, nil, party, mark())
 	if move.Kind != rules.AllyUse {
 		t.Fatalf("badly hurt with a pack full of bottles, the companion chose %+v", move)
 	}
@@ -459,7 +472,7 @@ func TestCompanionDrinksItsOwnSuppliesSensibly(t *testing.T) {
 	// Hurt worse than anything in the bag: take the biggest.
 	c.MaxHP = 400
 	c.HP = 10
-	move = rules.ChooseAllyMove(g, c, nil, party)
+	move = rules.ChooseAllyMove(g, c, nil, party, mark())
 	if move.Kind != rules.AllyUse {
 		t.Fatalf("nearly dead, the companion chose %+v", move)
 	}
@@ -478,7 +491,7 @@ func TestCompanionPrefersATechniqueToABottle(t *testing.T) {
 	c.HP = 1
 	c.Bag = []model.Item{{Name: "Small Beer", Kind: model.ItemHeal, Power: 8, Count: 1}}
 
-	move := rules.ChooseAllyMove(g, c, selfOnly, []*model.Character{c})
+	move := rules.ChooseAllyMove(g, c, selfOnly, []*model.Character{c}, mark())
 	if move.Kind != rules.AllyCast || move.Spell.Kind != model.SpellHeal {
 		t.Fatalf("with a heal known and psyche to spare, the companion chose %+v", move)
 	}
@@ -497,7 +510,7 @@ func TestCompanionNeverDrinksJunk(t *testing.T) {
 		{Name: "Smelling Salts", Kind: model.ItemRevive, Power: 25, Count: 1},
 	}
 	for i := 0; i < 200; i++ {
-		if move := rules.ChooseAllyMove(g, c, nil, []*model.Character{c}); move.Kind == rules.AllyUse {
+		if move := rules.ChooseAllyMove(g, c, nil, []*model.Character{c}, mark()); move.Kind == rules.AllyUse {
 			t.Fatalf("a companion with no healing drank %q", c.Bag[move.Item].Name)
 		}
 	}

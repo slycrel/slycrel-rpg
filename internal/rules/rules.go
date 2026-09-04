@@ -363,6 +363,34 @@ const focusBite = 1.15
 // Fighter was losing half of.
 const focusStudy = 0.15
 
+// strikeStudy is focusStudy's missing half: what a point of the *weapon* is
+// worth inside a paid technique.
+//
+// Focus exists so a caster has something to spend money on, and the paragraph
+// above says why in as many words. The martial classes had the identical hole
+// and nobody noticed it, because the term that would have filled it was named
+// after the thing only casters hold: a Fighter's Focus() is zero at every
+// level, so their techniques were `Power + psyche + level` and nothing else.
+// Two Fighters at level ten, one holding a sabre and one holding a table leg,
+// swung for wildly different numbers and cast identical Haymakers.
+//
+// The symptom it was found by is a sawtooth rather than a slope. A martial
+// technique's worth against a free swing does not decay smoothly — it falls
+// off a step every time a weapon is bought, because the swing takes the whole
+// upgrade and the technique takes none of it. A Fighter's Lunge is worth 0.75
+// of a swing at level nine, 0.63 the moment the sabre arrives, and 0.52 the
+// moment the rapier does. That is what "techniques never become more useful"
+// feels like from inside a playthrough: you buy a sword and the rest of your
+// kit quietly gets worse.
+//
+// It is set below the 1.0 that would hold the ratio exactly flat across an
+// upgrade, and that is deliberate rather than a compromise. At 1.0 the whole
+// list rises with the weapon and the *cheapest* technique clears a free swing
+// too — a two-psyche Lunge cast eleven times a fight, which is the spam the
+// gate in bestAttack exists to prevent. The opening technique retiring behind
+// a better sword is the design; the capstone retiring behind one is the bug.
+const strikeStudy = 0.55
+
 // psycheStudy and levelStudy are the two terms that grow on their own, and both
 // came down when the caster's off arm opened up.
 //
@@ -441,7 +469,8 @@ func SpellDamage(g *core.RNG, c *model.Character, s model.Spell) int {
 // character sheet, which cannot show a range it does not know the middle of.
 func SpellPower(c *model.Character, s model.Spell) float64 {
 	return float64(s.Power) + float64(c.MaxPsy())*psycheStudy +
-		float64(c.Focus())*focusStudy + float64(c.Level)*levelStudy
+		float64(c.Focus())*focusStudy + float64(c.Strike())*strikeStudy +
+		float64(c.Level)*levelStudy
 }
 
 // --- the two-sided techniques ---------------------------------------------
@@ -797,7 +826,11 @@ type AllyMove struct {
 // The attack half runs the same policy the balance simulator plays, so a
 // companion's contribution can be reasoned about from numbers that already
 // exist rather than guessed at.
-func ChooseAllyMove(g *core.RNG, c *model.Character, spells []model.Spell, party []*model.Character) AllyMove {
+// target is the creature the companion is about to hit, which the gate on the
+// attack half needs in order to compare where two blows land rather than how
+// large they leave. It may be nil when there is nothing standing — the triage
+// branches above the attack still have work to do in that case.
+func ChooseAllyMove(g *core.RNG, c *model.Character, spells []model.Spell, party []*model.Character, target *model.Monster) AllyMove {
 	// Somebody is down and this one can stand them up.
 	if s, ok := affordable(c, spells, model.SpellRevive); ok {
 		if target := mostBroken(party, false); target != nil {
@@ -823,7 +856,7 @@ func ChooseAllyMove(g *core.RNG, c *model.Character, spells []model.Spell, party
 	}
 
 	// Nothing urgent. Hit something, unless a technique beats the weapon.
-	if s, ok := bestAttack(c, spells); ok {
+	if s, ok := bestAttack(c, spells, target); ok {
 		return AllyMove{Kind: AllyCast, Spell: s}
 	}
 
@@ -1162,6 +1195,18 @@ type FightResult struct {
 	// the numbers moved — a mechanic whose effect can only be inferred from a
 	// win rate is one nobody can tune.
 	Dodges int
+	// Casts is how many rounds went on a technique rather than a swing, and it
+	// is the counter that says whether a technique list is participating at
+	// all.
+	//
+	// It is the same argument as Dodges and Siphoned one rung up: those two
+	// count what a mechanic did, and this counts whether a whole subsystem was
+	// ever reached. Every heading in the report says "techniques used" and
+	// nothing checked it — the gate in bestAttack retires a technique the
+	// moment a free swing prices above it, so a class whose list never clears
+	// that bar produces rows indistinguishable from a class with no list, and
+	// the report cannot tell the reader which it just measured.
+	Casts int
 }
 
 // Died reports the outcome that actually costs a run.
@@ -1368,6 +1413,22 @@ type Policy struct {
 	// A run with it switched off is the bound on how much that judgement is
 	// worth at all, and it is also a real way people play.
 	NeverFlee bool
+
+	// NeverCast swings the weapon every round and spends no psyche at all —
+	// no attack technique, no heal, no blessing.
+	//
+	// It is the control the report was missing. Every other section is headed
+	// "techniques used" and nothing anywhere measured what the techniques were
+	// worth: a class whose whole list is priced under a free swing plays
+	// identically with the list and without it, and every number in this report
+	// would read the same either way without once saying so. A player reported
+	// exactly that about the Fighter — that no way of playing beat swinging —
+	// and there was no column in which to check them.
+	//
+	// It is a bound in the sense NeverFlee is. The gap against the competent
+	// player is what the whole psyche economy is worth to that class at that
+	// level, and where the gap is nothing the techniques are decoration.
+	NeverCast bool
 }
 
 // SimulateGroupAs is SimulateGroup with the player's behaviour named rather
@@ -1445,10 +1506,19 @@ func SimulateGroupAs(g *core.RNG, c *model.Character, mons []*model.Monster, max
 			if target.Dead {
 				return
 			}
+			// The swings-only player never reaches for the list. Here rather
+			// than by handing bestSpell an empty spellbook, because an empty
+			// book is also what a character with nothing learned has, and the
+			// two want telling apart when a row reads as no difference.
+			if pol.NeverCast {
+				swing()
+				return
+			}
 			if s, ok := bestSpell(sim, spells, living); ok {
 				cost := PsycheCost(sim, s)
 				sim.Psyche -= cost
 				spent += cost
+				res.Casts++
 				switch s.Kind {
 				case model.SpellHeal:
 					sim.HP = core.Clamp(sim.HP+SpellDamage(g, sim, s), 0, sim.MaxHP)
@@ -1721,41 +1791,97 @@ func bestHeal(c *model.Character, spells []model.Spell) (model.Spell, bool) {
 // That last condition is what keeps a fighter's technique a finisher rather
 // than a replacement for the sword, and it is why a low-level attack spell
 // quietly retires once the weapon outgrows it instead of being cast forever.
-func bestAttack(c *model.Character, spells []model.Spell) (model.Spell, bool) {
+func bestAttack(c *model.Character, spells []model.Spell, target *model.Monster) (model.Spell, bool) {
 	var attack model.Spell
 	found := false
 	for _, s := range spells {
 		if PsycheCost(c, s) > c.Psyche || !s.Known(c) {
 			continue
 		}
-		switch s.Kind {
-		case model.SpellDamage, model.SpellDrain, model.SpellPact:
-		default:
+		if !isAttack(s) {
 			continue
 		}
 		// A pact is weighed on what is left of it after the caster has paid.
 		// Comparing raw power would make it the answer to every round in the
 		// game, since paying for it later is free at the moment of choosing.
-		if !found || attackWorth(s) > attackWorth(attack) {
+		if !found || techniqueWorth(c, s, target) > techniqueWorth(c, attack, target) {
 			attack, found = s, true
 		}
 	}
 	if !found {
 		return model.Spell{}, false
 	}
-	if SpellPower(c, attack) <= freeSwingWorth(c) {
+	if techniqueWorth(c, attack, target) <= freeSwingWorth(c, target) {
 		return model.Spell{}, false
 	}
 	return attack, true
 }
 
-// attackWorth ranks two attacking techniques against each other: the magnitude,
-// less whatever the caster is going to be wearing afterwards.
-func attackWorth(s model.Spell) float64 {
-	if s.Kind == model.SpellPact {
-		return float64(s.Power - PactCost(s))
+// isAttack is the kinds bestAttack will weigh against a free swing: the three
+// that put a number on a creature this round.
+func isAttack(s model.Spell) bool {
+	switch s.Kind {
+	case model.SpellDamage, model.SpellDrain, model.SpellPact:
+		return true
 	}
-	return float64(s.Power)
+	return false
+}
+
+// Castable reports whether the simulator's policy is capable of choosing this
+// technique at all, ever, under any circumstances.
+//
+// It is exported because the answer is "no" for half the roster and nothing
+// said so. bestSpell offers exactly three doors — a heal, a sap, and the
+// attack — so a technique that weakens, stuns, poisons, burns, blesses or
+// raises the dead is never chosen by any fight in the balance report, on any
+// class, at any level. That is not a small hole: five of the Thief's nine
+// techniques and three of the Fighter's are invisible to every number in that
+// report, under headings that say "techniques used".
+//
+// **A mechanic the simulator cannot see is a mechanic the balance pass is
+// lying about** is already the first rule in this file's brief, and it was
+// written about monsters inflicting poison. The same sentence applies to the
+// player's own list and nobody had turned it around. The honest thing until
+// the policy grows those doors is to print which techniques are unmeasured, so
+// a reader knows which half of a class they are looking at — which is what the
+// UNREACHABLE block under SWINGS ONLY does.
+//
+// It is derived from the three predicates the policy actually uses rather than
+// listed beside them, so a policy that learns a new door stops reporting that
+// door as shut without anybody remembering to come here.
+func Castable(s model.Spell) bool {
+	return isAttack(s) || s.Kind == model.SpellHeal || s.Kind == model.SpellSap
+}
+
+// techniqueWorth is what casting this costs the round to buy: what lands on the
+// creature in front, less whatever the caster wears for the rest of the fight.
+//
+// One function for the ranking and for the gate, and the two used to be two.
+// The ranking discounted a pact by what it charges the caster and the gate did
+// not, so a pact that ranked below the capstone still cleared the bar on its
+// undiscounted magnitude — and a level-thirteen Fighter, having spent eleven
+// psyche on a Haymaker, would follow it with a Reckless One priced at 1.07 of
+// a free swing and pay for it in offence for the rest of the fight. That is
+// the whole of why the swings-only player was still winning that row after the
+// gate learned to measure where a blow lands: the gate was right about the
+// first technique of the fight and blind to the second.
+//
+// Same defect as the three above it, one rung further in. Not "a policy that
+// estimates what the rules do" this time but two policies that estimate each
+// other, which is the version that survives a review because each half looks
+// correct beside the thing it was written next to.
+//
+// One thing it still does not price, named rather than fudged: a technique
+// that reaches the whole field is worth more against four creatures than
+// against one, and this weighs it against one. Every section that sets the
+// curve fights a single creature, so the bound is only wrong where it is
+// already known to be — CROWDS, which is measured separately and says so.
+func techniqueWorth(c *model.Character, s model.Spell, target *model.Monster) float64 {
+	w := landed(SpellPower(c, s), wardOf(target))
+	if s.Kind == model.SpellPact {
+		w -= float64(PactCost(s))
+	}
+	return w
 }
 
 // freeSwingWorth is what the round costs nothing to spend: a swing, or the bolt
@@ -1764,12 +1890,62 @@ func attackWorth(s model.Spell) float64 {
 // A caster's floor rises with their rod, which is the point — a level-one spark
 // should stop being worth two psyche once the staff throws harder for free,
 // exactly as a fighter's opening technique retires behind a better sword.
-func freeSwingWorth(c *model.Character) float64 {
+//
+// **It is measured where the blow lands, not where it leaves.** This used to be
+// a comparison of raw magnitudes, with a paragraph above it conceding that the
+// two sides meet different defences — a swing meets Defense, a technique meets
+// Ward — and arguing the comparison was honest anyway because on the top-band
+// roster the two run close together. They run close together *there*. Across
+// the roster as a whole they do not, and the error is not small: a level-one
+// Thief's Backstab prices at 0.79 of a swing raw and 1.19 of one after the
+// crab's shell takes six off the sword and its ward takes two off the knife.
+// The gate was refusing techniques that are the better blow, at exactly the
+// levels where a player is deciding whether the list is worth learning.
+//
+// Fourth instance of the rule this file keeps re-learning: **a policy that
+// estimates what the rules do is a second copy of the rules.** The previous
+// three were caught by making the policy call the real arithmetic; this one
+// was not caught because the policy called half of it. Both magnitudes were
+// real and neither mitigation was, which reads as correct in a diff and is
+// wrong in a fight.
+//
+// A nil target is the honest degradation rather than a special case: no
+// creature means no mitigation on either side, which is arithmetically the old
+// raw comparison. The one caller that passes nil is ChooseAllyMove's blessing
+// branch, where nothing has been picked to hit yet.
+func freeSwingWorth(c *model.Character, target *model.Monster) float64 {
 	if c.Casting() {
-		return float64(c.Focus())*focusBite + float64(c.Level)*0.6
+		bolt := float64(c.Focus())*focusBite + float64(c.Level)*0.6
+		return landed(bolt, wardOf(target))
 	}
 	lo, hi := SwingBand(c)
-	return float64(lo+hi) / 2
+	return landed(float64(lo+hi)/2, defenseOf(target))
+}
+
+// landed is a magnitude less what the thing in front of it takes off, floored
+// where the rules floor it.
+//
+// One is AfterWard's floor rather than PlayerDamage's zero, and the difference
+// is deliberate: this is a *comparison*, and a swing that reads as zero against
+// a wall would make every technique in the game worth casting at it. The floor
+// says "a blow is worth something" on both sides, which is the question the
+// gate is actually asking.
+func landed(raw, mitigation float64) float64 { return math.Max(1, raw-mitigation) }
+
+// wardOf and defenseOf read a creature's two mitigations, or nothing at all
+// when there is no creature to read.
+func wardOf(m *model.Monster) float64 {
+	if m == nil {
+		return 0
+	}
+	return float64(m.Ward)
+}
+
+func defenseOf(m *model.Monster) float64 {
+	if m == nil {
+		return 0
+	}
+	return float64(m.Defense)
 }
 
 // bestSpell picks what a competent solo player would cast this round: a heal
@@ -1790,6 +1966,9 @@ func freeSwingWorth(c *model.Character) float64 {
 // came out the most fragile thing in the game at exactly the level where it has
 // the fewest hit points and the most psyche to spend on not dying.
 func bestSpell(c *model.Character, spells []model.Spell, living []*model.Monster) (model.Spell, bool) {
+	if len(living) == 0 {
+		return model.Spell{}, false
+	}
 	if heal, ok := bestHeal(c, spells); ok {
 		incoming := incomingPerRound(c, living)
 		if c.HP <= incoming*2 && c.HP < c.MaxHP*3/4 {
@@ -1804,7 +1983,7 @@ func bestSpell(c *model.Character, spells []model.Spell, living []*model.Monster
 	if s, ok := worthSapping(c, spells, living); ok {
 		return s, true
 	}
-	return bestAttack(c, spells)
+	return bestAttack(c, spells, living[0])
 }
 
 // worthSapping picks a two-sided debuff to open with, when there is a fight

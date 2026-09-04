@@ -123,6 +123,26 @@ func storyGame(t *testing.T) *Game {
 	}
 	g.Player = rules.NewCharacter(g.RNG, "Bosk", model.ClassFighter)
 	g.Walk.Place(g.World.Start)
+
+	// And then the root moves, which is the whole of this helper worth reading.
+	//
+	// Root is two jobs wearing one field: it is where the content is read from,
+	// which is done by the time we get here, and it is where saves, shots and
+	// the settings file are *written*. Leaving it pointing at the checkout
+	// means every test that saves writes into the developer's own saves/
+	// directory — and one of them does, at slot "1", which is a slot a person
+	// plays into.
+	//
+	// It is not a hypothetical. Running the suite on this machine overwrote a
+	// real level-14 character in slot 1 with this helper's level-one Bosk, and
+	// saves/ is gitignored, so there was nothing to restore from. The test that
+	// did it looks entirely innocent: it asserts an empty slot asks no question
+	// and then writes one, and it only fails — let alone announces itself — on
+	// a machine where that slot was already occupied.
+	//
+	// So the writing half gets a directory of its own. Content is already in
+	// g.Data and nothing below reaches for it through Root again.
+	g.Root = t.TempDir()
 	return g
 }
 
