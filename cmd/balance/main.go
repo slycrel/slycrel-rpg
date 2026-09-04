@@ -2383,7 +2383,136 @@ columns mean "a solo hero after their company was killed".
 
 	reportSwingsOnly(out, run)
 	reportRounds(out, g, t, fights/4)
+	reportParty(out, g, t, fights/4)
 	reportUnreachable(out, t)
+}
+
+// reportParty measures the game as it is actually played.
+//
+// **Every other fight in this report is one character, and the game has not
+// been a solo game since hirelings landed.** That is the largest single thing
+// this document has been unable to see. A companion is an extra sword and, more
+// usefully, an extra place for a claw to land, and neither exists in a
+// simulation of one person — so every win rate above is a hero fighting without
+// the two people the game spent its whole economy getting them.
+//
+// It also puts a price on the last unmeasurable technique. A revive was outside
+// UNREACHABLE's reach not because the policy would not choose one but because a
+// solo caster has nobody to stand up, and a caster who needs standing up has
+// already lost.
+//
+// The comparison is against the same hero alone in the same encounter, because
+// "a party wins more" is not a finding — of course three beat one. The finding
+// is how much, against how many, and what state it leaves them in: a fight won
+// with two of three on the floor is a different afternoon from one won intact,
+// and "intact" is a column no solo report can have.
+func reportParty(out io.Writer, g *core.RNG, t *gamedata.Tables, fights int) {
+	fmt.Fprintf(out, "PARTY — the game as it is actually played\n")
+	fmt.Fprintf(out, "a hero and two hirelings of their own level against one, two and three\n")
+	fmt.Fprintf(out, "creatures three levels over; \"alone\" is the same hero in the same fight\n")
+	fmt.Fprintf(out, "without them. On level a full company wins every one of these, intact,\n")
+	fmt.Fprintf(out, "at every level and size measured — which is the first finding and the\n")
+	fmt.Fprintf(out, "reason the table is on the stretch band instead\n\n")
+	fmt.Fprintf(out, "%-6s %-8s %5s %8s %8s %8s %9s %8s\n",
+		"level", "class", "foes", "won", "alone", "intact", "standing", "revives")
+	fmt.Fprintln(out, strings.Repeat("-", 66))
+
+	// The company a player actually ends up with: the other two classes, which
+	// is what the hiring board offers and what a party of three can be.
+	mates := func(class model.Class) []model.Class {
+		var out []model.Class
+		for _, c := range model.AllClasses {
+			if c != class {
+				out = append(out, c)
+			}
+		}
+		return out
+	}
+
+	for _, level := range []int{3, 7, 11} {
+		for _, class := range model.AllClasses {
+			for _, foes := range []int{1, 2, 3} {
+				label := fmt.Sprintf("party/%s/%d/%d", class, level, foes)
+				var won, alone, intact, standing, revives, n int
+				for f := 0; f < fights; f++ {
+					rg := g.Fork(label, int64(f))
+					build := func() []*model.Character {
+						hero := rules.BuildCharacter(rg, class, level)
+						equip(t, hero)
+						party := []*model.Character{hero}
+						for i, mc := range mates(class) {
+							mate := rules.Recruit(rg, fmt.Sprintf("Mate%d", i), mc, "", level)
+							equip(t, mate)
+							party = append(party, mate)
+						}
+						return party
+					}
+					enc := core.Max(1, level+laneStretch)
+					mons := t.PickMonsters(rg, biomeForLevel(enc), enc, foes)
+					if len(mons) == 0 {
+						continue
+					}
+					n++
+
+					// The same encounter twice: once with the company, once
+					// without. Spawned fresh each time because a fight consumes
+					// the creatures it is fought against.
+					spells := func(c *model.Character) []model.Spell { return t.SpellsFor(c) }
+					party := build()
+					r := rules.SimulateParty(rg, party, spells,
+						t.PickMonsters(rg, biomeForLevel(enc), enc, foes), 60, rules.Policy{})
+					if r.Won {
+						won++
+					}
+					if r.Standing == len(party) {
+						intact++
+					}
+					standing += r.Standing
+					revives += r.Revives
+
+					solo := build()[:1]
+					if rules.SimulateParty(rg, solo, spells,
+						t.PickMonsters(rg, biomeForLevel(enc), enc, foes), 60, rules.Policy{}).Won {
+						alone++
+					}
+				}
+				if n == 0 {
+					continue
+				}
+				pct := func(v int) float64 { return float64(v) * 100 / float64(n) }
+				fmt.Fprintf(out, "%-6d %-8s %5d %7.1f%% %7.1f%% %7.1f%% %9.2f %8.2f\n",
+					level, class, foes, pct(won), pct(alone), pct(intact),
+					float64(standing)/float64(n), float64(revives)/float64(n))
+			}
+			fmt.Fprintln(out)
+		}
+	}
+
+	fmt.Fprint(out, `"standing" is how many of the three were upright at the end, out of three,
+and it is the column that says what a win cost. "intact" is the share of fights
+where nobody went down at all.
+
+**The difficulty of this game is headcount, and nothing else is close.** The
+gap between the first two columns is wider than the gap between any two builds
+in ARCS, any two lanes in LANES, and every stat in EXCHANGE put together: a
+level-seven Fighter against three creatures three over wins 2% of those fights
+alone and 97.5% with two hirelings behind them. Every curve in this document was
+set against the first number and the game is played on the second.
+
+The revive column is nearly all noughts and that is a finding rather than a
+gap: a full company at these levels almost never loses anybody, so the
+technique that stands them up has nothing to do. It is reachable now, which it
+was not — a solo caster has no ally to raise — and what it reports is that the
+situation it exists for does not arise.
+
+Two things this does not do, named rather than faked. The hirelings are the
+other two classes at the hero's own level, which is what the board offers and
+not what a particular player assembled; and the company never runs, because the
+retreat is one decision for three characters and the solo one took two attempts
+and had two bugs in it that nothing else in the report could see. Both are
+reasons to read the death side of this table as a ceiling.
+
+`)
 }
 
 // reportRounds says what a fight is actually made of.
@@ -2518,11 +2647,15 @@ attack, so a technique that weakened, stunned, poisoned, burned or blessed was
 not weighed and found wanting — it was never seen, and every class number in
 this report was a floor under a heading that said "techniques used".
 
-What is left is the one that needs a second character to point at. Standing
-somebody up is worth a great deal and there is nobody to stand up: every fight
-in this report is one character, so a revive has no target that is not the
-caster, and a caster who needs reviving has already lost. It becomes measurable
-when this report can fight a party, and not before.
+What is left is the one that needs a second character to point at, and it is
+listed here because this block is about the *solo* policy — which is what every
+section above PARTY uses. A revive has no target that is not the caster there,
+and a caster who needs reviving has already lost.
+
+PARTY reaches it, through the companions' own brain rather than through this
+policy, and reports what it is worth: almost nothing, because a full company at
+those levels hardly ever loses anybody. That is a different answer from "not
+measured" and it took a party simulator to tell them apart.
 
 `)
 }
