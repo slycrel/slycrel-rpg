@@ -4030,6 +4030,27 @@ this machine, with `saves/` gitignored so there was nothing to restore from.
 The test looks entirely innocent: it asserts an empty slot asks no question and
 then writes one, and it only fails on a machine where that slot was occupied.
 
+### The report runs on ten cores, and that is what bought the rest
+
+Sixty-six seconds to sixteen, with two new sections and a party simulator added
+in between. The point is not the minute: every question this report cannot
+afford is a question it does not ask, and both of the big ones cost fights.
+
+Sections run concurrently — each already carried its own generator so its
+placement was free — and the output is byte-identical, so diffing against the
+last report still works. EXCHANGE fans out inside itself because it was 55 of
+the 66 seconds, and it can because its fights draw from streams forked on their
+own index: `Fork` never reads its receiver, so fight *f* rolls the same dice
+whoever runs it. **That is a property of the generator, not of the loop**, and
+it is the only thing that makes a loop safe to hand out — the half of this
+report that draws from one stream in sequence is left alone.
+
+The collector was the real cost. Concurrency alone bought 27% and spent 150
+seconds of CPU against a serial run's 70: four million fights each allocating a
+character, an encounter and a spell list, with ten goroutines making GC run far
+more often against a heap that is barely growing. `GOGC=800` is 16 seconds for
+184MB and is set in the program.
+
 ### The sixteen character sheets, and why they are not being used
 
 `miniadventureheroeshumans` and `miniadventureheroeselves` hold eight sheets
@@ -4070,26 +4091,53 @@ instrument that could have caught them, because neither is a number. The rule
 holds for anything the report measures; it says nothing about the writing, and
 the writing had been drifting for as long as anybody had been reading numbers.
 
-### 0. The simulator can only choose three kinds of technique
+### 0. The simulator can only choose three kinds of technique — done, and it
+### moved the whole difficulty curve
 
-New, and above everything else on this list that is measured by
-`cmd/balance`, because it bounds all of it. `bestSpell` can pick a heal, a sap
-or an attack; a technique that weakens, stuns, poisons, burns, blesses or
-raises the dead is never chosen by any fight in the report. Five of the Thief's
-nine, three of the Fighter's, four of the Mage's — UNREACHABLE prints the
-roster every run.
+`techniqueValue` prices every kind in one currency: hit points over the rest of
+this fight, either taken off them or not taken off you. A poison is worth its
+ticks for as long as the fight has left to run, a stun one round of that
+creature's output, a weaken the difference to every round after this one.
+Twelve of the thirteen unreachable techniques are reachable.
 
-Every class number in this document is therefore a floor. The Thief's is the
-floor with the most missing from underneath it: it is the class whose list is
-mostly conditions, and it is the class the report keeps finding slightly
-behind.
+It was shut in two places at once, which is why neither half looked wrong.
+`bestSpell` could not choose them *and* `SimulateGroupAs` could not resolve them
+— it had a `default` that treated any unhandled kind as damage — so opening the
+policy alone would have had a stun land as a damage roll. `rules.CastAtFoe` is
+the resolution now and the battle screen calls it too; the two had already
+drifted, with the screen rolling a field-wide technique once per creature and
+the simulator once for all of them.
 
-The fix is doors, not columns, and each door is a judgement rather than a
-lookup: when is a weakening worth a round, when is a poison worth it against a
-creature that is nearly dead anyway, when does a blessing beat a swing. Those
-are the same shape as the retreat policy, which took two attempts and had two
-bugs in it that nothing else in the report could see. Expect the same here, and
-expect PLAYSTYLES to be where it is visible.
+**What it cost is the interesting part.** The Thief at level nine goes from 12.1
+to 19.8 points of win rate for having a list, the Fighter at thirteen from 0.8
+to 7.2, and the stretch column moved with them — a level-twelve Fighter from
+66.5% to 80.4%. That is the honest reading rather than a regression: the report
+had been measuring a player who ignored two thirds of their kit. DANGER still
+radiates outward, so the *shape* held and the magnitude is now content's
+question rather than the instrument's. Whether the stretch band should be that
+survivable is the first thing to look at with the new numbers.
+
+### 0b. What a fight is made of, and what a party does to it
+
+Two sections that answer questions this document could not previously ask.
+
+ROUNDS is the share of rounds by what they went on. A Fighter spends 96% of
+level one swinging and 65% of level nine, with a sixth of its rounds on a pact;
+a Thief runs 42-48% swings with poison, weaken and drain around them; a Mage
+swings 14%. Three classes that produced identical-looking rows everywhere else
+play visibly differently, and "no playstyle beats auto-attacks" is a claim about
+this table rather than about any win rate.
+
+PARTY is the game as it is actually played, and it produced the largest single
+number in this document. **The difficulty of this game is headcount and nothing
+else is close** — wider than any two builds in ARCS, any two lanes in LANES, and
+every stat in EXCHANGE together. A level-seven Fighter against three creatures
+three over wins 2% of those fights alone and 97.5% with two hirelings. On level,
+a full company wins every fight measured, intact, at every level and size.
+
+Every curve above it was set against the solo number. That is the open question
+this pass leaves: the content is tuned for a hero who, for most of the game, is
+not alone.
 
 ### 1. None of it has been played
 

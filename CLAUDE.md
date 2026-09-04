@@ -58,7 +58,31 @@ numbers mean anything. Two rules follow:
 
 - **A mechanic the simulator cannot see is a mechanic the balance pass is lying
   about.** When monsters started inflicting poison, `SimulateFight` had to learn
-  to apply and tick it.
+  to apply and tick it. The rule holds for the *player's* list too and nobody
+  turned it around for a long time: the policy could choose three kinds of
+  technique out of ten, so twelve techniques across three classes were never
+  weighed and found wanting — they were never seen, under headings that say
+  "techniques used". `rules.Castable` and the UNREACHABLE block exist so that
+  the gap is printed rather than assumed closed, and both derive from `priced`
+  rather than listing it, because the first version of that was a second copy
+  and went stale the day the doors opened.
+- **The battle screen and the simulator resolve a technique through the same
+  three functions.** `rules.CastAtFoe`, `CastOnCaster` and `CastOnAlly`. They
+  were two switches that agreed only because one person wrote both, and they had
+  already drifted — the screen rolls a field-wide technique once per creature
+  and the simulator rolled it once for all of them. Anything new a technique can
+  do goes in `internal/rules`, not beside a log line: a poison lasting four
+  rounds is a balance number, and a balance number in a draw call is one nothing
+  can price.
+- **`cmd/balance` runs concurrently, and only where the generator allows it.**
+  `parallelFor` is called in loops whose fights draw from a stream forked on
+  their own index — `Fork` never reads its receiver, so fight *f* rolls the same
+  dice whoever runs it and whenever. A loop drawing from one stream in sequence
+  produces different numbers the moment two iterations swap places, and half the
+  report does that; those are left alone. Sections and the cells inside them
+  share one budget of `NumCPU`, and a section gives up its slot before fanning
+  out, which is what stops twenty goroutines running on ten cores. `-timings`
+  says which section is the floor.
 - **And a policy that estimates what the rules do is a second copy of the
   rules.** Different failure, same cost, and harder to see because both halves
   look right alone. `incomingPerRound` priced a caster's blow at 0.85 of offence
