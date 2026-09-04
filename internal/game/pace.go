@@ -54,5 +54,30 @@ func setPace(step int) int {
 	return stepTicks
 }
 
+// typeRate is how fast a message box fills, in characters a tick, derived from
+// the same setting that decides how long a combat step holds.
+//
+// One setting rather than two, and derived rather than tabled, because both
+// numbers are answering the same question: how fast does this game hand you
+// something to read. A player who slowed combat down did it to keep up with
+// the transcript, and would have to find a second row to slow the dialogue
+// they are equally behind on.
+//
+// The middle rung is one character a tick — 60 a second, which is where the
+// machines this is imitating sat — so the ladder runs 1.5, 1.0 and 0.75. A
+// hundred-character line takes a second and a half at the top and just over
+// two at the bottom.
+// The tour gets the text all at once. -demo takes one frame per screen, and a
+// screen photographed mid-sentence documents nothing — the quest offer came out
+// as `"I need 3 Rank P` and stopped. The guard is here rather than at the call
+// site so it travels to any new one, which is the same reason autosave's is
+// inside autosave.
+func (g *Game) typeRate() float64 {
+	if g.InDemo() {
+		return 0
+	}
+	return float64(paceSteady) / float64(stepTicks)
+}
+
 // paceName is the current setting as the settings row shows it.
 func paceName() string { return paceNames[paceIndex(stepTicks)] }

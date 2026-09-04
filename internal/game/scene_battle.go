@@ -151,6 +151,12 @@ func newBattleScene(g *Game, enc gamedata.Encounter, where string) *battleScene 
 		spentPsyche: map[*model.Character]int{},
 		guarding:    map[*model.Character]bool{},
 	}
+	// This transcript types and the overworld strip does not; see Update, which
+	// sets the rate every frame. A blow landing is something being told to you,
+	// and the strip is a readout of what is currently true, which wants to be
+	// true immediately.
+	b.log.Typing(g.typeRate())
+
 	// Nobody carries anything in from the last fight — and then whatever is on
 	// the off arm goes up, before anybody has swung at anything.
 	for _, c := range b.party {
@@ -503,6 +509,17 @@ func (b *battleScene) showing(slot int) *model.Monster {
 
 func (b *battleScene) Update(g *Game) error {
 	b.cam.Update()
+	// The transcript advances every frame regardless of mode, so a line
+	// written by the last step of a round keeps arriving while the player is
+	// already reading the command list.
+	//
+	// The rate is re-read rather than kept from the constructor, because the
+	// settings screen is reachable from the pause menu in the middle of a
+	// fight: a player slowing the pace down because they cannot keep up would
+	// otherwise slow the steps and not the words, in the one fight where they
+	// asked for it.
+	b.log.Typing(g.typeRate())
+	b.log.Tick()
 	b.retireBursts(g)
 	for i := range b.hurt {
 		if b.hurt[i] > 0 {
@@ -561,6 +578,20 @@ const deathFade = 105
 func (b *battleScene) updateBusy(g *Game) {
 	if b.timer > 0 {
 		b.timer--
+		return
+	}
+	// A step's clock has run down, but the sentence it wrote may not have
+	// finished arriving. Wait for it.
+	//
+	// The two are set from the same preference and so are usually close — a
+	// step holds 45 ticks at the middle rung and the transcript writes 45
+	// characters in them — but "usually" is not a guarantee, and the failure it
+	// prevents is the ugly one: a long line replaced mid-word by the next
+	// message, which reads as the game skipping something rather than as the
+	// game being fast. Holding here rather than lengthening the timer keeps the
+	// pace setting meaning one thing, and a fight whose lines all fit inside
+	// their step never waits at all.
+	if !b.log.Settled() {
 		return
 	}
 	if len(b.queue) > 0 {

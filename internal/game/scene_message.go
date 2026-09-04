@@ -24,15 +24,36 @@ type messageScene struct {
 	// worse than the plain box they get now.
 	portrait string
 	role     string
+
+	// typed is the body arriving a character at a time.
+	//
+	// It is built from body rather than replacing it, because the panel is
+	// sized off the full text and has to be: a box that grew as it filled
+	// would move the words already in it, and the reader would be chasing the
+	// line down the screen. body says how big the box is, typed says how much
+	// of it has been said.
+	typed *ui.Typewriter
+}
+
+// say builds the scene both constructors need, with the body already wrapped
+// to whatever width the layout it is going into allows.
+//
+// It exists so that no path can add a message box and forget the typewriter.
+// There were five of them and the effect had to be on all five: a game where
+// the signpost types and the shopkeeper does not is not a game with an effect,
+// it is a game with a bug somebody will report as one.
+func (g *Game) say(m *messageScene) *messageScene {
+	m.typed = ui.NewTypewriter(m.body, g.typeRate())
+	return m
 }
 
 // Say pushes a plain message box over the current scene.
 func (g *Game) Say(speaker, body string) {
-	g.Push(&messageScene{
+	g.Push(g.say(&messageScene{
 		under:   g.Top(),
 		speaker: speaker,
 		body:    render.Wrap(body, render.ScreenW-56),
-	})
+	}))
 }
 
 // SayAs is Say for a person: it carries a face and, when there is one, a word
@@ -43,13 +64,13 @@ func (g *Game) Say(speaker, body string) {
 // the frame and out the other side, since a panel does not clip what you draw
 // in it.
 func (g *Game) SayAs(name, role, face, body string) {
-	g.Push(&messageScene{
+	g.Push(g.say(&messageScene{
 		under:    g.Top(),
 		speaker:  name,
 		role:     role,
 		portrait: face,
 		body:     render.Wrap(body, talkTextW),
-	})
+	}))
 }
 
 // AskAs is AskMenu for a person, with the same face and the same width.
@@ -68,7 +89,7 @@ func (g *Game) AskAs(name, role, face, body string, items []ui.MenuItem, onChoos
 		onChoose: onChoose,
 	}
 	m.menu.SetItems(items)
-	g.Push(m)
+	g.Push(g.say(m))
 }
 
 // SayThen pushes a plain message box and runs then once it is dismissed.
@@ -77,12 +98,12 @@ func (g *Game) AskAs(name, role, face, body string, items []ui.MenuItem, onChoos
 // a chest reports what was in it, and only then asks about the thing with a
 // name on it. Pushing both at once would show them back to front.
 func (g *Game) SayThen(speaker, body string, then func(*Game)) {
-	g.Push(&messageScene{
+	g.Push(g.say(&messageScene{
 		under:    g.Top(),
 		speaker:  speaker,
 		body:     render.Wrap(body, render.ScreenW-56),
 		onChoose: func(g *Game, _ int) { then(g) },
-	})
+	}))
 }
 
 // Ask pushes a message box with choices. onChoose fires after the box closes.
@@ -118,10 +139,30 @@ func (g *Game) AskMenu(speaker, body string, items []ui.MenuItem, onChoose func(
 		onChoose: onChoose,
 	}
 	m.menu.SetItems(items)
-	g.Push(m)
+	g.Push(g.say(m))
 }
 
 func (m *messageScene) Update(g *Game) error {
+	// The words arrive first, and the first press buys the rest of them rather
+	// than the box.
+	//
+	// One press doing one thing is the whole rule. A key that dismissed a box
+	// mid-sentence would make the effect a hazard — the player who presses on
+	// instinct loses the line and has no way back to it — and a key that did
+	// nothing at all while text arrived would make it a wait. So it completes
+	// the text, and the *next* press does what it would always have done.
+	//
+	// This is also why the choices are not navigable yet: a menu that can be
+	// answered before the question has finished being asked is a menu that can
+	// be answered without it.
+	if !m.typed.Done() {
+		m.typed.Tick()
+		if g.Dismiss() || g.Accept() || g.Back() {
+			m.typed.Finish()
+		}
+		return nil
+	}
+
 	if len(m.choices) == 0 {
 		// Anything at all closes a box that is only reporting. See Keystroke.
 		if g.Dismiss() {
@@ -179,10 +220,19 @@ func (m *messageScene) Draw(g *Game, dst *ebiten.Image) {
 	y := render.ScreenH - h - 14
 	ui.TitledPanel(dst, m.speaker, 16, y, render.ScreenW-32, h)
 
+	// The panel was measured against the whole text and the text is drawn as
+	// far as it has got. Visible returns a row per row either way, so ty walks
+	// the same distance on the first frame as on the last and nothing moves.
 	ty := y + 10
-	for _, ln := range m.body {
+	for _, ln := range m.typed.Visible() {
 		render.Text(dst, ln, 26, ty, render.ColInk)
 		ty += render.LineH
+	}
+	// Neither the choice nor the "there is more" chevron appears until the
+	// sentence has finished: one is an answer to a half-asked question and the
+	// other is an invitation to leave in the middle of one.
+	if !m.typed.Done() {
+		return
 	}
 	if len(m.choices) > 0 {
 		m.menu.Draw(dst, 34, ty+4, render.ScreenW-80)
@@ -290,11 +340,14 @@ func (m *messageScene) drawTalk(g *Game, dst *ebiten.Image) {
 	}
 
 	ty := float64(talkY + 20)
-	for _, ln := range m.body {
+	for _, ln := range m.typed.Visible() {
 		render.Text(dst, ln, talkTextX, ty, render.ColInk)
 		ty += render.LineH
 	}
 
+	if !m.typed.Done() {
+		return
+	}
 	// The choice sits under the text, not under the portrait, so the eye goes
 	// down one column instead of crossing back.
 	if len(m.choices) > 0 {

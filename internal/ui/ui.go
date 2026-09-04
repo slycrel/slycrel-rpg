@@ -483,6 +483,20 @@ func (m *Menu) Height() float64 {
 type Log struct {
 	lines []logLine
 	max   int
+
+	// The newest entry arriving a character at a time, when the caller has
+	// asked for that. shown counts characters of lines[len-1]; rate is
+	// characters a tick and zero means the effect is off; acc carries the
+	// fraction between ticks so a rate below one still moves.
+	//
+	// Only the newest, and a new entry finishes the one before it. That bound
+	// is the whole design: a transcript is written to in bursts — a round can
+	// queue seven messages — and anything that let two of them be half-arrived
+	// at once would either fall further behind every round or need a queue of
+	// its own beside the queue the battle already has.
+	shown int
+	rate  float64
+	acc   float64
 }
 
 type logLine struct {
@@ -514,6 +528,41 @@ func (l *Log) AddColor(c color.Color, format string, args ...any) {
 	if len(l.lines) > l.max {
 		l.lines = l.lines[len(l.lines)-l.max:]
 	}
+	// Whatever was still arriving has arrived. A line that stayed half-written
+	// while the next one began would be a sentence the player never saw the end
+	// of, and the transcript's whole job is that they saw it.
+	l.shown, l.acc = 0, 0
+}
+
+// Typing sets how fast a new entry arrives, in characters a tick. Zero is off,
+// which is what every caller gets until it says otherwise — the overworld strip
+// and the character sheet want their line the moment it is true.
+func (l *Log) Typing(rate float64) { l.rate = rate }
+
+// Tick advances the newest entry. Callers that never set a rate need not call
+// it; callers that do must, every frame, or the transcript stops mid-word.
+func (l *Log) Tick() {
+	if l.rate <= 0 || len(l.lines) == 0 {
+		return
+	}
+	n := len([]rune(l.lines[len(l.lines)-1].text))
+	if l.shown >= n {
+		return
+	}
+	l.acc += l.rate
+	for l.acc >= 1 && l.shown < n {
+		l.acc--
+		l.shown++
+	}
+}
+
+// Settled reports that the newest entry has finished arriving, which is what a
+// caller waiting to move on has to ask.
+func (l *Log) Settled() bool {
+	if l.rate <= 0 || len(l.lines) == 0 {
+		return true
+	}
+	return l.shown >= len([]rune(l.lines[len(l.lines)-1].text))
 }
 
 // Clear empties the log.
@@ -572,6 +621,13 @@ func (l *Log) DrawWrapped(dst *ebiten.Image, x, y, w float64, rows int) {
 			c = render.ColInkDim
 		}
 		wrapped := render.Wrap(l.lines[i].text, w)
+		// The newest entry may still be arriving. It is wrapped whole first
+		// and then cut, so it occupies its final number of rows from the first
+		// frame — cutting before wrapping would have the entry grow a row as
+		// it filled and shove everything above it up the panel.
+		if i == len(l.lines)-1 && l.rate > 0 && l.shown < len([]rune(l.lines[i].text)) {
+			wrapped = Reveal(wrapped, l.shown)
+		}
 		// An entry goes in whole or not at all.
 		//
 		// Filling the last row with the tail of a sentence whose beginning did
