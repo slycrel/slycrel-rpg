@@ -140,6 +140,26 @@ func buildDemoSteps() []demoStep {
 		{at: 214, shot: "07b-quest-offer"},
 		{at: 218, do: func(g *Game) { g.demoChoose(0) }},
 		{at: 222, do: func(g *Game) { g.Push(newQuestScene(g)) }},
+		// On an errand, not on whatever happens to be first.
+		//
+		// The journal lists three kinds of outstanding thing and the long story
+		// sorts above the errands, so the cursor landed on a saga and the pane
+		// below documented the saga pane. The errand pane is the one that grew
+		// an objective line, a countdown and a Where row, and it is what the
+		// screen is mostly for. Not a longer tour — the same one frame, showing
+		// the thing it is a frame of.
+		{at: 228, do: func(g *Game) {
+			q, ok := g.Top().(*questScene)
+			if !ok {
+				return
+			}
+			for i, it := range q.menu.Items {
+				if _, isQuest := it.Data.(*quest.Quest); isQuest {
+					q.menu.Index = i
+					return
+				}
+			}
+		}},
 		{at: 232, shot: "07c-quest-log"},
 		{at: 236, do: func(g *Game) { g.dropOverlays() }},
 

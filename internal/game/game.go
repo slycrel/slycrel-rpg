@@ -303,7 +303,15 @@ func (g *Game) saveFrame(dst *ebiten.Image, stem string) {
 	if err := png.Encode(f, img); err != nil {
 		return
 	}
-	g.Log.Add("Screenshot saved to shots/%s", filepath.Base(name))
+	// Not into the transcript during the tour. The player pressing `\` wants to
+	// be told it worked; the tour is a sequence of frames, and telling it puts
+	// "Screenshot saved to shots/demo-07d-hire.png" across the bottom of
+	// demo-07e — every frame carrying the name of the one before it, in the one
+	// line of transcript the walking-around screen has. stderr says it either
+	// way, which is where the tour is actually being watched from.
+	if !g.InDemo() {
+		g.Log.Add("Screenshot saved to shots/%s", filepath.Base(name))
+	}
 	fmt.Fprintf(os.Stderr, "wrote %s\n", name)
 }
 

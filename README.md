@@ -16,17 +16,17 @@ that nobody in the world ever acknowledges the joke.
 
 | | |
 |---|---|
-| ![The overworld: roads and terrain with locations marked](docs/screenshots/overworld.png) | ![A turn-based battle against three monsters](docs/screenshots/battle.png) |
-| Overworld — roads, terrain, points of interest | Battle — portraits, transcript, commands |
+| ![The overworld: roads and terrain with locations marked](docs/screenshots/overworld.png) | ![A turn-based battle: the company standing in the field facing two creatures, with the transcript across the bottom](docs/screenshots/battle.png) |
+| Overworld — roads, terrain, points of interest | Battle — the company, the field, the transcript |
 | ![A town of red-roofed buildings along a paved street](docs/screenshots/town.png) | ![A dungeon of rooms and corridors with lurking creatures](docs/screenshots/dungeon.png) |
 | Town — generated from the location's seed | Dungeon — rooms, foes, chests, a boss |
 | ![A parchment map showing explored terrain](docs/screenshots/map.png) | ![The blacksmith's stock, each weapon with an icon](docs/screenshots/shop.png) |
 | The map — only what you have walked past | A shop, with icons |
-| ![The character sheet and pack](docs/screenshots/character.png) | ![The quest log, showing an errand to clear a ruin](docs/screenshots/quests.png) |
+| ![The character sheet and pack](docs/screenshots/character.png) | ![The quest log, showing a delivery errand and the line saying what to do next](docs/screenshots/quests.png) |
 | Character sheet and pack | Errands, generated from the world |
 | ![Someone outside an inn offering to join for coins](docs/screenshots/hire.png) | ![A hireling walking behind the player through a town](docs/screenshots/party.png) |
-| Hiring — cheaper, because he is part demon | The company, following you around |
-| ![A companion's sheet showing part-demon ancestry](docs/screenshots/lineage.png) | ![Choosing which party member an item is used on](docs/screenshots/targeting.png) |
+| Hiring — cheaper, because she is part fey | The company, following you around |
+| ![A companion's sheet showing part-fey ancestry](docs/screenshots/lineage.png) | ![Choosing which party member an item is used on](docs/screenshots/targeting.png) |
 | A hireling's sheet, ancestry and all | Choosing who an effect lands on |
 
 ## Running it
