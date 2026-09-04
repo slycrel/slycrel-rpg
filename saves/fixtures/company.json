@@ -288,9 +288,9 @@
           "Bellbottom"
         ],
         "roles": {
-          "{X}": "Spider, Overfamiliar"
+          "{X}": "Owl That Knows"
         },
-        "monsterID": "forest_spider",
+        "monsterID": "forest_owl",
         "at": 1,
         "have": 0
       }
@@ -307,21 +307,23 @@
   },
   "quests": [
     {
-      "id": "cull-0-5948421",
+      "id": "cull-0-11611265",
       "kind": "cull",
       "state": "active",
-      "title": "Cull 5 Wolf, Deeply Unimpressed",
-      "ask": "\"There's Wolf, Deeply Unimpressed out there. 5 of them, ideally fewer by supper.\"",
-      "nag": "\"Still out there, then. The Wolf, Deeply Unimpressed. I can hear them from here.\"",
-      "thank": "\"Done? Properly done? Right. I'll stop flinching at noises.\"",
+      "title": "Cull the Goblin, Middle Management",
+      "ask": "\"Go to the woods outside Crown of the Sunken Barge and kill 4 Goblin. I'd do it myself but I've got a bad back and a good excuse.\"",
+      "nag": "\"Still {R} of them out in {W}. I can hear them from here.\"",
+      "thank": "\"That's the Goblin dealt with. The village will be insufferable about it for weeks.\"",
       "giver": "Person",
       "giverPOI": 0,
-      "monsterID": "forest_wolf",
-      "monsterName": "Wolf, Deeply Unimpressed",
-      "need": 5,
+      "monsterID": "forest_goblin",
+      "monsterName": "Goblin, Middle Management",
+      "where": "the woods outside Crown of the Sunken Barge",
+      "giverPlace": "Crown of the Sunken Barge",
+      "need": 4,
       "have": 0,
-      "rewardCoins": 50,
-      "rewardXP": 85
+      "rewardCoins": 96,
+      "rewardXP": 40
     }
   ],
   "threads": [

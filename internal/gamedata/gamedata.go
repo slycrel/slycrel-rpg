@@ -121,6 +121,12 @@ type Text struct {
 
 	// Quest lines, keyed by quest kind then by part (ask / nag / thank).
 	Quest map[string]map[string][]string `json:"quest"`
+
+	// Where an errand sends you, keyed by biome. Each is a phrase naming the
+	// country around a settlement — "the woods outside {P}" — because a fetch
+	// or a cull happens in a region rather than at an address, and a quest that
+	// cannot name an address was previously naming nothing at all.
+	QuestWhere map[string][]string `json:"questWhere"`
 }
 
 // FindRoot locates the game root — the folder holding data/ — by walking up

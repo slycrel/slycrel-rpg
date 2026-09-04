@@ -268,13 +268,13 @@
   "quest": {
     "fetch": {
       "ask": [
-        "\"I need {N} {I}. Don't ask what for. Actually do ask, later, when I've had a drink.\"",
-        "\"Bring me {N} {I} and I'll make it worth your while. Modestly worth. Let's not oversell it.\"",
-        "\"{N} {I}. That's the order. My supplier was eaten, which is the third time this year.\""
+        "\"I need {N} {I}, off whatever is in {W}. Don't ask what for. Actually do ask, later, when I've had a drink.\"",
+        "\"Bring me {N} {I} from {W} and I'll make it worth your while. Modestly worth. Let's not oversell it.\"",
+        "\"{N} {I}, out of {W}. That's the order. My supplier was eaten, which is the third time this year.\""
       ],
       "nag": [
-        "\"Still {N} {I}. The number has not changed. I would have mentioned.\"",
-        "\"{I}. {N} of them. I'm not going anywhere, worse luck.\""
+        "\"{R} {I} still to come, and they are still out in {W}. The number has not changed on its own.\"",
+        "\"{I}. {R} more of them, out of {W}. I'm not going anywhere, worse luck.\""
       ],
       "thank": [
         "\"All {N}. You actually did it. I had a whole speech ready for if you didn't.\"",
@@ -283,13 +283,13 @@
     },
     "cull": {
       "ask": [
-        "\"There's {M} out there. {N} of them, ideally fewer by supper.\"",
-        "\"Kill {N} {M}. I'd do it myself but I've got a bad back and a good excuse.\"",
-        "\"{N} {M}. They've been at the livestock, the washing, and once at my aunt.\""
+        "\"There's {M} in {W}. Kill {N} of them, ideally fewer by supper.\"",
+        "\"Go to {W} and kill {N} {M}. I'd do it myself but I've got a bad back and a good excuse.\"",
+        "\"{N} {M}, in {W}. They've been at the livestock, the washing, and once at my aunt.\""
       ],
       "nag": [
-        "\"{M}. {N} of them. They are not culling themselves, which we tried.\"",
-        "\"Still out there, then. The {M}. I can hear them from here.\""
+        "\"{R} {M} left, in {W}. They are not culling themselves, which we tried.\"",
+        "\"Still {R} of them out in {W}. I can hear them from here.\""
       ],
       "thank": [
         "\"That's the {M} dealt with. The village will be insufferable about it for weeks.\"",
@@ -298,13 +298,13 @@
     },
     "delve": {
       "ask": [
-        "\"Somebody needs to go into {P} and put a stop to whatever is in there.\"",
+        "\"Go into {P} and put a stop to whatever is in there. Nobody else is going to.\"",
         "\"{P}. Nobody's come back from it. That's not a warning, that's a job opening.\"",
         "\"Clear out {P}. My brother went in. I'd like the place emptied and, if convenient, him back.\""
       ],
       "nag": [
         "\"{P} is still there. Still full. Still nobody's problem but yours, apparently.\"",
-        "\"Have you been to {P} yet? No? It hasn't improved.\""
+        "\"Have you been out to {P} yet? No? It hasn't improved.\""
       ],
       "thank": [
         "\"{P} is quiet. First time in years. Feels wrong, honestly.\"",
@@ -313,12 +313,12 @@
     },
     "deliver": {
       "ask": [
-        "\"Take this to {P}. Don't open it. Don't shake it. Don't listen to it.\"",
-        "\"A parcel for {P}. It's paid for. It's mostly legal. It's definitely paid for.\"",
-        "\"Get this to {P} before it goes off. I won't define 'off'.\""
+        "\"Carry this to {P}. Don't open it. Don't shake it. Don't listen to it.\"",
+        "\"A parcel for {P}. Take it there, then come back and tell me. It's paid for. It's mostly legal. It's definitely paid for.\"",
+        "\"Get this to {P} before it goes off, then come and say so. I won't define 'off'.\""
       ],
       "nag": [
-        "\"{P}. The parcel. It is not improving in your bag.\"",
+        "\"{P}. The parcel goes to {P}. It is not improving in your bag.\"",
         "\"Still carrying that? {P}. Any day now.\""
       ],
       "thank": [
@@ -538,5 +538,39 @@
   "labelPlaceholder": {
     "npc": "someone",
     "recruit": "someone idle"
+  },
+  "questWhere": {
+    "coast": [
+      "the shore below {P}",
+      "the tidal flats outside {P}"
+    ],
+    "plains": [
+      "the fields outside {P}",
+      "the open ground north of {P}"
+    ],
+    "forest": [
+      "the woods outside {P}",
+      "the treeline west of {P}"
+    ],
+    "hills": [
+      "the hills above {P}",
+      "the sheep tracks outside {P}"
+    ],
+    "mountain": [
+      "the high country above {P}",
+      "the passes above {P}"
+    ],
+    "swamp": [
+      "the mire outside {P}",
+      "the wet ground east of {P}"
+    ],
+    "desert": [
+      "the sands outside {P}",
+      "the dunes south of {P}"
+    ],
+    "wasteland": [
+      "the scorched land outside {P}",
+      "the burnt ground beyond {P}"
+    ]
   }
 }

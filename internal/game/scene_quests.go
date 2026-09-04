@@ -103,7 +103,7 @@ func (s *questScene) refresh(g *Game) {
 		}
 	}
 
-	s.menu.Visible = 7
+	s.menu.Visible = questRowsShown
 	s.menu.SetItems(items)
 }
 
@@ -138,16 +138,49 @@ func (s *questScene) Update(g *Game) error {
 	return nil
 }
 
+// The detail panel under the list, and where its first line of text sits.
+//
+// Named rather than typed in four places because the errand pane grew a line
+// when it learned to say what to do next, and the three panes have to agree
+// about where they start or two of them are laid out against a box that has
+// moved. It also starts four pixels higher than it used to: the errand pane is
+// the tallest of the three and its last row was inking through the bottom
+// border, which is not something any test could see and not something a frame
+// makes obvious either — it is two pixels of gold on a gold line.
+const (
+	detailX = 14.0
+	// The list above ends at listY+listH and the pane starts below it.
+	//
+	// The pane took fourteen pixels off the list to get them, and the list had
+	// them spare: seven rows at LineH from y+12 fill 96 of the 118 it used to
+	// hold. The errand pane is the one that needed them — with a two-line
+	// objective and a Where row it had nothing left for the giver's voice, and
+	// dropped it silently, which is the failure this whole panel was being
+	// rearranged to stop doing in the first place.
+	// How many rows the list shows at once.
+	questRowsShown = 7
+
+	listY = 16.0
+	listH = 104.0
+
+	detailY   = listY + listH + 6
+	detailH   = 118.0
+	detailTop = detailY + 8
+	// The lowest y a row may be drawn at and still have its ink inside the
+	// panel. render.Text inks y+2 through y+12, and the border is one pixel.
+	detailFloor = detailY + detailH - render.TextInkH - 3
+)
+
 func (s *questScene) Draw(g *Game, dst *ebiten.Image) {
 	if s.under != nil {
 		s.under.Draw(g, dst)
 	}
 	render.Rect(dst, 0, 0, render.ScreenW, render.ScreenH, color.RGBA{0x0A, 0x08, 0x10, 0xFF})
 
-	ui.TitledPanel(dst, "things outstanding", 14, 16, render.ScreenW-28, 118)
+	ui.TitledPanel(dst, "things outstanding", detailX, listY, render.ScreenW-2*detailX, listH)
 	s.menu.Draw(dst, 28, 28, render.ScreenW-56)
 
-	ui.TitledPanel(dst, "", 14, 144, render.ScreenW-28, 96)
+	ui.TitledPanel(dst, "", detailX, detailY, render.ScreenW-2*detailX, detailH)
 	if it, ok := s.menu.Selected(); ok && !it.Disabled {
 		switch d := it.Data.(type) {
 		case *saga.Saga:
@@ -175,7 +208,7 @@ func (s *questScene) Draw(g *Game, dst *ebiten.Image) {
 // two — what, where, how far along — because from the player's side that is
 // what all three are.
 func (s *questScene) drawSaga(g *Game, dst *ebiten.Image, sg *saga.Saga) {
-	y := 152.0
+	y := detailTop
 	for i, ln := range render.Wrap(sg.Note(&g.Data.Sagas), render.ScreenW-64) {
 		if i > 2 {
 			break
@@ -213,7 +246,7 @@ func (s *questScene) drawSaga(g *Game, dst *ebiten.Image, sg *saga.Saga) {
 // the same shape as an errand — what, where, how far along — because from the
 // player's side that is what it is.
 func (s *questScene) drawThread(g *Game, dst *ebiten.Image, t *thread.Thread) {
-	y := 152.0
+	y := detailTop
 	for i, ln := range render.Wrap(t.Note(&g.Data.Threads), render.ScreenW-64) {
 		if i > 2 {
 			break
@@ -244,17 +277,50 @@ func (s *questScene) drawThread(g *Game, dst *ebiten.Image, t *thread.Thread) {
 }
 
 func (s *questScene) drawQuest(g *Game, dst *ebiten.Image, q *quest.Quest) {
-	y := 152.0
+	y := detailTop
 
-	body := q.Nag
+	// What to do next, in gold, above what anybody said about it.
+	//
+	// The journal used to open with the giver's nag and nothing else — a line
+	// in character, which is a fine thing to have and is not an instruction.
+	// A player coming back after a week got "Still 4 Chitin Scrap. The number
+	// has not changed. I would have mentioned." and had to work out from it
+	// what they were supposed to physically do, where, and how much of it was
+	// left. The objective says that in one sentence and the nag stays
+	// underneath, because the two are not redundant: one is what somebody said
+	// to you and the other is what you wrote down afterwards.
+	for i, ln := range render.Wrap(q.Objective(), render.ScreenW-64) {
+		if i > 1 {
+			break
+		}
+		render.Text(dst, ln, 26, y, render.ColGold)
+		y += render.LineH
+	}
+	y += 2
+
+	// What the giver says about it, dim and underneath, in whatever room is
+	// left once the rows below have taken theirs.
+	//
+	// Budgeted rather than fixed, because the number of rows varies: an errand
+	// pointing at a place has a Where row and one happening in a region does
+	// not, and a fixed one-line allowance spent the spare line on nothing and
+	// truncated the voice mid-word — "the fields outside Bastion of th." —
+	// while a fixed two-line allowance pushed the reward through the bottom
+	// border on the errands that do have the row.
+	rows := 3 // asked by, progress, pays
+	if q.TargetName != "" {
+		rows++
+	}
+	budget := int((detailFloor - y - 4 - float64(rows)*render.LineH) / render.LineH)
+	body := q.NagLine()
 	if q.Complete() {
 		body = q.Thank
 	}
 	for i, ln := range render.Wrap(body, render.ScreenW-64) {
-		if i > 2 {
+		if i >= budget {
 			break
 		}
-		render.Text(dst, ln, 26, y, render.ColInk)
+		render.Text(dst, ln, 26, y, render.ColInkDim)
 		y += render.LineH
 	}
 	y += 4
@@ -264,9 +330,18 @@ func (s *questScene) drawQuest(g *Game, dst *ebiten.Image, q *quest.Quest) {
 		render.ScreenW-26, y, render.ColInk)
 	y += render.LineH
 
+	// Where, only for the errands that point at a place you can be sent to.
+	//
+	// A fetch and a cull happen in a region, and the objective above already
+	// names it — putting it in a row underneath as well printed the same long
+	// generated place name twice in a panel four inches wide. A delve and a
+	// delivery point at a POI, which is a different fact: it is the thing Z
+	// follows, and it belongs beside the other facts rather than only inside a
+	// sentence.
 	if q.TargetName != "" {
 		render.Text(dst, "Where", 26, y, render.ColInkDim)
-		render.TextRight(dst, q.TargetName, render.ScreenW-26, y, render.ColInk)
+		render.TextRight(dst, render.Trunc(q.TargetName, render.ScreenW-110),
+			render.ScreenW-26, y, render.ColInk)
 		y += render.LineH
 	}
 	render.Text(dst, "Progress", 26, y, render.ColInkDim)

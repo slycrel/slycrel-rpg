@@ -1195,3 +1195,58 @@ func TestEveryMonsterNameCarriesBothHalves(t *testing.T) {
 		}
 	}
 }
+
+// The journal's detail pane has to hold every row it draws.
+//
+// It is arithmetic rather than a frame, and that is the point: the pane grew a
+// line when the errand pane learned to say what to do next, and the row it
+// pushed past the bottom border was the reward — gold text inking two pixels
+// through a gold line, which no screenshot makes obvious and no other test can
+// see. The three panes lay themselves out by walking down from detailTop a line
+// at a time, so the check is that the tallest of them lands above detailFloor.
+//
+// The errand pane is the tallest and its shape is fixed: two lines of
+// objective, one of the giver's voice, then four labelled rows.
+func TestTheJournalDetailPaneHoldsItsRows(t *testing.T) {
+	// Both shapes: an errand pointing at a place has a Where row, one happening
+	// in a region does not, and the giver's line is budgeted against whichever
+	// it is. The failure this catches showed up on the four-row shape only.
+	for _, rows := range [][]string{
+		{"Asked by", "Where", "Progress", "Pays"},
+		{"Asked by", "Progress", "Pays"},
+	} {
+		y := detailTop
+		y += 2 * render.LineH // the objective, at its longest
+		y += 2
+		// Whatever the pane will actually give the giver's line, by the same
+		// arithmetic drawQuest uses. Restating the number here would let the
+		// two drift, which is the whole failure mode.
+		budget := int((detailFloor - y - 4 - float64(len(rows))*render.LineH) / render.LineH)
+		if budget < 1 {
+			t.Errorf("%d rows leaves no room at all for what the giver said", len(rows))
+		}
+		y += float64(budget) * render.LineH
+		y += 4
+		for _, label := range rows {
+			if y > detailFloor {
+				t.Errorf("with %d rows, %q is drawn at %.0f, past the floor at %.0f — "+
+					"the pane is %.0f tall", len(rows), label, y, detailFloor, detailH)
+			}
+			y += render.LineH
+		}
+	}
+	// And the pane must not reach the hint under it, which is drawn at 250.
+	if detailY+detailH > 250-4 {
+		t.Errorf("the pane ends at %.0f and the hint is at 250", detailY+detailH)
+	}
+	// Nor collide with the list above it.
+	if detailY < listY+listH {
+		t.Errorf("the pane starts at %.0f, inside the list that ends at %.0f",
+			detailY, listY+listH)
+	}
+	// And the list must still hold the rows it says it shows, or the pane has
+	// taken its space rather than been given it.
+	if want := 12 + float64(questRowsShown)*render.LineH + 6; want > listH {
+		t.Errorf("%d rows need %.0f pixels, the list is %.0f", questRowsShown, want, listH)
+	}
+}

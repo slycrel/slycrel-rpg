@@ -37,7 +37,7 @@ func (g *Game) talkTo(e *world.Entity) {
 		if q.Complete() {
 			g.offerTurnIn(e, q)
 		} else {
-			g.SayAs(e.Name, g.roleOf(e), g.faceOf(e), q.Nag)
+			g.SayAs(e.Name, g.roleOf(e), g.faceOf(e), q.NagLine())
 		}
 		return
 	}

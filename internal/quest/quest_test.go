@@ -24,6 +24,12 @@ type stubWriter struct{}
 
 func (stubWriter) QuestLine(_ *core.RNG, kind, part string) string { return kind + "/" + part }
 
+// A phrase with {P} still in it, exactly as the real writer returns one, so
+// these tests exercise the substitution rather than a constant.
+func (stubWriter) QuestWhere(_ *core.RNG, biome string) string {
+	return "the " + biome + " outside {P}"
+}
+
 func tables(t *testing.T) *gamedata.Tables {
 	t.Helper()
 	root, err := gamedata.FindRoot()

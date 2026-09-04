@@ -378,9 +378,9 @@
           "Rookhaven"
         ],
         "roles": {
-          "{X}": "Hound, Extremely Loose"
+          "{X}": "Hog, of Poor Character"
         },
-        "monsterID": "plains_dog",
+        "monsterID": "plains_boar",
         "at": 1,
         "have": 0
       }
@@ -397,21 +397,23 @@
   },
   "quests": [
     {
-      "id": "cull-0-9977032",
+      "id": "cull-0-3199547",
       "kind": "cull",
       "state": "active",
-      "title": "Cull 4 Ox, With a Grudge",
-      "ask": "\"There's Ox, With a Grudge out there. 4 of them, ideally fewer by supper.\"",
-      "nag": "\"Still out there, then. The Ox, With a Grudge. I can hear them from here.\"",
-      "thank": "\"Done? Properly done? Right. I'll stop flinching at noises.\"",
+      "title": "Cull the Ewe, Cursed",
+      "ask": "\"3 Ewe, in the fields outside Mudgallow. They've been at the livestock, the washing, and once at my aunt.\"",
+      "nag": "\"Still {R} of them out in {W}. I can hear them from here.\"",
+      "thank": "\"That's the Ewe dealt with. The village will be insufferable about it for weeks.\"",
       "giver": "Person",
       "giverPOI": 0,
-      "monsterID": "plains_ox",
-      "monsterName": "Ox, With a Grudge",
-      "need": 4,
+      "monsterID": "plains_sheep",
+      "monsterName": "Ewe, Cursed",
+      "where": "the fields outside Mudgallow",
+      "giverPlace": "Mudgallow",
+      "need": 3,
       "have": 0,
-      "rewardCoins": 72,
-      "rewardXP": 96
+      "rewardCoins": 18,
+      "rewardXP": 21
     }
   ],
   "threads": [

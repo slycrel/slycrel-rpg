@@ -14,6 +14,7 @@ package quest
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
@@ -67,6 +68,25 @@ type Quest struct {
 	MonsterID   string `json:"monsterID,omitempty"`
 	MonsterName string `json:"monsterName,omitempty"`
 
+	// Where is the country a fetch or a cull happens in, already filled with
+	// the settlement's name: "the woods outside Blightford".
+	//
+	// A delve and a delivery point at a POI and have TargetName for it; the
+	// other two happen in a region, and until this field existed they named no
+	// location whatsoever. The player was told to bring four of something and
+	// never told where any of it was.
+	//
+	// The empty string is the honest zero value and every save written before
+	// today supplies it: it means "this errand does not know where", and every
+	// line that uses it is written to be a whole sentence without it. It must
+	// never be filled in with a guess — naming a place that is not there is
+	// the one thing this generator has always refused to do.
+	Where string `json:"where,omitempty"`
+
+	// GiverPlace is the settlement the giver is standing in, so the errand can
+	// say where to take it back to without the quest package holding a map.
+	GiverPlace string `json:"giverPlace,omitempty"`
+
 	Need int `json:"need"`
 	Have int `json:"have"`
 
@@ -76,6 +96,86 @@ type Quest struct {
 
 // Complete reports whether the conditions are met.
 func (q *Quest) Complete() bool { return q.Have >= q.Need }
+
+// Remaining is how many are still wanted, which is what a person nagging you
+// about an errand would actually say.
+//
+// The nag lines used to quote Need — the number originally asked for — so
+// somebody holding three of four Chitin Scrap was told "Still 4 Chitin Scrap.
+// The number has not changed." It had changed. It had changed three times.
+func (q *Quest) Remaining() int { return core.Max(0, q.Need-q.Have) }
+
+// Species is the creature's name as prose should say it: the half before the
+// comma.
+//
+// CLAUDE.md has had this rule since the battle transcript learned it — "prose
+// uses Monster.Short()", because "Wolf, Deeply Unimpressed B bites Bosk" is
+// unreadable — and the quest generator never did. It interpolated the whole
+// name into flowing sentences, so a cull errand read "There's Wolf, Deeply
+// Unimpressed out there", with the comma the name plate wants sitting in the
+// middle of a sentence that cannot have one. Sixty-eight of the seventy-nine
+// creatures in the game carry a comma.
+//
+// The full name is still what the title and the journal row show, because
+// those are labels, and a label is exactly where the epithet belongs.
+func (q *Quest) Species() string {
+	head, _ := model.SplitName(q.MonsterName)
+	return head
+}
+
+// Objective is the one line that says what to physically do next.
+//
+// It is computed rather than stored, which is the point of it. A stored line
+// is written once, at the moment the errand is taken, and is wrong from the
+// first creature killed; this one is re-derived every time it is read, so it
+// counts down, and it changes to "go back and say so" the moment the counting
+// stops. It also cannot rot in an old save, having never been in one.
+//
+// Every branch is an imperative verb and a named place, in that order, because
+// that is the sentence a player who has put the game down for a week needs and
+// the flavour lines are constitutionally incapable of being. The giver's own
+// voice is still there, above this, saying the same thing in character — the
+// two are not redundant, they are the difference between what somebody said to
+// you and what you wrote down afterwards.
+func (q *Quest) Objective() string {
+	// One action, not two. The finished errand has its own line, so an
+	// outstanding one saying "…then go back to Dregg" is announcing a step the
+	// player cannot take yet and will be told about when they can. It also
+	// doubled the length of the only sentence on this screen that has to be
+	// read in a hurry.
+	if q.Complete() {
+		back := "Go back to " + q.Giver
+		// Not twice in one sentence. "…in the woods outside Crown of the Sunken
+		// Barge, then go back to Dregg in Crown of the Sunken Barge" is what
+		// naming both halves independently produces, and the generated place
+		// names in this game are long enough that it wrapped to three lines.
+		if q.GiverPlace != "" && !strings.Contains(q.Where, q.GiverPlace) {
+			back += " in " + q.GiverPlace
+		}
+		return back + "."
+	}
+	switch q.Kind {
+	case Fetch:
+		return "Find " + fmt.Sprintf("%d more %s", q.Remaining(), q.Item) + q.inWhere() + "."
+	case Cull:
+		return "Kill " + fmt.Sprintf("%d more %s", q.Remaining(), q.Species()) + q.inWhere() + "."
+	case Delve:
+		return "Travel to " + q.TargetName + " and clear it out."
+	case Deliver:
+		return "Carry the parcel to " + q.TargetName + "."
+	}
+	return "Go back to " + q.Giver + "."
+}
+
+// inWhere is " in the woods outside Blightford", or nothing at all when the
+// errand does not know where — which is every quest in every save written
+// before the field existed.
+func (q *Quest) inWhere() string {
+	if q.Where == "" {
+		return ""
+	}
+	return " in " + q.Where
+}
 
 // Progress renders the counter for the log, or a plain state for the errands
 // that are not counted.
@@ -94,6 +194,10 @@ func (q *Quest) Progress() string {
 // Writer supplies the generated prose. The content package implements it.
 type Writer interface {
 	QuestLine(g *core.RNG, kind, part string) string
+	// QuestWhere names the country around a settlement, with {P} left in it.
+	// Empty when the biome has no phrase — an errand that cannot say where
+	// says nothing, rather than saying "somewhere nearby".
+	QuestWhere(g *core.RNG, biome string) string
 }
 
 // Catalog is the slice of the content tables the generator needs. Taking an
@@ -156,10 +260,20 @@ func Generate(g *core.RNG, w *world.Map, cat Catalog, wr Writer, giverPOI int, g
 		}
 	}
 	q := &Quest{
-		State:    Active,
-		Giver:    giver,
-		GiverPOI: giverPOI,
-		Kind:     chosen,
+		State:      Active,
+		Giver:      giver,
+		GiverPOI:   giverPOI,
+		GiverPlace: home.Name,
+		Kind:       chosen,
+	}
+	// Where a fetch or a cull happens. Filled with the settlement's own name
+	// here rather than at display time, because this is the one place that has
+	// the map — and it stays empty when the biome has no phrase, which every
+	// line downstream is written to survive.
+	if q.Kind == Fetch || q.Kind == Cull {
+		if phrase := wr.QuestWhere(g, biome); phrase != "" {
+			q.Where = replaceAll(phrase, "{P}", home.Name)
+		}
 	}
 
 	switch q.Kind {
@@ -194,21 +308,41 @@ func Generate(g *core.RNG, w *world.Map, cat Catalog, wr Writer, giverPOI int, g
 	q.ID = fmt.Sprintf("%s-%d-%d", q.Kind, giverPOI, g.Intn(1<<24))
 	q.Title = q.titleText()
 	q.Ask = q.fill(wr.QuestLine(g, string(q.Kind), "ask"))
-	q.Nag = q.fill(wr.QuestLine(g, string(q.Kind), "nag"))
+	// The nag is stored with its placeholders still in it and filled on the way
+	// out, because it is the one line that has to be true *later*. It counts
+	// what is left, and what is left changes; a line filled here is a line
+	// written before the first creature died. NagLine is what reads it.
+	//
+	// An old save holds a nag that was filled at generation, and running fill
+	// over an already-filled string changes nothing — so this degrades to
+	// exactly the previous behaviour rather than to a sentence with braces in
+	// it.
+	q.Nag = wr.QuestLine(g, string(q.Kind), "nag")
 	q.Thank = q.fill(wr.QuestLine(g, string(q.Kind), "thank"))
 	return q, true
 }
 
+// NagLine is what the giver says while the errand is still outstanding, filled
+// against the counter as it stands now.
+func (q *Quest) NagLine() string { return q.fill(q.Nag) }
+
+// titleText is the errand's name in a list.
+//
+// A title is a label, so it carries the whole creature name — the comma is
+// correct here and wrong in a sentence — and it leads with a verb, so a journal
+// row says what the errand *is* rather than only what it involves. "3 x Chitin
+// Scrap" named a quantity of a thing and no action at all; the row beside it
+// already shows the count, so the title never needed to.
 func (q *Quest) titleText() string {
 	switch q.Kind {
 	case Delve:
-		return "Clear " + q.TargetName
+		return "Clear out " + q.TargetName
 	case Deliver:
-		return "Parcel for " + q.TargetName
+		return "Deliver a parcel to " + q.TargetName
 	case Fetch:
-		return fmt.Sprintf("%d x %s", q.Need, q.Item)
+		return "Gather " + q.Item
 	default:
-		return fmt.Sprintf("Cull %d %s", q.Need, q.MonsterName)
+		return "Cull the " + q.MonsterName
 	}
 }
 
@@ -216,9 +350,13 @@ func (q *Quest) titleText() string {
 func (q *Quest) fill(s string) string {
 	r := map[string]string{
 		"{N}": fmt.Sprint(q.Need),
+		"{R}": fmt.Sprint(q.Remaining()),
 		"{I}": q.Item,
-		"{M}": q.MonsterName,
+		// The species, not the whole name: this goes into sentences. See
+		// Quest.Species.
+		"{M}": q.Species(),
 		"{P}": q.TargetName,
+		"{W}": q.Where,
 		"{G}": q.Giver,
 	}
 	for k, v := range r {

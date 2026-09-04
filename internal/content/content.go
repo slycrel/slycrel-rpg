@@ -267,6 +267,19 @@ func (w *Writer) LevelUpLine(g *core.RNG, level int) string {
 	return strings.ReplaceAll(core.Pick(g, w.t.LevelFlavor), "{L}", fmt.Sprint(level))
 }
 
+// QuestWhere returns a phrase for the country around a settlement, with {P}
+// still in it for the caller to fill with the place name.
+//
+// Empty when the biome has no phrase, which the caller has to handle rather
+// than paper over: a quest that cannot say where is allowed to say nothing,
+// and is not allowed to say "somewhere nearby".
+func (w *Writer) QuestWhere(g *core.RNG, biome string) string {
+	if lines := w.t.QuestWhere[biome]; len(lines) > 0 {
+		return core.Pick(g, lines)
+	}
+	return ""
+}
+
 // QuestLine returns a template for a quest kind and part (ask / nag / thank).
 // Unknown combinations fall back to something neutral rather than an empty
 // speech bubble.
