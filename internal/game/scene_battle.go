@@ -2315,10 +2315,10 @@ func monSlotY(i, n int) float64 {
 // Splitting the plate puts each icon inside its own name.
 //
 // Measured from the names actually in this fight rather than fixed per layout,
-// because the two are not the same question. Three wolves and a goblin need two
-// lines above ("Goblin Middle Manager A" does not fit one at three columns) and
-// two below ("Deeply Unimpressed" does not either); two short-named creatures
-// need one and one, and should get a bigger portrait for it. The field takes
+// because the two are not the same question. Three wolves and a goblin need one
+// line above and two below ("Deeply Unimpressed" does not fit one at three
+// columns); two short-named creatures need one and one, and should get a bigger
+// portrait for it. The field takes
 // the maximum each way so the row stays level — portraits of different sizes in
 // one row read as a rendering fault rather than as a fit.
 func (b *battleScene) monPlate() (above, below int) {
@@ -2451,8 +2451,11 @@ func partyRowY(i, n int) float64 {
 //
 // Nothing is ever dropped silently in either. A line that will not fit is
 // truncated, which at least reads as cut; a line quietly not drawn reads as the
-// whole name, and that is how "Goblin Middle Manager" appeared on screen as
-// "Goblin Middle" for as long as it did.
+// whole name, and that is how the forest goblin appeared on screen as "Goblin
+// Middle" for as long as it did. It is "Goblin, Middle Management" now and the
+// species half is one word, so that particular sentence can no longer be built
+// — but the rule is about what the plate does with a name it cannot fit, and
+// the next long one is a content edit away.
 func plateLines(text string, slotW float64, budget int) []string {
 	if text == "" || budget <= 0 {
 		return nil

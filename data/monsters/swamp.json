@@ -1,7 +1,7 @@
 [
   {
     "id": "swamp_frog",
-    "name": "Frog of Unusual Size",
+    "name": "Frog, of Unusual Size",
     "kind": "beast",
     "level": 2,
     "hp": 27,
@@ -39,7 +39,7 @@
   },
   {
     "id": "swamp_leech",
-    "name": "Affectionate Parasite",
+    "name": "Parasite, Affectionate",
     "kind": "aberrant",
     "level": 3,
     "hp": 20,
@@ -83,7 +83,7 @@
   },
   {
     "id": "swamp_insect",
-    "name": "Mire Swarm",
+    "name": "Mire Swarm, Ongoing",
     "kind": "beast",
     "level": 4,
     "hp": 31,
@@ -203,7 +203,7 @@
   },
   {
     "id": "swamp_snake",
-    "name": "Snake With a Reputation",
+    "name": "Snake, With a Reputation",
     "kind": "beast",
     "level": 6,
     "hp": 39,
@@ -247,7 +247,7 @@
   },
   {
     "id": "swamp_widow",
-    "name": "Fen Widow",
+    "name": "Fen Widow, In Mourning",
     "kind": "beast",
     "level": 7,
     "hp": 50,
@@ -335,7 +335,7 @@
   },
   {
     "id": "swamp_mirehorror",
-    "name": "Mire Horror",
+    "name": "Mire Horror, Fully Grown",
     "kind": "aberrant",
     "level": 9,
     "hp": 67,

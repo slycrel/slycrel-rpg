@@ -39,7 +39,7 @@
   },
   {
     "id": "mtn_yeti",
-    "name": "Yeti With a Cold",
+    "name": "Yeti, With a Cold",
     "kind": "beast",
     "level": 7,
     "hp": 54,
@@ -233,7 +233,7 @@
   },
   {
     "id": "mtn_provisional",
-    "name": "Provisional Dragon",
+    "name": "Dragon, Provisional",
     "kind": "beast",
     "level": 12,
     "hp": 91,

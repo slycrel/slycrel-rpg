@@ -1,7 +1,7 @@
 [
   {
     "id": "hills_goat",
-    "name": "Goat of Ill Repute",
+    "name": "Goat, of Ill Repute",
     "kind": "beast",
     "level": 2,
     "hp": 27,
@@ -84,7 +84,7 @@
   },
   {
     "id": "hills_beast",
-    "name": "Hill Thing",
+    "name": "Hill Thing, Ordinary",
     "kind": "aberrant",
     "level": 5,
     "hp": 46,
@@ -122,7 +122,7 @@
   },
   {
     "id": "hills_tollman",
-    "name": "Collector of the Path",
+    "name": "Collector, of the Path",
     "kind": "humanoid",
     "level": 6,
     "hp": 45,
@@ -211,7 +211,7 @@
   },
   {
     "id": "hills_troll",
-    "name": "Bridge Troll (Freelance)",
+    "name": "Bridge Troll, Freelance",
     "kind": "humanoid",
     "level": 8,
     "hp": 58,

@@ -12,9 +12,8 @@ import (
 // transcript and a portrait that flashed red for a few frames, which is enough
 // to follow and not enough to watch — and a turn-based fight is almost entirely
 // watching. The one thing a burst adds that the transcript cannot is *where*:
-// with three monsters on screen, "Bosk hits the Overfamiliar Spider" is a
-// sentence you have to read, and a fireball landing on the middle portrait is
-// not.
+// with three monsters on screen, "Bosk hits the Spider" is a sentence you have
+// to read, and a fireball landing on the middle portrait is not.
 //
 // Deliberately not a new mechanic. Nothing here is read by rules, nothing
 // changes a number, and the entire system can be deleted without the game

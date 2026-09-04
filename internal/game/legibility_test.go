@@ -987,9 +987,8 @@ func TestEveryMonsterNameFitsItsPlate(t *testing.T) {
 				// creatures of a kind get "Crab A" and "Crab B".
 				head, tail := monsterName(d.Name + " A")
 				// The species fits whole wherever the field is a single row,
-				// which is every layout up to three creatures. Above that it
-				// may run over — "Ghost With Unfinished Business" wants three
-				// lines at a third of the field — and is truncated visibly.
+				// which is every layout up to three creatures. Above that a
+				// long one may still run over and is truncated visibly.
 				// Raising the ceiling instead would cost the whole field its
 				// epithets to fit one long name, which is the worse trade: the
 				// plate is measured per field, so one creature would silence
@@ -1107,5 +1106,92 @@ func TestSavingOverAnotherCharacterAsksFirst(t *testing.T) {
 	// And a slot that is still empty stays silent even now.
 	if _, ok := s.occupant(g, "3"); ok {
 		t.Error("an empty slot asked a question")
+	}
+}
+
+// namesWithoutAnEpithet is every creature allowed to be all species.
+//
+// model.SplitName treats a name with no comma as species only, and CLAUDE.md
+// blesses that for "Owl That Knows", where the phrase is the joke and cutting
+// it in half destroys it. That licence was being used by thirty-six of the
+// seventy-six monsters in the game, three whole biomes of them, which is not a
+// licence being used — it is a convention that had stopped existing.
+//
+// Twenty-five were the plain case: a species wearing its epithet in front, the
+// same joke the other half of the roster tells the other way round, and they
+// were simply turned around. The eleven here are the ones the convention would
+// actually cost something, and each is a decision rather than a leftover:
+//
+//   - The oddity roster is institutional signage, and the flatness is the
+//     whole gag. A thing called "A Courtesy Announcement" that attacks you is
+//     funny because nobody has named it; "Announcement, Courtesy" is a monster
+//     with a nickname. ("Maintenance Unit, Overdue" sits in the same file with
+//     a comma and is left alone — an oddity may be either, and that one earns
+//     its second half.)
+//   - "Owl That Knows" and "Something That Was A Diver" are the construction
+//     CLAUDE.md names: the sentence is the creature.
+//   - "Bogard the Damp" is somebody's name, not a species and an epithet.
+//   - "The Drowned Subscription" is an oddity joke that wandered into the
+//     swamp and keeps the oddity's licence with it.
+//
+// The point of the list is that it is a list. A new monster now either carries
+// both halves or is added here with a reason, which is a decision on the
+// record rather than a comma somebody did not type.
+var namesWithoutAnEpithet = map[string]bool{
+	"Owl That Knows":             true,
+	"Something That Was A Diver": true,
+	"Bogard the Damp":            true,
+	"The Drowned Subscription":   true,
+	"Compliance Officer":         true,
+	"Something in a Suit":        true,
+	"The Attendant":              true,
+	"A Courtesy Announcement":    true,
+	"Site Warden":                true,
+	"Unscheduled Passenger":      true,
+	"The Night Shift":            true,
+}
+
+// A creature's plate says both halves, and the roster has to actually supply
+// two.
+//
+// TestEveryMonsterNameFitsItsPlate above checks that a name *fits* the space
+// the layout gives it; this checks that there is a name of the right shape to
+// put there. They fail differently and both were needed: the field can draw an
+// epithet for every creature on it and still be drawing nothing, because the
+// content never wrote one.
+func TestEveryMonsterNameCarriesBothHalves(t *testing.T) {
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Skipf("no data directory: %v", err)
+	}
+	tables, err := gamedata.Load(root)
+	if err != nil {
+		t.Fatalf("loading content: %v", err)
+	}
+
+	seen := map[string]bool{}
+	for _, defs := range tables.Monsters {
+		for _, d := range defs {
+			seen[d.Name] = true
+			head, tail := model.SplitName(d.Name)
+			if tail != "" {
+				continue
+			}
+			if namesWithoutAnEpithet[d.Name] {
+				continue
+			}
+			t.Errorf("%q is all species and is not on the list of names that may be; "+
+				"give it an epithet after a comma, or say in namesWithoutAnEpithet why the "+
+				"phrase is the joke", head)
+		}
+	}
+	// And the list may not outlive the names on it. An allowlist nobody prunes
+	// is how the convention got lost the first time: every entry is a standing
+	// permission, and one naming a monster that no longer exists is a
+	// permission granted to whatever is written next.
+	for name := range namesWithoutAnEpithet {
+		if !seen[name] {
+			t.Errorf("namesWithoutAnEpithet excuses %q, which is not in the roster any more", name)
+		}
 	}
 }

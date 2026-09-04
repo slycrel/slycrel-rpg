@@ -372,7 +372,7 @@
           "Bellbottom"
         ],
         "roles": {
-          "{X}": "Bear With Boundaries"
+          "{X}": "Bear, With Boundaries"
         },
         "monsterID": "forest_bear",
         "at": 1,
@@ -417,7 +417,7 @@
       "roles": {
         "{N}": "Hireling 1",
         "{P}": "Wreck of Bad Weather",
-        "{X}": "Bear With Boundaries"
+        "{X}": "Bear, With Boundaries"
       },
       "placePOI": 27,
       "monsterID": "forest_bear",

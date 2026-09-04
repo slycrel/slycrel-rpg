@@ -1,7 +1,7 @@
 [
   {
     "id": "forest_goblin",
-    "name": "Goblin Middle Manager",
+    "name": "Goblin, Middle Management",
     "kind": "humanoid",
     "level": 2,
     "hp": 24,
@@ -46,7 +46,7 @@
   },
   {
     "id": "forest_spider",
-    "name": "Overfamiliar Spider",
+    "name": "Spider, Overfamiliar",
     "kind": "beast",
     "level": 3,
     "hp": 25,
@@ -129,7 +129,7 @@
   },
   {
     "id": "forest_plant",
-    "name": "Amorous Shrub",
+    "name": "Shrub, Amorous",
     "kind": "aberrant",
     "level": 4,
     "hp": 33,
@@ -213,7 +213,7 @@
   },
   {
     "id": "forest_bear",
-    "name": "Bear With Boundaries",
+    "name": "Bear, With Boundaries",
     "kind": "beast",
     "level": 6,
     "hp": 52,

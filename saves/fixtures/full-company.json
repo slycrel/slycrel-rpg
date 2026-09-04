@@ -378,7 +378,7 @@
           "Rookhaven"
         ],
         "roles": {
-          "{X}": "Extremely Loose Hound"
+          "{X}": "Hound, Extremely Loose"
         },
         "monsterID": "plains_dog",
         "at": 1,
@@ -400,14 +400,14 @@
       "id": "cull-0-9977032",
       "kind": "cull",
       "state": "active",
-      "title": "Cull 4 Ox With a Grudge",
-      "ask": "\"There's Ox With a Grudge out there. 4 of them, ideally fewer by supper.\"",
-      "nag": "\"Still out there, then. The Ox With a Grudge. I can hear them from here.\"",
+      "title": "Cull 4 Ox, With a Grudge",
+      "ask": "\"There's Ox, With a Grudge out there. 4 of them, ideally fewer by supper.\"",
+      "nag": "\"Still out there, then. The Ox, With a Grudge. I can hear them from here.\"",
       "thank": "\"Done? Properly done? Right. I'll stop flinching at noises.\"",
       "giver": "Person",
       "giverPOI": 0,
       "monsterID": "plains_ox",
-      "monsterName": "Ox With a Grudge",
+      "monsterName": "Ox, With a Grudge",
       "need": 4,
       "have": 0,
       "rewardCoins": 72,
@@ -423,7 +423,7 @@
       "roles": {
         "{N}": "Hireling 1",
         "{P}": "Deeps of the Long Excuse",
-        "{X}": "Editorial Crow"
+        "{X}": "Crow, Editorial"
       },
       "placePOI": 16,
       "monsterID": "plains_crow",

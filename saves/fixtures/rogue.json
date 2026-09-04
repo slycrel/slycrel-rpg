@@ -382,7 +382,7 @@
           "Mud Situation"
         ],
         "roles": {
-          "{X}": "Hog of Poor Character"
+          "{X}": "Hog, of Poor Character"
         },
         "monsterID": "plains_boar",
         "at": 1,

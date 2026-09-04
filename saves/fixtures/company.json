@@ -288,7 +288,7 @@
           "Bellbottom"
         ],
         "roles": {
-          "{X}": "Overfamiliar Spider"
+          "{X}": "Spider, Overfamiliar"
         },
         "monsterID": "forest_spider",
         "at": 1,

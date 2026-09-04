@@ -1,7 +1,7 @@
 [
   {
     "id": "plains_chicken",
-    "name": "Ungovernable Rooster",
+    "name": "Rooster, Ungovernable",
     "kind": "beast",
     "level": 1,
     "hp": 15,
@@ -40,7 +40,7 @@
   },
   {
     "id": "plains_sheep",
-    "name": "Cursed Ewe",
+    "name": "Ewe, Cursed",
     "kind": "beast",
     "level": 1,
     "hp": 24,
@@ -79,7 +79,7 @@
   },
   {
     "id": "plains_boar",
-    "name": "Hog of Poor Character",
+    "name": "Hog, of Poor Character",
     "kind": "beast",
     "level": 2,
     "hp": 30,
@@ -117,7 +117,7 @@
   },
   {
     "id": "plains_crow",
-    "name": "Editorial Crow",
+    "name": "Crow, Editorial",
     "kind": "beast",
     "level": 2,
     "hp": 18,
@@ -160,7 +160,7 @@
   },
   {
     "id": "plains_bandit",
-    "name": "Freelance Tax Collector",
+    "name": "Tax Collector, Freelance",
     "kind": "humanoid",
     "level": 3,
     "hp": 32,
@@ -205,7 +205,7 @@
   },
   {
     "id": "plains_ox",
-    "name": "Ox With a Grudge",
+    "name": "Ox, With a Grudge",
     "kind": "beast",
     "level": 4,
     "hp": 44,
@@ -243,7 +243,7 @@
   },
   {
     "id": "plains_dog",
-    "name": "Extremely Loose Hound",
+    "name": "Hound, Extremely Loose",
     "kind": "beast",
     "level": 3,
     "hp": 27,
