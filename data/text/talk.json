@@ -1,0 +1,152 @@
+{
+  "trees": [
+    {
+      "id": "companion",
+      "root": "root",
+      "nodes": [
+        {
+          "id": "root",
+          "text": [
+            "{N} slows enough to walk beside you rather than behind you, which is as close to an invitation as you are going to get.",
+            "{N} looks up. 'Something, or are we just doing this?'",
+            "'Right,' says {N}, in the tone of somebody who has been waiting a while to be asked something.",
+            "{N} stops looking at the road and starts looking at you, which takes a moment and is clearly an effort."
+          ],
+          "options": [
+            { "label": "How are you holding up?", "goto": "hold" },
+            { "label": "That thing you started telling me.", "goto": "story", "need": "story" },
+            { "label": "What are we waiting on?", "goto": "waiting", "need": "waiting" },
+            { "label": "Let's settle it, then.", "goto": "ending", "need": "ending" },
+            { "label": "Where are you from?", "goto": "origin" },
+            { "label": "About your cut.", "goto": "cut" },
+            { "label": "Nothing." }
+          ]
+        },
+        {
+          "id": "hold",
+          "text": [
+            "'Upright. Fed. Owed money.' {N} counts them off. 'Two of those are your doing and I will let you work out which.'",
+            "'I have been worse. I have been considerably worse, and in one case I was being paid less for it.'",
+            "'Fine.' A pause. 'That was not a complaint, before you go looking for one in it.'",
+            "'You keep asking me that,' says {N}, 'and I keep saying fine, and one of these days I am going to say something else and you are going to wish you had not started this.'"
+          ],
+          "options": [
+            { "label": "You're bleeding.", "goto": "rest", "need": "hurt" },
+            { "label": "Back to it.", "goto": "root" }
+          ]
+        },
+        {
+          "id": "rest",
+          "text": [
+            "'I am aware. It is mine, it is not much of it, and it has stopped.' {N} does not look at it. 'Ask me again if it starts.'",
+            "'That is not blood, that is somebody else's blood, and I would rather you did not point at it.' They point at it. 'That one is mine. It is fine.'",
+            "'We can stop,' says {N}, 'or we can be somewhere with a door on it before dark. I know which one I am voting for and I am not going to say it out loud, because then it is my fault.'"
+          ],
+          "options": [{ "label": "Back to it.", "goto": "root" }]
+        },
+        {
+          "id": "story",
+          "text": [
+            "{N} takes a moment to work out how much of it they said the first time.\n\n{S}",
+            "'I did tell you this.' They tell you again anyway, in almost the same words, which is how you learn it was rehearsed.\n\n{S}",
+            "'Right. From the top, and this is the last time I do it from the top.'\n\n{S}"
+          ],
+          "options": [
+            { "label": "So what happens now?", "goto": "waiting", "need": "waiting" },
+            { "label": "Understood.", "goto": "root" }
+          ]
+        },
+        {
+          "id": "waiting",
+          "text": [
+            "'Nothing complicated,' says {N}. 'We {W}. Then I stop being cryptic at you and you can go back to enjoying my company.'",
+            "'We {W},' says {N}. 'I know how that sounds. It sounded worse when I was doing it alone.'",
+            "{N} does not look at you while saying it, which is how you know it matters. 'We {W}. After that it is a conversation rather than a problem.'"
+          ],
+          "options": [{ "label": "Then we do that.", "goto": "root" }]
+        },
+        {
+          "id": "ending",
+          "text": [
+            "'Yes.' {N} straightens up. 'Yes. All right. We {W} and then I stop talking about it forever, which I imagine is the part you are looking forward to.'",
+            "'Now?' A breath. 'Now. Fine. We {W}, and whatever I say afterwards, I did ask for it.'"
+          ],
+          "options": [{ "label": "Then we go.", "goto": "root" }]
+        },
+        {
+          "id": "origin",
+          "text": [
+            "'A place with a name you would mispronounce and a river nobody has ever swum in on purpose.' {N} shrugs. 'It is still there. That is the most I will say for it.'",
+            "'Nowhere you have been,' says {N}, 'which is not me being mysterious, it is a statement about how few people go there.'",
+            "'Two days east of somewhere you have heard of. Everyone from there says that. Nobody from there will tell you what the somewhere is.'",
+            "{N} thinks about it for longer than the question deserves. 'A house. Some fields. A man who did the accounts for both and was not good at it.'"
+          ],
+          "options": [
+            { "label": "Go on.", "goto": "origin2" },
+            { "label": "And the blood?", "goto": "blood", "need": "blood" },
+            { "label": "Fair enough.", "goto": "root" }
+          ]
+        },
+        {
+          "id": "origin2",
+          "text": [
+            "'There is not a lot of go on. I left, they noticed, and by the time anybody wrote about it I was three counties away and using a different name for reasons that are no longer relevant.'",
+            "'You want the version with a burning barn in it. There is no barn. There is a very ordinary morning and a decision I have never once regretted, and that makes a terrible story, so I generally let people invent one.'",
+            "'I was good at something they had no use for, and useless at the thing everyone there did. That is the whole of it. Every second person you meet has the same story and better clothes.'"
+          ],
+          "options": [{ "label": "Right.", "goto": "root" }]
+        },
+        {
+          "id": "blood",
+          "text": [
+            "'The blood,' says {N} flatly. 'Yes. It is mine, I did not choose it, and it has never once got me a better price on anything.'",
+            "'Ah. That.' {N} does not appear surprised to be asked, which is worse than if they had. 'It comes up. It came up at the last three doors we knocked on. You will get used to it before I do, because I have had longer and I have not.'",
+            "'It is one grandparent and a great deal of talk,' says {N}. 'The talk is the part that follows you. The grandparent was, by all accounts, pleasant.'"
+          ],
+          "options": [
+            { "label": "It doesn't matter to me.", "goto": "bloodkind" },
+            { "label": "Understood.", "goto": "root" }
+          ]
+        },
+        {
+          "id": "bloodkind",
+          "text": [
+            "'It does, a bit. That is all right.' {N} almost smiles. 'It mattering a bit and you hiring me anyway is the good outcome. I have had the other one.'",
+            "'You say that now, and then something with my face on it comes out of a hole and you will have a moment. Have the moment. Just have it quietly.'"
+          ],
+          "options": [{ "label": "Back to it.", "goto": "root" }]
+        },
+        {
+          "id": "cut",
+          "text": [
+            "'{C} of the coin,' says {N}, without having to look it up. 'You agreed to it in an inn while I was sitting on a stool, and I have not raised it once since.'",
+            "'{C}.' A beat. 'You do know it, you just want to hear me say it, and I do not mind saying it.'",
+            "'{C} of the coin, none of the gear, and I carry my own. It is a good arrangement. I have had arrangements that were not, and this is how I know.'"
+          ],
+          "options": [
+            { "label": "Would you take less?", "goto": "haggle" },
+            { "label": "It's fair.", "goto": "cutfair" },
+            { "label": "Back to it.", "goto": "root" }
+          ]
+        },
+        {
+          "id": "haggle",
+          "text": [
+            "'No.' {N} says it pleasantly. 'I want you to notice that I did not think about it.'",
+            "'Would you?' asks {N}, and waits, and does not blink, and eventually you move on to something else.",
+            "'I would take less from somebody who had done me a favour,' says {N}. 'That is not a refusal. That is a rate card.'"
+          ],
+          "options": [{ "label": "Back to it.", "goto": "root" }]
+        },
+        {
+          "id": "cutfair",
+          "text": [
+            "'It is,' says {N}. 'That is why I have not raised it. Do not mistake that for me not having thought about raising it.'",
+            "{N} nods once. 'Say that again in front of the next person who tries to hire me out from under you.'"
+          ],
+          "options": [{ "label": "Back to it.", "goto": "root" }]
+        }
+      ]
+    }
+  ]
+}

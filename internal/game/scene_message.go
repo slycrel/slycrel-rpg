@@ -1,6 +1,9 @@
 package game
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
@@ -25,14 +28,134 @@ type messageScene struct {
 	portrait string
 	role     string
 
-	// typed is the body arriving a character at a time.
+	// pages is body cut into screenfuls, page is which one is up, and tall is
+	// the longest of them.
 	//
-	// It is built from body rather than replacing it, because the panel is
-	// sized off the full text and has to be: a box that grew as it filled
-	// would move the words already in it, and the reader would be chasing the
-	// line down the screen. body says how big the box is, typed says how much
-	// of it has been said.
+	// Everything that used to be true of one box is now true of one page: the
+	// panel is sized off the *whole* of the longest page rather than off what
+	// has arrived, because a box that grew as it filled would move the words
+	// already in it. Sizing to the longest rather than to the current one is
+	// the same rule applied across the page turn — a panel that resized between
+	// page two and page three would move the text for the same reason.
+	pages [][]string
+	page  int
+	tall  int
+
+	// typed is the current page arriving a character at a time.
 	typed *ui.Typewriter
+	// rate is kept so that turning the page can start another one. A message
+	// box outlives the frame it was pushed on and the pace setting is read
+	// once, at the top of the conversation, so that changing it mid-sentence
+	// cannot make one paragraph of a speech arrive faster than the last.
+	rate float64
+}
+
+// Long text, and the boxes that hold it.
+//
+// A message box has never had a limit, because nothing that used one had ever
+// been long: a sign is two lines, a chest is three, and a companion's beat was
+// written to the size of the box it was going to be read in. That is the
+// constraint being lifted — the writing should decide how long a speech is —
+// and the first thing that falls out of lifting it is that both layouts
+// overflow. The conversation panel clamps its own height and then draws the
+// text past the bottom of it; the notice panel computes its top edge from its
+// height and puts it off the top of the screen.
+//
+// So the body is cut into pages that fit, and the chevron that always meant
+// "press to go on" now sometimes means the next page and sometimes the end of
+// it. Which one is the only thing the player has to be told, and the counter in
+// the corner tells them.
+const (
+	// plainMaxH stops the notice box short of the top of the screen.
+	plainMaxH = render.ScreenH - 30
+	// The insets each layout puts around its text, which is what turns a height
+	// into a number of rows. Kept beside the two places that add them back on.
+	plainInset = 26
+	talkInset  = 24
+	// pageLookback is how far up a page will hunt for a paragraph break to end
+	// on instead of filling.
+	//
+	// Four rows. A page that stops where the gap is reads as deliberate; a page
+	// that stops halfway up because that was the nearest gap reads as a
+	// mistake, and the two are the same rule with a different number in it.
+	pageLookback = 4
+)
+
+// rows is how many lines of body this box can show at once.
+func (m *messageScene) rows() int {
+	avail, inset := float64(plainMaxH), float64(plainInset)
+	if m.portrait != "" {
+		avail, inset = talkMaxH, talkInset
+	}
+	avail -= inset
+	if len(m.choices) > 0 {
+		// The choices are only drawn on the last page, but the box is sized for
+		// them on every page: a panel that grew when the question arrived would
+		// move the answer the player is reading it for.
+		avail -= m.menu.Height() + 10
+	}
+	if n := int(avail / render.LineH); n > 0 {
+		return n
+	}
+	return 1
+}
+
+// paginate cuts already-wrapped lines into pages of at most rows lines.
+//
+// It ends a page on a paragraph break when there is one within pageLookback of
+// the bottom, because the blank line between two paragraphs is where a page
+// wants to turn and breaking one line past it leaves an orphan at the top of
+// the next. A page never begins with a blank line and never ends with one:
+// a leading gap is a line the reader has lost, and a trailing one makes the
+// chevron float away from the words it belongs to.
+func paginate(lines []string, rows int) [][]string {
+	if rows < 1 {
+		rows = 1
+	}
+	var pages [][]string
+	for len(lines) > 0 {
+		for len(lines) > 0 && strings.TrimSpace(lines[0]) == "" {
+			lines = lines[1:]
+		}
+		if len(lines) == 0 {
+			break
+		}
+		n := rows
+		if n >= len(lines) {
+			n = len(lines)
+		} else {
+			for i := n; i > rows-pageLookback && i > 1; i-- {
+				if strings.TrimSpace(lines[i-1]) == "" {
+					n = i - 1
+					break
+				}
+			}
+		}
+		page := lines[:n]
+		for len(page) > 0 && strings.TrimSpace(page[len(page)-1]) == "" {
+			page = page[:len(page)-1]
+		}
+		if len(page) > 0 {
+			pages = append(pages, page)
+		}
+		lines = lines[n:]
+	}
+	if len(pages) == 0 {
+		// A box with nothing in it is still a box. Somebody pushed it, and
+		// returning no pages would leave the typewriter with nothing to read.
+		pages = [][]string{{}}
+	}
+	return pages
+}
+
+// more reports whether there is another page after this one.
+func (m *messageScene) more() bool { return m.page < len(m.pages)-1 }
+
+// turn moves to the next page and starts typing it.
+func (m *messageScene) turn(g *Game) {
+	m.page++
+	m.typed = ui.NewTypewriter(m.pages[m.page], m.rate)
+	g.Sound.Play("ui/page")
 }
 
 // say builds the scene both constructors need, with the body already wrapped
@@ -43,7 +166,14 @@ type messageScene struct {
 // the signpost types and the shopkeeper does not is not a game with an effect,
 // it is a game with a bug somebody will report as one.
 func (g *Game) say(m *messageScene) *messageScene {
-	m.typed = ui.NewTypewriter(m.body, g.typeRate())
+	m.rate = g.typeRate()
+	m.pages = paginate(m.body, m.rows())
+	for _, p := range m.pages {
+		if len(p) > m.tall {
+			m.tall = len(p)
+		}
+	}
+	m.typed = ui.NewTypewriter(m.pages[0], m.rate)
 	return m
 }
 
@@ -176,6 +306,20 @@ func (m *messageScene) Update(g *Game) error {
 		return nil
 	}
 
+	// A page that is not the last one goes on, whatever was pressed.
+	//
+	// Including cancel, and deliberately: while there is more to read the only
+	// thing a key can mean is "go on", and a player who taps back halfway
+	// through a companion's story to see the rest of it would otherwise have
+	// walked out of the conversation. Backing out is an answer, so it waits
+	// until there is a question.
+	if m.more() {
+		if g.Dismiss() || g.Accept() || g.Back() {
+			m.turn(g)
+		}
+		return nil
+	}
+
 	if len(m.choices) == 0 {
 		// Anything at all closes a box that is only reporting. See Keystroke.
 		if g.Dismiss() {
@@ -222,8 +366,7 @@ func (m *messageScene) Draw(g *Game, dst *ebiten.Image) {
 		return
 	}
 
-	lines := len(m.body)
-	h := float64(lines)*render.LineH + 26
+	h := float64(m.tall)*render.LineH + plainInset
 	if len(m.choices) > 0 {
 		h += m.menu.Height() + 6
 	}
@@ -247,11 +390,26 @@ func (m *messageScene) Draw(g *Game, dst *ebiten.Image) {
 	if !m.typed.Done() {
 		return
 	}
-	if len(m.choices) > 0 {
+	if len(m.choices) > 0 && !m.more() {
 		m.menu.Draw(dst, 34, ty+4, render.ScreenW-80)
 	} else if (g.Tick()/24)%2 == 0 {
 		render.TextRight(dst, "v", render.ScreenW-28, y+h-16, render.ColGold)
 	}
+	m.drawCount(dst, render.ScreenW-28, y+8)
+}
+
+// drawCount is "2/4" in the corner of a box with more than one page in it.
+//
+// The chevron already says "press to go on" and has always said it; what it
+// cannot say is whether going on is another paragraph or the end of the
+// conversation. One box in the game used to mean one thing, and now that a
+// speech can run to four screens the difference is the whole of what a reader
+// needs to know before they decide to keep reading.
+func (m *messageScene) drawCount(dst *ebiten.Image, x, y float64) {
+	if len(m.pages) < 2 {
+		return
+	}
+	render.TextRight(dst, fmt.Sprintf("%d/%d", m.page+1, len(m.pages)), x, y, render.ColInkFaint)
 }
 
 // The conversation layout.
@@ -304,7 +462,7 @@ const (
 // stops at the face's own height, which is the floor a conversation cannot go
 // below anyway.
 func (m *messageScene) talkHeight() float64 {
-	text := float64(len(m.body))*render.LineH + 24
+	text := float64(m.tall)*render.LineH + talkInset
 	if len(m.choices) > 0 {
 		text += m.menu.Height() + 10
 	}
@@ -363,9 +521,10 @@ func (m *messageScene) drawTalk(g *Game, dst *ebiten.Image) {
 	}
 	// The choice sits under the text, not under the portrait, so the eye goes
 	// down one column instead of crossing back.
-	if len(m.choices) > 0 {
+	if len(m.choices) > 0 && !m.more() {
 		m.menu.Draw(dst, talkTextX+8, ty+6, talkW-(talkTextX-talkX)-26)
 	} else if (g.Tick()/24)%2 == 0 {
 		render.TextRight(dst, "v", talkX+talkW-12, talkY+h-16, render.ColGold)
 	}
+	m.drawCount(dst, talkX+talkW-12, talkY+6)
 }

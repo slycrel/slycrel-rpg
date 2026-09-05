@@ -70,6 +70,12 @@ func (s *localScene) Update(g *Game) error {
 		g.Push(newStatusScene(g))
 		return nil
 	}
+	// T is the company, and only when there is one. A key that opens an empty
+	// box teaches the player it does nothing, and they are right.
+	if inpututil.IsKeyJustPressed(ebiten.KeyT) && len(g.Allies) > 0 {
+		g.talkToCompany()
+		return nil
+	}
 
 	if g.Local.POI.Kind.Settlement() {
 		g.Sound.Ambience("amb/town")

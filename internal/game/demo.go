@@ -192,6 +192,13 @@ func buildDemoSteps() []demoStep {
 		{at: 298, shot: "07f-companion-sheet"},
 		{at: 302, do: func(g *Game) { g.dropOverlays() }},
 
+		// And a word with them, which is the other half of having hired
+		// somebody. The sheet says what they can carry; this is the screen
+		// where they are a person.
+		{at: 306, do: func(g *Game) { g.talkToCompany() }},
+		{at: 318, shot: "07g-talk"},
+		{at: 322, do: func(g *Game) { g.dropOverlays() }},
+
 		// A battle, staged against a group so the multi-target layout shows —
 		// and, now that there is a company, the party panel with it.
 		//
@@ -200,7 +207,7 @@ func buildDemoSteps() []demoStep {
 		// characters against three monsters is not a fight, it is a formality,
 		// and a tour that always ends in a wipe never shows what happens after
 		// one. It also leaves a more useful save fixture behind.
-		{at: 308, do: func(g *Game) {
+		{at: 326, do: func(g *Game) {
 			g.demoLevelParty(4)
 			// The real roll, shape and all, rather than three creatures stood
 			// in a line. What the tour is meant to show is the fight the game
@@ -211,28 +218,28 @@ func buildDemoSteps() []demoStep {
 				g.Push(newBattleScene(g, enc, "woods"))
 			}
 		}},
-		{at: 322, shot: "08-battle"},
-		{at: 328, do: func(g *Game) { g.demoOpenTechniques() }},
+		{at: 340, shot: "08-battle"},
+		{at: 346, do: func(g *Game) { g.demoOpenTechniques() }},
 		// With the popover open, which is one frame covering two things rather
 		// than the tour drifting: the list is still visible underneath, and
 		// the panel over it is the only place in the game that says what a
 		// technique does. A tour that skipped it would never capture the
 		// screen this whole feature exists to be.
-		{at: 336, do: func(g *Game) {
+		{at: 354, do: func(g *Game) {
 			if b, ok := g.Top().(*battleScene); ok {
 				b.blurb = true
 			}
 		}},
-		{at: 340, shot: "08b-techniques"},
-		{at: 346, do: func(g *Game) { g.demoRootMenu() }},
+		{at: 358, shot: "08b-techniques"},
+		{at: 364, do: func(g *Game) { g.demoRootMenu() }},
 
 		// Handing a companion something out of the pack, which is the cursor
 		// the party-versus-self rework exists for.
-		{at: 352, do: func(g *Game) { g.demoOfferItem() }},
-		{at: 364, shot: "08c-on-whom"},
-		{at: 370, do: func(g *Game) { g.demoRootMenu() }},
+		{at: 370, do: func(g *Game) { g.demoOfferItem() }},
+		{at: 382, shot: "08c-on-whom"},
+		{at: 388, do: func(g *Game) { g.demoRootMenu() }},
 
-		{at: 376, do: func(g *Game) { g.demoBattleAdvance() }},
+		{at: 394, do: func(g *Game) { g.demoBattleAdvance() }},
 		{at: 406, shot: "09-battle-resolving"},
 
 		// Then let it run to a conclusion rather than leaving it mid-round.

@@ -15,6 +15,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
 	"github.com/slycrel/slycrel-rpg/internal/saga"
+	"github.com/slycrel/slycrel-rpg/internal/talk"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 )
 
@@ -47,6 +48,9 @@ type Tables struct {
 	// in one. They live beside the rest of the writing rather than in the
 	// binary for the same reason everything else here does.
 	Threads thread.Book
+	// Talk is the conversation trees: what somebody you are travelling with
+	// says when you ask, and what asking makes available to ask next.
+	Talk talk.Book
 	// Sagas are the authored long stories: the spine that starts at the gate,
 	// and the short arcs found out in the world.
 	Sagas saga.Book
@@ -242,6 +246,16 @@ func Load(root string) (*Tables, error) {
 		return nil, err
 	}
 	if err := readJSON(filepath.Join(dd, "text", "threads.json"), &t.Threads); err != nil {
+		return nil, err
+	}
+	if err := readJSON(filepath.Join(dd, "text", "talk.json"), &t.Talk); err != nil {
+		return nil, err
+	}
+	// A broken conversation does not crash, which is the problem: it shows an
+	// option that leads nowhere, or hides a branch nobody can reach, and both
+	// look exactly like writing somebody has not finished. So it refuses to
+	// load, the way a monster with no name does.
+	if err := t.Talk.Check(); err != nil {
 		return nil, err
 	}
 

@@ -124,6 +124,12 @@ func (s *overworldScene) Update(g *Game) error {
 		g.Push(newStatusScene(g))
 		return nil
 	}
+	// T is the company, and only when there is one. A key that opens an empty
+	// box teaches the player it does nothing, and they are right.
+	if inpututil.IsKeyJustPressed(ebiten.KeyT) && len(g.Allies) > 0 {
+		g.talkToCompany()
+		return nil
+	}
 
 	// Walking onto a location walks in. Z was a second thing to do after the
 	// thing you had already done: nobody steps onto a town's tile by accident,

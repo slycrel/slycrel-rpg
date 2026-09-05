@@ -625,6 +625,33 @@ func (t *Thread) Note(b *Book) string {
 	return t.Fill(bt.Note)
 }
 
+// Told is the last thing this thread actually said out loud, filled in, or
+// empty if it has not said anything yet.
+//
+// A beat fires once, in the middle of a walk, and is gone. That was fine while
+// the only thing you could do with a companion was equip them; it is not fine
+// now that you can ask them about it, because "what was that about?" is the
+// single most obvious thing a player wants from a person who said something
+// cryptic four minutes ago and then went back to walking.
+//
+// At points at the beat being *waited on*, so the one that was said is the one
+// before it — and once the thread runs out of beats At sits one past the end,
+// which is the clamp below rather than a bug.
+func (t *Thread) Told(b *Book) string {
+	s, ok := b.Get(t.Skeleton)
+	if !ok || len(s.Beats) == 0 {
+		return ""
+	}
+	i := t.At - 1
+	if i >= len(s.Beats) {
+		i = len(s.Beats) - 1
+	}
+	if i < 0 {
+		return ""
+	}
+	return t.Fill(s.Beats[i].Text)
+}
+
 // Progress renders the counter for the journal, empty for the beats that have
 // no meaningful halfway — "arrive at the ruin" has none, and a step count is
 // one the player is not keeping. See Trigger.Shown.
