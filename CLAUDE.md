@@ -482,6 +482,17 @@ which event fires which trigger, and where it is safe to put a box on screen.
   a home, a row is nearly always better than a key: it costs no binding, it
   quotes its price in the detail column like every other row, and it can grey
   itself out — which is the rule the inn and the hiring board already follow.
+- **Depth replaces a walk with a descent; it must not multiply one.** Towers and
+  caves have floors and dungeons deliberately do not — a dungeon is already
+  eleven rooms with a boss in the furthest, and three of those is the same
+  dungeon three times. `world.Depth` is the switch, a floor of a many-levelled
+  place is smaller than a place with one floor, and `UsedKey` carries the floor
+  or opening a chest on the ground floor empties the one three storeys up.
+- **A transient place needs no save format.** A wayside is generated on a POI
+  that is not in the world's list, so `poiIndex` returns -1, the save records
+  the party on the overworld, and every caller of `currentPOIIndex` already
+  handled -1. Anything that wants to exist only until you walk away should look
+  for that seam before adding a field.
 - **A rate expressed as a chance per tick has a shape nobody chose.** The
   dungeon ambush was six per cent a step and averaged a fight every 21.3 steps,
   which is fine, while fifteen per cent of its gaps were eight steps or fewer

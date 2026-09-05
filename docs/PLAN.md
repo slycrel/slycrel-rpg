@@ -4130,6 +4130,77 @@ until the field boons are in it, which is the same rule this document keeps
 finding: a mechanic the simulator cannot see is one the balance pass is lying
 about.
 
+## Places with floors, and places that are not on the map
+
+Two features from the same playthrough, and they answer opposite halves of one
+complaint: that everywhere you can go is somewhere a marker already told you
+about, on one level.
+
+### A tower is a climb
+
+`KindTower` existed and fell through to `buildSite`, which is a tower in name
+and a shed in fact — one room, one chest, nothing above it. Towers and caves
+have two to four floors now, read off the location's own level so the deep
+places are the dangerous ones.
+
+The shapes are deliberately different. A dungeon is a plan you get lost in; a
+tower is a climb, so each floor is one room at twenty-six by fifteen, which is
+what fits the screen — you can see the stairs from the door and the interest is
+what stands between you and them. Caves keep the rooms-and-corridors plan at
+about a third of a dungeon's size, so three storeys is a little over one
+dungeon's walking rather than three dungeons of it.
+
+**A dungeon keeps its single floor and that is the interesting exclusion.** It
+is already the deep place: fifty-two by forty, eleven rooms, a boss in the
+furthest one. Three of those is not deeper, it is the same dungeon three times
+with the same boss at the end of the third. **Depth is worth having where it
+replaces a walk with a descent, not where it multiplies one.** One line if that
+turns out to be wrong.
+
+The boss and a hoard are on the last floor only. A hoard is a chest paid three
+times over with the gear roll guaranteed — not a second loot table, because a
+second one is a second thing to keep in step with the first, and what makes the
+bottom of a tower worth reaching is how much rather than what.
+
+Two things frames caught that the structure tests could not, and both are the
+same lesson at sixteen pixels. Three three-pixel treads with no gap between
+them is a grey rectangle, and a grey rectangle in the corner of a room is
+scenery — steps are read from the shadow under each tread. And nothing may
+stand within two tiles of a stair, because character art is sixty-four pixels
+tall on a sixteen-pixel grid, so a creature one square below the stairs draws
+over them completely. On a floor whose whole design is that you can see the far
+end, the far end was behind a goblin.
+
+### A wayside is weather
+
+A fire in a clearing with somebody selling something at it, reached by walking
+into a green mark. It arrives as the fifth boon rather than a fourth omen: three
+is what a marker can say at seven pixels, and a green ring already means "worth
+walking to" — that one of the good things turns out to be a *place* is a better
+surprise than a fourth colour nobody can read at dusk.
+
+Nothing about it is saved, which is the same argument the wanderer type already
+makes for itself: this format is a seed plus deltas, so a place that persisted
+would have to become one, and then every file written before today loads with
+none and every file after carries a list of campsites.
+
+The part worth keeping is how little that cost. A wayside's POI is not in the
+world's list, so `poiIndex` returns -1, so the save records the party standing
+on the overworld — which is where walking out would have put them. Every caller
+of `currentPOIIndex` already checked for -1, so quests do not advance here and
+no tracker points at it. **A feature that needs no special case is usually one
+that has found a seam that was already there.**
+
+One trade rather than a row of them, and a hireling rarer than in a town. A
+town has four counters, an inn, a hiring board and a name; a wayside is a person
+with a bag. That difference is most of what keeps this from making towns
+pointless.
+
+And the ambush test moved off the location kind onto the map. It asked whether
+the POI was a settlement, which was right until something turned up that is
+neither a settlement nor dangerous — a wayside is built on a `KindCamp`, so the
+party would have been jumped in the middle of somebody's supper.
+
 ## What is open, and in what order
 
 Rewritten after the session that answered items 2, 4 and half of 6, and found
