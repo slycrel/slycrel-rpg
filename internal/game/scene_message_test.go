@@ -130,14 +130,16 @@ func TestNoBoxDrawsPastItsOwnFrame(t *testing.T) {
 			// Checked before the "is the fixture long enough" guard below, so
 			// that a build with no paging in it fails on the overflow rather
 			// than on the sanity check that would have caught it second.
+			// What the contents want, not what the panel was clamped to.
+			// The clamped number is at most the maximum by construction, so a
+			// test that read it would report a pass while the text ran out of
+			// the bottom of the frame — which is the bug itself.
 			h := float64(m.tall)*render.LineH + plainInset
-			if m.portrait != "" {
-				h = m.talkHeight()
-			}
 			if len(m.choices) > 0 {
-				if m.portrait == "" {
-					h += m.menu.Height() + 6
-				}
+				h += m.menu.Height() + 6
+			}
+			if m.portrait != "" {
+				h = m.talkNeeds()
 			}
 			if h > tc.maxH {
 				t.Errorf("the box is %.0f tall in %.0f of room", h, tc.maxH)

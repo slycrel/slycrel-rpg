@@ -1,11 +1,14 @@
 package game
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/slycrel/slycrel-rpg/internal/model"
+	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/talk"
+	"github.com/slycrel/slycrel-rpg/internal/ui"
 )
 
 // A line may only name a thing the option that reached it guarantees exists.
@@ -282,5 +285,82 @@ func TestALineageAnswersInItsOwnVoice(t *testing.T) {
 	plain := &model.Character{Name: "X", Class: model.ClassFighter}
 	if got := voiceOf(plain, node); len(got) == 0 || got[0] != node.Text[0] {
 		t.Error("an ordinary person did not get the ordinary answer")
+	}
+}
+
+// The writing that ships fits the boxes that ship.
+//
+// Beats were written to the size of the box they were going to be read in, and
+// then paging lifted that constraint and the writing grew into it. The risk
+// runs the other way now: a box is sized off its longest page, a page is sized
+// off what is left after the menu, and the last beat of a thread shares its box
+// with the choice at the end of it — which is the tightest arrangement in the
+// game and the one nothing was checking.
+//
+// Every skeleton, every beat, every ending, against the real layout.
+func TestEveryLineOfWritingFitsTheBoxItIsReadIn(t *testing.T) {
+	g := storyGame(t)
+	lines := 0
+	check := func(what, body string, choices []string) {
+		t.Helper()
+		m := &messageScene{portrait: "face/x", body: render.Wrap(body, talkTextW)}
+		if len(choices) > 0 {
+			items := make([]ui.MenuItem, len(choices))
+			for i, c := range choices {
+				items[i] = ui.MenuItem{Label: c, Detail: "999 coins"}
+			}
+			m.choices = choices
+			m.menu.SetItems(items)
+		}
+		g.say(m)
+		lines++
+		if m.tall > m.rows() {
+			t.Errorf("%s: the longest page is %d rows in a box that shows %d",
+				what, m.tall, m.rows())
+		}
+		if m.talkNeeds() > talkMaxH {
+			t.Errorf("%s: the contents want %.0f pixels in %.0f of room",
+				what, m.talkNeeds(), float64(talkMaxH))
+		}
+	}
+
+	for i := range g.Data.Threads.Threads {
+		s := &g.Data.Threads.Threads[i]
+		var labels []string
+		for _, e := range s.Endings {
+			labels = append(labels, e.Label)
+		}
+		for j, b := range s.Beats {
+			// The last beat shares its box with the choice; the others do not.
+			if j == len(s.Beats)-1 {
+				check(fmt.Sprintf("%s beat %d + the choice", s.ID, j), b.Text, labels)
+				continue
+			}
+			check(fmt.Sprintf("%s beat %d", s.ID, j), b.Text, nil)
+		}
+		for _, e := range s.Endings {
+			check(fmt.Sprintf("%s / %s", s.ID, e.Label), e.Text, nil)
+		}
+	}
+
+	// And every line of every conversation, voices included.
+	for _, tr := range g.Data.Talk.Trees {
+		for _, n := range tr.Nodes {
+			all := append([]string(nil), n.Text...)
+			for _, v := range n.Voices {
+				all = append(all, v...)
+			}
+			var labels []string
+			for _, o := range n.Options {
+				labels = append(labels, o.Label)
+			}
+			for _, line := range all {
+				check(tr.ID+"/"+n.ID, line, labels)
+			}
+		}
+	}
+
+	if lines < 100 {
+		t.Errorf("only %d lines checked; the writing is not being reached", lines)
 	}
 }

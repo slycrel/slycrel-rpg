@@ -10,31 +10,31 @@
           "trigger": "travel",
           "need": 90,
           "note": "walk with them and let it come up",
-          "text": "{N} has been getting letters. You have not seen anybody deliver one. 'Old employer,' they say, folding it away. 'There is paperwork. There is always paperwork.'"
+          "text": "{N} has been getting letters. You have not seen anybody deliver one. They are always on top of the pack in the morning, always folded the same way, and the paper is better than anything sold in the towns you have been walking through.\n\n'Old employer,' they say, folding it away. 'There is paperwork. There is always paperwork.'\n\nYou ask whether they are going to read it. {N} says they already have, which does not answer the question you asked, and goes to see about the fire."
         },
         {
           "trigger": "fights",
           "need": 4,
           "note": "keep them in fights and see what slips",
-          "text": "{N} stops mid-swing and apologises to nobody in particular. Afterwards, unprompted: 'Not to you. There is a clause about enthusiasm and I am told I have been exceeding it.'"
+          "text": "{N} stops mid-swing and apologises to nobody in particular. The thing they were about to hit takes the opportunity, and the fight goes on around them for a moment while they stand there looking, briefly and unmistakably, embarrassed.\n\nAfterwards, unprompted: 'Not to you. There is a clause about enthusiasm and I am told I have been exceeding it.'\n\n'Told by whom.'\n\n'That is also in the clause,' says {N}, and starts cleaning their weapon with the particular thoroughness of somebody who has finished a conversation."
         },
         {
           "trigger": "reach",
           "note": "take them to {P}",
-          "text": "{N} regards {P} the way most people regard a dentist. 'This is where I signed. I would like the original back, and I would like to not discuss why on the walk in.'"
+          "text": "{N} regards {P} the way most people regard a dentist, which is to say from a distance, for slightly too long, having already decided to go in.\n\n'This is where I signed. I would like the original back, and I would like to not discuss why on the walk in.'\n\nThey check their pack twice on the approach. The letters are in it. All of them, in order, tied with something that is not string."
         }
       ],
       "endings": [
         {
           "label": "Burn it in front of them",
-          "text": "The document goes up fast, the way old paper does. {N} watches every word of it catch, then works their jaw like somebody testing a new tooth. The letters stop. Something quieter starts, and they do not mention it.",
+          "text": "The document goes up fast, the way old paper does, and for a moment the light off it is the brightest thing in {P}.\n\n{N} watches every word of it catch. They do not look away and they do not say anything, and when there is nothing left but the smell they work their jaw like somebody testing a new tooth.\n\nThe letters stop. You notice it about a week later, on a morning when the top of the pack is just the top of the pack. Something quieter starts around the same time, and they do not mention it, and neither do you.",
           "cut": -5,
           "xp": 22,
           "honor": 1
         },
         {
           "label": "Sell it back to the estate",
-          "text": "The estate pays promptly, which tells you what the contract was worth. {N} takes the news like a professional, which is to say entirely, and calls you 'employer' for a week afterwards without once making it sound like a compliment.",
+          "text": "The estate pays promptly, which tells you what the contract was worth and, by a short walk, what {N} was worth to them.\n\n{N} takes the news like a professional, which is to say entirely. They ask what the figure was. They do not react to the figure. They ask whether the receipt was made out in their name, and when you say it was, they nod once as though a small thing has been confirmed.\n\nThey call you 'employer' for a week afterwards without once making it sound like a compliment.",
           "coins": 48,
           "cut": 3,
           "honor": -1
@@ -51,24 +51,24 @@
           "trigger": "travel",
           "need": 70,
           "note": "walk with them and let it come up",
-          "text": "{N} will not eat in front of anyone. On the fourth night they explain that it is not a religious thing, it is a scheduling thing, and then they explain nothing further for two days."
+          "text": "{N} will not eat in front of anyone. They take their share, thank you for it, and walk out to the edge of the firelight with it, and come back with an empty bowl and nothing to say about the interval.\n\nOn the fourth night they explain that it is not a religious thing, it is a scheduling thing.\n\nThen they explain nothing further for two days, and eat at the edge of the firelight, and are perfectly pleasant about everything else."
         },
         {
           "trigger": "kills",
           "need": 3,
           "note": "put down {X} where they can count them",
-          "text": "{N} counts each {X} out loud as it goes down. At three they stop counting and look relieved in a way that does not suit their face at all."
+          "text": "{N} counts each {X} out loud as it goes down. Not the way you count enemies, which is quick and quiet and about survival -- slowly, and clearly, and with the number said again afterwards.\n\nAt three they stop counting and look relieved in a way that does not suit their face at all.\n\n'Three was the number, then.'\n\n'Three was a number,' says {N}. 'There are others. That one was mine.'"
         },
         {
           "trigger": "reach",
           "note": "take them to {P}",
-          "text": "'{P},' says {N}. 'Witnessed here. Do not sign anything, do not accept a drink, and whatever else happens, do not compliment the furniture.'"
+          "text": "'{P},' says {N}. 'Witnessed here.'\n\nThey stop you at the threshold with one hand, not urgently, the way somebody stops you before you walk into a low beam.\n\n'Do not sign anything, do not accept a drink, and whatever else happens, do not compliment the furniture.'\n\nYou ask what happens if you compliment the furniture. {N} says that it is not a trap, exactly, and that this is the most reassuring answer they have."
         }
       ],
       "endings": [
         {
           "label": "Buy out the terms",
-          "text": "The sum is large and the receipt is a small cold weight in your pocket for about an hour before it stops existing. {N} does not thank you. They do start eating in front of people, which from them is a speech.",
+          "text": "The sum is large. It is large enough that the purse afterwards feels wrong in the hand, lighter in a way that keeps announcing itself, and the receipt is a small cold weight in your pocket for about an hour before it stops existing.\n\nYou check the pocket. There was definitely a receipt. There is definitely no receipt.\n\n{N} does not thank you. They do start eating in front of people, which from them is a speech, and the first time they do it they keep going as though nothing is happening and nobody at the fire says a word.",
           "coins": -38,
           "cut": -6,
           "xp": 18,
@@ -76,7 +76,7 @@
         },
         {
           "label": "Let it stand",
-          "text": "The arrangement continues, and the arrangement pays. {N} accepts this the way you accept weather. 'It was always going to,' they say. 'That is the shape of it.' They are cheerful for a week, which is much worse.",
+          "text": "The arrangement continues, and the arrangement pays. Whatever it is, it is prompt, and the coin turns up in denominations nobody in the party can place.\n\n{N} accepts this the way you accept weather. 'It was always going to,' they say. 'That is the shape of it. You do not buy out of the shape of a thing, you buy out of the terms, and the terms are the cheap part.'\n\nThey are cheerful for a week, which is much worse.",
           "coins": 30,
           "shame": 1,
           "honor": -1
@@ -93,30 +93,30 @@
           "trigger": "travel",
           "need": 80,
           "note": "walk with them and let it come up",
-          "text": "{N} has started sleeping outside the camp, facing out. They say the fire ruins their night vision. This is true. It is not the reason."
+          "text": "{N} has started sleeping outside the camp, facing out. Not far out -- eight or ten paces, at the edge of where the light gives up, close enough to be first at anything and far enough to be alone with it.\n\nThey say the fire ruins their night vision. This is true.\n\nIt is not the reason."
         },
         {
           "trigger": "town",
           "note": "walk them into a town and watch",
-          "text": "In the street somebody calls {N} by a name you did not hire. {N} does not turn round, does not break stride, and does not say another word for four streets."
+          "text": "In the street somebody calls {N} by a name you did not hire.\n\n{N} does not turn round, does not break stride, and does not say another word for four streets. When they do speak it is about the road out and the weather on it, in a voice pitched exactly like every other time they have talked about the road out.\n\nBehind you the person who shouted is still standing where they were, watching the pair of you go, and they do not shout again."
         },
         {
           "trigger": "reach",
           "note": "take them to {P}",
-          "text": "{P}. {N} goes quiet a hundred paces out and stays quiet. Then: 'They will be smaller than I remember. Everything is. I would like to get this over with.'"
+          "text": "{P}. {N} goes quiet a hundred paces out and stays quiet.\n\nThey have been quiet before -- on watch, on bad ground, after fights that went longer than they should have. This is not that quiet. This is the quiet of somebody doing arithmetic they already know the answer to.\n\nThen: 'They will be smaller than I remember. Everything is. I would like to get this over with.'"
         }
       ],
       "endings": [
         {
           "label": "Go in with them",
-          "text": "It is dark and it smells of animal and old smoke, and whatever meeting happens in there happens in a language with no words in it. {N} comes out walking differently. They do not explain and you do not ask.",
+          "text": "It is dark and it smells of animal and old smoke, and every surface in there has been worn smooth by something that was not hands.\n\nWhatever meeting happens in there happens in a language with no words in it. There is a long silence, and then a sound like weather, and then another silence that is a different shape from the first one.\n\n{N} comes out walking differently. Not better or worse -- differently, the way somebody walks who has put down a thing they had stopped noticing they were carrying. They do not explain and you do not ask.",
           "cut": -4,
           "xp": 26,
           "fame": 1
         },
         {
           "label": "Wait outside",
-          "text": "You wait. It takes a while. {N} comes out alone carrying something wrapped, sells it in the next town without discussion, and hands you the larger half. Neither of you raises the subject again.",
+          "text": "You wait. It takes a while. You have time to check your gear twice and to think, at some length, about whether waiting was cowardice or manners, and to fail to settle it.\n\n{N} comes out alone carrying something wrapped. They do not offer to show you and you do not look at the shape of it too closely.\n\nThey sell it in the next town without discussion, at a counter you would not have chosen, for a figure you would not have accepted, and hand you the larger half. Neither of you raises the subject again.",
           "coins": 34
         }
       ]
@@ -131,31 +131,31 @@
           "trigger": "travel",
           "need": 60,
           "note": "walk with them and let it come up",
-          "text": "{N} cannot lie, as they mention often, in sentences built with the care of a load-bearing wall. Tonight one of them fails halfway through and they sit down in the road."
+          "text": "{N} cannot lie, as they mention often, in sentences built with the care of a load-bearing wall. Every clause holds up something. Nothing is ever quite the thing you asked about, and every word of it is true.\n\nTonight one of them fails halfway through. You watch it happen -- the sentence going out over open ground with no support under it -- and so do they.\n\nThey sit down in the road. Not dramatically. The way you sit down when your leg has decided the matter for you."
         },
         {
           "trigger": "fights",
           "need": 5,
           "note": "keep them in fights and see what slips",
-          "text": "'I am glad you are alive,' says {N} after the fight, and then stands very still, apparently checking whether it went through unchallenged."
+          "text": "'I am glad you are alive,' says {N} after the fight, and then stands very still, apparently checking whether it went through unchallenged.\n\nNothing objects. The wind carries on. Somewhere behind you somebody is being sick in a hedge.\n\n'Right,' says {N}, to themselves, and writes it down. You did not know they wrote things down."
         },
         {
           "trigger": "reach",
           "note": "take them to {P}",
-          "text": "At {P} something is owed to {N} that they are not permitted to ask for, on account of asking being a kind of lying if you already know the answer. They look at you meaningfully. That is the whole of it."
+          "text": "At {P} something is owed to {N} that they are not permitted to ask for, on account of asking being a kind of lying if you already know the answer.\n\nThey have explained this three times on the walk in, each time from a different angle, each time ending slightly earlier than the last.\n\nNow they are standing in front of it and they look at you meaningfully. That is the whole of it. That is the entire mechanism of the thing, and it has been the entire mechanism for longer than you have known them."
         }
       ],
       "endings": [
         {
           "label": "Ask on their behalf",
-          "text": "You ask. It is a small thing, said out loud, and the thing at {P} hands it over with the bad grace of a clerk at closing. {N} does not thank you, because that would also be a kind of lying, and instead is unbearably pleasant for a month.",
+          "text": "You ask. It is a small thing, said out loud, and it takes about four seconds.\n\nThe thing at {P} hands it over with the bad grace of a clerk at closing, and there is a moment where the whole arrangement is visible: how long this has been waiting, and how little it needed, and how completely {N} could not do it.\n\n{N} does not thank you, because that would also be a kind of lying, and instead is unbearably pleasant for a month.",
           "cut": -6,
           "xp": 20,
           "honor": 1
         },
         {
           "label": "Make them find the words",
-          "text": "It takes {N} most of an hour and it is not comfortable to watch. What they eventually construct is technically true, structurally magnificent, and answered with something heavy and unpleasantly warm. They insist you take half.",
+          "text": "It takes {N} most of an hour and it is not comfortable to watch.\n\nThey start four times. Twice they get far enough that you think it is going to hold, and both times something in the middle of the sentence gives way and they stop, and stand there, and begin again from a different word.\n\nWhat they eventually construct is technically true, structurally magnificent, and answered without comment by something heavy and unpleasantly warm. {N} looks at it, and then at you, and insists you take half.",
           "coins": 32,
           "cut": 2,
           "fame": 1
@@ -172,31 +172,31 @@
           "trigger": "travel",
           "need": 100,
           "note": "walk with them and let it come up",
-          "text": "{N} keeps a jar. The jar, in a sense they decline to unpack, also keeps {N}. It is corked. It is always the last thing packed and the first thing checked."
+          "text": "{N} keeps a jar. The jar, in a sense they decline to unpack, also keeps {N}.\n\nIt is corked. It is always the last thing packed and the first thing checked, and on the two occasions the pack has gone over on bad ground {N} has been off the road and kneeling before anybody else registered the noise.\n\nAsked what is in it, they say 'not much now'."
         },
         {
           "trigger": "kills",
           "need": 3,
           "note": "put down {X} where they can see",
-          "text": "{N} holds the jar up to each {X} as it falls, the way you show a child a parade. 'He would have liked that one,' they say, of nobody you have met."
+          "text": "{N} holds the jar up to each {X} as it falls, the way you show a child a parade. Both hands. Level with their own eyes, and then a little higher.\n\n'He would have liked that one,' they say, of nobody you have met.\n\nIt is not said sadly. That is the part you keep turning over afterwards: it is said the way you would pass on a joke to somebody in the next room."
         },
         {
           "trigger": "reach",
           "note": "take them to {P}",
-          "text": "'{P},' says {N}, and sets the jar down on a rock with enormous care. 'He asked to be brought here. He asked a lot of things. This is the one I can still do.'"
+          "text": "'{P},' says {N}, and sets the jar down on a rock with enormous care, and then adjusts it, and then adjusts it back.\n\n'He asked to be brought here. He asked a lot of things. Most of them were about the tide, and about whether I had eaten, and about a man called Ardal who I have never been able to find.'\n\nThey straighten up. 'This is the one I can still do.'"
         }
       ],
       "endings": [
         {
           "label": "Help them bury it",
-          "text": "The ground is bad and it takes both of you the better part of the afternoon. {N} says a few words that are mostly logistics. Afterwards they are lighter by about a jar, and by rather more than that.",
+          "text": "The ground is bad and it takes both of you the better part of the afternoon. Twice you hit rock and start again a pace to the left, and {N} does not once suggest that anywhere else would do.\n\nWhen it is deep enough they say a few words that are mostly logistics -- where this is, how far it is from the water, what the weather is doing.\n\nAfterwards they are lighter by about a jar, and by rather more than that.",
           "cut": -4,
           "xp": 24,
           "honor": 1
         },
         {
           "label": "Tell them to keep it",
-          "text": "{N} thinks about it for a long moment and then packs the jar away again, visibly relieved and visibly ashamed of being relieved. Somebody in the next town pays absurdly well for a look at it. You split that.",
+          "text": "{N} thinks about it for a long moment. The rock is right there and so is the jar and so, for that matter, is the afternoon.\n\nThen they pack it away again, visibly relieved and visibly ashamed of being relieved, and are noticeably brisk about getting back on the road.\n\nSomebody in the next town pays absurdly well for a look at it. {N} negotiates. {N} is *good* at negotiating, which is new information. You split that.",
           "coins": 36,
           "shame": 1
         }
@@ -212,30 +212,30 @@
           "trigger": "travel",
           "need": 85,
           "note": "walk with them and let it come up",
-          "text": "{N} has been counting their own steps since the day you hired them and will tell you the number if asked. It is correct. It has been correct every time you have checked."
+          "text": "{N} has been counting their own steps since the day you hired them and will tell you the number if asked.\n\nIt is correct. It has been correct every time you have checked, including the time you counted a thousand of them yourself out of pure suspicion and lost your place twice and had to take their word for the remainder anyway.\n\nThey do not appear to be concentrating on it. They do it while talking, while eating, and, as far as anyone can establish, while asleep."
         },
         {
           "trigger": "town",
           "note": "walk them into a town and watch",
-          "text": "A man in a good coat follows you for two streets, writing, and leaves when {N} looks at him. 'They keep notes,' {N} says. 'I would quite like to read them. I am the subject.'"
+          "text": "A man in a good coat follows you for two streets, writing. He is not subtle about it and he is not nervous about it either, which between them are worse than one or the other.\n\nHe leaves when {N} looks at him. Not hurriedly. He finishes the line first.\n\n'They keep notes,' {N} says. 'I would quite like to read them. I am the subject.'"
         },
         {
           "trigger": "reach",
           "note": "take them to {P}",
-          "text": "The notes are at {P}, in a box, in an order somebody thought about. {N} stands in front of it with their hands behind their back like a person at a graveside."
+          "text": "The notes are at {P}, in a box, in an order somebody thought about. The box is not locked. That is somehow the worst detail available: whoever filled it never expected the subject to come and collect.\n\n{N} stands in front of it with their hands behind their back like a person at a graveside, and does not reach for it, and does not move.\n\n'Nineteen years of somebody else's opinion of me,' they say. 'It is a lot to have in a box.'"
         }
       ],
       "endings": [
         {
           "label": "Burn the notes unread",
-          "text": "{N} does not read a page of it, which you suspect took more out of them than the walk. The fire is brief and thorough. 'Now nobody has established what,' they say, apparently pleased. 'Including me.'",
+          "text": "{N} does not read a page of it, which you suspect took more out of them than the walk did.\n\nThey lift the box, they hold it for a moment at arm's length as though weighing something that is not its weight, and then it goes on the fire whole. The fire is brief and thorough. The box burns better than the paper does.\n\n'Now nobody has established what,' they say, apparently pleased. 'Including me.'",
           "cut": -5,
           "xp": 25,
           "honor": 1
         },
         {
           "label": "Sell them to the college",
-          "text": "The college pays without haggling, which is how you learn what {N} is worth on paper. {N} reads the receipt with great interest and asks to keep it. They are noticeably easier company and noticeably more expensive.",
+          "text": "The college pays without haggling, which is how you learn what {N} is worth on paper.\n\nThey pay in one go, in front of witnesses, and the man who counts it out does not once look at {N}, who is standing next to you the entire time being extremely polite to everybody.\n\n{N} reads the receipt with great interest and asks to keep it. They are noticeably easier company afterwards and noticeably more expensive, and if there is a connection between those two things they have not offered it.",
           "coins": 44,
           "cut": 3,
           "honor": -1
@@ -251,24 +251,24 @@
           "trigger": "travel",
           "need": 70,
           "note": "walk with them and let it come up",
-          "text": "{N} counts their cut twice every time, and puts most of it somewhere that is not a pocket. Asked about it, they say 'it is spoken for' in the voice of somebody quoting."
+          "text": "{N} counts their cut twice every time. Once when you hand it over and once again later, out of sight, when they think nobody is looking -- and they are wrong about that, because you have been watching people count money for a living for some time now.\n\nMost of it goes somewhere that is not a pocket.\n\nAsked about it, they say 'it is spoken for' in the voice of somebody quoting."
         },
         {
           "trigger": "fights",
           "need": 4,
           "note": "keep them in fights and see what slips",
-          "text": "{N} takes a bad hit and says a name on the way down. It is not yours and it is not theirs, and when they get up they are extremely keen to talk about anything else."
+          "text": "{N} takes a bad hit and says a name on the way down.\n\nIt is not yours and it is not theirs. It is two syllables, and it is said the way you say a name to somebody who is in the room.\n\nWhen they get up they are extremely keen to talk about anything else, and they talk about anything else for the rest of the day, at length, on subjects they have never previously shown any interest in whatsoever."
         },
         {
           "trigger": "reach",
           "note": "take them to {P}",
-          "text": "The sum is owed in {P}, and has been for long enough to have grown a personality. {N} is very calm about this in the way of somebody who has rehearsed being calm about it."
+          "text": "The sum is owed in {P}, and has been for long enough to have grown a personality.\n\n{N} lays it out on the walk in with the flatness of a bill of lading: how much, since when, to whom, and what has been added to it since by people who were entitled to add things.\n\nThey are very calm about all of this, in the way of somebody who has rehearsed being calm about it, on the road, alone, more than once."
         }
       ],
       "endings": [
         {
           "label": "Settle it out of the purse",
-          "text": "The debt is smaller than the dread of it, which is how debts work. {N} watches it get paid, says 'right', and then says 'right' again about ten minutes later, out on the road, to nobody.",
+          "text": "The debt is smaller than the dread of it, which is how debts work.\n\n{N} watches it get paid. They watch the whole transaction, every stage of it, including the part where the clerk rules a line through the entry and blots it, and they do not say anything until it is done.\n\nThen they say 'right'. And then, about ten minutes later, out on the road, to nobody, they say 'right' again.",
           "coins": -30,
           "cut": -5,
           "xp": 16,
@@ -276,7 +276,7 @@
         },
         {
           "label": "Introduce yourself to the creditor",
-          "text": "You have a conversation. It is not a long one and nothing is broken. The terms afterwards are extremely reasonable, and {N} looks at you for the rest of the day as though recalculating something.",
+          "text": "You have a conversation. It is not a long one and nothing is broken.\n\nThe creditor is a reasonable person who has been dealing with an unreasonable situation for some years and who has, you get the strong impression, been dreading this meeting rather more than {N} has.\n\nThe terms afterwards are extremely reasonable. {N} looks at you for the rest of the day as though recalculating something, and asks, once, quite carefully, what exactly you said.",
           "fame": 1,
           "shame": 1,
           "cut": -2,
@@ -294,24 +294,24 @@
           "trigger": "travel",
           "need": 60,
           "note": "walk with them and let it come up",
-          "text": "{N} asks, casually, whether {X} ever drops {I}. Then asks again the next day, and the day after that, each time as though for the first."
+          "text": "{N} asks, casually, whether {X} ever drops {I}.\n\nThen asks again the next day, and the day after that, each time as though for the first, each time with the same studied lack of interest and the same half-second pause before the question.\n\nOn the fourth day you say yes, sometimes. {N} says 'huh', and does not ask again for a week, which is how you know it was the answer they wanted."
         },
         {
           "trigger": "kills",
           "need": 3,
           "note": "put down {X} until they say when",
-          "text": "Three of them down, and {N} has been through all three with a knife and an expression of mounting professional disappointment. 'Not that one either.'"
+          "text": "Three of them down, and {N} has been through all three with a knife and an expression of mounting professional disappointment.\n\n'Not that one either.'\n\nThey clean the knife. They are not sulking -- it is worse than sulking, it is patient, and it is the patience of somebody who has done this on their own for years and has an unexamined amount of time budgeted for doing it on their own for years more."
         },
         {
           "trigger": "reach",
           "note": "take them to {P}",
-          "text": "'The big one is at {P},' says {N}. 'It has been at {P} for eleven years. I have been not going to {P} for eleven years. Those two facts are related.'"
+          "text": "'The big one is at {P},' says {N}.\n\n'It has been at {P} for eleven years. I have been not going to {P} for eleven years. Those two facts are related.'\n\nThey say it looking at the horizon rather than at you, and then they check their gear, which they checked an hour ago, and then they check it again."
         }
       ],
       "endings": [
         {
           "label": "Let them take the shot",
-          "text": "{N} takes it. It is not clean and it is not quick and nobody says anything encouraging while it is happening. Afterwards they hold up {I} in both hands and look at it for a very long time, and then put it in a pocket like a receipt.",
+          "text": "{N} takes it.\n\nIt is not clean and it is not quick and nobody says anything encouraging while it is happening, because the one thing you can see clearly from where you are standing is that encouragement would be an insult.\n\nAfterwards they hold up {I} in both hands and look at it for a very long time. Long enough that you start to wonder. Then they put it in a pocket like a receipt, and say that they should like to get moving before dark.",
           "cut": -5,
           "xp": 22,
           "fame": 1,
@@ -319,7 +319,7 @@
         },
         {
           "label": "Take it yourself and hand it over",
-          "text": "You do it. It is easier than it should be, and that is the problem: {N} is grateful, thoroughly and out loud, and something goes out of them that you cannot put back. They ask for a bigger share the following week and you give it.",
+          "text": "You do it. It is easier than it should be, and that is the problem.\n\n{N} is grateful, thoroughly and out loud, in front of everybody, at a length that goes past the point where you can enjoy it and out the other side.\n\nSomething goes out of them that you cannot put back. They ask for a bigger share the following week and you give it, and you would have given it anyway, and both of you know that.",
           "coins": 26,
           "cut": 4,
           "honor": -1
@@ -334,24 +334,24 @@
         {
           "trigger": "town",
           "note": "walk them into a town and watch",
-          "text": "{N} does not go into the tavern. {N} waits outside the tavern, at an angle, with a view of both doors, and is unable to give a reason that survives being said out loud."
+          "text": "{N} does not go into the tavern.\n\n{N} waits outside the tavern, at an angle, with a view of both doors, and does it so naturally that it takes you three towns to notice it is a habit rather than a preference.\n\nAsked, they give a reason. It is a decent reason. It is unable to survive being said out loud, and both of you hear it fail, and neither of you says so."
         },
         {
           "trigger": "travel",
           "need": 80,
           "note": "walk with them and let it come up",
-          "text": "The name you hired {N} under is on a list somewhere, they explain, along with a description that is unfair and a sum that is not. The sum is the part they resent."
+          "text": "The name you hired {N} under is on a list somewhere, they explain, along with a description that is unfair and a sum that is not.\n\nThe description, they say, has them a head taller and considerably better looking, which they have decided to be annoyed about on principle.\n\nThe sum is the part they resent. 'It is not even a good sum. I have done things worth a great deal more than that and they were not on the list at all.'"
         },
         {
           "trigger": "reach",
           "note": "take them to {P}",
-          "text": "The list is kept in {P}, and so is the man who keeps it. {N} points this out, waits, and then adds: 'I am not asking. I am describing a situation.'"
+          "text": "The list is kept in {P}, and so is the man who keeps it.\n\n{N} points this out on the road in, in the tone of somebody remarking on the crop rotation, and then waits an entire mile before adding: 'I am not asking. I am describing a situation.'\n\nYou point out that they have described the situation four times. {N} agrees that they have."
         }
       ],
       "endings": [
         {
           "label": "Have the name struck off",
-          "text": "It costs what it costs and the clerk does not look up once. {N} reads the amended page twice, mouths their own name off it, and is unreasonably good company for a fortnight.",
+          "text": "It costs what it costs and the clerk does not look up once, which is either professional discretion or complete indifference and is, for your purposes, identical.\n\n{N} reads the amended page twice. Then they mouth their own name off it, silently, the way you check a word you have only ever seen written down.\n\nThey are unreasonably good company for a fortnight, and they go into the next tavern first.",
           "coins": -34,
           "cut": -6,
           "xp": 18,
@@ -359,7 +359,7 @@
         },
         {
           "label": "Have it sold to somebody else",
-          "text": "There is always a market for a name with a sum attached. The buyer is delighted, the clerk is incurious, and {N} is now legally somebody with a much worse reputation and considerably more money.",
+          "text": "There is always a market for a name with a sum attached, and it turns out there is a fairly brisk one.\n\nThe buyer is delighted. The clerk is incurious. The whole thing takes less time than the argument about whether to do it.\n\n{N} is now legally somebody with a much worse reputation and considerably more money, and spends the walk out trying on the new name in different tones of voice to see which of them they can stand.",
           "coins": 40,
           "shame": 1,
           "cut": 2,
@@ -409,7 +409,7 @@
         {
           "trigger": "return",
           "note": "go to {P}, then come back and tell {N}",
-          "text": "'You will be going out that way,' says {N}. It is not a question. 'My brother went to {P}. Eight months ago. He was not a brave man, which is why I have not gone to look — I am the one he got it from.'"
+          "text": "'You will be going out that way,' says {N}. It is not a question. 'My brother went to {P}. Eight months ago. He was not a brave man, which is why I have not gone to look \u2014 I am the one he got it from.'"
         },
         {
           "trigger": "reach",
@@ -486,7 +486,7 @@
       "endings": [
         {
           "label": "Tell them what is out there",
-          "text": "You describe it. {N} takes it in the way somebody takes a diagnosis — carefully, and without interrupting once. At the end they say 'good' twice, meaning it differently each time, and go back to work with the look of a person who has stopped waiting for something.",
+          "text": "You describe it. {N} takes it in the way somebody takes a diagnosis \u2014 carefully, and without interrupting once. At the end they say 'good' twice, meaning it differently each time, and go back to work with the look of a person who has stopped waiting for something.",
           "xp": 22,
           "honor": 1
         },

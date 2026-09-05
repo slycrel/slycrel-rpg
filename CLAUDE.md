@@ -568,6 +568,11 @@ which event fires which trigger, and where it is safe to put a box on screen.
   `go test ./internal/...`, or pass any command (`./scripts/test-headless.command
   go run ./cmd/slycrel -demo`). First run is minutes, the rest are seconds.
   The host path is still faster when the screen is awake.
+- **One unreproduced segfault, 5 Sep 2026.** `-demo` died once with a nil
+  dereference in the draw path, immediately after the conversation step was
+  added to the tour. It has not recurred in 15 further runs or a sweep of 20
+  fixed world seeds, and no cause was found. Recorded rather than fixed, so
+  that whoever sees the second one knows there was a first.
 - **A worktree has no art.** `assets-raw/` is gitignored, so a `git worktree`
   gets the manifest and none of the files it points at, and the two tests that
   probe the registry fail on missing portraits and effects — which reads as a
@@ -602,6 +607,18 @@ checked by breaking the thing it protects.
   than the room's synthetic POI, and each room has an address of its own so a
   hireling hired at {16,4} in the inn does not also delete whatever stands on
   {16,4} out in the street.
+- `TestEveryLineOfWritingFitsTheBoxItIsReadIn` — every beat, ending and
+  conversation line in the shipped data, against the real layout. It measures
+  `talkNeeds` rather than `talkHeight`: the latter is clamped to the maximum by
+  construction, so a test reading it watches text run out of the bottom of a
+  frame and reports a pass. That is not hypothetical — it is how the overflow
+  got there, and the first version of this test made the same mistake.
+- `TestNoLineNamesSomethingItsWayInDoesNotGuarantee` — that `{S}` and `{W}` are
+  only reachable through the conditions that make them true. It is a
+  *must*-analysis and the first draft was a may-analysis, which passed when
+  provoked: a conversation is a graph with cycles, almost every branch offers a
+  way back to the opening, and under a union the opening inherits every gate
+  anything ever passed.
 - `TestAHouseholdReadsYouBeforeItDecidesWhatToDo` — the first place reputation
   costs or pays rather than tinting a line of dialogue, and that it does so
   once. The tour's hero is level one and reads as nobody, so no frame of it can

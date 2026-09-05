@@ -462,6 +462,22 @@ const (
 // stops at the face's own height, which is the floor a conversation cannot go
 // below anyway.
 func (m *messageScene) talkHeight() float64 {
+	h := m.talkNeeds()
+	if h > talkMaxH {
+		h = talkMaxH
+	}
+	return h
+}
+
+// talkNeeds is the height the contents actually want, before the clamp.
+//
+// Split out because the clamp makes talkHeight useless as a measurement: it
+// answers "how tall is the panel", which is at most talkMaxH by construction,
+// and the question worth asking is "does what goes in it fit" — which is how a
+// panel came to be drawn at its maximum height with three rows of text hanging
+// out of the bottom of it, with nothing able to say so. A test that asserted on
+// the clamped number would have watched that happen and reported a pass.
+func (m *messageScene) talkNeeds() float64 {
 	text := float64(m.tall)*render.LineH + talkInset
 	if len(m.choices) > 0 {
 		text += m.menu.Height() + 10
@@ -474,14 +490,10 @@ func (m *messageScene) talkHeight() float64 {
 		}
 		face += float64(n) * render.LineH
 	}
-	h := text
-	if face > h {
-		h = face
+	if face > text {
+		return face
 	}
-	if h > talkMaxH {
-		h = talkMaxH
-	}
-	return h
+	return text
 }
 
 func (m *messageScene) drawTalk(g *Game, dst *ebiten.Image) {
