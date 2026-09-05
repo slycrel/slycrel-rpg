@@ -36,7 +36,7 @@ func (g *Game) converse(c *model.Character, tr *talk.Tree, id string) {
 	if !ok || len(n.Text) == 0 {
 		return
 	}
-	body := g.fillTalk(c, core.Pick(g.RNG, n.Text))
+	body := g.fillTalk(c, core.Pick(g.RNG, voiceOf(c, n)))
 
 	opts := g.openTo(c, n.Options)
 	if len(opts) == 0 {
@@ -58,6 +58,23 @@ func (g *Game) converse(c *model.Character, tr *talk.Tree, id string) {
 			g.converse(c, tr, to)
 		}
 	})
+}
+
+// voiceOf is the version of a line this particular person would say.
+//
+// Lineage before class, because the blood is the more distinctive fact and it
+// is what the sales pitch already leads with — a part-undead thief and a
+// part-undead fighter have more in common in a conversation than two thieves
+// do. Falling through to Text is the ordinary case: most people are just
+// people, and there is nothing to say about that in a special voice.
+func voiceOf(c *model.Character, n *talk.Node) []string {
+	if v := n.Voices[string(c.Blood)]; len(v) > 0 {
+		return v
+	}
+	if v := n.Voices[string(c.Class)]; len(v) > 0 {
+		return v
+	}
+	return n.Text
 }
 
 // openTo is the options this person can currently be asked, in the order they

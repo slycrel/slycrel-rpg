@@ -24,6 +24,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/slycrel/slycrel-rpg/internal/model"
 )
 
 // Need is a condition on an option, drawn from a closed vocabulary.
@@ -81,6 +83,21 @@ func init() {
 	}
 }
 
+// voices is who a Node.Voices key may name: every lineage a hireling can carry,
+// and every class they can ply. Built from the model's own tables rather than
+// written out again, because a second list of the lineages is a second list to
+// forget to update.
+var voices = func() map[string]bool {
+	m := map[string]bool{}
+	for _, l := range model.Lineages {
+		m[string(l.Kind)] = true
+	}
+	for _, c := range []model.Class{model.ClassFighter, model.ClassThief, model.ClassMage} {
+		m[string(c)] = true
+	}
+	return m
+}()
+
 // Option is one thing the player can say.
 type Option struct {
 	// Label is the menu row. Kept short: it is what the player says, not what
@@ -105,6 +122,21 @@ type Node struct {
 	// cheapest anti-staleness there is, and the only one that costs nothing but
 	// writing.
 	Text []string `json:"text"`
+	// Voices are the same answer in somebody's own voice, keyed by lineage or
+	// by class, falling back to Text when nobody has written one for them.
+	//
+	// This is what stops a company of three being one person with three
+	// portraits. "Where are you from" is a different question asked of a
+	// part-undead, who is still technically employed by the place, than of a
+	// part-ooze, who is from a pond and has made peace with it — and the
+	// generic answer is worse than either, because it is an answer neither of
+	// them would give.
+	//
+	// Keys are checked at load against the lineage table and the class list, so
+	// a voice written for "vampire" fails rather than silently never being
+	// heard. That failure is the one that matters: nobody notices an answer
+	// they were never given.
+	Voices map[string][]string `json:"voices,omitempty"`
 	// Options are the answers. A node with none is the end of the branch and
 	// the box closes after it.
 	Options []Option `json:"options"`
@@ -191,6 +223,16 @@ func (t *Tree) check() []string {
 		ids[n.ID] = true
 		if len(n.Text) == 0 {
 			bad = append(bad, fmt.Sprintf("%s/%s: says nothing", t.ID, n.ID))
+		}
+		for who, lines := range n.Voices {
+			if !voices[who] {
+				bad = append(bad, fmt.Sprintf("%s/%s: a voice for %q, which is "+
+					"neither a lineage nor a class", t.ID, n.ID, who))
+			}
+			if len(lines) == 0 {
+				bad = append(bad, fmt.Sprintf("%s/%s: the %s voice says nothing",
+					t.ID, n.ID, who))
+			}
 		}
 	}
 	root := t.Root

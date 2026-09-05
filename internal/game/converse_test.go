@@ -33,61 +33,76 @@ func TestNoLineNamesSomethingItsWayInDoesNotGuarantee(t *testing.T) {
 		"{W}": {talk.Waiting, talk.Ending},
 	}
 
-	// How every node can be arrived at: the union of the needs on the options
-	// leading to it, walked to a fixed point so that a chain of ungated hops
-	// off a gated option keeps the guarantee.
-	under := map[string]map[talk.Need]bool{tr.Root: {talk.Always: true}}
+	// What every way into a node guarantees, which is an intersection and not a
+	// union — and getting that backwards is how this test passed the first time
+	// it was provoked. A conversation is a graph with cycles in it: almost every
+	// branch offers a way back to the opening, so "reachable having passed a
+	// story gate" is true of the opening itself. What has to hold is that
+	// *every* path into a node passed the gate, so a node's guarantee is
+	// narrowed by each way in rather than widened.
+	//
+	// Optimistic initialisation: the root guarantees nothing, everything else
+	// starts out claiming everything, and each edge takes away what it cannot
+	// promise until nothing moves.
+	every := []talk.Need{talk.Story, talk.Waiting, talk.Ending, talk.NoStory,
+		talk.Hurt, talk.Blood, talk.Errand, talk.Rich, talk.Broke}
+	guar := map[string]map[talk.Need]bool{}
+	for _, n := range tr.Nodes {
+		guar[n.ID] = map[talk.Need]bool{}
+		if n.ID == tr.Root {
+			continue
+		}
+		for _, need := range every {
+			guar[n.ID][need] = true
+		}
+	}
 	for changed := true; changed; {
 		changed = false
 		for _, n := range tr.Nodes {
-			here, seen := under[n.ID]
-			if !seen {
-				continue
-			}
 			for _, o := range n.Options {
 				if o.Goto == "" {
 					continue
 				}
-				to := under[o.Goto]
-				if to == nil {
-					to = map[talk.Need]bool{}
-					under[o.Goto] = to
-				}
-				add := func(need talk.Need) {
-					if !to[need] {
-						to[need] = true
-						changed = true
-					}
+				via := map[talk.Need]bool{}
+				for need := range guar[n.ID] {
+					via[need] = true
 				}
 				if o.Need != talk.Always {
-					add(o.Need)
-					continue
+					via[o.Need] = true
 				}
-				// An ungated hop carries whatever got you this far.
-				for need := range here {
-					add(need)
+				for need := range guar[o.Goto] {
+					if !via[need] {
+						delete(guar[o.Goto], need)
+						changed = true
+					}
 				}
 			}
 		}
 	}
 
 	for _, n := range tr.Nodes {
-		for _, line := range n.Text {
+		// Every line the node can say, the per-lineage voices included: a voice
+		// is an alternative to Text, not an exception to the rule about what a
+		// line may name.
+		lines := append([]string(nil), n.Text...)
+		for _, v := range n.Voices {
+			lines = append(lines, v...)
+		}
+		for _, line := range lines {
 			for token, allowed := range guarded {
 				if !strings.Contains(line, token) {
 					continue
 				}
-				held := under[n.ID]
-				got := false
+				held, got := guar[n.ID], false
 				for _, need := range allowed {
 					if held[need] {
 						got = true
 					}
 				}
 				if !got {
-					t.Errorf("%s says %s, but can be reached without %v — the "+
-						"player would be read a sentence with a hole in it",
-						n.ID, token, allowed)
+					t.Errorf("%s says %s, but there is a way in that does not "+
+						"pass %v -- the player would be read a sentence with a "+
+						"hole in it", n.ID, token, allowed)
 				}
 			}
 		}
@@ -213,5 +228,59 @@ func TestOneCompanionIsNotAskedWhich(t *testing.T) {
 	g.demoChoose(1)
 	if m := g.Top().(*messageScene); m.speaker != "Wren" {
 		t.Errorf("picking the second companion opened a box titled %q", m.speaker)
+	}
+}
+
+// Everybody answers as themselves.
+//
+// A company of three that all say the same sentence is one person with three
+// portraits, which is the thing the lineages exist to stop — they already shift
+// the stat line and unlock a technique, and until now the only place they
+// showed up in a *conversation* was the caption under the face.
+func TestALineageAnswersInItsOwnVoice(t *testing.T) {
+	g := storyGame(t)
+	tr, ok := g.Data.Talk.Tree("companion")
+	if !ok {
+		t.Fatal("there is no companion conversation")
+	}
+
+	// Every node with voices in it has one for every lineage, or none: a table
+	// with four of six filled is two companions falling back to an answer
+	// written for somebody else, and it looks exactly like the four being
+	// deliberate.
+	for _, n := range tr.Nodes {
+		if len(n.Voices) == 0 {
+			continue
+		}
+		for _, l := range model.Lineages {
+			if len(n.Voices[string(l.Kind)]) == 0 {
+				t.Errorf("%s has voices but none for %s, who will be handed "+
+					"somebody else's answer", n.ID, l.Kind)
+			}
+		}
+	}
+
+	// And two different companions asked the same thing get different answers.
+	node, ok := tr.Node("blood")
+	if !ok {
+		t.Fatal("there is nothing to ask about the blood")
+	}
+	seen := map[string]string{}
+	for _, l := range model.Lineages {
+		c := &model.Character{Name: "X", Class: model.ClassFighter, Blood: l.Kind}
+		lines := voiceOf(c, node)
+		if len(lines) == 0 {
+			t.Fatalf("%s was given nothing to say", l.Kind)
+		}
+		if was, dup := seen[lines[0]]; dup {
+			t.Errorf("%s and %s open with the same sentence", was, l.Kind)
+		}
+		seen[lines[0]] = string(l.Kind)
+	}
+	// Somebody ordinary falls through to the plain answer, which is right:
+	// there is nothing to say about being a person in a special voice.
+	plain := &model.Character{Name: "X", Class: model.ClassFighter}
+	if got := voiceOf(plain, node); len(got) == 0 || got[0] != node.Text[0] {
+		t.Error("an ordinary person did not get the ordinary answer")
 	}
 }
