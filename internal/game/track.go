@@ -36,6 +36,31 @@ type Track struct {
 	On    bool   `json:"on"`
 	POI   int    `json:"poi"`
 	Label string `json:"label"`
+	// At is where the followed thing is when it is not a location.
+	//
+	// An errand can invent its own destination, which is a tile and has no
+	// index — so POI is -1 for those and this is read instead. Every reader
+	// already guarded POI < 0 before this existed, which is why adding it broke
+	// nothing: they simply stopped following. Now they follow this.
+	At core.Point `json:"at,omitempty"`
+}
+
+// tracked is where the followed thing is, whichever kind it is.
+//
+// One place that answers "where am I pointing", so the status line, the compass
+// and the corner map cannot disagree about it — three copies of this lookup is
+// three chances for the arrow to point somewhere the label does not.
+func (g *Game) tracked() (core.Point, bool) {
+	if !g.Track.On || g.World == nil {
+		return core.Point{}, false
+	}
+	if g.Track.POI < 0 {
+		return g.Track.At, true
+	}
+	if g.Track.POI >= len(g.World.POIs) {
+		return core.Point{}, false
+	}
+	return g.World.POIs[g.Track.POI].Pos, true
 }
 
 // trackPOI starts following a location.
@@ -44,6 +69,15 @@ func (g *Game) trackPOI(idx int, label string) {
 		return
 	}
 	g.Track = Track{On: true, POI: idx, Label: label}
+}
+
+// trackSpot starts following a tile with no location on it, which is what an
+// errand's invented destination is.
+func (g *Game) trackSpot(at core.Point, label string) {
+	if g.World == nil {
+		return
+	}
+	g.Track = Track{On: true, POI: -1, At: at, Label: label}
 }
 
 // trackIfIdle follows something only when nothing is being followed already, or
@@ -61,10 +95,8 @@ func (g *Game) trackIfIdle(idx int, label string) {
 
 // atTracked reports whether the player is standing on what they are following.
 func (g *Game) atTracked() bool {
-	if !g.Track.On || g.World == nil || g.Track.POI < 0 || g.Track.POI >= len(g.World.POIs) {
-		return false
-	}
-	return g.World.POIs[g.Track.POI].Pos == g.Walk.Tile
+	at, ok := g.tracked()
+	return ok && at == g.Walk.Tile
 }
 
 // trackLine is what the status bar says about it: the name, and how far.
@@ -78,13 +110,13 @@ func (g *Game) atTracked() bool {
 // worse answer than "Seat of the T. 31", and a fixed truncation cannot know
 // which of those it is about to produce.
 func (g *Game) trackLine(maxW float64) (string, bool) {
-	if !g.Track.On || g.World == nil || g.Track.POI < 0 || g.Track.POI >= len(g.World.POIs) {
+	at, ok := g.tracked()
+	if !ok {
 		return "", false
 	}
-	p := g.World.POIs[g.Track.POI]
 	tail := " - here"
-	if p.Pos != g.Walk.Tile {
-		tail = fmt.Sprintf(" %d", p.Pos.Manhattan(g.Walk.Tile))
+	if at != g.Walk.Tile {
+		tail = fmt.Sprintf(" %d", at.Manhattan(g.Walk.Tile))
 	}
 	label := render.Trunc(g.Track.Label, core.MaxF(24, maxW-render.TextW(tail)))
 	return label + tail, true
@@ -93,11 +125,11 @@ func (g *Game) trackLine(maxW float64) (string, bool) {
 // trackBearing is which of eight ways the tracked place lies, as an index into
 // compassGlyphs, and whether there is one at all.
 func (g *Game) trackBearing() (int, bool) {
-	if !g.Track.On || g.World == nil || g.Track.POI < 0 || g.Track.POI >= len(g.World.POIs) {
+	at, ok := g.tracked()
+	if !ok {
 		return 0, false
 	}
-	p := g.World.POIs[g.Track.POI]
-	dx, dy := p.Pos.X-g.Walk.Tile.X, p.Pos.Y-g.Walk.Tile.Y
+	dx, dy := at.X-g.Walk.Tile.X, at.Y-g.Walk.Tile.Y
 	if dx == 0 && dy == 0 {
 		return 0, false
 	}
@@ -256,6 +288,14 @@ func (g *Game) destinationOf(data any) (int, string, bool) {
 		// generator sets both together or neither, and location zero is a real
 		// location — usually the capital — so testing the index would have
 		// quietly refused to point at the one place every run starts from.
+		// A made destination has no index, so it is followed by tile. The -1
+		// travels through unchanged and trackPOI's caller reads it — which is
+		// the one place the two kinds of destination have to be told apart, and
+		// it is told apart by the flag rather than by the index, because an
+		// index is a number and a number means whatever the reader assumes.
+		if d.Made {
+			return -1, d.TargetName, true
+		}
 		if d.TargetName != "" {
 			return d.TargetPOI, d.TargetName, true
 		}

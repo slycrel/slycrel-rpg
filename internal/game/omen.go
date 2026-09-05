@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"image/color"
 
+	"github.com/slycrel/slycrel-rpg/internal/assetsys"
 	"github.com/slycrel/slycrel-rpg/internal/core"
+	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
@@ -287,4 +289,64 @@ func (g *Game) enterWayside(rng *core.RNG) {
 	g.Sound.Play("world/enter")
 	g.Push(newLocalScene(g))
 	g.Log.AddColor(render.ColGold, "A fire, and people around it. Nobody was expecting you.")
+}
+
+// enterMade drops the party into a place an errand invented.
+//
+// The same transient-interior path a wayside uses, and for the same reasons:
+// the POI is not in the world's list, so `poiIndex` cannot find it, so a save
+// taken here records the party standing on the overworld — which is where
+// walking back out puts them. Nothing new is stored anywhere.
+//
+// What is different is the seed. A wayside is drawn fresh every time because it
+// is weather; this one is derived from the quest's own ID, so the crossroads is
+// the same crossroads on the second visit as on the first. An errand that moved
+// its own destination between two walks would be the errand lying.
+func (g *Game) enterMade(q *quest.Quest) {
+	if g.World == nil || g.Player == nil {
+		return
+	}
+	host := q.Giver + "'s man"
+	if q.Kind == quest.Deliver {
+		host = "somebody expecting a parcel"
+	}
+	l := world.BuildErrandSite(q.SiteSeed(), g.encounterLevel(g.Walk.Tile), g.Write,
+		q.TargetName, "nobody's idea of a landmark", host)
+
+	g.floor = 0
+	g.Local = l
+	g.LocalWalk = core.NewWalker(7)
+	g.LocalWalk.Place(l.Entry)
+	g.reformLines()
+	g.localFollow.Place(l.Entry)
+	g.Sound.Play("world/enter")
+	g.Push(newLocalScene(g))
+	g.Log.AddColor(render.ColGold, "%s. Somebody is here.", q.TargetName)
+
+	// The errand advances on arriving, exactly as one pointing at a settlement
+	// does — the difference between the two is where you are standing, not what
+	// the errand is.
+	g.noteQuestProgress(g.Quests.OnReachedMade(q))
+}
+
+// drawMadeMarker rings the spot an errand is pointing at.
+//
+// A ring on the ground rather than a building or a hole in a hill, because it
+// is neither: the overworld's markers say what *kind* of place something is,
+// and the honest answer here is "somewhere you were told to meet somebody".
+// Gold, and it breathes, so it reads as a thing the errand put there rather
+// than as a feature of the country.
+func drawMadeMarker(ctx *render.Ctx, at core.Point, tick int) {
+	const ts = assetsys.TileSize
+	ox, oy := ctx.Cam.Offset()
+	x, y := float64(at.X*ts)+ox, float64(at.Y*ts)+oy
+	col := color.RGBA{0xE0, 0xB0, 0x4C, 0xFF}
+	if (tick/24)%2 == 0 {
+		col = color.RGBA{0xFF, 0xE0, 0x90, 0xFF}
+	}
+	// Two rings, the inner one dark, so it holds its shape over grass and over
+	// sand. A single stroke at this size disappears into whichever of the two
+	// it happens to be sitting on.
+	render.Frame(ctx.Dst, x+1, y+1, ts-2, ts-2, color.RGBA{0x30, 0x24, 0x10, 0xC0})
+	render.Frame(ctx.Dst, x+2, y+2, ts-4, ts-4, col)
 }

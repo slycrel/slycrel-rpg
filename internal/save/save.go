@@ -47,6 +47,11 @@ type TrackState struct {
 	On    bool   `json:"on"`
 	POI   int    `json:"poi"`
 	Label string `json:"label"`
+	// At is where the followed thing is when it is not a location — an errand
+	// can invent its own destination, and that is a tile rather than an index.
+	// POI is -1 in that case. Absent in every file written before this, where
+	// POI is always a real index and this is never read.
+	At core.Point `json:"at,omitempty"`
 }
 
 // minVersion is the oldest layout this build can still read correctly.

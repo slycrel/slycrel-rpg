@@ -63,6 +63,27 @@ type Quest struct {
 	TargetPOI  int    `json:"targetPOI,omitempty"`
 	TargetName string `json:"targetName,omitempty"`
 
+	// Made says the destination is one this errand invented rather than one
+	// already on the map, and TargetAt is where it is.
+	//
+	// The world has about forty locations on it and every errand in the game
+	// has always pointed at one of them, so a run's errands send you to the
+	// same forty markers over and over. A made place is a crossroads, a burnt
+	// farm, a camp expecting you — somewhere that exists *because* an errand
+	// says so, generated from this quest's own ID and therefore the same place
+	// on the second visit as on the first, and gone when the errand closes.
+	//
+	// It costs the save format nothing, which is the whole reason it is shaped
+	// this way: the quest is already saved, so a place derived from the quest
+	// is already saved. It is the same seam the wayside found.
+	//
+	// An explicit flag rather than reading TargetPOI as -1, because a zero
+	// value that means something real is a zero value that turns every old
+	// save into a silent claim about location zero — which is a lesson this
+	// file has already been taught twice.
+	Made     bool       `json:"made,omitempty"`
+	TargetAt core.Point `json:"targetAt,omitempty"`
+
 	// Item is what a fetch quest wants; Monster is what a cull quest counts.
 	Item        string `json:"item,omitempty"`
 	MonsterID   string `json:"monsterID,omitempty"`
@@ -93,6 +114,10 @@ type Quest struct {
 	RewardCoins int64 `json:"rewardCoins"`
 	RewardXP    int64 `json:"rewardXP"`
 }
+
+// SiteSeed is the seed for a made destination, so the place an errand invents
+// is the same place every time it is walked to.
+func (q *Quest) SiteSeed() int64 { return core.SeedFrom(q.ID) }
 
 // Complete reports whether the conditions are met.
 func (q *Quest) Complete() bool { return q.Have >= q.Need }
@@ -285,8 +310,25 @@ func Generate(g *core.RNG, w *world.Map, cat Catalog, wr Writer, giverPOI int, g
 		q.RewardXP = int64(40+g.Intn(30)) * int64(target.poi.Level)
 
 	case Deliver:
-		target := core.Pick(g, nearbySettlements(w, home, giverPOI))
-		q.TargetPOI, q.TargetName = target.idx, target.poi.Name
+		// Sometimes to a town, sometimes to somewhere that is not on the map.
+		//
+		// A run's errands used to send you to the same forty markers, because
+		// forty markers is all the world has. A made destination is a
+		// crossroads or a burnt farm that exists because this errand says so —
+		// it is somewhere new every time, and it is the only kind of
+		// destination the generator can produce more of.
+		//
+		// Still only ever *near* somewhere real: the tile is picked off the map
+		// and checked for walkable ground, which is the same rule the rest of
+		// this generator follows. Naming a place is fine as long as walking
+		// there finds one.
+		if at, name, ok := madeDestination(g, w, home); ok && g.Chance(0.45) {
+			q.Made, q.TargetAt, q.TargetName = true, at, name
+			q.TargetPOI = -1
+		} else {
+			target := core.Pick(g, nearbySettlements(w, home, giverPOI))
+			q.TargetPOI, q.TargetName = target.idx, target.poi.Name
+		}
 		q.Need = 1
 		q.RewardCoins = int64(25+g.Intn(25)) * int64(core.Max(1, home.Level))
 		q.RewardXP = int64(15+g.Intn(15)) * int64(core.Max(1, home.Level))
@@ -384,6 +426,52 @@ func indexOf(s, sub string) int {
 		}
 	}
 	return -1
+}
+
+// madeDestination finds open ground for a place an errand invents, and a name
+// for it.
+//
+// Between a quarter and most of the way to the edge of what an errand will
+// send you, on ground you can actually stand on, and not on top of a location
+// that already exists — a made place sharing a square with a real one is two
+// things on one tile and a player who cannot tell which they walked into.
+//
+// Returns false when nowhere works, and the caller falls back to a real
+// settlement. **A destination that cannot be reached is worse than a dull one**,
+// which is the rule this generator has followed since it was written.
+func madeDestination(g *core.RNG, w *world.Map, home *world.POI) (core.Point, string, bool) {
+	for try := 0; try < 40; try++ {
+		d := g.Between(questRange/4, questRange*3/4)
+		dx := g.Between(-d, d)
+		dy := d - core.Abs(dx)
+		if g.Chance(0.5) {
+			dy = -dy
+		}
+		p := core.Point{X: home.Pos.X + dx, Y: home.Pos.Y + dy}
+		if !w.Walkable(p.X, p.Y) || w.POIAt(p.X, p.Y) != nil {
+			continue
+		}
+		return p, core.Pick(g, madeNames), true
+	}
+	return core.Point{}, "", false
+}
+
+// madeNames are what a place an errand invents is called.
+//
+// Deliberately generic and deliberately not run through the place-name
+// generator: those names — "Crown of the Sunken Barge" — are for locations that
+// are on a map and have been there a while. This is a crossroads. Somebody
+// says "meet them at the burnt farm" because that is what it is, not because
+// it has a name.
+var madeNames = []string{
+	"the crossroads",
+	"the burnt farm",
+	"the old ford",
+	"the drovers' camp",
+	"the milestone",
+	"the broken bridge",
+	"the shepherd's hut",
+	"the boundary stone",
 }
 
 // poiRef pairs a location with its index, which is what a quest stores.
@@ -571,3 +659,31 @@ func (l *Log) ReadyAt(poiIdx int) []*Quest {
 
 // Close marks an errand handed in.
 func (l *Log) Close(q *Quest) { q.State = Closed }
+
+// MadeAt returns the errand whose invented destination is this tile, if any.
+//
+// Only errands still outstanding: a made place exists because the errand does,
+// so when the errand closes the place stops being there. Somebody walking back
+// to the crossroads a week later finds a crossroads, which is what it always
+// was — the point was never the ground, it was who was standing on it.
+func (l *Log) MadeAt(at core.Point) *Quest {
+	for _, q := range l.Active() {
+		if q.Made && q.TargetAt == at {
+			return q
+		}
+	}
+	return nil
+}
+
+// OnReachedMade advances an errand whose destination is one it invented.
+//
+// Its own entry point rather than a branch inside OnEnteredPOI, because that
+// one is keyed on a POI index and a made place has none. Same shape, same
+// result: arriving is what completes a delivery, wherever it is delivered to.
+func (l *Log) OnReachedMade(q *Quest) []*Quest {
+	if q == nil || !q.Made || q.Complete() {
+		return nil
+	}
+	q.Have = q.Need
+	return []*Quest{q}
+}

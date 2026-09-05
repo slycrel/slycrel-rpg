@@ -131,7 +131,15 @@ func (s *questScene) Update(g *Game) error {
 			g.Sound.Play("ui/deny")
 			return nil
 		}
-		g.trackPOI(idx, label)
+		// An index of -1 means the row points at a tile rather than a location,
+		// which is what an errand that invented its own destination does.
+		if idx < 0 {
+			if q, isQuest := it.Data.(*quest.Quest); isQuest {
+				g.trackSpot(q.TargetAt, label)
+			}
+		} else {
+			g.trackPOI(idx, label)
+		}
 		g.Sound.Play("ui/page")
 		g.Pop()
 	}

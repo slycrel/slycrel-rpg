@@ -138,6 +138,12 @@ func (s *overworldScene) Update(g *Game) error {
 			g.enterPOI(poi)
 			return nil
 		}
+		// And onto a place an errand invented, which is not on the map because
+		// it is not in the world — it is in the quest log.
+		if q := g.Quests.MadeAt(g.Walk.Tile); q != nil {
+			g.enterMade(q)
+			return nil
+		}
 	}
 
 	// Z still enters, which matters for exactly one case: you have just walked
@@ -425,6 +431,22 @@ func (s *overworldScene) Draw(g *Game, dst *ebiten.Image) {
 			continue
 		}
 		drawPOIMarker(ctx, g.Assets, p)
+	}
+
+	// And the places errands invented, which have no marker of their own
+	// because they have no location behind them. A ring on the ground: it is
+	// not a building and it is not a hole in a hill, it is somewhere somebody
+	// said to meet. Drawn only while the errand is live, which is exactly as
+	// long as anybody is there.
+	for _, q := range g.Quests.Active() {
+		if !q.Made {
+			continue
+		}
+		p := q.TargetAt
+		if p.X < x0 || p.X > x1 || p.Y < y0 || p.Y > y1 {
+			continue
+		}
+		drawMadeMarker(ctx, p, g.Tick())
 	}
 
 	// The creatures the rolls produced, drawn with the things that stand on the

@@ -389,7 +389,11 @@
   "track": {
     "on": true,
     "poi": 0,
-    "label": "Somewhere"
+    "label": "Somewhere",
+    "at": {
+      "X": 0,
+      "Y": 0
+    }
   },
   "lastSpell": "lunge",
   "clock": {
@@ -406,6 +410,10 @@
       "thank": "\"That's the Ewe dealt with. The village will be insufferable about it for weeks.\"",
       "giver": "Person",
       "giverPOI": 0,
+      "targetAt": {
+        "X": 0,
+        "Y": 0
+      },
       "monsterID": "plains_sheep",
       "monsterName": "Ewe, Cursed",
       "where": "the fields outside Mudgallow",

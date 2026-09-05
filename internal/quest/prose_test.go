@@ -212,3 +212,49 @@ func TestAnErrandThatDoesNotKnowWhereStillReads(t *testing.T) {
 		}
 	}
 }
+
+// A made destination is the same errand, said the same way.
+//
+// A delivery to a town and a delivery to a crossroads have to read alike — the
+// objective is still a verb and a named place, the title still leads with the
+// job, and nothing may leak the fact that one of the two places is a fiction
+// this errand is carrying around with it.
+func TestAnInventedDestinationReadsLikeARealOne(t *testing.T) {
+	made := 0
+	for _, q := range realQuests(t) {
+		if !q.Made {
+			continue
+		}
+		made++
+		if q.TargetName == "" {
+			t.Fatal("a made destination has no name")
+		}
+		if !strings.Contains(q.Objective(), q.TargetName) {
+			t.Errorf("the objective %q does not name %q", q.Objective(), q.TargetName)
+		}
+		if !strings.Contains(q.Title, q.TargetName) {
+			t.Errorf("the title %q does not name %q", q.Title, q.TargetName)
+		}
+		// And it is the same place every time it is asked for, which is the
+		// whole of why it costs the save format nothing: the place is a
+		// function of the quest, and the quest is already saved.
+		if q.SiteSeed() != q.SiteSeed() {
+			t.Error("a made destination does not have a stable seed")
+		}
+	}
+	if made == 0 {
+		t.Skip("this world generated no made destinations, so nothing was checked")
+	}
+	// Two errands must not invent the same place, or two people send you to one
+	// crossroads and whichever you reach first answers both.
+	seeds := map[int64]bool{}
+	for _, q := range realQuests(t) {
+		if !q.Made {
+			continue
+		}
+		if seeds[q.SiteSeed()] {
+			t.Errorf("two errands share a destination seed")
+		}
+		seeds[q.SiteSeed()] = true
+	}
+}

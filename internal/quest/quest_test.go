@@ -85,6 +85,39 @@ func TestGeneratedQuestsAreCompletable(t *testing.T) {
 						t.Errorf("cull quest names monster %q, which does not exist", q.MonsterID)
 					}
 				case quest.Delve, quest.Deliver:
+					// A destination the errand invented is checked against the
+					// same rule as one it found, which is the rule this whole
+					// generator is built on: never name something that might
+					// not be there. For a made place that means ground you can
+					// stand on, far enough to be a trip, and not on top of a
+					// location that already exists — two things on one tile is
+					// a square the player cannot read.
+					if q.Made {
+						if q.Kind != quest.Deliver {
+							t.Errorf("a %s invented its own destination; only a delivery may", q.Kind)
+						}
+						if !w.Walkable(q.TargetAt.X, q.TargetAt.Y) {
+							t.Errorf("%s quest points at %v, which cannot be walked to", q.Kind, q.TargetAt)
+						}
+						// This one is belt and braces and is worth saying so:
+						// deleting the check it guards does not fail it, because
+						// a tile picked at random almost never lands on one of
+						// forty-five markers. It would catch a *systematic*
+						// fault — a generator that started preferring occupied
+						// ground — and it cannot catch the check simply going
+						// missing. The walkability assertion above it can, and
+						// was watched doing so.
+						if w.POIAt(q.TargetAt.X, q.TargetAt.Y) != nil {
+							t.Errorf("%s quest invented a place on top of a real one at %v", q.Kind, q.TargetAt)
+						}
+						if q.TargetAt == w.POIs[i].Pos {
+							t.Errorf("%s quest sends the player where they already are", q.Kind)
+						}
+						if q.TargetName == "" {
+							t.Error("a made destination has no name to put on the map")
+						}
+						continue
+					}
 					if q.TargetPOI < 0 || q.TargetPOI >= len(w.POIs) {
 						t.Errorf("%s quest points at location %d of %d", q.Kind, q.TargetPOI, len(w.POIs))
 						continue

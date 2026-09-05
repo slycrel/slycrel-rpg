@@ -158,11 +158,11 @@ func (m *minimap) draw(g *Game, dst *ebiten.Image) {
 // walking north-east and walking around a bay. Once the destination is a pin on
 // a picture of the coastline, it is a route.
 func (m *minimap) drawTracked(g *Game, dst *ebiten.Image, x, y float64, wx, wy int) {
-	if !g.Track.On || g.Track.POI < 0 || g.Track.POI >= len(g.World.POIs) {
+	at, ok := g.tracked()
+	if !ok {
 		return
 	}
-	p := g.World.POIs[g.Track.POI]
-	tx, ty := p.Pos.X-wx, p.Pos.Y-wy
+	tx, ty := at.X-wx, at.Y-wy
 
 	if tx >= 0 && tx < miniTiles && ty >= 0 && ty < miniTiles {
 		// On the window: a ring around the pin rather than a dot on top of it,

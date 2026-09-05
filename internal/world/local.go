@@ -1170,6 +1170,43 @@ func buildTower(g *core.RNG, poi *POI, wr Namer, floor, depth int) *LocalMap {
 // world's list, so the save records the party as standing where they were on
 // the overworld, which is where walking out of here would have put them.
 func BuildWayside(seed int64, level int, wr Namer) *LocalMap {
+	return buildClearing(seed, level, wr, "a fire by the road", "somebody else's evening", true)
+}
+
+// BuildErrandSite is a place that exists because an errand says so.
+//
+// The same clearing a wayside is, with the trader swapped for whoever the
+// errand is about — a person standing in the open who was told to expect you.
+// It shares the generator rather than getting one of its own because they are
+// the same object with different reasons for existing: somewhere small, safe
+// and off the map, which the player walks into and out of.
+//
+// Deterministic from the seed the quest supplies, so it is the same clearing on
+// the second visit as on the first. Nothing about it is saved and nothing needs
+// to be — the quest is saved, and this is a function of the quest.
+func BuildErrandSite(seed int64, level int, wr Namer, name, tag, host string) *LocalMap {
+	l := buildClearing(seed, level, wr, name, tag, false)
+	// Whoever is waiting. Placed after the clearing is furnished so it never
+	// lands on the fire, and named by the caller because the errand already
+	// told the player who it would be — a place that promised a brother and
+	// produced a stranger is the errand lying.
+	if p, ok := openNear(core.NewRNG(seed+1), l, core.Point{X: l.W / 2, Y: l.H / 2}, 1, 5); ok {
+		l.Entities = append(l.Entities, &Entity{
+			Kind: ENPC, Pos: p, Name: host,
+			Line: wr.NPCLine(core.NewRNG(seed + 2)), Sprite: core.Pick(core.NewRNG(seed+3), folkSprites),
+		})
+	}
+	return l
+}
+
+// buildClearing is the shape both of them are: a round patch of open ground
+// with a fire in the middle and a way back at the bottom.
+//
+// trade decides whether somebody is selling anything, which is the difference
+// between a place you found and a place you were sent to — a wayside pays out
+// because walking to a green mark has to, and an errand's destination pays out
+// by being the errand.
+func buildClearing(seed int64, level int, wr Namer, name, tag string, trade bool) *LocalMap {
 	g := core.NewRNG(seed)
 	// A POI that is not on the map. It carries the level so encounters and
 	// prices here are worth what the country around them is worth, and a kind
@@ -1178,7 +1215,7 @@ func BuildWayside(seed int64, level int, wr Namer) *LocalMap {
 	// settlement.
 	poi := &POI{
 		Kind: KindCamp, Level: level, Seed: seed,
-		Name: "a fire by the road", Tag: "somebody else's evening",
+		Name: name, Tag: tag,
 	}
 	l := newLocal(poi, 26, 18, LVoid)
 	l.Biome = "plains"
@@ -1212,18 +1249,20 @@ func BuildWayside(seed int64, level int, wr Namer) *LocalMap {
 	// Somebody selling something. One trade rather than a row of them: this is
 	// a person with a bag, not a market, and the difference is most of what
 	// keeps a wayside from making towns pointless.
-	trade := core.Pick(g, []ShopKind{ShopApothecary, ShopSmith, ShopArmorer})
-	if p, ok := openNear(g, l, core.Point{X: cx, Y: cy}, 2, 5); ok {
-		l.Entities = append(l.Entities, &Entity{
-			Kind: EShop, Pos: p, Name: wr.PersonName(g), Shop: trade,
-			Line: wr.NPCLine(g), Sprite: shopSprites[trade],
-		})
+	if trade {
+		kind := core.Pick(g, []ShopKind{ShopApothecary, ShopSmith, ShopArmorer})
+		if p, ok := openNear(g, l, core.Point{X: cx, Y: cy}, 2, 5); ok {
+			l.Entities = append(l.Entities, &Entity{
+				Kind: EShop, Pos: p, Name: wr.PersonName(g), Shop: kind,
+				Line: wr.NPCLine(g), Sprite: shopSprites[kind],
+			})
+		}
 	}
 
 	// And sometimes somebody who would rather be travelling with you than
 	// sitting here. Rarer than in a town, because a hireling met on the road is
 	// a windfall and a hiring board is a service.
-	if g.Chance(0.35) {
+	if trade && g.Chance(0.35) {
 		if p, ok := openNear(g, l, core.Point{X: cx, Y: cy}, 2, 6); ok {
 			class := core.Pick(g, recruitClasses)
 			look := core.Pick(g, recruitLooks[class])

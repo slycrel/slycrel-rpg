@@ -27,6 +27,18 @@ func (g *RNG) Fork(label string, salt int64) *RNG {
 	return NewRNG(int64(h.Sum64()) ^ salt)
 }
 
+// SeedFrom turns a string into a seed.
+//
+// For anything whose identity is a name rather than a number and which has to
+// generate the same thing every time it is asked — a place an errand invents,
+// which exists because the errand says so and must be the same place on the
+// second visit as on the first.
+func SeedFrom(s string) int64 {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(s))
+	return int64(h.Sum64())
+}
+
 // Intn returns a value in [0,n). n <= 0 yields 0.
 func (g *RNG) Intn(n int) int {
 	if n <= 0 {

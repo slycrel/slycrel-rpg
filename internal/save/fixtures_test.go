@@ -1,6 +1,7 @@
 package save_test
 
 import (
+	"github.com/slycrel/slycrel-rpg/internal/core"
 	"os"
 	"path/filepath"
 	"strings"
@@ -137,8 +138,25 @@ func TestFixturesOnlyNameContentThatExists(t *testing.T) {
 			}
 			// Every quest points at somewhere; an index past the end of the
 			// location list is how a quest ends up naming nothing at all.
-			if q.GiverPOI < 0 || q.TargetPOI < 0 {
-				t.Errorf("%s: a quest points at location %d / %d", name, q.GiverPOI, q.TargetPOI)
+			//
+			// An errand that invented its own destination points at a tile
+			// instead, and its index is deliberately -1 — so the thing to check
+			// there is that it has a name and somewhere to put it, which is the
+			// same rule wearing different clothes. A saved quest whose made
+			// destination had lost its coordinates would send the player to
+			// {0,0}, which is a corner of the ocean.
+			if q.GiverPOI < 0 {
+				t.Errorf("%s: a quest was given at location %d", name, q.GiverPOI)
+			}
+			if q.Made {
+				if q.TargetName == "" {
+					t.Errorf("%s: a made destination survived the round trip with no name", name)
+				}
+				if q.TargetAt == (core.Point{}) {
+					t.Errorf("%s: a made destination survived the round trip with no place", name)
+				}
+			} else if q.TargetPOI < 0 {
+				t.Errorf("%s: a quest points at location %d", name, q.TargetPOI)
 			}
 		}
 		for _, th := range f.Threads {
