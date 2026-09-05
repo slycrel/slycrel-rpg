@@ -482,6 +482,18 @@ which event fires which trigger, and where it is safe to put a box on screen.
   a home, a row is nearly always better than a key: it costs no binding, it
   quotes its price in the detail column like every other row, and it can grey
   itself out — which is the rule the inn and the hiring board already follow.
+- **A rate expressed as a chance per tick has a shape nobody chose.** The
+  dungeon ambush was six per cent a step and averaged a fight every 21.3 steps,
+  which is fine, while fifteen per cent of its gaps were eight steps or fewer
+  and the longest was 132 — a memoryless roll clusters and droughts by
+  construction, and the mean cannot see either. `ambushDue` draws the distance
+  up front instead. Any "how often does X happen" dial in this game can fail the
+  same way, and the overworld encounter roll still can.
+- **A marker says what kind of event, not what species.** `world.Omen` is three
+  states and both rolls — the overworld's in `internal/game`, interiors' in
+  `internal/world` because they are generated from the location seed — read one
+  share table. The silhouette under the mark is decoration: it is the world
+  having things in it, and it is picked at random. The mark is the information.
 - **Interface goes over the sky tint.** `drawSky` runs after the entity pass, so
   anything drawn with the sprites gets the weather and the night painted over
   it. The labels already sit in a later pass for this reason; the attention

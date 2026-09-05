@@ -4068,6 +4068,68 @@ party row reads as two different games. **This is the standing answer to "we do
 not have enough character art"**: we have twenty sheets and four of them are at
 the scale the game is drawn at.
 
+## Encounters: a rate that was a shape, and icons that were noise
+
+Three things from a playthrough, and the pattern from the last pass held for two
+of them — what reads as a content fault is worth pricing as an instrument first.
+
+### The dungeon rate was never a rate
+
+The complaint was "every 5-8 steps, with the occasional long stretch". Measured
+over a hundred and eighty thousand steps of walking real dungeons, the roll it
+described — six per cent a step after a grace of six — averages a fight every
+21.3 steps, which is a reasonable number and was not the problem. Fifteen per
+cent of the gaps are eight steps or fewer and the longest is 132. A memoryless
+roll clusters and droughts by construction, and **a mean is the one statistic
+that cannot see either**.
+
+Drawing the distance up front fixes both ends with one change. Twenty steps to
+forty-eight: the same walk averages 29.9 with 6.5% of gaps under eight, and the
+short ones left are the player walking into a visible foe on purpose.
+
+Worth keeping as a shape rather than a number. Any "how often does X happen"
+dial in this game that is expressed as a chance per tick has the same failure
+available to it, and the overworld's encounter roll is still one.
+
+### One mark per kind of event, not one picture per species
+
+The icons were reported as random and two of the three ways they are produced
+made them random. Interior foes get `core.Pick(g, foeSprites)` and the encounter
+is rolled fresh on contact, so the picture never had anything to do with the
+fight. Overworld wanderers key off monster kind, which is a category with eight
+values over seventy-nine creatures — and a third of the roster is "beast", so a
+wolf, a bear, an owl and an ox all stand in the grass as the same crab.
+
+The replacement separates two jobs that had been one. **The silhouette is the
+world having things in it; the mark is the information.** What a player needs
+from across a field is not the species but whether to walk over, which is three
+answers — hostile, boon, mystery — drawn as a red blade, a green ring and a pale
+question mark, told apart by shape first and colour second. Both the overworld
+roll and the interior one read one share table in `internal/world`, because a
+mark that is common in a field and rare underground is two marks wearing one
+shape.
+
+### Not everything in the grass is a fight
+
+A spring, a well, a cache and a traveller who marks the nearest place you have
+not found. Weighted by what the company could use, softly: a spring offered to a
+party at full health teaches a player that green means nothing, and a world that
+only ever hands you what you need is a world with no reason to plan.
+
+Deliberately modest, and the reason is the inn. Its job is not hit points — it
+is where a run is written down — so nothing in a field autosaves and nothing
+fully heals.
+
+A mystery is decided when it is reached and pays out two in five. A coin flip is
+a marker you always walk to, which is the same as no marker at all.
+
+**What this does to ENDURANCE is not modelled and should be.** Fights per rest
+is measured against a simulator that never meets a spring, and springs are now
+about one encounter in seven. The report will read the game as harder than it is
+until the field boons are in it, which is the same rule this document keeps
+finding: a mechanic the simulator cannot see is one the balance pass is lying
+about.
+
 ## What is open, and in what order
 
 Rewritten after the session that answered items 2, 4 and half of 6, and found
