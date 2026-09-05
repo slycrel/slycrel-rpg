@@ -4201,6 +4201,65 @@ the POI was a settlement, which was right until something turned up that is
 neither a settlement nor dangerous — a wayside is built on a `KindCamp`, so the
 party would have been jumped in the middle of somebody's supper.
 
+## Errands that make their own destinations, and one that walks
+
+### A place that exists because an errand says so
+
+Every errand in the game pointed at one of the world's forty-odd locations, so
+a run's deliveries send you to the same forty markers. About half of them now
+go somewhere invented — a crossroads, a burnt farm, an old ford — generated
+from the quest's own ID and therefore the same place on the second visit as on
+the first, and gone when the errand closes.
+
+**It costs the save format nothing, and that is the shape of the idea.** The
+quest is already saved, so a place derived from the quest is already saved. It
+is the second time this seam has paid: the wayside found it first, and the rule
+is worth stating generally — anything that should exist only for as long as
+something already-saved exists can be a function of that thing rather than a
+field beside it.
+
+The generator's oldest rule is unchanged. A made destination is a tile checked
+for walkable ground, off any existing location, and when nowhere works it falls
+back to a real settlement, because a destination that cannot be reached is worse
+than a dull one. Names are deliberately *not* run through the place-name
+generator: "Crown of the Sunken Barge" is for somewhere that has been on a map a
+while, and this is a crossroads.
+
+Three readers had to learn that a destination can be a tile — the status line,
+the compass and the corner map — and they each had their own copy of the lookup.
+They answer through one function now, because three copies of "where am I
+pointing" is three chances for the arrow to disagree with the label.
+
+### An escort, and the finding that shaped it
+
+**Companions in this game cannot die.** `checkEnd` says so: a party member at
+zero hit points is out of the fight and back on their feet the moment it ends.
+So an escort whose stake was "keep them alive" would have no stake at all —
+which is worth knowing before designing any errand about somebody's safety, and
+is the sort of thing that reads as a feature until somebody looks.
+
+What an escort costs instead is a deadline, and company on the road. Half of
+them carry a clock of two to four days that the clock spends whether you fight
+or not, which makes this the only errand in the game that can be *failed* rather
+than abandoned; half carry somebody who joins in.
+
+An escortee is a fourth **follower** and not a fourth party member, and that is
+the battle panel's decision rather than a design preference: the panel is 156
+pixels and a row needs about fifty, so four rows want two hundred and the panel
+cannot grow. The constraint turned out to be the feature — no slot, so a full
+company can take the errand; never in the panel; and the helpful sort join in
+from off it, in a line of transcript, which is as much presence as somebody
+sheltering behind three armed people should have.
+
+**If a fourth combatant is ever wanted, it is a battle-panel redesign and not a
+constant.** Worth writing down so the next attempt starts from the right place.
+
+### The one that already worked
+
+The closed verb list in `TestEveryObjectiveOpensWithAnAction` refused the new
+errand kind until its imperative was added — a test doing the job it was written
+for, unprompted, a pass later. That list is worth keeping closed.
+
 ## What is open, and in what order
 
 Rewritten after the session that answered items 2, 4 and half of 6, and found

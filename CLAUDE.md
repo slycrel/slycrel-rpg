@@ -488,6 +488,15 @@ which event fires which trigger, and where it is safe to put a box on screen.
   dungeon three times. `world.Depth` is the switch, a floor of a many-levelled
   place is smaller than a place with one floor, and `UsedKey` carries the floor
   or opening a chest on the ground floor empties the one three storeys up.
+- **Companions cannot die**, and anything designed around losing one has no
+  stake. `checkEnd` puts a party member at zero hit points out of the fight and
+  `reviveFallen` stands them up the moment it ends. An escort is priced in a
+  deadline and a slower road instead.
+- **The battle panel holds three and the number is measured.** 156 pixels, a row
+  of about fifty — a 34x46 stage, a name, hit points, two meters and the pips.
+  A fourth combatant is a panel redesign, not a constant: anything that wants to
+  walk with the party without fighting is a follower outside `Allies`, drawn at
+  the back of the line and absent from the panel.
 - **A transient place needs no save format.** A wayside is generated on a POI
   that is not in the world's list, so `poiIndex` returns -1, the save records
   the party on the overworld, and every caller of `currentPOIIndex` already
