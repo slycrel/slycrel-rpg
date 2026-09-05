@@ -527,12 +527,34 @@ func madeDestination(g *core.RNG, w *world.Map, home *world.POI) (core.Point, st
 			dy = -dy
 		}
 		p := core.Point{X: home.Pos.X + dx, Y: home.Pos.Y + dy}
-		if !w.Walkable(p.X, p.Y) || w.POIAt(p.X, p.Y) != nil {
+		if !Placeable(w, p) {
 			continue
 		}
 		return p, core.Pick(g, madeNames), true
 	}
 	return core.Point{}, "", false
+}
+
+// Placeable reports whether an errand may invent a place on this tile.
+//
+// **A named rule rather than a condition inside a loop, because a rule can be
+// tested and a condition can only be sampled.** The first version of this was
+// two clauses inside madeDestination, and the test written for it asserted that
+// no generated destination landed on a location — which passed with the clause
+// deleted, because a tile picked at random almost never hits one of forty-five
+// markers. An assertion that cannot be made to fail is not a check, it is a
+// sentence.
+//
+// Split out, there are two provable statements instead: this function says no
+// to a location's own square and yes to open ground, directly and with no dice
+// in it; and madeDestination returns only squares this says yes to. Break
+// either and something fails on the first run.
+//
+// The same shape is available anywhere else in this game that decides where
+// something may stand. There are several, and they are all currently conditions
+// inside loops.
+func Placeable(w *world.Map, p core.Point) bool {
+	return w.Walkable(p.X, p.Y) && w.POIAt(p.X, p.Y) == nil
 }
 
 // madeNames are what a place an errand invents is called.

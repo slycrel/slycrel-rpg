@@ -1,6 +1,7 @@
 package quest_test
 
 import (
+	"github.com/slycrel/slycrel-rpg/internal/content"
 	"testing"
 
 	"github.com/slycrel/slycrel-rpg/internal/core"
@@ -101,16 +102,16 @@ func TestGeneratedQuestsAreCompletable(t *testing.T) {
 						if !w.Walkable(q.TargetAt.X, q.TargetAt.Y) {
 							t.Errorf("%s quest points at %v, which cannot be walked to", q.Kind, q.TargetAt)
 						}
-						// This one is belt and braces and is worth saying so:
-						// deleting the check it guards does not fail it, because
-						// a tile picked at random almost never lands on one of
-						// forty-five markers. It would catch a *systematic*
-						// fault — a generator that started preferring occupied
-						// ground — and it cannot catch the check simply going
-						// missing. The walkability assertion above it can, and
-						// was watched doing so.
-						if w.POIAt(q.TargetAt.X, q.TargetAt.Y) != nil {
-							t.Errorf("%s quest invented a place on top of a real one at %v", q.Kind, q.TargetAt)
+						// Against the rule rather than against its clauses.
+						// TestPlaceableRefusesALocationsOwnSquare proves what
+						// Placeable says; this proves the generator only ever
+						// returns squares it said yes to. Between them there is
+						// nothing left to sample — which the version this
+						// replaces could only do, and duly passed with the
+						// check deleted.
+						if !quest.Placeable(w, q.TargetAt) {
+							t.Errorf("%s quest invented a place at %v, which Placeable refuses",
+								q.Kind, q.TargetAt)
 						}
 						if q.TargetAt == w.POIs[i].Pos {
 							t.Errorf("%s quest sends the player where they already are", q.Kind)
@@ -259,5 +260,121 @@ func TestAnErrandBelongsToWhoeverAskedForIt(t *testing.T) {
 	l.Close(mine)
 	if l.From(3, "Ilsabet") != nil || l.HasFrom(3) {
 		t.Error("a closed errand is still being offered")
+	}
+}
+
+// The placement rule itself, with no dice in it.
+//
+// This is the half that was missing. A rule stated as a condition inside a loop
+// can only ever be *sampled* — the old test asserted that no generated
+// destination landed on a location, and passed with the check deleted, because
+// a random tile almost never hits one of forty-five markers.
+//
+// Stated as a function it can be asked directly, on the two squares whose
+// answers are known: a location's own tile, which is exactly what must be
+// refused, and open ground beside it, which is exactly what must be allowed.
+func TestPlaceableRefusesALocationsOwnSquare(t *testing.T) {
+	w := world.Generate(1994, content.New(&tables(t).Text))
+
+	checked := 0
+	for _, p := range w.POIs {
+		if quest.Placeable(w, p.Pos) {
+			t.Errorf("a place may be invented on top of %s at %v", p.Name, p.Pos)
+		}
+		checked++
+	}
+	if checked == 0 {
+		t.Fatal("this world has no locations, so nothing was refused")
+	}
+
+	// And it has to say yes to something, or the rule is "no" wearing a name
+	// and the generator above it would simply never produce a destination.
+	open := 0
+	for y := 0; y < world.Height && open < 50; y++ {
+		for x := 0; x < world.Width && open < 50; x++ {
+			p := core.Point{X: x, Y: y}
+			if w.Walkable(x, y) && w.POIAt(x, y) == nil && quest.Placeable(w, p) {
+				open++
+			}
+		}
+	}
+	if open == 0 {
+		t.Error("Placeable refuses every square in the world")
+	}
+
+	// Water is not ground, whatever else is true of it.
+	for y := 0; y < world.Height; y++ {
+		for x := 0; x < world.Width; x++ {
+			if !w.Walkable(x, y) && quest.Placeable(w, core.Point{X: x, Y: y}) {
+				t.Fatalf("a place may be invented on water at %d,%d", x, y)
+			}
+		}
+	}
+}
+
+// The search only ever returns somewhere Placeable allows, and this proves it
+// rather than sampling it.
+//
+// The world here is built to leave the search no honest answer: ocean
+// everywhere, except a ring of walkable tiles at exactly the distances it
+// looks at — and every one of those carries a location. A search that consults
+// Placeable finds nowhere and says so. A search that only checks walkable
+// ground returns one of them immediately.
+//
+// This is the control the original version of this check could not have. It
+// asserted the outcome over a real world and passed with the rule deleted;
+// the fix was not a bigger sample, it was a world small enough to be exhaustive.
+func TestTheSearchNeverReturnsSomewhereTheRuleRefuses(t *testing.T) {
+	w := &world.Map{
+		Seed:     1,
+		Tiles:    make([]world.Terrain, world.Width*world.Height),
+		Explored: make([]bool, world.Width*world.Height),
+	}
+	// Ocean is the zero value, so everything is already water.
+	home := &world.POI{Kind: world.KindVillage, Name: "Home", Pos: core.Point{X: 80, Y: 60}}
+	w.POIs = append(w.POIs, home)
+
+	// Dry land only where the search looks, and a location on every square of
+	// it. Manhattan distances from a quarter of the range to three quarters is
+	// exactly the band madeDestination samples.
+	for d := quest.QuestRange / 4; d <= quest.QuestRange*3/4; d++ {
+		for dx := -d; dx <= d; dx++ {
+			dy := d - core.Abs(dx)
+			for _, p := range []core.Point{
+				{X: home.Pos.X + dx, Y: home.Pos.Y + dy},
+				{X: home.Pos.X + dx, Y: home.Pos.Y - dy},
+			} {
+				if p.X < 0 || p.Y < 0 || p.X >= world.Width || p.Y >= world.Height {
+					continue
+				}
+				w.Tiles[p.Y*world.Width+p.X] = world.Plains
+				w.POIs = append(w.POIs, &world.POI{Kind: world.KindCamp, Name: "Taken", Pos: p})
+			}
+		}
+	}
+
+	g := core.NewRNG(7)
+	for i := 0; i < 200; i++ {
+		if at, name, ok := quest.MadeDestination(g, w, home); ok {
+			t.Fatalf("the search returned %v (%q) in a world where every reachable square is a location",
+				at, name)
+		}
+	}
+
+	// And the same world with the locations lifted must produce somewhere, or
+	// the test above passes because the search is broken in the other
+	// direction and never returns anything at all.
+	w.POIs = w.POIs[:1]
+	found := false
+	for i := 0; i < 200 && !found; i++ {
+		if at, _, ok := quest.MadeDestination(g, w, home); ok {
+			found = true
+			if !quest.Placeable(w, at) {
+				t.Errorf("the search returned %v, which Placeable refuses", at)
+			}
+		}
+	}
+	if !found {
+		t.Error("with the ground clear the search still found nowhere")
 	}
 }
