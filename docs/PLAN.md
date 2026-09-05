@@ -4260,6 +4260,58 @@ The closed verb list in `TestEveryObjectiveOpensWithAnAction` refused the new
 errand kind until its imperative was added — a test doing the job it was written
 for, unprompted, a pass later. That list is worth keeping closed.
 
+## Shops you walk into, and people who walk about
+
+### A shop was a menu attached to a person
+
+A town's buildings have had doors and floors since they were first generated,
+and what was behind one was three to six tiles by one to three — a cupboard,
+with the keeper standing in it because there was nowhere else to stand. A shop
+is a room now, entered through the door it always had, with a counter, somebody
+behind it and stock on the wall that says what the trade is before anybody
+speaks. The building is solid from the street with a door in its wall, which is
+what it looked like from outside all along.
+
+**The save format learns nothing.** A party in a shop is recorded standing at
+its door, because that is where walking out puts them and a save is a place you
+come back to rather than a photograph. The alternative is a field naming which
+room of which building, which every old save answers with a zero meaning the
+first shop in town. Rooms are held the way floors are: one `g.Local`, replaced
+on the way in, the settlement rebuilt on the way out.
+
+What this opens up is somewhere to *put* people. A hireling loitering in the
+street outside an inn is a hireling nobody finds; a hireling at a table inside
+it is somewhere you go to look. Nothing has been moved indoors yet.
+
+### The ones who matter stand still
+
+Idle townsfolk drift and anybody holding an errand, a story or a job does not.
+It says which is which from across a street, without a word, and it is learned
+by noticing — the kind of rule worth having. It costs nothing because the game
+already works out who is who in order to draw the attention star.
+
+**It could not be done without changing what a person is.** Three things about a
+villager came off a hash of the tile they stood on — their errand, their story
+and their face — and that was stable only because nobody in a town had ever
+moved. They key on the name now, which is the identity that survives walking and
+is already what the portrait pools use.
+
+Worth generalising: *a fact about a person must not be derived from a fact about
+a square.* There may be more of these; the three found here were found by
+wanting one villager to take one step.
+
+### The rule that could be tested
+
+The check that an errand never invents a place on top of a location was two
+clauses inside a loop, and the test for it passed with the clauses deleted. Split
+into `quest.Placeable` and a user of it, there are two provable statements where
+there was one unprovable one — and the second is proved against a world built to
+be exhaustive rather than sampled: ocean everywhere except the ring the search
+looks at, with a location on every square of it.
+
+**The same shape is available anywhere this game decides where something may
+stand**, and every one of those is currently a condition inside a loop.
+
 ## What is open, and in what order
 
 Rewritten after the session that answered items 2, 4 and half of 6, and found

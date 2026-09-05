@@ -488,6 +488,17 @@ which event fires which trigger, and where it is safe to put a box on screen.
   dungeon three times. `world.Depth` is the switch, a floor of a many-levelled
   place is smaller than a place with one floor, and `UsedKey` carries the floor
   or opening a chest on the ground floor empties the one three storeys up.
+- **A fact about a person must not be derived from a fact about a square.**
+  Whether a villager holds an errand, has a story, and what they look like were
+  all hashed off their tile, which was stable only because nobody in a town ever
+  moved. They key on the name now — `personHash`, not `unitHash` — and idle
+  townsfolk wander while anybody holding something stands still, which is what
+  tells the player which is which.
+- **A placement rule stated inside a loop can only be sampled.** `quest.Placeable`
+  is a named function so it can be asked directly, and its user is tested against
+  a world built to be exhaustive rather than a big sample. The condition it
+  replaced passed its own test with the check deleted. Every other "where may
+  this stand" decision in this codebase is still a condition inside a loop.
 - **Companions cannot die**, and anything designed around losing one has no
   stake. `checkEnd` puts a party member at zero hit points out of the fight and
   `reviveFallen` stands them up the moment it ends. An escort is priced in a
