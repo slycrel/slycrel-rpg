@@ -96,3 +96,34 @@ func Confess(c *model.Character) int {
 	c.Renown = core.Max(0, c.Renown-n)
 	return n
 }
+
+// The band a hireling's cut is rolled in, and a way to roll it from a name.
+//
+// It is a band rather than a number so that two people outside the same inn are
+// not the same offer, and it is reachable from a name so that the offer can be
+// *quoted before it is accepted*. It used to be rolled inside Recruit, which
+// happens after the money changes hands — so the pitch said "a cut of the coin
+// after" and the actual figure arrived in the line confirming the hire. That is
+// a price told to you once you have paid it.
+const (
+	cutLow  = 8
+	cutHigh = 18
+)
+
+// RolledCut is what this person asks a stranger, before reputation moves it.
+func RolledCut(g *core.RNG) int { return g.Between(cutLow, cutHigh) }
+
+// CutFromName is RolledCut for somebody who has not been hired yet.
+//
+// Keyed on the name so the number is the same every time the offer is opened
+// and the same when it is taken — a price that changed between reading it and
+// agreeing to it would be worse than not quoting one. The hash is the same
+// shape the portrait pool uses to keep a face stable for the same reason.
+func CutFromName(name string) int {
+	var h uint32 = 2166136261
+	for i := 0; i < len(name); i++ {
+		h ^= uint32(name[i])
+		h *= 16777619
+	}
+	return cutLow + int(h%uint32(cutHigh-cutLow+1))
+}

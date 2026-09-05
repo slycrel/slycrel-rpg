@@ -78,8 +78,16 @@ func (g *Game) offerRecruit(e *world.Entity) {
 	// mercenary's sales pitch overstating itself while the cut vanished into
 	// nothing; now that the same percentage visibly turns into a sword three
 	// towns later, the pitch is a rule the player can check.
-	body := fmt.Sprintf("%s\n\nA %s. %d coins up front, and a cut of the coin after.",
-		e.Line, trade, cost)
+	// The cut, in figures, before anybody pays anything.
+	//
+	// It used to say "and a cut of the coin after" and then tell you the number
+	// in the line confirming the hire — a price quoted once you have paid it,
+	// which is the same fault the shop rows were fixed for and the inn and the
+	// shrine already avoid. It is derived from their name so the figure in the
+	// offer is the figure in the contract; see rules.CutFromName.
+	cut := rules.AskingCut(rules.CutFromName(e.Name), g.Player.Honor)
+	body := fmt.Sprintf("%s\n\nA %s. %d coins up front, and %d%% of the coin after.",
+		e.Line, trade, cost, cut)
 
 	switch {
 	case g.PartyFull():
@@ -96,7 +104,7 @@ func (g *Game) offerRecruit(e *world.Entity) {
 	// that was missing.
 	g.AskAs(e.Name, g.roleOf(e), g.faceOf(e), fmt.Sprintf("%s\n\nYou have %d coins.", body, g.Player.Coins),
 		[]ui.MenuItem{
-			{Label: "Pay", Detail: fmt.Sprintf("%d coins", cost)},
+			{Label: "Pay", Detail: fmt.Sprintf("%d coins, %d%%", cost, cut)},
 			{Label: "Walk away"},
 		},
 		func(g *Game, choice int) {
@@ -141,7 +149,11 @@ func (g *Game) hire(e *world.Entity, level int) {
 	// you took on had to say about it. Applied here rather than inside Recruit
 	// because Recruit rolls a person and this is a negotiation: the same
 	// hireling asks a different number of two different employers.
-	rolled := c.Cut
+	// The number they quoted, not a fresh roll. Recruit rolls one because
+	// hirelings are also made for fixtures and the balance report, where nobody
+	// has been offered anything — but a person the player has just agreed terms
+	// with asks what they said they would ask.
+	rolled := rules.CutFromName(e.Name)
 	c.Cut = rules.AskingCut(rolled, g.Player.Honor)
 
 	// Hiring happens outside an inn in front of whoever is passing.

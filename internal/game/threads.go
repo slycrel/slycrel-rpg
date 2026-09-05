@@ -2,6 +2,7 @@ package game
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/model"
@@ -205,10 +206,28 @@ func (g *Game) offerThreadEnding(t *thread.Thread, setup string) bool {
 	rows := make([]ui.MenuItem, 0, len(opts)+1)
 	for _, e := range opts {
 		row := ui.MenuItem{Label: e.Label}
+		// What it costs *and* what it does to their terms.
+		//
+		// Fifteen of the twenty-six endings in the game move the companion's
+		// cut permanently, which is the one lasting reward for finishing
+		// somebody's story — and none of them said so until after it was
+		// chosen. A player could burn a contract for nothing and never learn
+		// that it was the choice that took five points off every haul for the
+		// rest of the run.
+		//
+		// The coins keep the column when there are both, because a price you
+		// cannot pay greys the row out and a cut cannot. What the cut does is
+		// said in the sentence above the menu instead, where there is room for
+		// all of them.
+		var parts []string
 		if cost := e.Costs() * int64(level); cost > 0 {
-			row.Detail = fmt.Sprintf("%d coins", cost)
+			parts = append(parts, fmt.Sprintf("%d coins", cost))
 			row.Disabled = g.Player.Coins < cost
 		}
+		if owner != nil && e.Cut != 0 {
+			parts = append(parts, fmt.Sprintf("%+d%%", e.Cut))
+		}
+		row.Detail = strings.Join(parts, ", ")
 		rows = append(rows, row)
 	}
 	rows = append(rows, ui.MenuItem{Label: "Not yet"})
@@ -220,6 +239,11 @@ func (g *Game) offerThreadEnding(t *thread.Thread, setup string) bool {
 	// that does not say what is in the purse is asking somebody to remember a
 	// number from another room.
 	setup += fmt.Sprintf("\n\nYou have %d coins.", g.Player.Coins)
+	// And what their terms are now, so the percentages in the rows are a
+	// difference against something rather than a number floating on its own.
+	if owner != nil && anyMovesTheCut(opts) {
+		setup += fmt.Sprintf(" %s takes %d%% of the coin.", owner.Name, owner.Cut)
+	}
 
 	g.AskAs(t.Owner, "", faceTown.pick(t.Owner), setup, rows, func(g *Game, choice int) {
 		if choice < 0 || choice >= len(opts) {
@@ -325,6 +349,18 @@ func (g *Game) threadsOnEnteringPOI(idx int) {
 func (g *Game) remindThreadEndings() bool {
 	for _, t := range g.Threads.Waiting() {
 		if g.offerThreadEnding(t, "") {
+			return true
+		}
+	}
+	return false
+}
+
+// anyMovesTheCut reports whether any of these endings changes what the
+// companion asks for, so the box only quotes their terms when the choice is
+// about them.
+func anyMovesTheCut(opts []thread.Ending) bool {
+	for _, e := range opts {
+		if e.Cut != 0 {
 			return true
 		}
 	}

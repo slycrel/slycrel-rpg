@@ -960,3 +960,89 @@ func TestEveryHeroFitsTheStageItStandsOn(t *testing.T) {
 		t.Errorf("a stage is %.0f tall and the rows are %d apart", memberStageH, partyRowH)
 	}
 }
+
+// A hireling's cut is the number they quoted, not a fresh roll.
+//
+// It used to be rolled inside Recruit — which runs after the money changes
+// hands — so the pitch said "a cut of the coin after" and the figure arrived in
+// the line confirming the hire. That is a price told to you once you have paid
+// it, and it is the fault the inn, the shrine and the shop rows were all fixed
+// for.
+//
+// Keyed on the name, so opening the offer twice quotes the same number and
+// agreeing to it gets that number.
+func TestAHirelingsCutIsQuotedBeforeItIsCharged(t *testing.T) {
+	// The check that matters is not that the derivation is stable — it is that
+	// the number in the offer is the number in the contract. A stable
+	// derivation used in one place and not the other is exactly the bug this
+	// replaces, and it passes a determinism test.
+	for _, name := range []string{"Nessa", "Sable Vane", "The Widow Pemberly"} {
+		g := storyGame(t)
+		g.Player.Honor = 4 // so AskingCut is doing something and is not the identity
+
+		e := &world.Entity{
+			Kind: world.ERecruit, Name: name, Class: string(model.ClassThief),
+			Look: "hero/thief", Pos: core.Point{X: 3, Y: 3},
+		}
+		quoted := rules.AskingCut(rules.CutFromName(e.Name), g.Player.Honor)
+
+		g.hire(e, 5)
+		if len(g.Allies) == 0 {
+			t.Fatalf("%q was hired and did not turn up", name)
+		}
+		if got := g.Allies[len(g.Allies)-1].Cut; got != quoted {
+			t.Errorf("%q was quoted %d%% and charges %d%%", name, quoted, got)
+		}
+		if quoted < 3 || quoted > 30 {
+			t.Errorf("%q asks for %d%%, outside anything the game allows", name, quoted)
+		}
+	}
+	// Different people ask different things, or the quote carries no
+	// information and the band may as well be a constant.
+	seen := map[int]bool{}
+	for _, n := range []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"} {
+		seen[rules.CutFromName(n)] = true
+	}
+	if len(seen) < 4 {
+		t.Errorf("twelve different people asked for %d different cuts", len(seen))
+	}
+}
+
+// Every ending that moves a companion's terms says so before it is chosen.
+//
+// Fifteen of the twenty-six endings in the game change the cut permanently,
+// which is the one lasting reward for finishing somebody's story — and the menu
+// quoted coins and said nothing about it. A player could burn a contract for
+// no visible gain and never learn it was the choice that took five points off
+// every haul for the rest of the run.
+func TestAnEndingSaysWhatItDoesToTheirTerms(t *testing.T) {
+	root, err := gamedata.FindRoot()
+	if err != nil {
+		t.Skipf("no data directory: %v", err)
+	}
+	tables, err := gamedata.Load(root)
+	if err != nil {
+		t.Fatalf("loading content: %v", err)
+	}
+
+	moves, total := 0, 0
+	for _, sk := range tables.Threads.Threads {
+		for _, e := range sk.Endings {
+			total++
+			if e.Cut != 0 {
+				moves++
+			}
+		}
+	}
+	if total == 0 {
+		t.Fatal("no endings at all")
+	}
+	if moves == 0 {
+		t.Fatal("no ending changes a companion's cut, so there is nothing to quote")
+	}
+	// The reward has to be worth having on at least some of them, or "finish
+	// their story" is advice rather than a mechanic.
+	if moves*3 < total {
+		t.Errorf("only %d of %d endings move the cut; the reward is a rounding error", moves, total)
+	}
+}

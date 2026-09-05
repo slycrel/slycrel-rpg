@@ -1032,7 +1032,7 @@ func Recruit(g *core.RNG, name string, class model.Class, blood model.MonsterKin
 	c := BuildCharacter(g, class, level)
 	c.Name = name
 	c.Ally = true
-	c.Cut = g.Between(8, 18)
+	c.Cut = RolledCut(g)
 	c.Blood = blood
 	ApplyLineage(c)
 	// Rested and ready. ApplyLineage only ever clamps downward — it has no way
