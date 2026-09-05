@@ -557,7 +557,7 @@ func TestTownspeopleActuallyHaveStories(t *testing.T) {
 				continue
 			}
 			settlements++
-			g.Local = world.BuildLocal(p, write)
+			g.Local = world.BuildLocal(p, write, 0)
 			g.Walk.Place(p.Pos)
 			for _, e := range g.Local.Entities {
 				if e.Kind != world.ENPC {
@@ -627,7 +627,7 @@ func TestATownOffersOneStoryAtATime(t *testing.T) {
 			if !p.Kind.Settlement() {
 				continue
 			}
-			g.Local = world.BuildLocal(p, write)
+			g.Local = world.BuildLocal(p, write, 0)
 			g.Walk.Place(p.Pos)
 			for _, e := range g.Local.Entities {
 				if e.Kind == world.ENPC {
@@ -855,7 +855,7 @@ func TestTheCompanyShopsWhereThereIsACounter(t *testing.T) {
 	place := func(kind world.POIKind) *world.LocalMap {
 		return world.BuildLocal(&world.POI{
 			Name: "Somewhere", Kind: kind, Pos: core.Point{X: 40, Y: 40}, Seed: 7,
-		}, write)
+		}, write, 0)
 	}
 
 	for _, tc := range []struct {

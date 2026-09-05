@@ -168,7 +168,7 @@ func TestLocalMapsAreEnterable(t *testing.T) {
 	m := world.Generate(1994, stubNamer{})
 	seen := map[world.POIKind]bool{}
 	for _, p := range m.POIs {
-		l := world.BuildLocal(p, stubNamer{})
+		l := world.BuildLocal(p, stubNamer{}, 0)
 		if !l.At(l.Entry.X, l.Entry.Y).Info().Passable {
 			t.Errorf("%s (%s): entry tile is solid", p.Name, p.Kind)
 		}
@@ -206,12 +206,12 @@ func TestSpentInteractablesSurviveLeaving(t *testing.T) {
 		t.Skip("seed produced no dungeon")
 	}
 
-	first := world.BuildLocal(poi, stubNamer{})
+	first := world.BuildLocal(poi, stubNamer{}, 0)
 	var spent []*world.Entity
 	for _, e := range first.Entities {
 		if e.Kind == world.EChest || e.Kind == world.EFoe {
 			e.Used = true
-			poi.MarkUsed(string(e.Kind), e.Pos)
+			poi.MarkUsed(string(e.Kind), e.Pos, 0)
 			spent = append(spent, e)
 		}
 	}
@@ -220,7 +220,7 @@ func TestSpentInteractablesSurviveLeaving(t *testing.T) {
 	}
 
 	// Walk out and back in.
-	again := world.BuildLocal(poi, stubNamer{})
+	again := world.BuildLocal(poi, stubNamer{}, 0)
 	for _, e := range spent {
 		found := false
 		for _, r := range again.Entities {
@@ -243,8 +243,8 @@ func TestSpentInteractablesSurviveLeaving(t *testing.T) {
 func TestInteriorsAreDeterministic(t *testing.T) {
 	m := world.Generate(2026, stubNamer{})
 	for _, p := range m.POIs[:core.Min(12, len(m.POIs))] {
-		a := world.BuildLocal(p, stubNamer{})
-		b := world.BuildLocal(p, stubNamer{})
+		a := world.BuildLocal(p, stubNamer{}, 0)
+		b := world.BuildLocal(p, stubNamer{}, 0)
 		if a.W != b.W || a.H != b.H || a.Entry != b.Entry {
 			t.Errorf("%s (%s) regenerated at a different size or entry", p.Name, p.Kind)
 			continue
@@ -578,7 +578,7 @@ func TestRecruitsLookLikeTheTradeTheySell(t *testing.T) {
 	for _, seed := range []int64{1, 42, 1994, 20260816} {
 		m := world.Generate(seed, stubNamer{})
 		for _, poi := range m.POIs {
-			for _, e := range world.BuildLocal(poi, stubNamer{}).Entities {
+			for _, e := range world.BuildLocal(poi, stubNamer{}, 0).Entities {
 				if e.Kind != world.ERecruit {
 					continue
 				}

@@ -132,6 +132,11 @@ type Inside struct {
 	POI    int        `json:"poi"` // index into File.POIs
 	At     core.Point `json:"at"`
 	Facing int        `json:"facing"`
+	// Floor is which level of the place, counting from the way in. Absent in
+	// every file written before interiors had more than one, and a nought
+	// there is the ground floor — which is exactly what those saves mean,
+	// since the places they were taken in had only the one.
+	Floor int `json:"floor,omitempty"`
 }
 
 // POIState is the mutable half of a point of interest.

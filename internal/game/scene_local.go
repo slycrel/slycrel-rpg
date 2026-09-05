@@ -203,7 +203,14 @@ func (g *Game) interact(e *world.Entity) {
 	case world.EExit:
 		g.Sound.Play("world/enter")
 		g.Local = nil
+		g.floor = 0
 		g.Pop()
+
+	case world.EDeeper:
+		g.changeFloor(g.floor+1, world.EShallower)
+
+	case world.EShallower:
+		g.changeFloor(g.floor-1, world.EDeeper)
 
 	case world.ENPC:
 		g.talkTo(e)
@@ -219,7 +226,11 @@ func (g *Game) interact(e *world.Entity) {
 
 	case world.EChest:
 		g.spend(e)
-		g.openChest(e)
+		g.openChest(e, false)
+
+	case world.EHoard:
+		g.spend(e)
+		g.openChest(e, true)
 
 	case world.EShop:
 		g.Push(newShopScene(g, e))
@@ -323,13 +334,24 @@ func (g *Game) interact(e *world.Entity) {
 func (g *Game) spend(e *world.Entity) {
 	e.Used = true
 	if g.Local != nil {
-		g.Local.POI.MarkUsed(string(e.Kind), e.Pos)
+		g.Local.POI.MarkUsed(string(e.Kind), e.Pos, g.floor)
 	}
 }
 
 // openChest rolls contents scaled to the location's level band.
-func (g *Game) openChest(e *world.Entity) {
-	coins := int64(g.RNG.Between(8, 25) * core.Max(1, g.Local.POI.Level))
+// openChest empties a chest, or the one at the bottom of the place.
+//
+// A hoard is the same routine paid three times over and guaranteed the gear
+// roll, which is the difference between a chest on the way and the reason for
+// the walk. Not a different table: a hoard that dropped things a chest cannot
+// would be a second loot system to keep in step with the first, and the thing
+// that makes the bottom of a tower worth reaching is how much rather than what.
+func (g *Game) openChest(e *world.Entity, hoard bool) {
+	mult := int64(1)
+	if hoard {
+		mult = 3
+	}
+	coins := int64(g.RNG.Between(8, 25)*core.Max(1, g.Local.POI.Level)) * mult
 	g.Player.Coins += coins
 	g.Sound.Play("world/chest")
 
@@ -352,7 +374,14 @@ func (g *Game) openChest(e *world.Entity) {
 			body += "\n" + itemLine(it)
 		}
 	}
-	if find, ok := g.rollAffixedGear(); ok {
+	find, ok := g.rollAffixedGear()
+	// A hoard always has something in it worth carrying. Rolled twice rather
+	// than given a better table, so it can still come up with nothing the
+	// second time and the first roll is the one that usually answers.
+	if !ok && hoard {
+		find, ok = g.rollAffixedGear()
+	}
+	if ok {
 		g.SayThen(e.Name, e.Line+"\n\n"+body, func(g *Game) {
 			g.takeFind(find, "Under everything else:")
 		})
@@ -831,6 +860,36 @@ func drawEntity(g *Game, ctx *render.Ctx, e *world.Entity) {
 		render.Rect(ctx.Dst, bx+6, by+9, 4, 3, color.RGBA{0xE8, 0xC8, 0x70, 0xFF})
 		render.Frame(ctx.Dst, bx+2, by+6, ts-4, ts-8, color.RGBA{0x30, 0x20, 0x10, 0xFF})
 		return
+	case world.EHoard:
+		// The same chest in gold, and bigger. It is the end of the place; a
+		// player who has walked four floors for it should be able to see that
+		// it is not the third chest of the afternoon.
+		render.Rect(ctx.Dst, bx+1, by+4, ts-2, ts-6, color.RGBA{0xB0, 0x88, 0x30, 0xFF})
+		render.Rect(ctx.Dst, bx+1, by+4, ts-2, 4, color.RGBA{0xF0, 0xD0, 0x70, 0xFF})
+		render.Rect(ctx.Dst, bx+6, by+8, 4, 4, color.RGBA{0xFF, 0xF0, 0xB0, 0xFF})
+		render.Frame(ctx.Dst, bx+1, by+4, ts-2, ts-6, color.RGBA{0x40, 0x30, 0x10, 0xFF})
+		return
+	case world.EDeeper, world.EShallower:
+		// Four treads, each narrower than the last, with a dark line under
+		// every one.
+		//
+		// The gaps are the whole drawing. The first version stacked three
+		// three-pixel bars with no space between them, which at this size is a
+		// grey rectangle — and a grey rectangle in the corner of a room is
+		// scenery. Steps are read from the shadow under each tread, so that is
+		// what is drawn.
+		//
+		// Which way it goes is in the label rather than in the picture: at
+		// sixteen pixels the difference between up and down is one shaded edge,
+		// and a player deciding whether to commit to another floor should not
+		// have to read a shaded edge.
+		for i := 0; i < 4; i++ {
+			w := float64(ts-4) - float64(i)*3
+			y := by + 3 + float64(i)*3
+			render.Rect(ctx.Dst, bx+2, y, w, 2, color.RGBA{0xB4, 0xAC, 0xA0, 0xFF})
+			render.Rect(ctx.Dst, bx+2, y+2, w, 1, color.RGBA{0x4C, 0x46, 0x40, 0xFF})
+		}
+		return
 	case world.EAltar:
 		render.Rect(ctx.Dst, bx+4, by+5, ts-8, ts-6, color.RGBA{0xB8, 0xB0, 0x90, 0xFF})
 		render.Rect(ctx.Dst, bx+2, by+3, ts-4, 3, color.RGBA{0xE8, 0xE0, 0xB8, 0xFF})
@@ -899,4 +958,64 @@ func (g *Game) drawOmen(ctx *render.Ctx, e *world.Entity) {
 	y := top + oy - 6 + starBob[(g.Tick()/8)%len(starBob)]
 	drawGlyph(ctx.Dst, rows, x+2, y+2, color.RGBA{0x10, 0x0C, 0x14, 0xD8})
 	drawGlyph(ctx.Dst, rows, x, y, col)
+}
+
+// changeFloor rebuilds the interior one level along and stands the party on the
+// stair they came out of.
+//
+// The arrival point is the *matching* stair rather than the floor's own entry,
+// and that is the whole of what makes a staircase feel like one: going down and
+// immediately turning round has to put you back where you were, not at the
+// front door. Floors are deterministic from the location's seed and the floor
+// number, so the stair on the other side is always there to be found — the
+// fallback to Entry exists for the one case that cannot happen and would be a
+// party standing in a wall if it did.
+func (g *Game) changeFloor(to int, arriveAt world.EntityKind) {
+	if g.Local == nil || to < 0 || to >= g.Local.Depth {
+		return
+	}
+	poi := g.Local.POI
+	g.floor = to
+	g.Local = world.BuildLocal(poi, g.Write, to)
+
+	at := g.Local.Entry
+	for _, e := range g.Local.Entities {
+		if e.Kind == arriveAt {
+			at = e.Pos
+			break
+		}
+	}
+	g.LocalWalk.Place(at)
+	g.reformLines()
+	g.localFollow.Place(at)
+	g.Sound.Play("world/enter")
+
+	// Say where you are, because a floor is the one piece of state in this game
+	// with no readout: the map looks like a map and the strip says the place,
+	// and neither of those changes when you go down a flight.
+	g.Log.AddColor(render.ColGold, "%s — %s", poi.Name, floorName(poi, to, g.Local.Depth))
+}
+
+// floorName is how a level of a place is described, which depends on which way
+// the place goes.
+func floorName(poi *world.POI, floor, depth int) string {
+	if depth <= 1 {
+		return poi.Tag
+	}
+	if poi.Kind == world.KindTower {
+		if floor+1 == depth {
+			return "the top"
+		}
+		if floor == 0 {
+			return "the ground floor"
+		}
+		return fmt.Sprintf("floor %d", floor+1)
+	}
+	if floor == 0 {
+		return "the way in"
+	}
+	if floor+1 == depth {
+		return "the bottom"
+	}
+	return fmt.Sprintf("%d floors down", floor)
 }

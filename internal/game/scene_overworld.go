@@ -374,7 +374,8 @@ func (g *Game) enterPOI(poi *world.POI) {
 	// Whatever put you here, you are here: the doorstep is a tile you have
 	// arrived at, so walking back out of it does not walk straight back in.
 	g.arrived = poi.Pos
-	g.Local = world.BuildLocal(poi, g.Write)
+	g.floor = 0
+	g.Local = world.BuildLocal(poi, g.Write, g.floor)
 	g.LocalWalk = core.NewWalker(7)
 	g.LocalWalk.Place(g.Local.Entry)
 	// The company comes in through the gate stacked on the hero and spreads

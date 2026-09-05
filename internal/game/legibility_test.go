@@ -297,7 +297,7 @@ func TestATownNeverPromisesMoreThanItCanGive(t *testing.T) {
 		if !p.Kind.Settlement() {
 			continue
 		}
-		g.Local = world.BuildLocal(p, g.Write)
+		g.Local = world.BuildLocal(p, g.Write, 0)
 		g.LocalWalk.Place(g.Local.Entry)
 
 		offers, people := 0, 0
@@ -346,7 +346,7 @@ func TestAJobInProgressIsNotStarred(t *testing.T) {
 	if idx < 0 {
 		t.Skip("this continent generated no settlements")
 	}
-	g.Local = world.BuildLocal(g.World.POIs[idx], g.Write)
+	g.Local = world.BuildLocal(g.World.POIs[idx], g.Write, 0)
 	g.LocalWalk.Place(g.Local.Entry)
 	defer func() { g.Local = nil }()
 
@@ -836,7 +836,7 @@ func TestOnlyPeopleHideTheirNames(t *testing.T) {
 	if idx < 0 {
 		t.Skip("this continent generated no settlements")
 	}
-	g.Local = world.BuildLocal(g.World.POIs[idx], g.Write)
+	g.Local = world.BuildLocal(g.World.POIs[idx], g.Write, 0)
 	g.LocalWalk.Place(g.Local.Entry)
 	defer func() { g.Local = nil }()
 
@@ -882,7 +882,7 @@ func TestAStandInOnlyMarksSomebodyWorthVisiting(t *testing.T) {
 		if !p.Kind.Settlement() {
 			continue
 		}
-		g.Local = world.BuildLocal(p, g.Write)
+		g.Local = world.BuildLocal(p, g.Write, 0)
 		g.LocalWalk.Place(g.Local.Entry)
 
 		for _, e := range g.Local.Entities {
@@ -919,7 +919,7 @@ func TestAShopIsLabelledFromAnywhereInTown(t *testing.T) {
 		if !p.Kind.Settlement() {
 			continue
 		}
-		g.Local = world.BuildLocal(p, g.Write)
+		g.Local = world.BuildLocal(p, g.Write, 0)
 		// The furthest corner from every shop in turn.
 		for _, e := range g.Local.Entities {
 			if e.Kind != world.EShop && e.Kind != world.EInn {

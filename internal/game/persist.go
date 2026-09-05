@@ -51,6 +51,7 @@ func (g *Game) Snapshot() *save.File {
 				POI:    idx,
 				At:     g.LocalWalk.Tile,
 				Facing: int(g.LocalWalk.Dir()),
+				Floor:  g.floor,
 			}
 		}
 	}
@@ -141,7 +142,8 @@ func (g *Game) Restore(f *save.File) error {
 
 	if f.Inside != nil && f.Inside.POI >= 0 && f.Inside.POI < len(g.World.POIs) {
 		poi := g.World.POIs[f.Inside.POI]
-		g.Local = world.BuildLocal(poi, g.Write)
+		g.floor = f.Inside.Floor
+		g.Local = world.BuildLocal(poi, g.Write, g.floor)
 		g.LocalWalk = core.NewWalker(7)
 		g.LocalWalk.Place(f.Inside.At)
 		g.LocalWalk.Face(core.Dir(f.Inside.Facing))

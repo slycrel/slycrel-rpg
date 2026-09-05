@@ -51,6 +51,14 @@ type UsedKey struct {
 	Kind string `json:"kind"`
 	X    int    `json:"x"`
 	Y    int    `json:"y"`
+	// Floor is which level of a many-levelled place this was on.
+	//
+	// Omitted when it is the ground floor, which is what every save written
+	// before interiors had floors is saying — and it is saying it correctly,
+	// since those places had exactly one. A chest at (10,10) on the second
+	// floor of a tower is not the chest at (10,10) on the first, and without
+	// this opening one would have emptied both.
+	Floor int `json:"floor,omitempty"`
 }
 
 // POI is one visitable location on the overworld.
@@ -73,8 +81,8 @@ type POI struct {
 }
 
 // MarkUsed records that an interactable has been spent.
-func (p *POI) MarkUsed(kind string, at core.Point) {
-	k := UsedKey{Kind: kind, X: at.X, Y: at.Y}
+func (p *POI) MarkUsed(kind string, at core.Point, floor int) {
+	k := UsedKey{Kind: kind, X: at.X, Y: at.Y, Floor: floor}
 	for _, u := range p.Used {
 		if u == k {
 			return
@@ -84,9 +92,9 @@ func (p *POI) MarkUsed(kind string, at core.Point) {
 }
 
 // IsUsed reports whether an interactable has already been spent.
-func (p *POI) IsUsed(kind string, at core.Point) bool {
+func (p *POI) IsUsed(kind string, at core.Point, floor int) bool {
 	for _, u := range p.Used {
-		if u.Kind == kind && u.X == at.X && u.Y == at.Y {
+		if u.Kind == kind && u.X == at.X && u.Y == at.Y && u.Floor == floor {
 			return true
 		}
 	}

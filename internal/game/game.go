@@ -96,6 +96,10 @@ type Game struct {
 	// nextAmbush is how many more steps underground before the next one. See
 	// ambushDue: a budget rather than a chance per step.
 	nextAmbush int
+	// floor is which level of the current interior the party is on, counting
+	// from the way in. Nought everywhere that has only one, which is most
+	// places and every place there used to be.
+	floor int
 
 	// arrived is the overworld tile the hero counts as having already walked
 	// onto, so stepping onto a location enters it exactly once.

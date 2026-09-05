@@ -386,7 +386,7 @@ func (g *Game) demoLoot() {
 	for _, e := range g.Local.Entities {
 		if e.Kind == world.EChest && !e.Used {
 			g.spend(e)
-			g.openChest(e)
+			g.openChest(e, false)
 			g.dropOverlays() // openChest pushes a message box
 		}
 	}

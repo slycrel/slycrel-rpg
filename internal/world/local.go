@@ -102,16 +102,28 @@ type EntityKind string
 
 // The interactable roster.
 const (
-	ENPC     EntityKind = "npc"
-	EShop    EntityKind = "shop"
-	EInn     EntityKind = "inn"
-	EChest   EntityKind = "chest"
-	ESign    EntityKind = "sign"
-	EFoe     EntityKind = "foe"     // a visible wandering monster
-	EExit    EntityKind = "exit"    // leave back to the overworld
-	EBoss    EntityKind = "boss"    // the thing the dungeon is about
-	EAltar   EntityKind = "altar"   // shrines: a blessing with strings attached
-	ERecruit EntityKind = "recruit" // someone outside the inn, available for money
+	ENPC   EntityKind = "npc"
+	EShop  EntityKind = "shop"
+	EInn   EntityKind = "inn"
+	EChest EntityKind = "chest"
+	// EHoard is the chest at the end of a place, as opposed to the ones on the
+	// way. Its own kind rather than a flag on EChest so that whatever decides
+	// what is inside can be told which of the two it is opening.
+	EHoard EntityKind = "hoard"
+	ESign  EntityKind = "sign"
+	EFoe   EntityKind = "foe" // a visible wandering monster
+	// EDeeper leads one floor further into a place and EShallower leads one
+	// back. Named for the direction of travel rather than for up or down,
+	// because a tower's "further in" is upstairs and a cave's is not, and the
+	// code that moves the player should not have to know which it is standing
+	// in. What the *player* is told is up or down, and that comes off the POI
+	// kind at the moment the words are written.
+	EDeeper    EntityKind = "deeper"
+	EShallower EntityKind = "shallower"
+	EExit      EntityKind = "exit"    // leave back to the overworld
+	EBoss      EntityKind = "boss"    // the thing the dungeon is about
+	EAltar     EntityKind = "altar"   // shrines: a blessing with strings attached
+	ERecruit   EntityKind = "recruit" // someone outside the inn, available for money
 	// EDecor is scenery. It stands there, it is solid, and walking into it does
 	// nothing — there is no case for it in `interact` and it is excluded from
 	// the bump that would call one. It exists so a dungeon can have a fire in
@@ -177,6 +189,10 @@ type LocalMap struct {
 	Biome string
 	// Indoors suppresses the overworld's ambient weather and changes music.
 	Indoors bool
+	// Floor is which level of the place this is, counting from the way in, and
+	// Depth is how many there are. Both are one and nought for everywhere that
+	// has only ever had a single storey.
+	Floor, Depth int
 }
 
 // At returns the tile at x,y, out-of-bounds reading as void.
@@ -235,26 +251,70 @@ func (l *LocalMap) rect(x, y, w, h int, t LocalTile) {
 // BuildLocal generates the interior of a POI. The result is a pure function of
 // poi.Seed, so leaving and re-entering gives you the same town — but the fresh
 // RNG fork means it costs nothing to store.
-func BuildLocal(poi *POI, w Namer) *LocalMap {
-	g := core.NewRNG(poi.Seed)
+func BuildLocal(poi *POI, w Namer, floor int) *LocalMap {
+	depth := Depth(poi)
+	floor = core.Clamp(floor, 0, depth-1)
+	// Each floor is its own stream, derived from the location's seed so it is
+	// the same floor every time it is walked into, and *not* forked — Fork
+	// ignores its receiver, so forking on the floor number alone would build
+	// the identical second storey under every tower on the continent.
+	g := core.NewRNG(poi.Seed + int64(floor)*floorStride)
+
 	var l *LocalMap
 	switch poi.Kind {
 	case KindCapital, KindTown, KindVillage, KindCastle:
 		l = buildSettlement(g, poi, w)
 	case KindDungeon, KindCave:
-		l = buildDungeon(g, poi, w)
+		l = buildDungeon(g, poi, w, floor, depth)
 	case KindOddity:
 		l = buildOddity(g, poi, w)
+	case KindTower:
+		l = buildTower(g, poi, w, floor, depth)
 	default:
 		l = buildSite(g, poi, w)
 	}
-	// Replay what the player has already dealt with here.
+	l.Floor, l.Depth = floor, depth
+	// Replay what the player has already dealt with here, on this floor.
 	for _, e := range l.Entities {
-		if poi.IsUsed(string(e.Kind), e.Pos) {
+		if poi.IsUsed(string(e.Kind), e.Pos, floor) {
 			e.Used = true
 		}
 	}
 	return l
+}
+
+// floorStride separates one floor's stream from the next.
+//
+// A large odd number rather than 1, so that the second floor of a place is not
+// the ground floor of whatever location happens to be seeded one along.
+const floorStride = 1_000_003
+
+// Depth is how many levels a location has.
+//
+// Most have one and always did. The three that go further are the ones whose
+// whole idea is depth — a dungeon, a cave, a tower — and how far is read off
+// the location's own level so that the deep places are the dangerous ones,
+// which is already how the world is banded.
+//
+// Two at level one and up to four at the top, because the floor above this is
+// not free: every one of them is a walk, and a five-storey tower at level two
+// is four rooms of the same fight between the player and the point of it.
+func Depth(poi *POI) int {
+	switch poi.Kind {
+	case KindCave, KindTower:
+	default:
+		// A dungeon deliberately stays one floor, and it is the interesting
+		// exclusion. It is already the deep place — fifty-two by forty, eleven
+		// rooms, a boss in the furthest one — and giving it three of those
+		// would not make it deeper, it would make it the same dungeon three
+		// times with the same boss at the end of the third. Depth is worth
+		// having where it replaces a walk with a descent, not where it
+		// multiplies one.
+		//
+		// It is one line if that turns out to be wrong.
+		return 1
+	}
+	return core.Clamp(2+poi.Level/5, 2, 4)
 }
 
 func newLocal(poi *POI, w, h int, base LocalTile) *LocalMap {
@@ -583,14 +643,23 @@ func buildOddity(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 
 // buildDungeon carves rooms and links them with elbow corridors, then seeds
 // foes, chests, and a boss in the room furthest from the entrance.
-func buildDungeon(g *core.RNG, poi *POI, wr Namer) *LocalMap {
-	l := newLocal(poi, 52, 40, LVoid)
+func buildDungeon(g *core.RNG, poi *POI, wr Namer, floor, depth int) *LocalMap {
+	// A floor of a many-levelled place is smaller than a place with one floor,
+	// and that is the whole of keeping this honest. A cave with three storeys
+	// of a dungeon's plan is three dungeons, which is not depth — it is the
+	// same walk repeated with the reward moved to the end of the third one.
+	// Divided so that the total is a little over one dungeon rather than three.
+	w, h, want := 52, 40, 11
+	if depth > 1 {
+		w, h, want = 34, 26, 6
+	}
+	l := newLocal(poi, w, h, LVoid)
 	l.Biome = "dungeon"
 	l.Indoors = true
 
 	type room struct{ x, y, w, h int }
 	var rooms []room
-	for tries := 0; tries < 500 && len(rooms) < 11; tries++ {
+	for tries := 0; tries < 500 && len(rooms) < want; tries++ {
 		r := room{
 			x: g.Between(1, l.W-10), y: g.Between(1, l.H-9),
 			w: g.Between(5, 9), h: g.Between(4, 7),
@@ -652,19 +721,22 @@ func buildDungeon(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 
 	entry := center(rooms[0])
 	l.Entry = entry
-	l.Entities = append(l.Entities, &Entity{
-		Kind: EExit, Pos: entry, Name: "the way out",
-		Line: "Daylight. Probably.",
-	})
+	// The way back, which is out of the place on the ground floor and up a
+	// flight on every other. Both stand on the tile you arrive at, so walking
+	// in and walking straight back out is one step either way.
+	l.Entities = append(l.Entities, wayBack(poi, entry, floor))
 
-	// The boss sits in whichever room is furthest from the entrance.
+	// The far room is where the point of the floor goes: the stairs on the way
+	// down, and whatever is waiting at the bottom on the last one.
 	far, farD := rooms[0], -1
 	for _, r := range rooms[1:] {
 		if d := center(r).Manhattan(entry); d > farD {
 			far, farD = r, d
 		}
 	}
-	if !poi.Cleared {
+	if floor+1 < depth {
+		l.Entities = append(l.Entities, deeperStair(poi, center(far)))
+	} else if !poi.Cleared {
 		l.Entities = append(l.Entities, &Entity{
 			Kind: EBoss, Pos: center(far), Name: "something large",
 			Line: "It has been waiting. It is not happy about the wait.",
@@ -673,6 +745,15 @@ func buildDungeon(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 			// game with a back and a side of its own.
 			Sprite: "foe/golem/walk",
 		})
+		// And the reason for the walk, beside it. A hoard is the one chest in
+		// a location that is worth the trip rather than worth opening on the
+		// way past.
+		if p, ok := openNear(g, l, center(far), 1, 4); ok {
+			l.Entities = append(l.Entities, &Entity{
+				Kind: EHoard, Pos: p, Name: "a hoard",
+				Line: "Whatever was guarding this is the thing you just walked past.",
+			})
+		}
 	}
 
 	// Wandering foes and chests in the other rooms.
@@ -928,3 +1009,132 @@ func (l *LocalMap) StepFoes(g *core.RNG) {
 
 // Facing reports which way an entity is looking, for sprite selection.
 func (e *Entity) Facing() core.Dir { return e.facing }
+
+// The stairs, and the words for them.
+//
+// A tower's "further in" is upstairs and a cave's is downstairs, and the code
+// that moves the player should not have to know which it is standing in — so
+// the entity kinds are named for the direction of travel and only the writing
+// knows about up and down. It is the one place in this file where the fiction
+// and the mechanism deliberately disagree.
+func goesUp(poi *POI) bool { return poi.Kind == KindTower }
+
+func deeperStair(poi *POI, at core.Point) *Entity {
+	if goesUp(poi) {
+		return &Entity{
+			Kind: EDeeper, Pos: at, Name: "stairs up",
+			Line: "They keep going. Somebody built this to be climbed.",
+		}
+	}
+	return &Entity{
+		Kind: EDeeper, Pos: at, Name: "stairs down",
+		Line: "Down, and colder.",
+	}
+}
+
+// wayBack is what stands on the tile you arrive at: the door out on the ground
+// floor, and the stairs you came by on every other.
+func wayBack(poi *POI, at core.Point, floor int) *Entity {
+	if floor == 0 {
+		return &Entity{
+			Kind: EExit, Pos: at, Name: "the way out",
+			Line: "Daylight. Probably.",
+		}
+	}
+	if goesUp(poi) {
+		return &Entity{
+			Kind: EShallower, Pos: at, Name: "stairs down",
+			Line: "Back the way you came.",
+		}
+	}
+	return &Entity{
+		Kind: EShallower, Pos: at, Name: "stairs up",
+		Line: "Back toward the daylight.",
+	}
+}
+
+// buildTower stacks a single room per floor, with a stair at each end.
+//
+// A tower was a one-room site for the life of the project, which is a tower in
+// name and a shed in fact. The shape is deliberately not the dungeon's: a
+// dungeon is a plan you get lost in and a tower is a climb, so each floor is
+// one room you cross, and the interest is what is standing in it rather than
+// which way to go. That also makes the last floor mean something — you have
+// walked past everything to reach it.
+func buildTower(g *core.RNG, poi *POI, wr Namer, floor, depth int) *LocalMap {
+	// Sized to fit the screen in one go: thirty tiles across and seventeen
+	// down is what 480x270 shows, so a floor of twenty-six by fifteen is a
+	// room you can see the far end of from the door. That is the whole design
+	// — a dungeon is a plan you get lost in and a tower is a climb, and a
+	// climb where you cannot see the stairs is just a smaller dungeon.
+	const w, h = 26, 15
+	l := newLocal(poi, w, h, LVoid)
+	l.Biome = poiBiome(poi.Kind)
+	l.Indoors = true
+	l.rect(1, 1, w-2, h-2, LFloor)
+	for x := 0; x < w; x++ {
+		l.set(x, 0, LWall)
+		l.set(x, h-1, LWall)
+	}
+	for y := 0; y < h; y++ {
+		l.set(0, y, LWall)
+		l.set(w-1, y, LWall)
+	}
+
+	entry := core.Point{X: w / 2, Y: h - 2}
+	top := core.Point{X: w / 2, Y: 2}
+	l.Entry = entry
+	l.Entities = append(l.Entities, wayBack(poi, entry, floor))
+
+	if floor+1 < depth {
+		l.Entities = append(l.Entities, deeperStair(poi, top))
+	} else if !poi.Cleared {
+		l.Entities = append(l.Entities, &Entity{
+			Kind: EBoss, Pos: top, Name: "something large",
+			Line:   "Whatever this tower is for, it is for this.",
+			Sprite: "foe/golem/walk",
+		})
+		if p, ok := openNear(g, l, top, 1, 4); ok {
+			l.Entities = append(l.Entities, &Entity{
+				Kind: EHoard, Pos: p, Name: "a hoard",
+				Line: "The top of a tower, and this is what was up here.",
+			})
+		}
+	}
+
+	// Two to four things standing in the room, and sometimes something to open.
+	//
+	// Never within a couple of tiles of either stair. A creature standing in
+	// front of a staircase hides it — character art is sixty-four pixels tall
+	// on a sixteen-pixel grid, so a foe one square below the stairs draws over
+	// them completely — and the stairs are the only landmark a floor has. It
+	// is a floor you can see the far end of, and this is what keeps the far end
+	// worth seeing.
+	clear := func(p core.Point) bool {
+		return chebyshev(p, top) > 2 && chebyshev(p, entry) > 2
+	}
+	for i, n := 0, g.Between(2, 4); i < n; i++ {
+		p, ok := openNearWhere(g, l, core.Point{X: w / 2, Y: h / 2}, 2, 7, clear)
+		if !ok {
+			continue
+		}
+		l.Entities = append(l.Entities, &Entity{
+			Kind: EFoe, Pos: p, Name: "a lurking shape",
+			Sprite: core.Pick(g, foeSprites), Wander: g.Chance(0.6),
+			Omen: rollOmen(g),
+		})
+	}
+	if g.Chance(0.5) {
+		if p, ok := openNearWhere(g, l, core.Point{X: w / 2, Y: h / 2}, 2, 7, clear); ok {
+			l.Entities = append(l.Entities, &Entity{
+				Kind: EChest, Pos: p, Name: "a chest", Line: wr.SignText(g),
+			})
+		}
+	}
+	if p, ok := openNear(g, l, core.Point{X: 3, Y: 3}, 0, 3); ok {
+		l.Entities = append(l.Entities, &Entity{
+			Kind: EDecor, Pos: p, Name: "a brazier", Sprite: "decor/brazier",
+		})
+	}
+	return l
+}
