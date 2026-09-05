@@ -193,6 +193,15 @@ type LocalMap struct {
 	// Depth is how many there are. Both are one and nought for everywhere that
 	// has only ever had a single storey.
 	Floor, Depth int
+	// Peaceful means nothing ambushes you here.
+	//
+	// A property of the map rather than a question asked of the POI kind, which
+	// is what it used to be — the interior step checked `!Kind.Settlement()`,
+	// and that was correct until something turned up that is not a settlement
+	// and is not dangerous either. A wayside is a fire with people sitting
+	// round it and it is built on a KindCamp, so the old test would have had
+	// the party jumped in the middle of somebody's supper.
+	Peaceful bool
 }
 
 // At returns the tile at x,y, out-of-bounds reading as void.
@@ -335,6 +344,8 @@ func buildSettlement(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 	}[poi.Kind]
 	l := newLocal(poi, size[0], size[1], LGrass)
 	l.Biome = "plains"
+	// A town is somewhere you are safe, which is most of what makes it a town.
+	l.Peaceful = true
 
 	// Ring wall with a gate at the bottom.
 	for x := 0; x < l.W; x++ {
@@ -1135,6 +1146,107 @@ func buildTower(g *core.RNG, poi *POI, wr Namer, floor, depth int) *LocalMap {
 		l.Entities = append(l.Entities, &Entity{
 			Kind: EDecor, Pos: p, Name: "a brazier", Sprite: "decor/brazier",
 		})
+	}
+	return l
+}
+
+// A wayside is a place you find rather than a place that is there.
+//
+// The overworld has locations on it, and finding one has always meant walking
+// to a marker somebody else put on your map. This is the other thing: a fire in
+// a clearing that was not there yesterday and will not be there tomorrow, with
+// somebody sitting at it who will sell you something.
+//
+// **Nothing about it is saved, and that is the design rather than a shortcut.**
+// A wanderer is already weather rather than furniture — the note on that type
+// says so, and for the same reason: this save format is a seed plus deltas, so
+// a place that persisted would have to become a delta, which means every file
+// written before today loads with none of them and every file after carries a
+// list of campsites. Walk away and it is gone. Come back and the road rolls you
+// another one somewhere else.
+//
+// It follows that a wayside cannot be saved *inside*, and that falls out
+// correctly without a special case: Game.poiIndex cannot find this POI in the
+// world's list, so the save records the party as standing where they were on
+// the overworld, which is where walking out of here would have put them.
+func BuildWayside(seed int64, level int, wr Namer) *LocalMap {
+	g := core.NewRNG(seed)
+	// A POI that is not on the map. It carries the level so encounters and
+	// prices here are worth what the country around them is worth, and a kind
+	// that keeps the interior code from treating this as a town — a wayside has
+	// no walls, no gate and no streets, and nothing here should walk it like a
+	// settlement.
+	poi := &POI{
+		Kind: KindCamp, Level: level, Seed: seed,
+		Name: "a fire by the road", Tag: "somebody else's evening",
+	}
+	l := newLocal(poi, 26, 18, LVoid)
+	l.Biome = "plains"
+	l.Peaceful = true
+
+	// A clearing: round, open, and walled by nothing but the dark.
+	cx, cy := l.W/2, l.H/2
+	for y := 0; y < l.H; y++ {
+		for x := 0; x < l.W; x++ {
+			dx, dy := float64(x-cx)/float64(l.W/2), float64(y-cy)/float64(l.H/2)
+			if dx*dx+dy*dy < 0.80+g.Float()*0.20 {
+				l.set(x, y, LFloor)
+			}
+		}
+	}
+	l.rect(cx-3, cy-2, 7, 5, LCobble)
+
+	l.Entry = core.Point{X: cx, Y: l.H - 4}
+	for l.At(l.Entry.X, l.Entry.Y) != LFloor && l.Entry.Y > 2 {
+		l.Entry.Y--
+	}
+	l.Entities = append(l.Entities, &Entity{
+		Kind: EExit, Pos: l.Entry, Name: "the road", Line: "Back to it.",
+	})
+
+	// The fire, which is the reason anybody stopped here.
+	l.Entities = append(l.Entities, &Entity{
+		Kind: EDecor, Pos: core.Point{X: cx, Y: cy}, Name: "a fire", Sprite: "decor/brazier",
+	})
+
+	// Somebody selling something. One trade rather than a row of them: this is
+	// a person with a bag, not a market, and the difference is most of what
+	// keeps a wayside from making towns pointless.
+	trade := core.Pick(g, []ShopKind{ShopApothecary, ShopSmith, ShopArmorer})
+	if p, ok := openNear(g, l, core.Point{X: cx, Y: cy}, 2, 5); ok {
+		l.Entities = append(l.Entities, &Entity{
+			Kind: EShop, Pos: p, Name: wr.PersonName(g), Shop: trade,
+			Line: wr.NPCLine(g), Sprite: shopSprites[trade],
+		})
+	}
+
+	// And sometimes somebody who would rather be travelling with you than
+	// sitting here. Rarer than in a town, because a hireling met on the road is
+	// a windfall and a hiring board is a service.
+	if g.Chance(0.35) {
+		if p, ok := openNear(g, l, core.Point{X: cx, Y: cy}, 2, 6); ok {
+			class := core.Pick(g, recruitClasses)
+			look := core.Pick(g, recruitLooks[class])
+			blood := ""
+			if g.Chance(0.35) {
+				blood = core.Pick(g, recruitBloods)
+			}
+			l.Entities = append(l.Entities, &Entity{
+				Kind: ERecruit, Pos: p, Name: wr.PersonName(g),
+				Line:  wr.RecruitPitch(g, blood),
+				Class: class, Blood: blood, Look: look, Sprite: look + "/idle",
+			})
+		}
+	}
+
+	// One or two others with nothing to sell and something to say.
+	for i, n := 0, g.Between(1, 2); i < n; i++ {
+		if p, ok := openNear(g, l, core.Point{X: cx, Y: cy}, 2, 6); ok {
+			l.Entities = append(l.Entities, &Entity{
+				Kind: ENPC, Pos: p, Name: wr.PersonName(g),
+				Line: wr.NPCLine(g), Sprite: core.Pick(g, folkSprites),
+			})
+		}
 	}
 	return l
 }

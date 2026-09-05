@@ -148,8 +148,13 @@ func (s *localScene) tryStep(g *Game, d core.Dir) {
 	g.Clock.Tick(1)
 	g.sinceFight++
 
-	// Interiors have their own ambush rate; towns do not.
-	if !g.Local.POI.Kind.Settlement() && g.ambushDue() {
+	// Interiors have their own ambush rate; the places people live in do not.
+	//
+	// Read off the map rather than off the location's kind. The kind test was
+	// right until somewhere turned up that is neither a settlement nor
+	// dangerous — a wayside is a fire with people round it, built on a
+	// KindCamp, and the party would have been jumped in the middle of it.
+	if !g.Local.Peaceful && g.ambushDue() {
 		enc := g.Data.PickEncounter(g.RNG, g.Local.Biome, g.Local.POI.Level, g.encounterSize(1+g.RNG.Intn(2)))
 		if len(enc.Monsters) > 0 {
 			g.Push(newBattleScene(g, enc, "dark"))

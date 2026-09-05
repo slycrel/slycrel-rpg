@@ -159,3 +159,68 @@ func TestOnlyTheDeepPlacesAreDeep(t *testing.T) {
 		}
 	}
 }
+
+// A wayside is somewhere you are safe, and somewhere with somebody in it.
+//
+// Both halves are the point of it. It is reached by walking into a green mark
+// on the road, so it has to pay out — a clearing with nothing in it is the
+// marker lying — and it must not then ambush you, which is a real hazard rather
+// than a hypothetical: the interior ambush used to ask the location's *kind*
+// whether the place was a settlement, and a wayside is built on a KindCamp,
+// which is not one.
+func TestAWaysideIsSafeAndWorthFinding(t *testing.T) {
+	for seed := int64(1); seed <= 40; seed++ {
+		l := BuildWayside(seed, 5, floorNamer{})
+		if !l.Peaceful {
+			t.Fatalf("seed %d: a fire with people round it is not marked peaceful", seed)
+		}
+		if count(l, EExit) != 1 {
+			t.Errorf("seed %d: %d ways back to the road", seed, count(l, EExit))
+		}
+		// Somebody to trade with, always. That is the reason for the walk.
+		if count(l, EShop) != 1 {
+			t.Errorf("seed %d: %d people selling anything", seed, count(l, EShop))
+		}
+		// And nothing that fights, ever. A boon that turns out to hold a
+		// monster is the mark meaning two things.
+		for _, k := range []EntityKind{EFoe, EBoss, EDeeper, EShallower} {
+			if got := count(l, k); got != 0 {
+				t.Errorf("seed %d: a wayside has %d %s", seed, got, k)
+			}
+		}
+		// Everything in it has to be standing somewhere you can reach.
+		for _, e := range l.Entities {
+			if !l.At(e.Pos.X, e.Pos.Y).Info().Passable {
+				t.Errorf("seed %d: %s is standing in the scenery at %v", seed, e.Kind, e.Pos)
+			}
+		}
+	}
+}
+
+// Two waysides are two different waysides.
+//
+// Nothing about one is saved — it is weather rather than furniture, the same
+// argument the wanderer type makes — so the seed is drawn fresh each time and
+// the only thing that would make them all the same is a generator that ignores
+// it.
+func TestNoTwoWaysidesAreTheSame(t *testing.T) {
+	sig := func(l *LocalMap) string {
+		s := ""
+		for _, e := range l.Entities {
+			s += fmt.Sprintf("%s%v;", e.Kind, e.Pos)
+		}
+		return s
+	}
+	seen := map[string]bool{}
+	same := 0
+	for seed := int64(1); seed <= 30; seed++ {
+		k := sig(BuildWayside(seed, 5, floorNamer{}))
+		if seen[k] {
+			same++
+		}
+		seen[k] = true
+	}
+	if same > 2 {
+		t.Errorf("%d of 30 waysides were repeats of one already generated", same)
+	}
+}

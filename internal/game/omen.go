@@ -5,6 +5,7 @@ import (
 	"image/color"
 
 	"github.com/slycrel/slycrel-rpg/internal/core"
+	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
 
@@ -130,6 +131,10 @@ const (
 	boonWell                   // psyche
 	boonCache                  // coins, and sometimes something in the pack
 	boonScout                  // marks the nearest place you have not found
+	// boonWayside is the one that is a place rather than an event: a fire in a
+	// clearing with somebody selling something at it. The other four happen to
+	// you in a sentence; this one you walk into and walk out of.
+	boonWayside
 )
 
 // pickBoon chooses what is standing there, weighted by what the company could
@@ -150,7 +155,7 @@ func (g *Game) pickBoon(rng *core.RNG) boonKind {
 			spent = true
 		}
 	}
-	pool := []boonKind{boonCache, boonScout, boonSpring, boonWell}
+	pool := []boonKind{boonCache, boonScout, boonSpring, boonWell, boonWayside}
 	if hurt {
 		pool = append(pool, boonSpring, boonSpring)
 	}
@@ -212,6 +217,9 @@ func (g *Game) grantBoon(rng *core.RNG, where string) {
 		g.Say("", fmt.Sprintf("Somebody buried this and did not come back for it. "+
 			"%d coins, and a hole where a %s used to be.", coins, where))
 
+	case boonWayside:
+		g.enterWayside(rng)
+
 	case boonScout:
 		if idx, name, ok := g.nearestUnfound(); ok {
 			g.World.POIs[idx].Discovered = true
@@ -253,4 +261,30 @@ func (g *Game) nearestUnfound() (int, string, bool) {
 		return 0, "", false
 	}
 	return best, g.World.POIs[best].Name, true
+}
+
+// enterWayside drops the party into a place that was not on the map.
+//
+// It is the same scene an interior uses, on a LocalMap with a POI that is not
+// in the world's list — and everything downstream already handles that, because
+// `currentPOIIndex` has always been able to return -1 and every caller of it
+// already checks. Quests do not advance here, sagas do not fire here and no
+// tracker points at it, which is right: this is somewhere nobody has heard of.
+func (g *Game) enterWayside(rng *core.RNG) {
+	if g.World == nil || g.Player == nil {
+		return
+	}
+	// Its own seed, so a wayside is a different one every time. Nothing about
+	// it is saved, so there is nothing for a stable seed to be stable for.
+	l := world.BuildWayside(int64(rng.Intn(1<<30)), g.encounterLevel(g.Walk.Tile), g.Write)
+
+	g.floor = 0
+	g.Local = l
+	g.LocalWalk = core.NewWalker(7)
+	g.LocalWalk.Place(l.Entry)
+	g.reformLines()
+	g.localFollow.Place(l.Entry)
+	g.Sound.Play("world/enter")
+	g.Push(newLocalScene(g))
+	g.Log.AddColor(render.ColGold, "A fire, and people around it. Nobody was expecting you.")
 }
