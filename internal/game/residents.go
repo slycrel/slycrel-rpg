@@ -1,6 +1,7 @@
 package game
 
 import (
+	"github.com/slycrel/slycrel-rpg/internal/core"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/world"
@@ -48,7 +49,7 @@ func (g *Game) hasStory(e *world.Entity) bool {
 	// A different salt from wantsToAsk's, or the two would be the same roll
 	// wearing different thresholds and the person with an errand would always
 	// be the person with a story.
-	return unitHash(e.Pos.X, e.Pos.Y, g.Local.POI.Seed, 0x51DE) < 0.22
+	return personHash(e.Name, g.Local.POI.Seed, 0x51DE) < 0.22
 }
 
 // residentThread returns the story this person is in the middle of telling, if
@@ -155,4 +156,62 @@ func (g *Game) residentJournalLine(t *thread.Thread) string {
 		where = g.World.POIs[t.HomePOI].Name
 	}
 	return t.Owner + ", in " + where
+}
+
+// stepTownsfolk drifts the people in a town who have nothing to say.
+//
+// **The ones who matter stand still, and that is the whole mechanism.** A
+// settlement draws eight or ten identical villagers and one or two of them are
+// holding something — an errand, a story, a job. Which is which has never been
+// visible except by the star over their head, and a star is something you have
+// to already be looking at.
+//
+// Movement says it from across the street and says it without a word: the
+// person shuffling between the well and the wall has nothing for you, and the
+// one who has not moved since you walked in does. It is a rule a player learns
+// by noticing rather than by being told, which is the sort worth having — and
+// it costs nothing, because the game already knows which of them is which in
+// order to draw the star.
+//
+// It is also why the three things that decide *who somebody is* had to stop
+// being keyed on where they are standing. A villager whose errand, story and
+// face came off their tile would have become a different person on their first
+// step, and the star would have hopped to whoever wandered into the square they
+// left.
+func (g *Game) stepTownsfolk() {
+	if g.Local == nil || !g.Local.POI.Kind.Settlement() {
+		return
+	}
+	poiIdx := g.currentPOIIndex()
+	for _, e := range g.Local.Entities {
+		if e.Kind != world.ENPC || e.Used || g.abed(e) {
+			continue
+		}
+		// Anybody the player has a reason to walk to stays where they are.
+		if g.attention(e, poiIdx) != attentionNone {
+			continue
+		}
+		// And a third of the time even the idle ones stay put, so a street
+		// reads as people standing about rather than as a crowd on a conveyor.
+		if !g.RNG.Chance(0.35) {
+			continue
+		}
+		d := core.Dir(g.RNG.Intn(4))
+		n := e.Pos.Add(d.Delta())
+		// Never onto the way out, never onto a doorway, and never onto
+		// somebody: a villager parked in a shop door is a shop you cannot get
+		// into, and one standing on the gate is the town refusing to let you
+		// leave.
+		if !g.Local.Walkable(n.X, n.Y) || g.Local.EntityAt(n.X, n.Y) != nil {
+			continue
+		}
+		if n == g.Local.Entry || g.Local.At(n.X, n.Y) == world.LDoor {
+			continue
+		}
+		if n == g.LocalWalk.Tile {
+			continue
+		}
+		e.Pos = n
+		e.Face(d)
+	}
 }

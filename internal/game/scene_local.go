@@ -81,6 +81,7 @@ func (s *localScene) Update(g *Game) error {
 	s.foeTimer--
 	if s.foeTimer <= 0 {
 		s.foeTimer = 34
+		g.stepTownsfolk()
 		g.Local.StepFoes(g.RNG)
 	}
 

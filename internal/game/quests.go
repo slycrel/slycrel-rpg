@@ -166,13 +166,15 @@ func partyFrac(party []*model.Character) float64 {
 }
 
 // wantsToAsk decides, stably, whether this particular person has an errand.
-// Derived from position rather than stored, like everything else about an
-// interior, so the same villager is always the one with the problem.
+//
+// Derived from *who they are* rather than stored, like everything else about an
+// interior, so the same villager is always the one with the problem — including
+// after they have walked across the square, which they now do.
 func (g *Game) wantsToAsk(e *world.Entity, poiIdx int) bool {
 	if g.Local == nil {
 		return false
 	}
-	return unitHash(e.Pos.X, e.Pos.Y, g.Local.POI.Seed, 0x9151) < 0.45
+	return personHash(e.Name, g.Local.POI.Seed, 0x9151) < 0.45
 }
 
 func (g *Game) offerQuest(e *world.Entity, q *quest.Quest) {

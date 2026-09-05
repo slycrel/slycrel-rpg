@@ -234,7 +234,7 @@ func (g *Game) questFaceKind(e *world.Entity) (quest.Kind, bool) {
 		return "", false
 	}
 	kinds := []quest.Kind{quest.Cull, quest.Fetch, quest.Delve, quest.Deliver}
-	i := int(unitHash(e.Pos.X, e.Pos.Y, g.Local.POI.Seed, 0x4A5C) * float64(len(kinds)))
+	i := int(personHash(e.Name, g.Local.POI.Seed, 0x4A5C) * float64(len(kinds)))
 	if i >= len(kinds) {
 		i = len(kinds) - 1
 	}

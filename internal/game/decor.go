@@ -99,6 +99,28 @@ func unitHash(x, y int, seed int64, salt uint32) float64 {
 	return float64(decorHash(x, y, seed, salt)) / 4294967296.0
 }
 
+// personHash returns a deterministic value in [0,1) for somebody, by name.
+//
+// **Keyed on who they are rather than on where they are standing**, which is
+// the difference between a fact about a person and a fact about a square.
+// Three things about a townsperson were decided by their position — whether
+// they hold an errand, whether they have a story, and what they look like —
+// and all three were stable only because nobody in a town ever moved. The
+// moment one of them takes a step they become a different person with a
+// different face, and the star over their head moves to whoever wandered onto
+// the tile they left.
+//
+// The name is the identity that survives walking, and it is already what the
+// portrait pools key on for exactly this reason.
+func personHash(name string, seed int64, salt uint32) float64 {
+	var h uint32 = 2166136261
+	for i := 0; i < len(name); i++ {
+		h ^= uint32(name[i])
+		h *= 16777619
+	}
+	return unitHash(int(h&0xFFFF), int(h>>16), seed, salt)
+}
+
 // drawDecor scatters scenery over the visible overworld. Called after the
 // ground pass so props are never overpainted by a later tile's terrain.
 func (g *Game) drawDecor(dst *ebiten.Image, cam render.Camera, x0, y0, x1, y1 int) {

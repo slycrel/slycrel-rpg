@@ -1051,6 +1051,11 @@ func (l *LocalMap) StepFoes(g *core.RNG) {
 // Facing reports which way an entity is looking, for sprite selection.
 func (e *Entity) Facing() core.Dir { return e.facing }
 
+// Face turns somebody the way they just walked. The field is unexported so
+// that nothing outside this package can point a person at a wall by accident;
+// this is the one thing a caller legitimately wants to do to it.
+func (e *Entity) Face(d core.Dir) { e.facing = d }
+
 // The stairs, and the words for them.
 //
 // A tower's "further in" is upstairs and a cave's is downstairs, and the code

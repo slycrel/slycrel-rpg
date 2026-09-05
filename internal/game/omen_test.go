@@ -174,3 +174,72 @@ func TestAnOldSaveIsNotAmbushedOnTheFirstStep(t *testing.T) {
 		t.Errorf("the drawn budget is %d, inside the floor of %d", g.nextAmbush, ambushFloor)
 	}
 }
+
+// Who somebody is does not depend on where they are standing.
+//
+// A town's villagers now move, and three things about a person were decided by
+// their tile: whether they hold an errand, whether they have a story, and what
+// they look like. All three were stable only because nobody in a town had ever
+// taken a step — the moment one does they become a different person with a
+// different face, and the star over their head hops to whoever wandered into
+// the square they left.
+//
+// This walks somebody across a town and asks the three questions at every stop.
+func TestWalkingDoesNotChangeWhoSomebodyIs(t *testing.T) {
+	g := storyGame(t)
+	poi := g.World.POIs[townIndex(t, g)]
+	g.Local = world.BuildLocal(poi, g.Write, 0)
+	g.townPOI = poi
+
+	var who *world.Entity
+	for _, e := range g.Local.Entities {
+		if e.Kind == world.ENPC {
+			who = e
+			break
+		}
+	}
+	if who == nil {
+		t.Skip("this town generated nobody to talk to")
+	}
+
+	idx := g.currentPOIIndex()
+	wantAsk, wantStory, wantRole := g.wantsToAsk(who, idx), g.hasStory(who), g.roleOf(who)
+	wantFace := g.faceOf(who)
+
+	start := who.Pos
+	for step := 0; step < 40; step++ {
+		who.Pos = core.Point{X: start.X + step%7, Y: start.Y + step/7}
+		if got := g.wantsToAsk(who, idx); got != wantAsk {
+			t.Fatalf("at %v they %s an errand; at %v they %s",
+				start, yesNo(wantAsk), who.Pos, yesNo(got))
+		}
+		if got := g.hasStory(who); got != wantStory {
+			t.Fatalf("at %v they %s a story; at %v they %s",
+				start, yesNo(wantStory), who.Pos, yesNo(got))
+		}
+		if got := g.roleOf(who); got != wantRole {
+			t.Fatalf("they were %q at %v and %q at %v", wantRole, start, got, who.Pos)
+		}
+		if got := g.faceOf(who); got != wantFace {
+			t.Fatalf("their face changed from %q to %q by walking", wantFace, got)
+		}
+	}
+}
+
+func yesNo(b bool) string {
+	if b {
+		return "have"
+	}
+	return "do not have"
+}
+
+func townIndex(t *testing.T, g *Game) int {
+	t.Helper()
+	for i, p := range g.World.POIs {
+		if p.Kind.Settlement() {
+			return i
+		}
+	}
+	t.Fatal("this continent generated no settlements")
+	return 0
+}
