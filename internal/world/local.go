@@ -102,10 +102,13 @@ type EntityKind string
 
 // The interactable roster.
 const (
-	ENPC   EntityKind = "npc"
-	EShop  EntityKind = "shop"
-	EInn   EntityKind = "inn"
-	EChest EntityKind = "chest"
+	ENPC  EntityKind = "npc"
+	EShop EntityKind = "shop"
+	EInn  EntityKind = "inn"
+	// EShopDoor is the way into a shop, standing where the shopkeeper used to.
+	// The keeper is inside; this is the building.
+	EShopDoor EntityKind = "shopdoor"
+	EChest    EntityKind = "chest"
 	// EHoard is the chest at the end of a place, as opposed to the ones on the
 	// way. Its own kind rather than a flag on EChest so that whatever decides
 	// what is inside can be told which of the two it is opening.
@@ -150,7 +153,21 @@ type Entity struct {
 	// frame of it for standing in the street; the character carries the prefix
 	// so it can face four ways once it is following you around.
 	Look string
-	Used bool // chests opened, foes killed, altars prayed at
+	// Still and Frame pin a sprite to one picture out of a sheet.
+	//
+	// Scenery drawn from a furnishing sheet is a *particular* chair, and the
+	// entity drawing code animates by default — walking the frame index with
+	// the clock, which is right for a brazier and turns a bookcase into a
+	// slideshow of every object in the pack. Two fields rather than "frame zero
+	// means animate", because frame zero is a real frame and a zero value that
+	// means something real is the trap this file keeps writing down.
+	Still bool
+	Frame int
+	// Shelf is which of a settlement's shops this door leads to, so the room
+	// behind it can be generated from the location's seed and this number and
+	// come back the same every time.
+	Shelf int
+	Used  bool // chests opened, foes killed, altars prayed at
 	// Wander is set on foes that move on their own.
 	Wander bool
 	// Omen is what walking into this will turn out to be, for the things in an
@@ -442,16 +459,29 @@ func buildSettlement(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 			break
 		}
 		b := built[i]
-		door := core.Point{X: b.x + b.w/2, Y: b.y + b.h - 2}
-		kind := EShop
+		// A shop is solid from the street, and the door is in the wall.
+		//
+		// It used to be a shell with a three-tile cupboard inside it and the
+		// keeper standing in the cupboard. Now that the shop is a room of its
+		// own there is nothing behind this wall to walk into, so the inside is
+		// filled in and what is left is a building with a door on it — which is
+		// what it looked like from outside all along.
+		l.rect(b.x+1, b.y+2, b.w-2, b.h-3, LRoof)
+		door := core.Point{X: b.x + b.w/2, Y: b.y + b.h - 1}
+		l.set(door.X, door.Y, LDoor)
 		if s.kind == ShopInn {
-			kind = EInn
 			inn, innAt = door, b
 		}
+		// A door, not a shopkeeper standing in a doorway.
+		//
+		// The person used to *be* the shop: you bumped them in the entrance and
+		// a menu opened, and the building behind them was scenery with a
+		// three-tile hole in it. They are inside now, behind a counter, and what
+		// stands here is the way in. Which is also what the building always
+		// looked like from the street.
 		l.Entities = append(l.Entities, &Entity{
-			Kind: kind, Pos: door, Name: s.name, Shop: s.kind,
-			Line:   wr.NPCLine(g),
-			Sprite: shopSprites[s.kind],
+			Kind: EShopDoor, Pos: door, Name: s.name, Shop: s.kind,
+			Line: wr.NPCLine(g), Shelf: i,
 		})
 	}
 
@@ -1288,4 +1318,116 @@ func buildClearing(seed int64, level int, wr Namer, name, tag string, trade bool
 		}
 	}
 	return l
+}
+
+// Inside a shop.
+//
+// A town's buildings have had doors and floors since they were first generated,
+// and what is behind the door is three to six tiles by one to three — which is
+// a cupboard, not a room. The shopkeeper stood in it because there was nowhere
+// else to stand, and everything a shop has ever been was a menu attached to
+// that person.
+//
+// A shop is its own map now, entered through the door it always had. What that
+// buys is somewhere to *put* things: a counter with somebody behind it, stock
+// on the walls that says what the trade is before anybody speaks, and — the
+// part that matters beyond decoration — a meaningful place for the people a
+// town has always had nowhere good to stand. A hireling loitering in the street
+// outside the inn is a hireling nobody finds; a hireling at a table inside it
+// is somewhere you go to look.
+//
+// Deterministic from the location's seed and which shop it is, and holding no
+// state of its own: nothing in here is spent, so nothing in here needs saving.
+// Same seam the wayside and the errand site found.
+const (
+	shopW = 15
+	shopH = 11
+)
+
+// shopStock is what hangs on the walls, per trade, as frames of the furnishing
+// sheet. It is the fastest thing in the room to read and the only one that has
+// to be right: a player who walks into the wrong shop should know before the
+// keeper opens their mouth.
+var shopStock = map[ShopKind][]int{
+	// Blades on the wall and a shield by the door.
+	ShopSmith: {45, 42, 44, 45},
+	// Plate, mail, and the pictures of people who could afford them.
+	ShopArmorer: {45, 35, 45, 38},
+	// Bottles, and more bottles.
+	ShopApothecary: {1, 3, 4, 7, 41, 22},
+	// Bread, a roast, a cake, and somewhere to put your elbows.
+	ShopInn: {9, 11, 12, 6, 8, 22},
+}
+
+// BuildShopRoom is the inside of one of a town's shops.
+func BuildShopRoom(poi *POI, wr Namer, idx int, kind ShopKind, name string) *LocalMap {
+	g := core.NewRNG(poi.Seed + int64(idx)*7717 + 991)
+	room := &POI{
+		Kind: poi.Kind, Level: poi.Level, Seed: poi.Seed,
+		Name: name, Tag: "inside",
+	}
+	l := newLocal(room, shopW, shopH, LWall)
+	l.Biome = "plains"
+	l.Indoors = true
+	// Nothing ambushes you in a shop. It is a room in a town, and a town is
+	// somewhere you are safe — which is most of what makes it a town.
+	l.Peaceful = true
+	l.rect(1, 1, shopW-2, shopH-2, LFloor)
+
+	// The way out, in the middle of the bottom wall where the door was.
+	door := core.Point{X: shopW / 2, Y: shopH - 2}
+	l.set(door.X, shopH-1, LDoor)
+	l.Entry = door
+	l.Entities = append(l.Entities, &Entity{
+		Kind: EExit, Pos: door, Name: "the door", Line: "Back to the street.",
+	})
+
+	// A counter across the room with a gap at one end, and the keeper behind
+	// it. The counter is what makes the room read as a shop from the doorway:
+	// it is the one piece of furniture that says which side of the room is
+	// yours.
+	const counterY = 4
+	gap := g.Between(1, shopW-2)
+	for x := 1; x < shopW-1; x++ {
+		if x == gap {
+			continue
+		}
+		l.set(x, counterY, LWall)
+	}
+	keeper := core.Point{X: core.Clamp(gap, 2, shopW-3), Y: counterY - 1}
+	if keeper.X == gap {
+		keeper.X = core.Clamp(gap+1, 2, shopW-3)
+	}
+	l.Entities = append(l.Entities, &Entity{
+		Kind: shopEntityKind(kind), Pos: keeper, Name: name, Shop: kind,
+		Line: wr.NPCLine(g), Sprite: shopSprites[kind],
+	})
+
+	// Stock along the back wall, which is the strip behind the counter nobody
+	// walks on.
+	stock := shopStock[kind]
+	for i, x := 0, 2; x < shopW-2 && len(stock) > 0; x, i = x+2, i+1 {
+		if l.EntityAt(x, 1) != nil {
+			continue
+		}
+		l.Entities = append(l.Entities, &Entity{
+			Kind: EDecor, Pos: core.Point{X: x, Y: 1}, Name: "stock",
+			Sprite: "prop/cozy16", Still: true, Frame: stock[i%len(stock)],
+		})
+	}
+	// Nothing placed on the customers' side. The floor decor that furnishes
+	// every settlement interior already covers it, and the two together made a
+	// room you could not walk across for the furniture — the stock on the wall
+	// is what has to be *read*, and it only reads against a floor that is not
+	// also covered in bottles.
+	return l
+}
+
+// shopEntityKind is which sort of counter this is, since an inn's is a bed
+// rather than a shelf.
+func shopEntityKind(k ShopKind) EntityKind {
+	if k == ShopInn {
+		return EInn
+	}
+	return EShop
 }

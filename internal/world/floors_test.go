@@ -224,3 +224,90 @@ func TestNoTwoWaysidesAreTheSame(t *testing.T) {
 		t.Errorf("%d of 30 waysides were repeats of one already generated", same)
 	}
 }
+
+// A shop is a room you can cross, with somebody to trade with and a way out.
+//
+// The room replaced a cupboard: a town's buildings have had doors since they
+// were generated, and what was behind one was three to six tiles by one to
+// three, with the keeper standing in it because there was nowhere else. The
+// things that have to be true of the replacement are the things that were not
+// true of that.
+func TestAShopIsARoomWithSomebodyInIt(t *testing.T) {
+	poi := &POI{Kind: KindTown, Seed: 21, Level: 5, Name: "Town", Tag: "tag"}
+	for _, kind := range []ShopKind{ShopSmith, ShopArmorer, ShopApothecary, ShopInn} {
+		for idx := 0; idx < 4; idx++ {
+			l := BuildShopRoom(poi, floorNamer{}, idx, kind, "The Shop")
+
+			if !l.Peaceful {
+				t.Errorf("%s: a room in a town is not marked peaceful", kind)
+			}
+			if count(l, EExit) != 1 {
+				t.Errorf("%s: %d ways out", kind, count(l, EExit))
+			}
+			// Exactly one counter, and it is the right sort: an inn takes a
+			// bed and everything else takes a shelf.
+			keepers := count(l, EShop) + count(l, EInn)
+			if keepers != 1 {
+				t.Errorf("%s: %d people behind the counter", kind, keepers)
+			}
+			if kind == ShopInn && count(l, EInn) != 1 {
+				t.Errorf("an inn's counter is a %v, not a bed", EShop)
+			}
+			if kind != ShopInn && count(l, EShop) != 1 {
+				t.Errorf("%s sells from a bed", kind)
+			}
+			// Stock on the wall, which is what says what the trade is before
+			// anybody speaks.
+			if count(l, EDecor) == 0 {
+				t.Errorf("%s has nothing on its walls", kind)
+			}
+			// Everything stands somewhere you can reach, and the way out is
+			// somewhere you can stand.
+			for _, e := range l.Entities {
+				if !l.At(e.Pos.X, e.Pos.Y).Info().Passable {
+					t.Errorf("%s: %s is inside the furniture at %v", kind, e.Kind, e.Pos)
+				}
+			}
+			// And the room is a room: the keeper has to be reachable from the
+			// door, which the counter must therefore not seal off.
+			if !reaches(l, l.Entry, keeperAt(l)) {
+				t.Errorf("%s: the counter walls the keeper off from the door", kind)
+			}
+		}
+	}
+}
+
+func keeperAt(l *LocalMap) core.Point {
+	for _, e := range l.Entities {
+		if e.Kind == EShop || e.Kind == EInn {
+			return e.Pos
+		}
+	}
+	return core.Point{X: -1}
+}
+
+// reaches is a flood fill from one tile to another, treating anything an
+// entity stands on as walkable — a person is not a wall.
+func reaches(l *LocalMap, from, to core.Point) bool {
+	if to.X < 0 {
+		return false
+	}
+	seen := map[core.Point]bool{from: true}
+	queue := []core.Point{from}
+	for len(queue) > 0 {
+		p := queue[0]
+		queue = queue[1:]
+		if p == to {
+			return true
+		}
+		for _, d := range []core.Point{{X: 1}, {X: -1}, {Y: 1}, {Y: -1}} {
+			n := core.Point{X: p.X + d.X, Y: p.Y + d.Y}
+			if seen[n] || !l.At(n.X, n.Y).Info().Passable {
+				continue
+			}
+			seen[n] = true
+			queue = append(queue, n)
+		}
+	}
+	return false
+}

@@ -370,8 +370,16 @@ func (g *Game) demoOpenShop() {
 		return
 	}
 	for _, e := range g.Local.Entities {
-		if e.Kind == world.EShop {
-			g.Push(newShopScene(g, e))
+		if e.Kind == world.EShopDoor {
+			// Into the shop and up to the counter, which is what a player does
+			// and is now two steps rather than one.
+			g.enterShop(e)
+			for _, in := range g.Local.Entities {
+				if in.Kind == world.EShop {
+					g.Push(newShopScene(g, in))
+					return
+				}
+			}
 			return
 		}
 	}

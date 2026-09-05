@@ -328,7 +328,11 @@ func listing(names []string) string {
 func countersHere(l *world.LocalMap) func(gamedata.Counter) bool {
 	has := map[world.ShopKind]bool{}
 	for _, e := range l.Entities {
-		if e.Kind == world.EShop {
+		// The doors, not the keepers. Companions restock on walking into a
+		// town and do not go inside anything — what they need to know is which
+		// trades the place has, and since the counters moved indoors the only
+		// thing in the street that still says so is the door.
+		if e.Kind == world.EShopDoor {
 			has[e.Shop] = true
 		}
 	}

@@ -205,7 +205,16 @@ func (g *Game) ambushDue() bool {
 // interact runs whatever the entity does.
 func (g *Game) interact(e *world.Entity) {
 	switch e.Kind {
+	case world.EShopDoor:
+		g.enterShop(e)
+
 	case world.EExit:
+		// Out of a shop is back into the town it is in; out of anywhere else is
+		// back to the overworld.
+		if g.inShop {
+			g.leaveShop()
+			return
+		}
 		g.Sound.Play("world/enter")
 		g.Local = nil
 		g.floor = 0
@@ -729,7 +738,13 @@ func labelRange(k world.EntityKind) int {
 	switch k {
 	case world.EFoe, world.EBoss:
 		return 0
-	case world.EShop, world.EInn:
+	case world.EDecor:
+		// Furniture does not introduce itself. It never had a name worth
+		// reading and it never had many of them in one room either — a shop is
+		// eight pieces of stock on a wall, and eight plates saying "clutter"
+		// is a room you cannot see for the labels on it.
+		return 0
+	case world.EShop, world.EInn, world.EShopDoor:
 		// Always. A shop's sign is the one label that is pure navigation — it
 		// is how you cross a town towards the armourer instead of walking into
 		// buildings until one of them is the armourer — and a sign you have to
@@ -839,8 +854,17 @@ func drawEntity(g *Game, ctx *render.Ctx, e *world.Entity) {
 	// sprite's size is what keeps unresolved keys out of the world as magenta
 	// boxes; they fall through to the markers below instead.
 	if e.Sprite != "" && g.Assets.Has(e.Sprite) {
-		ctx.Shadow(x, y)
-		ctx.World(g.Assets.Get(e.Sprite), g.Tick()/12, x, y, false)
+		frame := g.Tick() / 12
+		if e.Still {
+			frame = e.Frame
+		}
+		// No shadow under furniture. A shadow says "this is standing here",
+		// which is right for a person and wrong for a shelf against a wall —
+		// it lifts the thing off the floor and it reads as floating.
+		if !e.Still {
+			ctx.Shadow(x, y)
+		}
+		ctx.World(g.Assets.Get(e.Sprite), frame, x, y, false)
 		return
 	}
 
@@ -853,6 +877,16 @@ func drawEntity(g *Game, ctx *render.Ctx, e *world.Entity) {
 	case world.EExit:
 		c = color.RGBA{0xE0, 0xC0, 0x60, 0xFF}
 		render.Frame(ctx.Dst, bx+2, by+2, ts-4, ts-4, c)
+		return
+	case world.EShopDoor:
+		// A door in a wall, with a trade's colour on it. It is the front of a
+		// building rather than a person now, so it is drawn as one: a plank
+		// panel, a lintel, and a handle you can see from across a street.
+		c = shopDoorColour(e.Shop)
+		render.Rect(ctx.Dst, bx+2, by+3, ts-4, ts-3, color.RGBA{0x5C, 0x3E, 0x22, 0xFF})
+		render.Rect(ctx.Dst, bx+2, by+3, ts-4, 2, c)
+		render.Rect(ctx.Dst, bx+ts-6, by+9, 2, 2, color.RGBA{0xE8, 0xC8, 0x70, 0xFF})
+		render.Frame(ctx.Dst, bx+2, by+3, ts-4, ts-3, color.RGBA{0x2C, 0x1C, 0x10, 0xFF})
 		return
 	case world.EShop:
 		c = color.RGBA{0x60, 0xA0, 0xE0, 0xFF}

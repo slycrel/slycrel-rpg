@@ -383,6 +383,8 @@ func (g *Game) enterPOI(poi *world.POI) {
 	// arrived at, so walking back out of it does not walk straight back in.
 	g.arrived = poi.Pos
 	g.floor = 0
+	g.inShop = false
+	g.townPOI = poi
 	g.Local = world.BuildLocal(poi, g.Write, g.floor)
 	g.LocalWalk = core.NewWalker(7)
 	g.LocalWalk.Place(g.Local.Entry)

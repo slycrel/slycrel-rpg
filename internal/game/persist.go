@@ -46,10 +46,30 @@ func (g *Game) Snapshot() *save.File {
 	}
 
 	if g.Local != nil {
-		if idx := g.poiIndex(g.Local.POI); idx >= 0 {
+		// The location to record is the one the world knows about. A shop room
+		// carries a POI of its own that is not in the world's list, so asking
+		// the room would answer -1 and file the party as standing outside the
+		// town — see the note below on where they are actually put back.
+		here := g.Local.POI
+		if g.inShop && g.townPOI != nil {
+			here = g.townPOI
+		}
+		if idx := g.poiIndex(here); idx >= 0 {
+			at := g.LocalWalk.Tile
+			if g.inShop {
+				// Standing in a shop is recorded as standing at its door.
+				//
+				// A save is a place you come back to rather than a photograph,
+				// and the door is where walking out puts you — so this is the
+				// same answer by a shorter route, and it costs the format
+				// nothing. The alternative is a field naming which room of
+				// which building, which every save written before today would
+				// answer with a zero that means the first shop in the town.
+				at = g.shopReturn
+			}
 			f.Inside = &save.Inside{
 				POI:    idx,
-				At:     g.LocalWalk.Tile,
+				At:     at,
 				Facing: int(g.LocalWalk.Dir()),
 				Floor:  g.floor,
 			}
@@ -143,6 +163,7 @@ func (g *Game) Restore(f *save.File) error {
 	if f.Inside != nil && f.Inside.POI >= 0 && f.Inside.POI < len(g.World.POIs) {
 		poi := g.World.POIs[f.Inside.POI]
 		g.floor = f.Inside.Floor
+		g.inShop, g.townPOI = false, poi
 		g.Local = world.BuildLocal(poi, g.Write, g.floor)
 		g.LocalWalk = core.NewWalker(7)
 		g.LocalWalk.Place(f.Inside.At)
