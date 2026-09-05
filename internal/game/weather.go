@@ -47,8 +47,8 @@ func (g *Game) skyLine() string {
 // abed reports whether an entity has gone in for the night.
 //
 // The plan's phrase for this was "which NPCs are out", and the answer is: the
-// people, not the buildings. Townsfolk and the hopefuls loitering outside inns
-// go home after dusk. Counters, beds, altars, chests and anything with teeth
+// people out on the street, not the buildings and not the people inside them.
+// Townsfolk go home after dusk. Counters, beds, altars, chests and anything with teeth
 // stay exactly where they are — a merchant will always take money, and a
 // dungeon does not keep hours.
 //
@@ -61,6 +61,15 @@ func (g *Game) skyLine() string {
 // out because it got late.
 func (g *Game) abed(e *world.Entity) bool {
 	if e == nil || g.Local == nil || !g.Local.POI.Kind.Settlement() {
+		return false
+	}
+	// Not inside. Going home is a thing you do from a street, and the room the
+	// hireling sits in is an inn — the one building this comment already said
+	// is definitely open. Before the shops became rooms this could not come up,
+	// because there was no indoors in a town to be inside of; the night the
+	// taproom was furnished it emptied out at dusk, hireling included, and the
+	// player who walked in at midnight found a lit fire and nobody at it.
+	if g.Local.Indoors {
 		return false
 	}
 	if !g.Clock.Phase().Dark() {

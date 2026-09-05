@@ -62,6 +62,10 @@ var localMaterial = map[world.LocalTile]string{
 	world.LWater:  "shallow",
 	world.LDoor:   "road",
 	world.LStair:  "stone",
+	// Furniture is floor to look at and blends like it. What makes it
+	// impassable is the tile's own Info, not how it is drawn — the whole point
+	// of the kind is that the two halves disagree.
+	world.LFurniture: "dirt",
 }
 
 // localMaterialAt reports the ground material for an interior cell.

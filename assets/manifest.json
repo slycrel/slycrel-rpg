@@ -3923,6 +3923,12 @@
       "frameH": 16
     },
     {
+      "key": "prop/cozy32",
+      "file": "assets-raw/manaseedpixelarttilesetcollection/19.04b - Cozy Furnishings/packaged/cozy furnishings 32x32.png",
+      "frameW": 32,
+      "frameH": 32
+    },
+    {
       "key": "prop/desert16",
       "file": "assets-raw/manaseedpixelarttilesetcollection/23.03a - Desert Sands/packaged/desert sheets/desert 16x16.png",
       "frameW": 16,

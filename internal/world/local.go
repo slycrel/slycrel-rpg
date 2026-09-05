@@ -20,6 +20,15 @@ const (
 	LVoid
 	LStair
 	LRoof
+	// LFurniture is a square you cannot cross that is not a wall.
+	//
+	// A table is a hole in the floor as far as walking is concerned and a piece
+	// of floor as far as looking is concerned. Until this existed the only way
+	// to say the first half was LWall, which said the second half too and put a
+	// slab of cold stone under every table in the taproom wherever the sprite
+	// did not quite reach — the furniture is drawn from a 32-pixel sheet onto a
+	// 16-pixel grid, so it never covers its own footprint exactly.
+	LFurniture
 )
 
 // shopSprites maps a merchant to a townsperson sheet that suits the trade.
@@ -87,6 +96,8 @@ var localTileInfo = [...]localInfo{
 	LVoid:   {"tile/void", false},
 	LStair:  {"tile/cobble", true},
 	LRoof:   {"tile/roof", false},
+	// Floor to look at, wall to walk into.
+	LFurniture: {"tile/floor", false},
 }
 
 // Info returns the descriptor for t.
@@ -204,12 +215,28 @@ type LocalMap struct {
 	Entry    core.Point
 	// Biome selects the monster table for interior encounters.
 	Biome string
-	// Indoors suppresses the overworld's ambient weather and changes music.
+	// Indoors means there is a roof over this map: no rain falls on it, and
+	// nobody standing in it goes home at dusk.
+	//
+	// It is a property of the map because it is not a property of the location
+	// kind. A town is outdoors and the room behind its inn door is not, and
+	// both are built from the same POI — which is what the drawing code used to
+	// ask, so it rained on the tables in the taproom and the hireling sitting
+	// at the bar went home at nightfall.
 	Indoors bool
 	// Floor is which level of the place this is, counting from the way in, and
 	// Depth is how many there are. Both are one and nought for everywhere that
 	// has only ever had a single storey.
 	Floor, Depth int
+	// Furnished means the room laid out its own furniture and does not want the
+	// random scatter on top of it.
+	//
+	// The interior clutter pass drops bread and bottles on three floor tiles in
+	// ten, which is what makes a bare stone box read as somewhere people live.
+	// A room that has already been furnished on purpose does not need it and is
+	// actively hurt by it: the point of a taproom is the tables, and they do
+	// not read through a floor covered in loose cake.
+	Furnished bool
 	// Peaceful means nothing ambushes you here.
 	//
 	// A property of the map rather than a question asked of the POI kind, which
@@ -452,8 +479,6 @@ func buildSettlement(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 	if poi.Kind == KindVillage {
 		shops = shops[:2]
 	}
-	inn := core.Point{X: -1}
-	var innAt building
 	for i, s := range shops {
 		if i >= len(built) {
 			break
@@ -469,9 +494,6 @@ func buildSettlement(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 		l.rect(b.x+1, b.y+2, b.w-2, b.h-3, LRoof)
 		door := core.Point{X: b.x + b.w/2, Y: b.y + b.h - 1}
 		l.set(door.X, door.Y, LDoor)
-		if s.kind == ShopInn {
-			inn, innAt = door, b
-		}
 		// A door, not a shopkeeper standing in a doorway.
 		//
 		// The person used to *be* the shop: you bumped them in the entrance and
@@ -485,33 +507,11 @@ func buildSettlement(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 		})
 	}
 
-	// Someone loitering outside the inn, available for money. Only settlements
-	// big enough to have an inn get one, which gives a village a reason to be
-	// somewhere you pass through and a town a reason to be somewhere you stop.
-	if inn.X >= 0 {
-		// Outside the building, always. See openNearWhere.
-		if p, ok := openNearWhere(g, l, inn, 2, 5, func(p core.Point) bool {
-			return p.X < innAt.x || p.X >= innAt.x+innAt.w ||
-				p.Y < innAt.y || p.Y >= innAt.y+innAt.h
-		}); ok {
-			class := core.Pick(g, recruitClasses)
-			look := core.Pick(g, recruitLooks[class])
-			// Roughly one hireling in three is not entirely a person. They are
-			// the ones going cheap, because nobody else in town will take them.
-			blood := ""
-			if g.Chance(0.35) {
-				blood = core.Pick(g, recruitBloods)
-			}
-			l.Entities = append(l.Entities, &Entity{
-				Kind: ERecruit, Pos: p, Name: wr.PersonName(g),
-				Line:   wr.RecruitPitch(g, blood),
-				Class:  class,
-				Blood:  blood,
-				Look:   look,
-				Sprite: look + "/idle",
-			})
-		}
-	}
+	// The hireling used to stand out here, on the cobbles beside the inn's
+	// front wall, because there was nowhere else to put a person. They are
+	// inside now — see rollRecruit and buildTaproom — which is the whole point
+	// of a shop being a room: somebody worth finding is somewhere you go to
+	// look for them rather than somebody you trip over on the way past.
 
 	// Townsfolk milling about on the streets.
 	folk := map[POIKind]int{KindCapital: 10, KindTown: 7, KindVillage: 4, KindCastle: 6}[poi.Kind]
@@ -1299,17 +1299,7 @@ func buildClearing(seed int64, level int, wr Namer, name, tag string, trade bool
 	// a windfall and a hiring board is a service.
 	if trade && g.Chance(0.35) {
 		if p, ok := openNear(g, l, core.Point{X: cx, Y: cy}, 2, 6); ok {
-			class := core.Pick(g, recruitClasses)
-			look := core.Pick(g, recruitLooks[class])
-			blood := ""
-			if g.Chance(0.35) {
-				blood = core.Pick(g, recruitBloods)
-			}
-			l.Entities = append(l.Entities, &Entity{
-				Kind: ERecruit, Pos: p, Name: wr.PersonName(g),
-				Line:  wr.RecruitPitch(g, blood),
-				Class: class, Blood: blood, Look: look, Sprite: look + "/idle",
-			})
+			l.Entities = append(l.Entities, rollRecruit(g, wr, p))
 		}
 	}
 
@@ -1364,6 +1354,19 @@ var shopStock = map[ShopKind][]int{
 	ShopInn: {9, 11, 12, 6, 8, 22},
 }
 
+// ShopFloor is the first floor number the rooms behind a town's doors use.
+//
+// A shop is a map built from the town's seed, and what the player spends in one
+// is recorded against the town — so the room needs a floor of its own or a
+// hireling hired in the inn would be filed at the same address as whatever
+// stands on that square out on the street. A hundred, because no place on the
+// continent is a hundred storeys deep and nothing here should ever have to
+// reason about which end of the range it is in.
+const ShopFloor = 100
+
+// ShopFloorOf is the floor number of the room behind a settlement's nth door.
+func ShopFloorOf(idx int) int { return ShopFloor + idx }
+
 // BuildShopRoom is the inside of one of a town's shops.
 func BuildShopRoom(poi *POI, wr Namer, idx int, kind ShopKind, name string) *LocalMap {
 	g := core.NewRNG(poi.Seed + int64(idx)*7717 + 991)
@@ -1371,21 +1374,34 @@ func BuildShopRoom(poi *POI, wr Namer, idx int, kind ShopKind, name string) *Loc
 		Kind: poi.Kind, Level: poi.Level, Seed: poi.Seed,
 		Name: name, Tag: "inside",
 	}
-	l := newLocal(room, shopW, shopH, LWall)
+	w, h := shopW, shopH
+	if kind == ShopInn {
+		// An inn is a common room rather than a shop counter, and a common room
+		// needs floor to put people on. See buildTaproom.
+		w, h = innW, innH
+	}
+	l := newLocal(room, w, h, LWall)
 	l.Biome = "plains"
 	l.Indoors = true
 	// Nothing ambushes you in a shop. It is a room in a town, and a town is
 	// somewhere you are safe — which is most of what makes it a town.
 	l.Peaceful = true
-	l.rect(1, 1, shopW-2, shopH-2, LFloor)
+	l.Floor, l.Depth = ShopFloorOf(idx), 1
+	l.rect(1, 1, w-2, h-2, LFloor)
 
 	// The way out, in the middle of the bottom wall where the door was.
-	door := core.Point{X: shopW / 2, Y: shopH - 2}
-	l.set(door.X, shopH-1, LDoor)
+	door := core.Point{X: w / 2, Y: h - 2}
+	l.set(door.X, h-1, LDoor)
 	l.Entry = door
 	l.Entities = append(l.Entities, &Entity{
 		Kind: EExit, Pos: door, Name: "the door", Line: "Back to the street.",
 	})
+
+	if kind == ShopInn {
+		buildTaproom(g, l, wr, name)
+		markUsed(l, poi)
+		return l
+	}
 
 	// A counter across the room with a gap at one end, and the keeper behind
 	// it. The counter is what makes the room read as a shop from the doorway:
@@ -1425,7 +1441,24 @@ func BuildShopRoom(poi *POI, wr Namer, idx int, kind ShopKind, name string) *Loc
 	// room you could not walk across for the furniture — the stock on the wall
 	// is what has to be *read*, and it only reads against a floor that is not
 	// also covered in bottles.
+	markUsed(l, poi)
 	return l
+}
+
+// markUsed replays what the player has already spent in a room against the
+// location that owns it.
+//
+// The room's own POI is a label — a synthetic record holding the shop's name so
+// the status bar can say "Inn" — and it is not in the world's list, so writing
+// to it writes to nothing. The town is the ledger. BuildLocal does the same
+// thing for floors, inline; this is that loop with a name, because a room now
+// holds something worth spending.
+func markUsed(l *LocalMap, poi *POI) {
+	for _, e := range l.Entities {
+		if poi.IsUsed(string(e.Kind), e.Pos, l.Floor) {
+			e.Used = true
+		}
+	}
 }
 
 // shopEntityKind is which sort of counter this is, since an inn's is a bed

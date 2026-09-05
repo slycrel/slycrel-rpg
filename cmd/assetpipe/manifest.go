@@ -228,9 +228,17 @@ func buildManifest() error {
 		add(f.key, filepath.Join(vfx, f.dir, f.file+".png"), 64, 64)
 	}
 
-	// Interior clutter.
+	// Interior clutter, at two scales.
+	//
+	// The 16px sheet is objects on a surface — bottles, bread, books — and the
+	// 32px one is the furniture they sit on: tables, benches, beds, and the
+	// mounted boar's head that makes a room a tavern rather than a room. Both
+	// are needed and they are not interchangeable: a table drawn at sixteen
+	// pixels is a stool, and a tankard drawn at thirty-two is a barrel.
 	add("prop/cozy16", filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
 		"19.04b - Cozy Furnishings", "packaged", "cozy furnishings 16x16.png"), 16, 16)
+	add("prop/cozy32", filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
+		"19.04b - Cozy Furnishings", "packaged", "cozy furnishings 32x32.png"), 32, 32)
 	add("prop/cave16", filepath.Join(rawRoot, "manaseedpixelarttilesetcollection",
 		"19.10a - Muddy Cave", "packaged", "muddy cave sheets", "muddy cave 16x16 v1.png"), 16, 16)
 

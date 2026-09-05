@@ -129,17 +129,30 @@ func buildDemoSteps() []demoStep {
 		{at: 144, shot: "05c-oddity"},
 		{at: 146, do: func(g *Game) { g.Local = nil; g.Pop() }},
 
-		{at: 149, do: func(g *Game) { g.demoEnter(func(p *world.POI) bool { return p.Kind.Settlement() }) }},
+		// A settlement with an inn in it, rather than whichever is nearest.
+		// The tour goes through the inn's door two steps below, and a village
+		// gets a smith and an apothecary and stops — so on the runs that landed
+		// on one, the taproom frame was a picture of a street.
+		{at: 149, do: func(g *Game) {
+			g.demoEnter(func(p *world.POI) bool { return p.Kind.Settlement() && g.demoHasInn(p) })
+		}},
 		{at: 175, shot: "06-town"},
 		{at: 180, do: func(g *Game) { g.demoOpenShop() }},
 		{at: 195, shot: "07-shop"},
 		{at: 200, do: func(g *Game) { g.dropOverlays() }},
 
+		// And the inn, which is the other kind of room a town has: not a
+		// counter to buy from but a place to be, with a fire, tables, people
+		// drinking at them, and the hireling who used to stand out in the
+		// street where nobody found them.
+		{at: 202, do: func(g *Game) { g.demoEnterInn() }},
+		{at: 214, shot: "07a-taproom"},
+
 		// An errand from a townsperson, then the log it lands in.
-		{at: 204, do: func(g *Game) { g.demoTakeQuest() }},
-		{at: 214, shot: "07b-quest-offer"},
-		{at: 218, do: func(g *Game) { g.demoChoose(0) }},
-		{at: 222, do: func(g *Game) { g.Push(newQuestScene(g)) }},
+		{at: 220, do: func(g *Game) { g.demoTakeQuest() }},
+		{at: 230, shot: "07b-quest-offer"},
+		{at: 234, do: func(g *Game) { g.demoChoose(0) }},
+		{at: 238, do: func(g *Game) { g.Push(newQuestScene(g)) }},
 		// On an errand, not on whatever happens to be first.
 		//
 		// The journal lists three kinds of outstanding thing and the long story
@@ -148,7 +161,7 @@ func buildDemoSteps() []demoStep {
 		// an objective line, a countdown and a Where row, and it is what the
 		// screen is mostly for. Not a longer tour — the same one frame, showing
 		// the thing it is a frame of.
-		{at: 228, do: func(g *Game) {
+		{at: 244, do: func(g *Game) {
 			q, ok := g.Top().(*questScene)
 			if !ok {
 				return
@@ -160,24 +173,24 @@ func buildDemoSteps() []demoStep {
 				}
 			}
 		}},
-		{at: 232, shot: "07c-quest-log"},
-		{at: 236, do: func(g *Game) { g.dropOverlays() }},
+		{at: 248, shot: "07c-quest-log"},
+		{at: 252, do: func(g *Game) { g.dropOverlays() }},
 
 		// Take somebody on, then walk far enough that the line strings out
 		// behind the hero rather than staying stacked on their tile.
-		{at: 242, do: func(g *Game) { g.demoHire() }},
-		{at: 252, shot: "07d-hire"},
-		{at: 256, do: func(g *Game) { g.demoChoose(0) }},
-		{at: 260, do: func(g *Game) { g.dropOverlays(); g.demoWalkLocal(6) }},
-		{at: 268, shot: "07e-company"},
-		{at: 272, do: func(g *Game) {
+		{at: 258, do: func(g *Game) { g.demoHire() }},
+		{at: 268, shot: "07d-hire"},
+		{at: 272, do: func(g *Game) { g.demoChoose(0) }},
+		{at: 276, do: func(g *Game) { g.dropOverlays(); g.demoWalkLocal(6) }},
+		{at: 284, shot: "07e-company"},
+		{at: 288, do: func(g *Game) {
 			g.Push(newStatusScene(g))
 			if s, ok := g.Top().(*statusScene); ok {
 				s.who = 1 // the hireling's sheet, not the hero's a second time
 			}
 		}},
-		{at: 282, shot: "07f-companion-sheet"},
-		{at: 286, do: func(g *Game) { g.dropOverlays() }},
+		{at: 298, shot: "07f-companion-sheet"},
+		{at: 302, do: func(g *Game) { g.dropOverlays() }},
 
 		// A battle, staged against a group so the multi-target layout shows —
 		// and, now that there is a company, the party panel with it.
@@ -187,7 +200,7 @@ func buildDemoSteps() []demoStep {
 		// characters against three monsters is not a fight, it is a formality,
 		// and a tour that always ends in a wipe never shows what happens after
 		// one. It also leaves a more useful save fixture behind.
-		{at: 292, do: func(g *Game) {
+		{at: 308, do: func(g *Game) {
 			g.demoLevelParty(4)
 			// The real roll, shape and all, rather than three creatures stood
 			// in a line. What the tour is meant to show is the fight the game
@@ -198,32 +211,32 @@ func buildDemoSteps() []demoStep {
 				g.Push(newBattleScene(g, enc, "woods"))
 			}
 		}},
-		{at: 306, shot: "08-battle"},
-		{at: 312, do: func(g *Game) { g.demoOpenTechniques() }},
+		{at: 322, shot: "08-battle"},
+		{at: 328, do: func(g *Game) { g.demoOpenTechniques() }},
 		// With the popover open, which is one frame covering two things rather
 		// than the tour drifting: the list is still visible underneath, and
 		// the panel over it is the only place in the game that says what a
 		// technique does. A tour that skipped it would never capture the
 		// screen this whole feature exists to be.
-		{at: 320, do: func(g *Game) {
+		{at: 336, do: func(g *Game) {
 			if b, ok := g.Top().(*battleScene); ok {
 				b.blurb = true
 			}
 		}},
-		{at: 324, shot: "08b-techniques"},
-		{at: 330, do: func(g *Game) { g.demoRootMenu() }},
+		{at: 340, shot: "08b-techniques"},
+		{at: 346, do: func(g *Game) { g.demoRootMenu() }},
 
 		// Handing a companion something out of the pack, which is the cursor
 		// the party-versus-self rework exists for.
-		{at: 336, do: func(g *Game) { g.demoOfferItem() }},
-		{at: 348, shot: "08c-on-whom"},
-		{at: 354, do: func(g *Game) { g.demoRootMenu() }},
+		{at: 352, do: func(g *Game) { g.demoOfferItem() }},
+		{at: 364, shot: "08c-on-whom"},
+		{at: 370, do: func(g *Game) { g.demoRootMenu() }},
 
-		{at: 360, do: func(g *Game) { g.demoBattleAdvance() }},
-		{at: 390, shot: "09-battle-resolving"},
+		{at: 376, do: func(g *Game) { g.demoBattleAdvance() }},
+		{at: 406, shot: "09-battle-resolving"},
 
 		// Then let it run to a conclusion rather than leaving it mid-round.
-		{at: 396, do: func(g *Game) { g.demo.autoFight = true }},
+		{at: 412, do: func(g *Game) { g.demo.autoFight = true }},
 		{at: 1100, shot: "09b-battle-over"},
 		{at: 1106, do: func(g *Game) { g.demo.autoFight = false; g.demoEndBattle() }},
 		{at: 1116, shot: "09c-after"},
@@ -385,6 +398,37 @@ func (g *Game) demoOpenShop() {
 	}
 }
 
+// demoHasInn reports whether a settlement is big enough to have one.
+func (g *Game) demoHasInn(p *world.POI) bool {
+	for _, e := range world.BuildLocal(p, g.Write, 0).Entities {
+		if e.Kind == world.EShopDoor && e.Shop == world.ShopInn {
+			return true
+		}
+	}
+	return false
+}
+
+// demoEnterInn puts the party in the town's taproom.
+//
+// Out of whichever shop the tour opened first, back onto the street, and in
+// through the inn's door — which is the walk a player makes, and the reason the
+// hireling is worth finding at the end of it. A village has no inn; there the
+// tour stays on the street and demoHire conjures somebody, as it always did.
+func (g *Game) demoEnterInn() {
+	if g.inShop {
+		g.leaveShop()
+	}
+	if g.Local == nil {
+		return
+	}
+	for _, e := range g.Local.Entities {
+		if e.Kind == world.EShopDoor && e.Shop == world.ShopInn {
+			g.enterShop(e)
+			return
+		}
+	}
+}
+
 // demoLoot opens every chest in the current interior, so the saved fixture
 // carries spent interactables and the loot that came out of them.
 func (g *Game) demoLoot() {
@@ -400,12 +444,12 @@ func (g *Game) demoLoot() {
 	}
 }
 
-// demoHire takes on the companion loitering outside the town's inn.
+// demoHire takes on the companion sitting at the end of the inn's bar.
 //
 // The tour grants the fee rather than earning it: a level-one fighter cannot
 // afford a hireling, and what the capture is for is the party interface. If the
-// settlement the tour walked into is a village — no inn, so nobody standing
-// outside one — the recruit is conjured, the same way demoTakeQuest asks the
+// settlement the tour walked into is a village — no inn, so no taproom and
+// nobody in it — the recruit is conjured, the same way demoTakeQuest asks the
 // generator directly rather than hoping a villager has an errand.
 func (g *Game) demoHire() {
 	if g.Local == nil || g.PartyFull() {

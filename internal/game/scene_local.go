@@ -348,9 +348,27 @@ func (g *Game) interact(e *world.Entity) {
 // itself, so it stays used after the interior is regenerated on a later visit.
 func (g *Game) spend(e *world.Entity) {
 	e.Used = true
-	if g.Local != nil {
-		g.Local.POI.MarkUsed(string(e.Kind), e.Pos, g.floor)
+	if p := g.here(); p != nil {
+		p.MarkUsed(string(e.Kind), e.Pos, g.floor)
 	}
+}
+
+// here is the location that owns what the player has spent.
+//
+// Usually it is simply the map they are standing on. Inside a shop it is not:
+// the room is built from the town's seed and carries a POI of its own so the
+// status bar can say "Inn", but that record is synthetic and is not in the
+// world's list, so anything written to it is written to nothing. The town is
+// the ledger — which is also the answer the save file needs, and it was already
+// working this out for itself in two places.
+func (g *Game) here() *world.POI {
+	if g.inShop && g.townPOI != nil {
+		return g.townPOI
+	}
+	if g.Local != nil {
+		return g.Local.POI
+	}
+	return nil
 }
 
 // openChest rolls contents scaled to the location's level band.
@@ -612,7 +630,7 @@ func (s *localScene) Draw(g *Game, dst *ebiten.Image) {
 	// A settlement is open to the sky and a dungeon is not, so the rain stops
 	// at the door. The light still changes either way: a town at midnight is a
 	// town at midnight whether or not anything is falling on it.
-	g.drawSky(dst, g.weatherHere(), !g.Local.POI.Kind.Settlement())
+	g.drawSky(dst, g.weatherHere(), g.Local.Indoors)
 
 	// Marks and labels go over the tint, because a name that dims at dusk is a
 	// name nobody can read at the hour they most need it — and a star that dims

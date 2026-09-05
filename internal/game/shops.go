@@ -29,6 +29,10 @@ func (g *Game) enterShop(e *world.Entity) {
 	}
 	g.shopReturn = g.LocalWalk.Tile
 	g.inShop = true
+	// The room gets a floor of its own so that what is spent in it — a hireling
+	// taken off a stool in the inn — is recorded at an address the street does
+	// not also use. See world.ShopFloorOf and Game.here.
+	g.floor = world.ShopFloorOf(e.Shelf)
 	g.Local = world.BuildShopRoom(g.Local.POI, g.Write, e.Shelf, e.Shop, e.Name)
 	g.LocalWalk = core.NewWalker(7)
 	g.LocalWalk.Place(g.Local.Entry)
@@ -46,11 +50,13 @@ func (g *Game) leaveShop() {
 		// party in a room with a door that does nothing. Out to the overworld
 		// is the honest failure.
 		g.inShop = false
+		g.floor = 0
 		g.Local = nil
 		g.Pop()
 		return
 	}
 	g.inShop = false
+	g.floor = 0
 	g.Local = world.BuildLocal(poi, g.Write, 0)
 	g.LocalWalk = core.NewWalker(7)
 	g.LocalWalk.Place(g.shopReturn)

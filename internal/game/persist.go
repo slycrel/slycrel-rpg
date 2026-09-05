@@ -50,12 +50,9 @@ func (g *Game) Snapshot() *save.File {
 		// carries a POI of its own that is not in the world's list, so asking
 		// the room would answer -1 and file the party as standing outside the
 		// town — see the note below on where they are actually put back.
-		here := g.Local.POI
-		if g.inShop && g.townPOI != nil {
-			here = g.townPOI
-		}
+		here := g.here()
 		if idx := g.poiIndex(here); idx >= 0 {
-			at := g.LocalWalk.Tile
+			at, floor := g.LocalWalk.Tile, g.floor
 			if g.inShop {
 				// Standing in a shop is recorded as standing at its door.
 				//
@@ -66,12 +63,17 @@ func (g *Game) Snapshot() *save.File {
 				// which building, which every save written before today would
 				// answer with a zero that means the first shop in the town.
 				at = g.shopReturn
+				// And on the street's floor, not the room's. g.floor holds a
+				// shop floor while the party is inside one, and a save that
+				// filed it would come back on a level of the town that only
+				// exists behind a door.
+				floor = 0
 			}
 			f.Inside = &save.Inside{
 				POI:    idx,
 				At:     at,
 				Facing: int(g.LocalWalk.Dir()),
-				Floor:  g.floor,
+				Floor:  floor,
 			}
 		}
 	}

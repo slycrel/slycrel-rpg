@@ -208,7 +208,13 @@ func (c *Ctx) TileTinted(sp *assetsys.Sprite, frame, tx, ty int, tint color.Colo
 	ox, oy := c.Cam.Offset()
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(tx*assetsys.TileSize)+ox, float64(ty*assetsys.TileSize)+oy)
-	op.ColorScale.ScaleWithColor(tint)
+	// No tint is no tint, not a crash. Every other draw in this file takes a
+	// nil colour to mean "as painted"; this one dereferenced it and brought the
+	// process down the first time a tile turned up that had a texture and no
+	// entry in the tint table. Third time: see ScreenTinted.
+	if tint != nil {
+		op.ColorScale.ScaleWithColor(tint)
+	}
 	c.Dst.DrawImage(img, op)
 }
 

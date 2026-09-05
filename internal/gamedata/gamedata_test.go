@@ -578,7 +578,18 @@ func TestRecruitsLookLikeTheTradeTheySell(t *testing.T) {
 	for _, seed := range []int64{1, 42, 1994, 20260816} {
 		m := world.Generate(seed, stubNamer{})
 		for _, poi := range m.POIs {
-			for _, e := range world.BuildLocal(poi, stubNamer{}, 0).Entities {
+			// Through the doors as well as down the street. A hireling stands
+			// in the inn now, so a sweep that only looked at the settlement map
+			// would find nobody and — before this walked the rooms too — did.
+			street := world.BuildLocal(poi, stubNamer{}, 0)
+			ents := street.Entities
+			for _, d := range street.Entities {
+				if d.Kind == world.EShopDoor {
+					ents = append(ents,
+						world.BuildShopRoom(poi, stubNamer{}, d.Shelf, d.Shop, d.Name).Entities...)
+				}
+			}
+			for _, e := range ents {
 				if e.Kind != world.ERecruit {
 					continue
 				}
@@ -598,8 +609,8 @@ func TestRecruitsLookLikeTheTradeTheySell(t *testing.T) {
 			}
 		}
 	}
-	// If no settlement in four continents put anybody outside an inn, the test
-	// above proved nothing and would keep proving nothing after a regression.
+	// If no settlement in four continents put anybody in an inn, the test above
+	// proved nothing and would keep proving nothing after a regression.
 	if len(seen) == 0 {
 		t.Fatal("no recruits were generated in any of the sampled worlds")
 	}

@@ -202,15 +202,30 @@ var (
 		Frames: []int{18, 19},
 		Chance: 0.02,
 	}
+	// What is left on the floor of a room that came furnished: bottles, and a
+	// sixth as many of them.
+	//
+	// Not nothing. A taproom with a swept floor reads as a showroom, and the
+	// scatter is what has always said somebody lives here. But a room whose
+	// tables were placed on purpose is already saying that, and the two
+	// together buried the tables in bread.
+	sweptProps = decorSet{
+		Sheet:  "prop/cozy16",
+		Frames: []int{1, 3, 4, 7},
+		Chance: 0.05,
+	}
 )
 
 // localDecorFor returns the scatter rules for an interior cell.
-func localDecorFor(t world.LocalTile, settlement bool) []decorSet {
+func localDecorFor(t world.LocalTile, settlement, furnished bool) []decorSet {
 	switch t {
 	case world.LFloor:
 		// The same tile is a cottage floor in a village and a cave floor under
 		// a mountain; only the location knows which.
-		if settlement {
+		switch {
+		case furnished:
+			return []decorSet{sweptProps}
+		case settlement:
 			return []decorSet{houseProps}
 		}
 		return []decorSet{caveProps}
@@ -238,7 +253,7 @@ func (g *Game) drawLocalDecor(dst *ebiten.Image, cam render.Camera, x0, y0, x1, 
 
 	for ty := y0; ty <= y1+2; ty++ {
 		for tx := x0 - 1; tx <= x1+1; tx++ {
-			sets := localDecorFor(l.At(tx, ty), settlement)
+			sets := localDecorFor(l.At(tx, ty), settlement, l.Furnished)
 			if len(sets) == 0 {
 				continue
 			}

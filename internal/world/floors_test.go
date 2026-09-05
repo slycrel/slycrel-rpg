@@ -256,22 +256,48 @@ func TestAShopIsARoomWithSomebodyInIt(t *testing.T) {
 			if kind != ShopInn && count(l, EShop) != 1 {
 				t.Errorf("%s sells from a bed", kind)
 			}
+			// An inn is the room the game puts people in. The hireling used to
+			// stand in the street outside it, where a player who never walked
+			// that particular stretch of cobbles never met one; the point of
+			// the room is that they are in it, so that is what is checked.
+			if kind == ShopInn {
+				if count(l, ERecruit) != 1 {
+					t.Errorf("an inn with %d hirelings in it", count(l, ERecruit))
+				}
+				if n := count(l, ENPC); n < 2 {
+					t.Errorf("a taproom with %d drinkers in it", n)
+				}
+			} else if count(l, ERecruit) != 0 {
+				t.Errorf("%s: a hireling is loitering in a shop", kind)
+			}
 			// Stock on the wall, which is what says what the trade is before
 			// anybody speaks.
 			if count(l, EDecor) == 0 {
 				t.Errorf("%s has nothing on its walls", kind)
 			}
-			// Everything stands somewhere you can reach, and the way out is
-			// somewhere you can stand.
+			// Nobody stands inside the furniture, and everybody can be
+			// walked up to.
+			//
+			// Decor is exempt from the first half and only from the first
+			// half: a table is a solid tile with a picture of a table on it,
+			// which is how a room gets furniture you cannot walk through. A
+			// *person* on a solid tile is a person nobody can reach.
 			for _, e := range l.Entities {
+				if e.Kind == EDecor {
+					continue
+				}
 				if !l.At(e.Pos.X, e.Pos.Y).Info().Passable {
 					t.Errorf("%s: %s is inside the furniture at %v", kind, e.Kind, e.Pos)
 				}
+				// And the room is a room: everything worth walking up to has
+				// to be reachable from the door, which the counter and the
+				// furniture must therefore not seal off.
+				if !reaches(l, l.Entry, e.Pos) {
+					t.Errorf("%s: %s at %v is walled off from the door", kind, e.Kind, e.Pos)
+				}
 			}
-			// And the room is a room: the keeper has to be reachable from the
-			// door, which the counter must therefore not seal off.
-			if !reaches(l, l.Entry, keeperAt(l)) {
-				t.Errorf("%s: the counter walls the keeper off from the door", kind)
+			if keeperAt(l).X < 0 {
+				t.Errorf("%s: nobody behind the counter at all", kind)
 			}
 		}
 	}
@@ -286,8 +312,13 @@ func keeperAt(l *LocalMap) core.Point {
 	return core.Point{X: -1}
 }
 
-// reaches is a flood fill from one tile to another, treating anything an
-// entity stands on as walkable — a person is not a wall.
+// reaches is a flood fill from one tile to another over passable tiles.
+//
+// A person is not a wall, and it does not need to be told so: people stand on
+// floor, which is half of what the caller is checking. Furniture is: a table is
+// an impassable tile with a picture of a table on it, so a fill that stepped
+// over anything with an entity on it would walk through the tables and call a
+// room crossable that is not.
 func reaches(l *LocalMap, from, to core.Point) bool {
 	if to.X < 0 {
 		return false
@@ -310,4 +341,33 @@ func reaches(l *LocalMap, from, to core.Point) bool {
 		}
 	}
 	return false
+}
+
+// What has a roof over it, and what only looks like it does.
+//
+// Indoors decides two things a player notices immediately — whether it rains on
+// them and whether the people are still there after dark — and for most of its
+// life it decided neither, because it was set by three builders and read by
+// nobody. The drawing code asked the POI kind instead, which gets the two
+// interesting cases backwards: a town is outdoors and the room behind its inn
+// door is not, and both are the same POI.
+func TestARoofIsAPropertyOfTheMapAndNotOfTheKind(t *testing.T) {
+	roofed := map[POIKind]bool{KindDungeon: true, KindCave: true, KindTower: true}
+	kinds := []POIKind{
+		KindCapital, KindTown, KindVillage, KindCastle,
+		KindDungeon, KindCave, KindTower, KindOddity, KindCamp, KindRuin,
+	}
+	for _, k := range kinds {
+		poi := &POI{Kind: k, Seed: 4242, Level: 3, Name: "Somewhere", Tag: "tag"}
+		if got := BuildLocal(poi, floorNamer{}, 0).Indoors; got != roofed[k] {
+			t.Errorf("%s is built indoors=%v, want %v", k, got, roofed[k])
+		}
+	}
+	// And every room behind a door is, whatever the town around it is.
+	town := &POI{Kind: KindTown, Seed: 4242, Level: 3, Name: "Town", Tag: "tag"}
+	for _, kind := range []ShopKind{ShopSmith, ShopArmorer, ShopApothecary, ShopInn} {
+		if !BuildShopRoom(town, floorNamer{}, 0, kind, "The Shop").Indoors {
+			t.Errorf("the %s is a room in a town with the sky in it", kind)
+		}
+	}
 }
