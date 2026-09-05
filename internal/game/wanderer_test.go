@@ -39,7 +39,7 @@ func TestARolledEncounterBecomesACreatureRatherThanAFight(t *testing.T) {
 	s := &overworldScene{}
 	depth := len(g.stack)
 
-	s.spawnWanderer(g, g.Walk.Tile, fakeEncounter(t, g))
+	s.spawnWanderer(g, g.Walk.Tile, fakeEncounter(t, g), world.OmenHostile)
 
 	if len(s.wanderers) == 0 {
 		t.Fatal("a hit on the roll produced no creature")
@@ -76,7 +76,7 @@ func TestNoMoreThanTheCapIsEverOut(t *testing.T) {
 	g := storyGame(t)
 	s := &overworldScene{}
 	enc := fakeEncounter(t, g)
-	s.spawnWanderer(g, g.Walk.Tile, enc)
+	s.spawnWanderer(g, g.Walk.Tile, enc, world.OmenHostile)
 	if len(s.wanderers) == 0 {
 		t.Skip("nowhere to stand near the start tile")
 	}
@@ -105,7 +105,7 @@ func TestTouchingACreatureStartsTheFightItWasCarrying(t *testing.T) {
 	g.Party()
 	s := &overworldScene{}
 	enc := fakeEncounter(t, g)
-	s.spawnWanderer(g, g.Walk.Tile, enc)
+	s.spawnWanderer(g, g.Walk.Tile, enc, world.OmenHostile)
 	if len(s.wanderers) == 0 {
 		t.Skip("nowhere to stand near the start tile")
 	}
@@ -133,7 +133,7 @@ func TestTouchingACreatureStartsTheFightItWasCarrying(t *testing.T) {
 func TestACreatureThatLosesYouIsGone(t *testing.T) {
 	g := storyGame(t)
 	s := &overworldScene{}
-	s.spawnWanderer(g, g.Walk.Tile, fakeEncounter(t, g))
+	s.spawnWanderer(g, g.Walk.Tile, fakeEncounter(t, g), world.OmenHostile)
 	if len(s.wanderers) == 0 {
 		t.Skip("nowhere to stand near the start tile")
 	}

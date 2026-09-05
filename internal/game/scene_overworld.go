@@ -225,9 +225,13 @@ func (s *overworldScene) tryStep(g *Game, d core.Dir) {
 			if g.RNG.Chance(0.10) {
 				count = 3
 			}
+			// The encounter is rolled either way, because a boon still needs
+			// something to stand there and something to become if a mystery
+			// turns out badly. What the omen decides is which of those happens
+			// when the two of you meet.
 			enc := g.Data.PickEncounter(g.RNG, biome, level, g.encounterSize(count))
 			if len(enc.Monsters) > 0 {
-				s.spawnWanderer(g, next, enc)
+				s.spawnWanderer(g, next, enc, rollOmen(g.RNG))
 			}
 		}
 	}
@@ -242,9 +246,9 @@ func (s *overworldScene) tryStep(g *Game, d core.Dir) {
 // ringed by water — the roll simply does not become a fight. That is the one
 // fight the visible model gives up that the invisible one would have had, and
 // it is a fair price for never lying about what is coming.
-func (s *overworldScene) spawnWanderer(g *Game, at core.Point, enc gamedata.Encounter) {
+func (s *overworldScene) spawnWanderer(g *Game, at core.Point, enc gamedata.Encounter, omen world.Omen) {
 	kind := string(enc.Monsters[0].Def.Kind)
-	w := g.World.SpawnWanderer(g.RNG, at, kind)
+	w := g.World.SpawnWanderer(g.RNG, at, kind, omen)
 	if w == nil {
 		return
 	}
@@ -288,7 +292,8 @@ func (s *overworldScene) stepWanderer(g *Game) {
 	}
 }
 
-// startWanderFight hands one creature's stored encounter to the battle screen.
+// startWanderFight is what happens when the two of you meet, which is not
+// always a fight any more.
 //
 // The others stay where they are. They are still out there, which is the whole
 // argument for letting more than one exist: walking away from a fight into the
@@ -301,6 +306,17 @@ func (s *overworldScene) startWanderFight(g *Game, i int) {
 	it := s.wanderers[i]
 	s.wanderers = append(s.wanderers[:i], s.wanderers[i+1:]...)
 	g.sinceFight = 0
+
+	// A mystery is not decided until it is reached, which is the only thing
+	// that makes walking to one a decision rather than a collection.
+	omen := it.w.Omen
+	if omen == world.OmenMystery {
+		omen = resolveMystery(g.RNG)
+	}
+	if omen == world.OmenBoon {
+		g.grantBoon(g.RNG, it.in)
+		return
+	}
 	g.Push(newBattleScene(g, it.enc, it.in))
 }
 
@@ -442,12 +458,55 @@ func (s *overworldScene) Draw(g *Game, dst *ebiten.Image) {
 	// Names over the tint, so a place is still readable after dark.
 	s.drawLabels(g, dst, x0, y0, x1, y1)
 
+	// And what each thing in the grass is worth walking to, over the tint for
+	// the same reason: the mark is the one piece of information the player has
+	// before they commit, and a mark you cannot see in the rain is a mark for
+	// the weather you least want to be surprised in.
+	s.drawOmens(g, dst, x0, y0, x1, y1)
+
 	// The corner map over the weather and under the status strip, which is the
 	// order they mean: it is interface, and the strip is the interface it
 	// belongs to.
 	s.mini.draw(g, dst)
 
 	s.drawHUD(g, dst)
+}
+
+// drawOmens paints the mark over each thing standing in the world.
+//
+// Over the creature rather than instead of it. The playthrough that produced
+// this asked for one icon per kind of event and also said it liked seeing
+// monsters on the map, and those are not in tension once the two jobs are
+// separated: the silhouette is the world having things in it, and the mark is
+// the information. A creature you can see is a creature you can walk around;
+// the mark is what tells you whether you want to.
+func (s *overworldScene) drawOmens(g *Game, dst *ebiten.Image, x0, y0, x1, y1 int) {
+	const ts = assetsys.TileSize
+	ox, oy := s.cam.Offset()
+	for _, it := range s.wanderers {
+		w := it.w
+		if w.Pos.X < x0 || w.Pos.X > x1 || w.Pos.Y < y0 || w.Pos.Y > y1 {
+			continue
+		}
+		rows, col, ok := omenMark(w.Omen, g.Tick())
+		if !ok {
+			continue
+		}
+		// Above the artwork rather than above the tile, which is the same
+		// measurement the attention star makes and for the same reason: the
+		// creature silhouettes run from thirteen pixels to twenty-five, so a
+		// fixed offset sits on the tall ones' heads.
+		top := float64(w.Pos.Y*ts + ts)
+		if sp := g.Assets.Get("wild/" + w.Kind); sp != nil {
+			top -= float64(sp.H - sp.Head)
+		} else {
+			top -= ts
+		}
+		x := float64(w.Pos.X*ts) + ox + (ts-7)/2
+		y := top + oy - 6 + starBob[(g.Tick()/8)%len(starBob)]
+		drawGlyph(dst, rows, x+2, y+2, color.RGBA{0x10, 0x0C, 0x14, 0xD8})
+		drawGlyph(dst, rows, x, y, col)
+	}
 }
 
 // poiLabelRadius is how close a location has to be before it says its name, in

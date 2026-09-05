@@ -87,6 +87,10 @@ type File struct {
 	Fog string `json:"fog"`
 
 	SinceFight int `json:"sinceFight"`
+	// NextAmbush is steps left before the next ambush underground. Absent in
+	// any file written before it existed, and a zero there means "draw one",
+	// not "now" — see Game.ambushDue.
+	NextAmbush int `json:"nextAmbush,omitempty"`
 
 	// Sagas are the long stories in progress: the spine and any arcs. Absent in
 	// a save written before there were any, which reads back as a run with no

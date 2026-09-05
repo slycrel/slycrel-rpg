@@ -26,6 +26,7 @@ func (g *Game) Snapshot() *save.File {
 		Facing:     int(g.Walk.Dir()),
 		Fog:        save.PackFog(g.World.Explored),
 		SinceFight: g.sinceFight,
+		NextAmbush: g.nextAmbush,
 		Summary:    g.summary(),
 		Quests:     g.Quests.Quests,
 		Threads:    g.Threads.Threads,
@@ -94,6 +95,7 @@ func (g *Game) Restore(f *save.File) error {
 	// list; both are already zero, so nothing needs converting.
 	g.World = world.Generate(f.Seed, g.Write)
 	g.sinceFight = f.SinceFight
+	g.nextAmbush = f.NextAmbush
 	g.Clock = f.Clock
 	g.Sagas, g.pendingLegs = f.Sagas, nil
 	g.Track = Track(f.Track)

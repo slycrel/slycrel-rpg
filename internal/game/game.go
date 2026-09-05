@@ -93,6 +93,9 @@ type Game struct {
 
 	// Steps since the last encounter, so fights cannot chain immediately.
 	sinceFight int
+	// nextAmbush is how many more steps underground before the next one. See
+	// ambushDue: a budget rather than a chance per step.
+	nextAmbush int
 
 	// arrived is the overworld tile the hero counts as having already walked
 	// onto, so stepping onto a location enters it exactly once.

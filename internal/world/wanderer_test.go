@@ -45,7 +45,7 @@ func TestWandererSpawnsWhereItCanBeSeen(t *testing.T) {
 
 	spawned := 0
 	for i := 0; i < 400; i++ {
-		w := m.SpawnWanderer(g, at, "beast")
+		w := m.SpawnWanderer(g, at, "beast", OmenHostile)
 		if w == nil {
 			continue // no room in the ring, which is allowed
 		}
@@ -83,7 +83,7 @@ func TestWandererClosesOnAStandingTarget(t *testing.T) {
 
 	arrived, tried := 0, 0
 	for i := 0; i < 60; i++ {
-		w := m.SpawnWanderer(g, at, "beast")
+		w := m.SpawnWanderer(g, at, "beast", OmenHostile)
 		if w == nil {
 			continue
 		}

@@ -2,6 +2,27 @@ package world
 
 import "github.com/slycrel/slycrel-rpg/internal/core"
 
+// Omen is what a thing standing in the world will turn out to be.
+//
+// Three, because three is what a marker can say at seven pixels and what a
+// player can act on: keep away, go over, or find out. A fourth would be a
+// palette nobody can read at a glance and a second would not be a choice.
+type Omen string
+
+const (
+	// OmenHostile is a fight, and looks like one.
+	OmenHostile Omen = "hostile"
+	// OmenBoon is something you want: a spring, a cache, somebody helpful.
+	OmenBoon Omen = "boon"
+	// OmenMystery is not saying, and resolves into one of the other two when
+	// you reach it.
+	//
+	// It exists because a world where every marker is honest is a world with no
+	// reason to take a risk in it, and the good ones would simply be collected.
+	// A mystery is the only marker that makes walking over there a decision.
+	OmenMystery Omen = "mystery"
+)
+
 // A Wanderer is an encounter the player can see coming.
 //
 // The overworld roll has always fired straight into the battle screen: a step
@@ -24,6 +45,17 @@ type Wanderer struct {
 	// Entity.Class is: world generation must not drag the character model in.
 	// It selects the sprite and nothing else.
 	Kind string
+	// Omen is what this will turn out to be, and it is the one thing the player
+	// is told before they commit.
+	//
+	// Not the species. The map used to draw a silhouette per monster kind and a
+	// third of the roster is "beast", so a wolf, a bear, an owl and an ox all
+	// appeared as the same crab — which reads as random decoration rather than
+	// as information, and a playthrough duly reported it as random decoration.
+	// What is actually worth knowing from across a field is not *what* is
+	// standing there but *whether you want to walk at it*, and that is three
+	// answers rather than eight.
+	Omen Omen
 	// Seen is set once it has noticed you, and never cleared. A creature that
 	// forgot about you every time you stepped out of its radius would jitter on
 	// the boundary instead of committing.
@@ -73,7 +105,7 @@ const (
 // happens on a beach or a spit of land — and a roll that finds nowhere to put
 // its creature is simply a roll that does not become a fight. That is the one
 // place the visible model gives up a fight the invisible one would have had.
-func (m *Map) SpawnWanderer(g *core.RNG, near core.Point, kind string) *Wanderer {
+func (m *Map) SpawnWanderer(g *core.RNG, near core.Point, kind string, omen Omen) *Wanderer {
 	for try := 0; try < 24; try++ {
 		d := WanderSpawnMin + g.Intn(WanderSpawnMax-WanderSpawnMin+1)
 		// A ring rather than a box: sample an offset and reject the ones that
@@ -87,7 +119,7 @@ func (m *Map) SpawnWanderer(g *core.RNG, near core.Point, kind string) *Wanderer
 		if p == near || !m.Walkable(p.X, p.Y) || m.POIAt(p.X, p.Y) != nil {
 			continue
 		}
-		return &Wanderer{Pos: p, Kind: kind, Life: WanderLife}
+		return &Wanderer{Pos: p, Kind: kind, Omen: omen, Life: WanderLife}
 	}
 	return nil
 }
@@ -209,3 +241,36 @@ func sign(n int) int {
 	}
 	return 0
 }
+
+// rollOmen decides what a thing standing in the world will turn out to be.
+//
+// It lives here rather than in the game layer because interiors are generated
+// in this package, from the location's own seed, and a foe's omen has to be
+// part of that generation or it would be redrawn every time the player walked
+// back in — a marker that changed colour between visits would be worse than no
+// marker, since the one thing a mark has to be is the same mark.
+//
+// The shares are the game's to know, so they are passed nothing and hard-set
+// here; the game layer has its own copy for the overworld roll, where the
+// encounter is weather rather than furniture. Two callers, one table, and the
+// test below is what says they agree.
+func rollOmen(g *core.RNG) Omen {
+	switch r := g.Float(); {
+	case r < BoonShare:
+		return OmenBoon
+	case r < BoonShare+MysteryShare:
+		return OmenMystery
+	}
+	return OmenHostile
+}
+
+// How often each omen comes up.
+//
+// Hostile is still most of it: this is a game about walking into things, and a
+// world where a third of what you meet hands you something is a world with no
+// reason to go to an inn. The boons are rare enough to be a small event and
+// common enough that a player learns what the mark means within an afternoon.
+const (
+	BoonShare    = 0.14
+	MysteryShare = 0.14
+)

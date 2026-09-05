@@ -141,6 +141,16 @@ type Entity struct {
 	Used bool // chests opened, foes killed, altars prayed at
 	// Wander is set on foes that move on their own.
 	Wander bool
+	// Omen is what walking into this will turn out to be, for the things in an
+	// interior that are an encounter rather than furniture.
+	//
+	// The sprite underneath stays decoration and is picked at random from a
+	// pool of five, which is what it always was — a playthrough called those
+	// icons random because they are, and the encounter is rolled fresh on
+	// contact so they could never have been anything else. What that report
+	// actually wanted was to know what it was walking into, and that is this
+	// field rather than the picture.
+	Omen   Omen
 	facing core.Dir
 }
 
@@ -564,7 +574,7 @@ func buildOddity(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 		if p, ok := findOpen(g, l, 120); ok {
 			l.Entities = append(l.Entities, &Entity{
 				Kind: EFoe, Pos: p, Name: "a lurking shape",
-				Sprite: core.Pick(g, foeSprites), Wander: true,
+				Sprite: core.Pick(g, foeSprites), Wander: true, Omen: rollOmen(g),
 			})
 		}
 	}
@@ -679,6 +689,7 @@ func buildDungeon(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 			l.Entities = append(l.Entities, &Entity{
 				Kind: EFoe, Pos: p, Name: "a lurking shape",
 				Sprite: core.Pick(g, foeSprites), Wander: g.Chance(0.6),
+				Omen: rollOmen(g),
 			})
 		}
 		if g.Chance(0.45) {
@@ -763,7 +774,7 @@ func buildSite(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 			if p, ok := findOpen(g, l, 120); ok {
 				l.Entities = append(l.Entities, &Entity{
 					Kind: EFoe, Pos: p, Name: "a lurking shape",
-					Sprite: core.Pick(g, foeSprites), Wander: true,
+					Sprite: core.Pick(g, foeSprites), Wander: true, Omen: rollOmen(g),
 				})
 			}
 		}
