@@ -19,7 +19,7 @@ import (
 //
 // Two halves have to hold for that not to happen. The town has to be the ledger
 // rather than the room (Game.here), and the room needs an address of its own
-// (world.ShopFloorOf) — without the second, a hireling hired at {16,4} in the
+// (world.RoomFloorOf) — without the second, a hireling hired at {16,4} in the
 // inn would also delete whatever stands on {16,4} out in the street.
 func TestAHirelingHiredInTheInnIsGoneWhenYouComeBack(t *testing.T) {
 	g := storyGame(t)
@@ -34,7 +34,7 @@ func TestAHirelingHiredInTheInnIsGoneWhenYouComeBack(t *testing.T) {
 	}
 	streetBefore := len(liveEntities(g.Local))
 
-	g.enterShop(door)
+	g.enterRoom(door)
 	recruit := firstOfKind(g.Local, world.ERecruit)
 	if recruit == nil {
 		t.Fatal("nobody is for hire in the taproom")
@@ -44,17 +44,17 @@ func TestAHirelingHiredInTheInnIsGoneWhenYouComeBack(t *testing.T) {
 
 	// Out and back in. The room is rebuilt from the seed either way; what has
 	// to survive is the record of what happened in it.
-	g.leaveShop()
+	g.leaveRoom()
 	if got := len(liveEntities(g.Local)); got != streetBefore {
 		t.Errorf("hiring somebody indoors removed %d thing(s) from the street",
 			streetBefore-got)
 	}
-	g.enterShop(door)
+	g.enterRoom(door)
 	if again := firstOfKind(g.Local, world.ERecruit); again != nil {
 		t.Errorf("the hireling is back on the stool at %v, offering again", again.Pos)
 	}
 	// And it is that seat that was spent, not the room wholesale.
-	if !poi.IsUsed(string(world.ERecruit), seat, world.ShopFloorOf(door.Shelf)) {
+	if !poi.IsUsed(string(world.ERecruit), seat, world.RoomFloorOf(door.Shelf)) {
 		t.Errorf("the town has no record of a hireling leaving %v", seat)
 	}
 	if poi.IsUsed(string(world.ERecruit), seat, 0) {

@@ -301,12 +301,30 @@ func (g *Game) roleOf(e *world.Entity) string {
 			return e.Blood
 		}
 		return "for hire"
+	case world.EResident:
+		return capResident.pick(e.Name)
 	case world.ENPC:
 		if k, ok := g.questFaceKind(e); ok {
 			return questCaptions[k].pick(e.Name)
 		}
 	}
 	return ""
+}
+
+// Somebody in their own house, which is the one thing the caption has to say.
+//
+// A player who has just opened a stranger's door should be told they are
+// looking at the person who lives here rather than at another townsperson who
+// happens to be standing indoors — that is the difference between a room and a
+// street with a roof on it. The trade goes first, as everywhere: "at home"
+// leads and the rest rides on it.
+var capResident = captionPool{
+	"at home, mid-sentence",
+	"at home, was not expecting anyone",
+	"at home, hand still on the door",
+	"at home, something on the stove",
+	"at home, wearing the indoor face",
+	"at home, and it shows",
 }
 
 // The counters.

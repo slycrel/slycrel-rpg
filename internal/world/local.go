@@ -119,7 +119,15 @@ const (
 	// EShopDoor is the way into a shop, standing where the shopkeeper used to.
 	// The keeper is inside; this is the building.
 	EShopDoor EntityKind = "shopdoor"
-	EChest    EntityKind = "chest"
+	// EHouseDoor is the way into one of the buildings that is not a trade, and
+	// EResident is the person who lives behind it. Not EShopDoor with a blank
+	// trade and not ENPC standing indoors: what happens when you knock is a
+	// different question from what happens when you shop, and what a resident
+	// says to you is not what a passer-by says to you — it depends on how the
+	// town takes you, which is the whole reason the room exists.
+	EHouseDoor EntityKind = "housedoor"
+	EResident  EntityKind = "resident"
+	EChest     EntityKind = "chest"
 	// EHoard is the chest at the end of a place, as opposed to the ones on the
 	// way. Its own kind rather than a flag on EChest so that whatever decides
 	// what is inside can be told which of the two it is opening.
@@ -479,6 +487,22 @@ func buildSettlement(g *core.RNG, poi *POI, wr Namer) *LocalMap {
 	if poi.Kind == KindVillage {
 		shops = shops[:2]
 	}
+	for i, b := range built {
+		if i < len(shops) {
+			continue
+		}
+		// Everything the trades did not take is somebody's house, and behind
+		// the door is a room rather than the three-tile alcove a player used to
+		// be able to step into and find nothing in.
+		l.rect(b.x+1, b.y+2, b.w-2, b.h-3, LRoof)
+		door := core.Point{X: b.x + b.w/2, Y: b.y + b.h - 1}
+		l.set(door.X, door.Y, LDoor)
+		l.Entities = append(l.Entities, &Entity{
+			Kind: EHouseDoor, Pos: door, Name: "a house",
+			Line: "Somebody lives here.", Shelf: i,
+		})
+	}
+
 	for i, s := range shops {
 		if i >= len(built) {
 			break
@@ -1354,7 +1378,7 @@ var shopStock = map[ShopKind][]int{
 	ShopInn: {9, 11, 12, 6, 8, 22},
 }
 
-// ShopFloor is the first floor number the rooms behind a town's doors use.
+// RoomFloor is the first floor number the rooms behind a town's doors use.
 //
 // A shop is a map built from the town's seed, and what the player spends in one
 // is recorded against the town — so the room needs a floor of its own or a
@@ -1362,10 +1386,10 @@ var shopStock = map[ShopKind][]int{
 // stands on that square out on the street. A hundred, because no place on the
 // continent is a hundred storeys deep and nothing here should ever have to
 // reason about which end of the range it is in.
-const ShopFloor = 100
+const RoomFloor = 100
 
-// ShopFloorOf is the floor number of the room behind a settlement's nth door.
-func ShopFloorOf(idx int) int { return ShopFloor + idx }
+// RoomFloorOf is the floor number of the room behind a settlement's nth door.
+func RoomFloorOf(idx int) int { return RoomFloor + idx }
 
 // BuildShopRoom is the inside of one of a town's shops.
 func BuildShopRoom(poi *POI, wr Namer, idx int, kind ShopKind, name string) *LocalMap {
@@ -1386,7 +1410,7 @@ func BuildShopRoom(poi *POI, wr Namer, idx int, kind ShopKind, name string) *Loc
 	// Nothing ambushes you in a shop. It is a room in a town, and a town is
 	// somewhere you are safe — which is most of what makes it a town.
 	l.Peaceful = true
-	l.Floor, l.Depth = ShopFloorOf(idx), 1
+	l.Floor, l.Depth = RoomFloorOf(idx), 1
 	l.rect(1, 1, w-2, h-2, LFloor)
 
 	// The way out, in the middle of the bottom wall where the door was.

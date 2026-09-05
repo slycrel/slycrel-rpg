@@ -386,7 +386,7 @@ func (g *Game) demoOpenShop() {
 		if e.Kind == world.EShopDoor {
 			// Into the shop and up to the counter, which is what a player does
 			// and is now two steps rather than one.
-			g.enterShop(e)
+			g.enterRoom(e)
 			for _, in := range g.Local.Entities {
 				if in.Kind == world.EShop {
 					g.Push(newShopScene(g, in))
@@ -415,15 +415,15 @@ func (g *Game) demoHasInn(p *world.POI) bool {
 // hireling is worth finding at the end of it. A village has no inn; there the
 // tour stays on the street and demoHire conjures somebody, as it always did.
 func (g *Game) demoEnterInn() {
-	if g.inShop {
-		g.leaveShop()
+	if g.inRoom {
+		g.leaveRoom()
 	}
 	if g.Local == nil {
 		return
 	}
 	for _, e := range g.Local.Entities {
 		if e.Kind == world.EShopDoor && e.Shop == world.ShopInn {
-			g.enterShop(e)
+			g.enterRoom(e)
 			return
 		}
 	}

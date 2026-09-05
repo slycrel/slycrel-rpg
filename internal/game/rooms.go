@@ -8,9 +8,9 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
 
-// Going into a shop and coming back out.
+// Going in through a door in a town and coming back out.
 //
-// A shop room is a map inside a map, and the way it is held is the way floors
+// A room behind a door is a map inside a map, and the way it is held is the way floors
 // are held: there is one g.Local, and moving between rooms replaces it and
 // rebuilds the other one on the way back. Interiors are deterministic from the
 // location's seed, so rebuilding is lossless — anything spent replays from the
@@ -22,18 +22,22 @@ import (
 // and a save is a place you come back to rather than a photograph. That is one
 // field on Game and no fields anywhere else.
 
-// enterShop swaps the town for the room behind one of its doors.
-func (g *Game) enterShop(e *world.Entity) {
+// enterRoom swaps the town for the room behind one of its doors.
+func (g *Game) enterRoom(e *world.Entity) {
 	if g.Local == nil || g.Local.POI == nil {
 		return
 	}
-	g.shopReturn = g.LocalWalk.Tile
-	g.inShop = true
+	g.roomReturn = g.LocalWalk.Tile
+	g.inRoom = true
 	// The room gets a floor of its own so that what is spent in it — a hireling
 	// taken off a stool in the inn — is recorded at an address the street does
-	// not also use. See world.ShopFloorOf and Game.here.
-	g.floor = world.ShopFloorOf(e.Shelf)
-	g.Local = world.BuildShopRoom(g.Local.POI, g.Write, e.Shelf, e.Shop, e.Name)
+	// not also use. See world.RoomFloorOf and Game.here.
+	g.floor = world.RoomFloorOf(e.Shelf)
+	if e.Kind == world.EHouseDoor {
+		g.Local = world.BuildHouseRoom(g.Local.POI, g.Write, e.Shelf)
+	} else {
+		g.Local = world.BuildShopRoom(g.Local.POI, g.Write, e.Shelf, e.Shop, e.Name)
+	}
 	g.LocalWalk = core.NewWalker(7)
 	g.LocalWalk.Place(g.Local.Entry)
 	g.reformLines()
@@ -42,26 +46,26 @@ func (g *Game) enterShop(e *world.Entity) {
 	g.Push(newLocalScene(g))
 }
 
-// leaveShop rebuilds the settlement and puts the party back on its doorstep.
-func (g *Game) leaveShop() {
+// leaveRoom rebuilds the settlement and puts the party back on its doorstep.
+func (g *Game) leaveRoom() {
 	poi := g.townPOI
 	if poi == nil {
 		// Nothing to go back to, which should not happen and would strand the
 		// party in a room with a door that does nothing. Out to the overworld
 		// is the honest failure.
-		g.inShop = false
+		g.inRoom = false
 		g.floor = 0
 		g.Local = nil
 		g.Pop()
 		return
 	}
-	g.inShop = false
+	g.inRoom = false
 	g.floor = 0
 	g.Local = world.BuildLocal(poi, g.Write, 0)
 	g.LocalWalk = core.NewWalker(7)
-	g.LocalWalk.Place(g.shopReturn)
+	g.LocalWalk.Place(g.roomReturn)
 	g.reformLines()
-	g.localFollow.Place(g.shopReturn)
+	g.localFollow.Place(g.roomReturn)
 	g.Sound.Play("world/enter")
 	g.Pop()
 	g.Log.AddColor(render.ColInkDim, "Back on the street.")

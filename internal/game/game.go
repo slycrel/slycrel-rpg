@@ -100,13 +100,13 @@ type Game struct {
 	// from the way in. Nought everywhere that has only one, which is most
 	// places and every place there used to be.
 	floor int
-	// inShop, shopReturn and townPOI are what it takes to be standing in a room
+	// inRoom, roomReturn and townPOI are what it takes to be standing in a room
 	// inside a town: whether we are, the doorstep to come back to, and the
 	// settlement to rebuild on the way out. None of it is saved — a party in a
 	// shop is recorded as standing at its door, which is where leaving puts
 	// them.
-	inShop     bool
-	shopReturn core.Point
+	inRoom     bool
+	roomReturn core.Point
 	townPOI    *world.POI
 
 	// arrived is the overworld tile the hero counts as having already walked

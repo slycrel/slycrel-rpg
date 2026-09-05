@@ -371,3 +371,81 @@ func TestARoofIsAPropertyOfTheMapAndNotOfTheKind(t *testing.T) {
 		}
 	}
 }
+
+// Everything a town built that is not a trade is somebody's house, and behind
+// the door is a room.
+//
+// The leftover buildings were scenery with a three-tile alcove in them that a
+// player could step into and find nothing, because there was nothing to find.
+// The two halves that have to hold: every one of them opens onto a room, and no
+// two of them open onto the *same* room — the door carries an index and that
+// index is both the seed of what is behind it and the address anything spent in
+// there is filed under, so a collision would make two houses one house.
+func TestEveryBuildingThatIsNotATradeIsSomebodysHouse(t *testing.T) {
+	// A castle is the exception, and on purpose. All four trades fit in one
+	// before anything is left over, and how many buildings a plot takes is a
+	// rejection loop against a street cross — on some seeds a castle is four
+	// buildings and all four of them are counters. Somewhere with no houses in
+	// it is a fort, which is a reasonable thing for a castle to be; somewhere
+	// with buildings it did not put anybody in is the bug this is looking for.
+	homes := map[POIKind]bool{KindCapital: true, KindTown: true, KindVillage: true}
+	for _, kind := range []POIKind{KindCapital, KindTown, KindVillage, KindCastle} {
+		poi := &POI{Kind: kind, Seed: 909, Level: 4, Name: "Somewhere", Tag: "tag"}
+		l := BuildLocal(poi, floorNamer{}, 0)
+
+		shelves := map[int]EntityKind{}
+		houses := 0
+		for _, e := range l.Entities {
+			switch e.Kind {
+			case EShopDoor, EHouseDoor:
+			default:
+				continue
+			}
+			if was, dup := shelves[e.Shelf]; dup {
+				t.Errorf("%s: a %s and a %s both open onto room %d",
+					kind, was, e.Kind, e.Shelf)
+			}
+			shelves[e.Shelf] = e.Kind
+			if e.Kind == EHouseDoor {
+				houses++
+			}
+		}
+		if houses == 0 && homes[kind] {
+			t.Errorf("%s has no houses in it, only shops", kind)
+		}
+		// And no doorway is a hole in a wall with nothing behind it.
+		if t.Failed() {
+			continue
+		}
+		for shelf, k := range shelves {
+			if k != EHouseDoor {
+				continue
+			}
+			room := BuildHouseRoom(poi, floorNamer{}, shelf)
+			if count(room, EResident) != 1 {
+				t.Errorf("%s: house %d has %d people living in it",
+					kind, shelf, count(room, EResident))
+			}
+			if count(room, EExit) != 1 {
+				t.Errorf("%s: house %d has %d ways out", kind, shelf, count(room, EExit))
+			}
+			if !room.Indoors || !room.Peaceful {
+				t.Errorf("%s: house %d is indoors=%v peaceful=%v",
+					kind, shelf, room.Indoors, room.Peaceful)
+			}
+			for _, e := range room.Entities {
+				if e.Kind == EDecor {
+					continue
+				}
+				if !room.At(e.Pos.X, e.Pos.Y).Info().Passable {
+					t.Errorf("%s: house %d has a %s inside the furniture at %v",
+						kind, shelf, e.Kind, e.Pos)
+				}
+				if !reaches(room, room.Entry, e.Pos) {
+					t.Errorf("%s: house %d walls its %s off from the door",
+						kind, shelf, e.Kind)
+				}
+			}
+		}
+	}
+}

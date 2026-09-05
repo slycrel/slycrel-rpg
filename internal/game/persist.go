@@ -53,7 +53,7 @@ func (g *Game) Snapshot() *save.File {
 		here := g.here()
 		if idx := g.poiIndex(here); idx >= 0 {
 			at, floor := g.LocalWalk.Tile, g.floor
-			if g.inShop {
+			if g.inRoom {
 				// Standing in a shop is recorded as standing at its door.
 				//
 				// A save is a place you come back to rather than a photograph,
@@ -62,7 +62,7 @@ func (g *Game) Snapshot() *save.File {
 				// nothing. The alternative is a field naming which room of
 				// which building, which every save written before today would
 				// answer with a zero that means the first shop in the town.
-				at = g.shopReturn
+				at = g.roomReturn
 				// And on the street's floor, not the room's. g.floor holds a
 				// shop floor while the party is inside one, and a save that
 				// filed it would come back on a level of the town that only
@@ -165,7 +165,7 @@ func (g *Game) Restore(f *save.File) error {
 	if f.Inside != nil && f.Inside.POI >= 0 && f.Inside.POI < len(g.World.POIs) {
 		poi := g.World.POIs[f.Inside.POI]
 		g.floor = f.Inside.Floor
-		g.inShop, g.townPOI = false, poi
+		g.inRoom, g.townPOI = false, poi
 		g.Local = world.BuildLocal(poi, g.Write, g.floor)
 		g.LocalWalk = core.NewWalker(7)
 		g.LocalWalk.Place(f.Inside.At)

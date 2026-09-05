@@ -50,8 +50,8 @@ func (g *Game) attention(e *world.Entity, poiIdx int) attentionKind {
 	}
 	switch e.Kind {
 	case world.ERecruit:
-		// Somebody standing outside an inn waiting to be paid is the clearest
-		// case of all: they are there *for* this.
+		// Somebody sitting at the end of an inn's bar waiting to be paid is the
+		// clearest case of all: they are there *for* this.
 		return attentionOffer
 	case world.ENPC:
 	default:

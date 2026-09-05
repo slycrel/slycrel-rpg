@@ -582,7 +582,9 @@ which event fires which trigger, and where it is safe to put a box on screen.
 than stepping, so the encounter roll never runs and a wandering monster can
 never appear in it; `demoOpenShop` takes the first counter, which is the smith
 under every seed tried. Both features were verified by patching the tour, taking
-a frame, and reverting — fine once, useless as a regression net.
+a frame, and reverting — fine once, useless as a regression net. A house
+interior was checked the same way, by pointing `demoEnterInn` at an `EHouseDoor`
+for one run.
 
 So anything the tour cannot reach gets a test instead of a longer tour. Growing
 `-demo` to cover everything is the drift the scope note below is about. And a
@@ -595,6 +597,20 @@ checked by breaking the thing it protects.
   truncated, since the vendor's portrait was paid for in item names. Its floor
   is *measured*, not chosen: the first version asserted "no two rows collide"
   and a column nearly three times the real one sailed straight through it.
+- `TestAHirelingHiredInTheInnIsGoneWhenYouComeBack` — the two halves of a room
+  behind a door being able to hold state at all: the town is the ledger rather
+  than the room's synthetic POI, and each room has an address of its own so a
+  hireling hired at {16,4} in the inn does not also delete whatever stands on
+  {16,4} out in the street.
+- `TestAHouseholdReadsYouBeforeItDecidesWhatToDo` — the first place reputation
+  costs or pays rather than tinting a line of dialogue, and that it does so
+  once. The tour's hero is level one and reads as nobody, so no frame of it can
+  ever show the interesting branches.
+- `TestARoofIsAPropertyOfTheMapAndNotOfTheKind` and
+  `TestNobodyGoesHomeFromInsideTheInn` — `LocalMap.Indoors` staying load
+  bearing. It was set by three builders and read by none for its whole life,
+  and the two things it decides are both invisible in a still frame taken in
+  fine weather at noon.
 
 ## Scope discipline
 

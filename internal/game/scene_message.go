@@ -106,6 +106,19 @@ func (g *Game) SayThen(speaker, body string, then func(*Game)) {
 	}))
 }
 
+// SayAsThen is SayThen for a person: the same face and width as SayAs, and the
+// same guarantee about order.
+func (g *Game) SayAsThen(name, role, face, body string, then func(*Game)) {
+	g.Push(g.say(&messageScene{
+		under:    g.Top(),
+		speaker:  name,
+		role:     role,
+		portrait: face,
+		body:     render.Wrap(body, talkTextW),
+		onChoose: func(g *Game, _ int) { then(g) },
+	}))
+}
+
 // Ask pushes a message box with choices. onChoose fires after the box closes.
 func (g *Game) Ask(speaker, body string, choices []string, onChoose func(*Game, int)) {
 	items := make([]ui.MenuItem, len(choices))

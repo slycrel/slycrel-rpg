@@ -206,14 +206,17 @@ func (g *Game) ambushDue() bool {
 // interact runs whatever the entity does.
 func (g *Game) interact(e *world.Entity) {
 	switch e.Kind {
-	case world.EShopDoor:
-		g.enterShop(e)
+	case world.EShopDoor, world.EHouseDoor:
+		g.enterRoom(e)
+
+	case world.EResident:
+		g.knock(e)
 
 	case world.EExit:
 		// Out of a shop is back into the town it is in; out of anywhere else is
 		// back to the overworld.
-		if g.inShop {
-			g.leaveShop()
+		if g.inRoom {
+			g.leaveRoom()
 			return
 		}
 		g.Sound.Play("world/enter")
@@ -362,7 +365,7 @@ func (g *Game) spend(e *world.Entity) {
 // the ledger — which is also the answer the save file needs, and it was already
 // working this out for itself in two places.
 func (g *Game) here() *world.POI {
-	if g.inShop && g.townPOI != nil {
+	if g.inRoom && g.townPOI != nil {
 		return g.townPOI
 	}
 	if g.Local != nil {
@@ -897,11 +900,18 @@ func drawEntity(g *Game, ctx *render.Ctx, e *world.Entity) {
 		c = color.RGBA{0xE0, 0xC0, 0x60, 0xFF}
 		render.Frame(ctx.Dst, bx+2, by+2, ts-4, ts-4, c)
 		return
-	case world.EShopDoor:
+	case world.EShopDoor, world.EHouseDoor:
 		// A door in a wall, with a trade's colour on it. It is the front of a
 		// building rather than a person now, so it is drawn as one: a plank
 		// panel, a lintel, and a handle you can see from across a street.
+		//
+		// A house takes the plain lintel, which is what makes the coloured ones
+		// worth having: four doors in a town mean something and the other ten
+		// are doors.
 		c = shopDoorColour(e.Shop)
+		if e.Kind == world.EHouseDoor {
+			c = color.RGBA{0x8C, 0x6E, 0x48, 0xFF}
+		}
 		render.Rect(ctx.Dst, bx+2, by+3, ts-4, ts-3, color.RGBA{0x5C, 0x3E, 0x22, 0xFF})
 		render.Rect(ctx.Dst, bx+2, by+3, ts-4, 2, c)
 		render.Rect(ctx.Dst, bx+ts-6, by+9, 2, 2, color.RGBA{0xE8, 0xC8, 0x70, 0xFF})
