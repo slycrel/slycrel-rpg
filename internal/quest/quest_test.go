@@ -26,6 +26,8 @@ func (stubWriter) QuestLine(_ *core.RNG, kind, part string) string { return kind
 
 // A phrase with {P} still in it, exactly as the real writer returns one, so
 // these tests exercise the substitution rather than a constant.
+func (stubWriter) PersonName(*core.RNG) string { return "Somebody" }
+
 func (stubWriter) QuestWhere(_ *core.RNG, biome string) string {
 	return "the " + biome + " outside {P}"
 }
@@ -59,7 +61,7 @@ func TestGeneratedQuestsAreCompletable(t *testing.T) {
 				continue
 			}
 			for try := 0; try < 12; try++ {
-				q, ok := quest.Generate(g, w, tb, stubWriter{}, i, "Giver", "")
+				q, ok := quest.Generate(g, w, tb, stubWriter{}, i, "Giver", "", 0, 480)
 				if !ok {
 					continue
 				}

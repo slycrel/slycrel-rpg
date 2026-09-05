@@ -468,8 +468,12 @@ func (g *Game) nearestSettlement() *world.POI {
 // on whoever they are following. Called whenever the party changes or a map is
 // entered.
 func (g *Game) reformLines() {
-	g.follow = party.Fit(g.follow, len(g.Allies), g.Walk.Tile, 9)
-	g.localFollow = party.Fit(g.localFollow, len(g.Allies), g.LocalWalk.Tile, 7)
+	// One longer when somebody is being walked somewhere. They are at the back
+	// and they are not in Allies, which is the whole of what an escortee is —
+	// see escort.go for why the battle panel cannot hold a fourth.
+	n := len(g.Allies) + g.escortCount()
+	g.follow = party.Fit(g.follow, n, g.Walk.Tile, 9)
+	g.localFollow = party.Fit(g.localFollow, n, g.LocalWalk.Tile, 7)
 }
 
 // drawFollowers paints the companions behind the hero. They are drawn back to

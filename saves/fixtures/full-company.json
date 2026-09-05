@@ -378,9 +378,9 @@
           "Rookhaven"
         ],
         "roles": {
-          "{X}": "Hog, of Poor Character"
+          "{X}": "Ewe, Cursed"
         },
-        "monsterID": "plains_boar",
+        "monsterID": "plains_sheep",
         "at": 1,
         "have": 0
       }
@@ -401,27 +401,29 @@
   },
   "quests": [
     {
-      "id": "cull-0-3199547",
-      "kind": "cull",
+      "id": "escort-0-314363",
+      "kind": "escort",
       "state": "active",
-      "title": "Cull the Ewe, Cursed",
-      "ask": "\"3 Ewe, in the fields outside Mudgallow. They've been at the livestock, the washing, and once at my aunt.\"",
-      "nag": "\"Still {R} of them out in {W}. I can hear them from here.\"",
-      "thank": "\"That's the Ewe dealt with. The village will be insufferable about it for weeks.\"",
+      "title": "Take Old Ferret to Drear Town",
+      "ask": "\"Old Ferret needs to get to Drear Town and cannot walk it alone. Take them. They will talk the whole way.\"",
+      "nag": "\"{E}. {P}. The two of those have not moved any closer together.\"",
+      "thank": "\"They got there. I did wonder. Nobody has come back complaining, which is the same thing.\"",
       "giver": "Person",
       "giverPOI": 0,
+      "targetPOI": 4,
+      "targetName": "Drear Town",
       "targetAt": {
         "X": 0,
         "Y": 0
       },
-      "monsterID": "plains_sheep",
-      "monsterName": "Ewe, Cursed",
-      "where": "the fields outside Mudgallow",
+      "escortee": "Old Ferret",
+      "helps": true,
+      "due": 1920,
       "giverPlace": "Mudgallow",
-      "need": 3,
+      "need": 1,
       "have": 0,
-      "rewardCoins": 18,
-      "rewardXP": 21
+      "rewardCoins": 44,
+      "rewardXP": 39
     }
   ],
   "threads": [

@@ -14,6 +14,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
+	"github.com/slycrel/slycrel-rpg/internal/sky"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
@@ -361,7 +362,7 @@ func TestAJobInProgressIsNotStarred(t *testing.T) {
 		t.Skip("this town generated nobody to ask")
 	}
 
-	q, ok := quest.Generate(g.RNG, g.World, g.Data, g.Write, idx, giver.Name, "")
+	q, ok := quest.Generate(g.RNG, g.World, g.Data, g.Write, idx, giver.Name, "", g.Clock.Step, sky.DayLength)
 	if !ok {
 		t.Skip("no errand could be generated for this town")
 	}
@@ -1211,8 +1212,13 @@ func TestTheJournalDetailPaneHoldsItsRows(t *testing.T) {
 	// Both shapes: an errand pointing at a place has a Where row, one happening
 	// in a region does not, and the giver's line is budgeted against whichever
 	// it is. The failure this catches showed up on the four-row shape only.
+	// Four rows is the most the pane can ever be asked for: the middle one is
+	// either a deadline or a destination and never both, which is exactly why
+	// they compete — five leaves nothing for the giver's own line and the pane
+	// drops it silently, which is the failure this test was written for.
 	for _, rows := range [][]string{
 		{"Asked by", "Where", "Progress", "Pays"},
+		{"Asked by", "Due", "Progress", "Pays"},
 		{"Asked by", "Progress", "Pays"},
 	} {
 		y := detailTop

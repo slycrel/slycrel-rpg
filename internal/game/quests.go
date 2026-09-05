@@ -8,6 +8,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/rules"
+	"github.com/slycrel/slycrel-rpg/internal/sky"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 	"github.com/slycrel/slycrel-rpg/internal/world"
 )
@@ -57,7 +58,7 @@ func (g *Game) talkTo(e *world.Entity) {
 		// The kind this person was always going to ask for, so their face is
 		// the same before, during and after the errand.
 		prefer, _ := g.questFaceKind(e)
-		if q, ok := quest.Generate(g.RNG, g.World, g.Data, g.Write, poiIdx, e.Name, prefer); ok {
+		if q, ok := quest.Generate(g.RNG, g.World, g.Data, g.Write, poiIdx, e.Name, prefer, g.Clock.Step, sky.DayLength); ok {
 			g.offerQuest(e, q)
 			return
 		}

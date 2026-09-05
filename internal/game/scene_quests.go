@@ -8,6 +8,7 @@ import (
 	"github.com/slycrel/slycrel-rpg/internal/quest"
 	"github.com/slycrel/slycrel-rpg/internal/render"
 	"github.com/slycrel/slycrel-rpg/internal/saga"
+	"github.com/slycrel/slycrel-rpg/internal/sky"
 	"github.com/slycrel/slycrel-rpg/internal/thread"
 	"github.com/slycrel/slycrel-rpg/internal/ui"
 )
@@ -316,7 +317,7 @@ func (s *questScene) drawQuest(g *Game, dst *ebiten.Image, q *quest.Quest) {
 	// while a fixed two-line allowance pushed the reward through the bottom
 	// border on the errands that do have the row.
 	rows := 3 // asked by, progress, pays
-	if q.TargetName != "" {
+	if dueRow(q) || whereRow(q) {
 		rows++
 	}
 	budget := int((detailFloor - y - 4 - float64(rows)*render.LineH) / render.LineH)
@@ -346,10 +347,27 @@ func (s *questScene) drawQuest(g *Game, dst *ebiten.Image, q *quest.Quest) {
 	// delivery point at a POI, which is a different fact: it is the thing Z
 	// follows, and it belongs beside the other facts rather than only inside a
 	// sentence.
-	if q.TargetName != "" {
+	if whereRow(q) {
 		render.Text(dst, "Where", 26, y, render.ColInkDim)
 		render.TextRight(dst, render.Trunc(q.TargetName, render.ScreenW-110),
 			render.ScreenW-26, y, render.ColInk)
+		y += render.LineH
+	}
+	// A deadline, when there is one. Above the progress because it is the fact
+	// that decides whether the progress still matters.
+	if dueRow(q) {
+		days := q.DueIn(g.Clock.Step, sky.DayLength)
+		render.Text(dst, "Due", 26, y, render.ColInkDim)
+		word, dcol := fmt.Sprintf("in %d days", days), render.ColInk
+		switch {
+		case days < 0:
+			word, dcol = "gone", render.ColBlood
+		case days == 0:
+			word, dcol = "today", render.ColBlood
+		case days == 1:
+			word, dcol = "tomorrow", render.ColGold
+		}
+		render.TextRight(dst, word, render.ScreenW-26, y, dcol)
 		y += render.LineH
 	}
 	render.Text(dst, "Progress", 26, y, render.ColInkDim)
@@ -409,3 +427,19 @@ func (g *Game) threadDetail(t *thread.Thread) string {
 	}
 	return ""
 }
+
+// Which single fact goes in the row under "Asked by".
+//
+// One row, not two, and the pane cannot afford both: five labelled rows leave
+// nothing at all for the giver's own line, which is the failure this pane was
+// rearranged to stop making — it dropped it silently. So the two compete and
+// the deadline wins, because a deadline is the fact that decides whether the
+// other one still matters.
+//
+// Losing "Where" costs less than it looks. The objective above already names
+// the destination in every kind that has one — "Walk Marda to the old ford" —
+// so the row was the same place twice on a panel four inches wide. It stays for
+// errands with no clock because it is what Z follows, and saying so beside the
+// other facts is worth a line when there is one going.
+func dueRow(q *quest.Quest) bool   { return q.Due > 0 }
+func whereRow(q *quest.Quest) bool { return q.Due <= 0 && q.TargetName != "" }

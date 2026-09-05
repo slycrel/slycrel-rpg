@@ -25,8 +25,8 @@ func realQuests(t *testing.T) []*quest.Quest {
 		if !m.POIs[i].Kind.Settlement() {
 			continue
 		}
-		for _, k := range []quest.Kind{quest.Fetch, quest.Cull, quest.Delve, quest.Deliver} {
-			if q, ok := quest.Generate(g, m, tb, w, i, "Dregg", k); ok {
+		for _, k := range []quest.Kind{quest.Fetch, quest.Cull, quest.Delve, quest.Deliver, quest.Escort} {
+			if q, ok := quest.Generate(g, m, tb, w, i, "Dregg", k, 0, 480); ok {
 				out = append(out, q)
 			}
 		}
@@ -50,7 +50,7 @@ func realQuests(t *testing.T) []*quest.Quest {
 // prompt to write an objective in the imperative rather than a description of
 // a situation.
 func TestEveryObjectiveOpensWithAnAction(t *testing.T) {
-	verbs := []string{"Find ", "Kill ", "Travel ", "Carry ", "Go back "}
+	verbs := []string{"Find ", "Kill ", "Travel ", "Carry ", "Walk ", "Go back "}
 	for _, q := range realQuests(t) {
 		for _, state := range []int{0, q.Need} {
 			q.Have = state
@@ -256,5 +256,85 @@ func TestAnInventedDestinationReadsLikeARealOne(t *testing.T) {
 			t.Errorf("two errands share a destination seed")
 		}
 		seeds[q.SiteSeed()] = true
+	}
+}
+
+// An escort is a person, a place, and sometimes a clock.
+//
+// The four shapes are the point of the kind. An errand whose every instance is
+// the same errand is one errand with a lot of names, so half of them carry
+// somebody who joins in and half carry a deadline — and both coins are flipped
+// independently, so all four combinations turn up.
+func TestAnEscortHasSomebodyAndSomewhere(t *testing.T) {
+	var helps, clocks, plain, n int
+	for _, q := range realQuests(t) {
+		if q.Kind != quest.Escort {
+			continue
+		}
+		n++
+		if q.Escortee == "" {
+			t.Error("an escort has nobody to escort")
+		}
+		if q.TargetName == "" {
+			t.Error("an escort has nowhere to go")
+		}
+		// The person has to be named everywhere the errand talks about them,
+		// or the player is walking a stranger.
+		if !strings.Contains(q.Title, q.Escortee) {
+			t.Errorf("the title %q does not name %q", q.Title, q.Escortee)
+		}
+		if !strings.Contains(q.Objective(), q.Escortee) {
+			t.Errorf("the objective %q does not name %q", q.Objective(), q.Escortee)
+		}
+		if q.Helps {
+			helps++
+		}
+		if q.Due > 0 {
+			clocks++
+		}
+		if !q.Helps && q.Due == 0 {
+			plain++
+		}
+	}
+	if n == 0 {
+		t.Skip("this world generated no escorts")
+	}
+	for _, tc := range []struct {
+		name string
+		got  int
+	}{{"somebody who joins in", helps}, {"a deadline", clocks}, {"neither", plain}} {
+		if tc.got == 0 {
+			t.Errorf("none of %d escorts had %s; the kind has one shape", n, tc.name)
+		}
+	}
+}
+
+// A deadline has to be able to pass, and one that was never set must never
+// pass.
+//
+// The second half is the zero value again: Due is absent in every quest in
+// every save written before escorts existed, and a nought read as "expired at
+// the beginning of time" would close every errand in every old file on the
+// first step.
+func TestOnlyAnErrandWithAClockCanRunOutOfTime(t *testing.T) {
+	q := &quest.Quest{Kind: quest.Escort, Need: 1, Due: 1000}
+	if q.Expired(999) {
+		t.Error("an errand expired before its deadline")
+	}
+	if !q.Expired(1001) {
+		t.Error("an errand did not expire after its deadline")
+	}
+	// Arriving beats the clock: a completed errand is not failed by the step
+	// that would have failed it.
+	q.Have = q.Need
+	if q.Expired(1001) {
+		t.Error("a finished errand expired anyway")
+	}
+
+	none := &quest.Quest{Kind: quest.Deliver, Need: 1}
+	for _, step := range []int{0, 1, 1 << 20} {
+		if none.Expired(step) {
+			t.Errorf("an errand with no deadline expired at step %d", step)
+		}
 	}
 }

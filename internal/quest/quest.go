@@ -33,6 +33,20 @@ const (
 	Delve Kind = "delve"
 	// Deliver: carry something to another settlement.
 	Deliver Kind = "deliver"
+	// Escort: take a person somewhere, and have them with you while you do it.
+	//
+	// The nearest relative is Deliver and the difference is that the parcel
+	// walks behind you. That is the whole feature: they are visible, they are
+	// slow, and sometimes they are on a clock.
+	//
+	// What an escort deliberately is *not* is a risk of losing them. Companions
+	// in this game cannot die — a party member at zero hit points is out of the
+	// fight and back on their feet the moment it ends, which checkEnd says in
+	// as many words — so an errand whose stake was "keep them alive" would be
+	// an errand with no stake at all, dressed as one. The costs are real
+	// instead: a deadline that the clock spends whether you fight or not, and
+	// company that draws more attention on the road than you would alone.
+	Escort Kind = "escort"
 )
 
 // State is where a quest is in its life.
@@ -84,6 +98,15 @@ type Quest struct {
 	Made     bool       `json:"made,omitempty"`
 	TargetAt core.Point `json:"targetAt,omitempty"`
 
+	// Escortee is who is walking behind you, and Helps says they are the sort
+	// who joins in rather than the sort who hides.
+	Escortee string `json:"escortee,omitempty"`
+	Helps    bool   `json:"helps,omitempty"`
+	// Due is the clock step the errand expires at, or nought for one with no
+	// deadline at all — which is most of them, and is the zero value meaning
+	// the safe thing rather than "expired at the beginning of time".
+	Due int `json:"due,omitempty"`
+
 	// Item is what a fetch quest wants; Monster is what a cull quest counts.
 	Item        string `json:"item,omitempty"`
 	MonsterID   string `json:"monsterID,omitempty"`
@@ -113,6 +136,22 @@ type Quest struct {
 
 	RewardCoins int64 `json:"rewardCoins"`
 	RewardXP    int64 `json:"rewardXP"`
+}
+
+// Expired reports whether a deadline has passed. An errand with no deadline
+// never expires, which is what a nought here has to mean: every quest in every
+// save written before deadlines existed carries one.
+func (q *Quest) Expired(step int) bool {
+	return q.Due > 0 && step > q.Due && !q.Complete()
+}
+
+// DueIn is how many days are left, for the journal to say. Negative when the
+// deadline has gone, and meaningless when there is not one.
+func (q *Quest) DueIn(step, dayLength int) int {
+	if q.Due <= 0 || dayLength <= 0 {
+		return 0
+	}
+	return (q.Due - step) / dayLength
 }
 
 // SiteSeed is the seed for a made destination, so the place an errand invents
@@ -188,6 +227,8 @@ func (q *Quest) Objective() string {
 		return "Travel to " + q.TargetName + " and clear it out."
 	case Deliver:
 		return "Carry the parcel to " + q.TargetName + "."
+	case Escort:
+		return "Walk " + q.Escortee + " to " + q.TargetName + "."
 	}
 	return "Go back to " + q.Giver + "."
 }
@@ -219,6 +260,10 @@ func (q *Quest) Progress() string {
 // Writer supplies the generated prose. The content package implements it.
 type Writer interface {
 	QuestLine(g *core.RNG, kind, part string) string
+	// PersonName names whoever an errand is about — the person an escort is
+	// carrying, who has to be called something before the errand can say who
+	// they are.
+	PersonName(g *core.RNG) string
 	// QuestWhere names the country around a settlement, with {P} left in it.
 	// Empty when the biome has no phrase — an errand that cannot say where
 	// says nothing, rather than saying "somewhere nearby".
@@ -251,7 +296,10 @@ type Catalog interface {
 // cannot ask for a delve however much its resident looks the part, and offering
 // an errand that points at nothing would be a worse failure than a face that
 // does not quite match the job.
-func Generate(g *core.RNG, w *world.Map, cat Catalog, wr Writer, giverPOI int, giver string, prefer Kind) (*Quest, bool) {
+// clockNow and dayLength are set by the caller through Generate's clock
+// arguments; see the signature.
+func Generate(g *core.RNG, w *world.Map, cat Catalog, wr Writer, giverPOI int, giver string,
+	prefer Kind, clockNow, dayLength int) (*Quest, bool) {
 	if giverPOI < 0 || giverPOI >= len(w.POIs) {
 		return nil, false
 	}
@@ -264,7 +312,7 @@ func Generate(g *core.RNG, w *world.Map, cat Catalog, wr Writer, giverPOI int, g
 		kinds = append(kinds, Delve)
 	}
 	if len(nearbySettlements(w, home, giverPOI)) > 0 {
-		kinds = append(kinds, Deliver)
+		kinds = append(kinds, Deliver, Escort)
 	}
 	biome := biomeAround(w, home)
 	if len(cat.BiomeDrops(biome)) > 0 {
@@ -308,6 +356,34 @@ func Generate(g *core.RNG, w *world.Map, cat Catalog, wr Writer, giverPOI int, g
 		q.Need = 1
 		q.RewardCoins = int64(60+g.Intn(40)) * int64(target.poi.Level)
 		q.RewardXP = int64(40+g.Intn(30)) * int64(target.poi.Level)
+
+	case Escort:
+		// Where a delivery goes, and by the same rules: sometimes a town,
+		// sometimes somewhere this errand invented. A person being taken to a
+		// crossroads to meet somebody is if anything the more natural of the
+		// two.
+		if at, name, ok := madeDestination(g, w, home); ok && g.Chance(0.5) {
+			q.Made, q.TargetAt, q.TargetName = true, at, name
+			q.TargetPOI = -1
+		} else {
+			target := core.Pick(g, nearbySettlements(w, home, giverPOI))
+			q.TargetPOI, q.TargetName = target.idx, target.poi.Name
+		}
+		q.Need = 1
+		q.Escortee = wr.PersonName(g)
+		// Sometimes they fight, sometimes there is a clock, sometimes both, and
+		// sometimes it is only a walk. Four shapes out of two coins, because an
+		// errand kind whose every instance is the same errand is one errand
+		// with a lot of names.
+		q.Helps = g.Chance(0.5)
+		if g.Chance(0.5) {
+			// Two to four days. The clock spends whether you fight or not,
+			// which is the point of it — this is the only errand in the game
+			// that can be failed rather than abandoned.
+			q.Due = clockNow + g.Between(2, 4)*dayLength
+		}
+		q.RewardCoins = int64(40+g.Intn(30)) * int64(core.Max(1, home.Level))
+		q.RewardXP = int64(25+g.Intn(20)) * int64(core.Max(1, home.Level))
 
 	case Deliver:
 		// Sometimes to a town, sometimes to somewhere that is not on the map.
@@ -381,6 +457,8 @@ func (q *Quest) titleText() string {
 		return "Clear out " + q.TargetName
 	case Deliver:
 		return "Deliver a parcel to " + q.TargetName
+	case Escort:
+		return "Take " + q.Escortee + " to " + q.TargetName
 	case Fetch:
 		return "Gather " + q.Item
 	default:
@@ -398,6 +476,7 @@ func (q *Quest) fill(s string) string {
 		// Quest.Species.
 		"{M}": q.Species(),
 		"{P}": q.TargetName,
+		"{E}": q.Escortee,
 		"{W}": q.Where,
 		"{G}": q.Giver,
 	}
@@ -620,7 +699,7 @@ func (l *Log) OnPOICleared(idx int) []*Quest {
 func (l *Log) OnEnteredPOI(idx int) []*Quest {
 	var done []*Quest
 	for _, q := range l.Active() {
-		if q.Kind == Deliver && q.TargetPOI == idx && !q.Complete() {
+		if (q.Kind == Deliver || q.Kind == Escort) && q.TargetPOI == idx && !q.Complete() {
 			q.Have = q.Need
 			done = append(done, q)
 		}

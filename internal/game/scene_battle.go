@@ -601,6 +601,19 @@ func (b *battleScene) updateBusy(g *Game) {
 		b.timer = stepTicks
 		return
 	}
+	// Whoever is being walked somewhere, if they are the sort who joins in.
+	//
+	// Before the conditions rather than in the turn order, because they have no
+	// turn — an escortee is not in the company and never appears in the panel,
+	// so what they get is a line in the transcript and a small number. See
+	// escort.go for why the panel cannot hold them.
+	if who, dmg, ok := escortHelp(g); ok {
+		if i := b.firstLiving(); i >= 0 {
+			b.damageMonster(g, i, dmg)
+			b.log.AddColor(render.ColGold, "%s throws something. %d, and mostly luck.", who, dmg)
+		}
+	}
+
 	// Conditions bite at the end of the round, before the ending is checked, so
 	// a poison can be what finishes a fight rather than only ever softening
 	// one. Then the clocks run down.

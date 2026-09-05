@@ -395,26 +395,26 @@
   },
   "quests": [
     {
-      "id": "deliver-0-11371248",
-      "kind": "deliver",
+      "id": "fetch-0-3538009",
+      "kind": "fetch",
       "state": "active",
-      "title": "Deliver a parcel to Hollowford",
-      "ask": "\"Get this to Hollowford before it goes off, then come and say so. I won't define 'off'.\"",
-      "nag": "\"Still carrying that? {P}. Any day now.\"",
-      "thank": "\"Delivered, and you didn't open it. I can tell. You'd be different if you had.\"",
+      "title": "Gather Greasy Haunch",
+      "ask": "\"Bring me 3 Greasy Haunch from the woods outside Crown of the Sunken Barge and I'll make it worth your while. Modestly worth. Let's not oversell it.\"",
+      "nag": "\"{R} {I} still to come, and they are still out in {W}. The number has not changed on its own.\"",
+      "thank": "\"All 3. You actually did it. I had a whole speech ready for if you didn't.\"",
       "giver": "Person",
       "giverPOI": 0,
-      "targetPOI": 7,
-      "targetName": "Hollowford",
       "targetAt": {
         "X": 0,
         "Y": 0
       },
+      "item": "Greasy Haunch",
+      "where": "the woods outside Crown of the Sunken Barge",
       "giverPlace": "Crown of the Sunken Barge",
-      "need": 1,
+      "need": 3,
       "have": 0,
-      "rewardCoins": 46,
-      "rewardXP": 15
+      "rewardCoins": 54,
+      "rewardXP": 48
     }
   ],
   "threads": [

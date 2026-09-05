@@ -589,6 +589,7 @@ func (s *localScene) Draw(g *Game, dst *ebiten.Image) {
 	}
 
 	g.drawFollowers(ctx, g.localFollow)
+	g.drawEscortee(ctx, g.localFollow)
 
 	sp := g.Assets.Get(heroSpriteKey(g.Player, g.LocalWalk.Dir(), g.LocalWalk.Moving()))
 	frame := g.Tick() / 6

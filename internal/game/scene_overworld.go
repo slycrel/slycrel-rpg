@@ -202,6 +202,8 @@ func (s *overworldScene) tryStep(g *Game, d core.Dir) {
 	g.World.Reveal(next, sky.Sight(g.Clock.Phase(), g.weatherAt(next)))
 	g.sinceFight++
 	g.travelWithCompany()
+	// A deadline is spent by walking, which is what makes it a deadline.
+	g.expireEscorts()
 
 	if poi := g.World.POIAt(next.X, next.Y); poi != nil && !poi.Visited {
 		poi.Visited = true
@@ -464,6 +466,7 @@ func (s *overworldScene) Draw(g *Game, dst *ebiten.Image) {
 	// The company, then the player, so nothing ever covers the character you
 	// are steering.
 	g.drawFollowers(ctx, g.follow)
+	g.drawEscortee(ctx, g.follow)
 
 	sp := g.Assets.Get(heroSpriteKey(g.Player, g.Walk.Dir(), g.Walk.Moving()))
 	frame := 0

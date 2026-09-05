@@ -325,6 +325,21 @@
         "\"It arrived. Nobody's shouting. That's the best outcome I'd planned for.\"",
         "\"Delivered, and you didn't open it. I can tell. You'd be different if you had.\""
       ]
+    },
+    "escort": {
+      "ask": [
+        "\"{E} needs to get to {P} and cannot walk it alone. Take them. They will talk the whole way.\"",
+        "\"Walk {E} as far as {P}. They are expected, they are late, and they are not my problem after that.\"",
+        "\"{E} is going to {P}. Somebody has to go with them and everybody else has an excuse.\""
+      ],
+      "nag": [
+        "\"{E} is still here. {P} is still there. You can see the difficulty.\"",
+        "\"{E}. {P}. The two of those have not moved any closer together.\""
+      ],
+      "thank": [
+        "\"They got there. I did wonder. Nobody has come back complaining, which is the same thing.\"",
+        "\"{E} arrived and has already written. Two pages. Mostly about you.\""
+      ]
     }
   },
   "recruitPitch": [

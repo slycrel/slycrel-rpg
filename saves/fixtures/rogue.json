@@ -382,9 +382,9 @@
           "Mud Situation"
         ],
         "roles": {
-          "{X}": "Hog, of Poor Character"
+          "{X}": "Ewe, Cursed"
         },
-        "monsterID": "plains_boar",
+        "monsterID": "plains_sheep",
         "at": 1,
         "have": 0
       }
@@ -405,17 +405,17 @@
   },
   "quests": [
     {
-      "id": "delve-0-2816947",
-      "kind": "delve",
+      "id": "deliver-0-8040297",
+      "kind": "deliver",
       "state": "active",
-      "title": "Clear out Grim Grotto",
-      "ask": "\"Grim Grotto. Nobody's come back from it. That's not a warning, that's a job opening.\"",
-      "nag": "\"Have you been out to {P} yet? No? It hasn't improved.\"",
-      "thank": "\"You went in and came out. That puts you ahead of everyone else who tried.\"",
+      "title": "Deliver a parcel to Bitterdell",
+      "ask": "\"A parcel for Bitterdell. Take it there, then come back and tell me. It's paid for. It's mostly legal. It's definitely paid for.\"",
+      "nag": "\"Still carrying that? {P}. Any day now.\"",
+      "thank": "\"Delivered, and you didn't open it. I can tell. You'd be different if you had.\"",
       "giver": "Person",
       "giverPOI": 0,
-      "targetPOI": 22,
-      "targetName": "Grim Grotto",
+      "targetPOI": 6,
+      "targetName": "Bitterdell",
       "targetAt": {
         "X": 0,
         "Y": 0
@@ -423,8 +423,8 @@
       "giverPlace": "Seat of the Sunken Barge",
       "need": 1,
       "have": 0,
-      "rewardCoins": 402,
-      "rewardXP": 300
+      "rewardCoins": 35,
+      "rewardXP": 19
     }
   ],
   "threads": [

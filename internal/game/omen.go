@@ -307,8 +307,11 @@ func (g *Game) enterMade(q *quest.Quest) {
 		return
 	}
 	host := q.Giver + "'s man"
-	if q.Kind == quest.Deliver {
+	switch q.Kind {
+	case quest.Deliver:
 		host = "somebody expecting a parcel"
+	case quest.Escort:
+		host = "somebody expecting " + q.Escortee
 	}
 	l := world.BuildErrandSite(q.SiteSeed(), g.encounterLevel(g.Walk.Tile), g.Write,
 		q.TargetName, "nobody's idea of a landmark", host)

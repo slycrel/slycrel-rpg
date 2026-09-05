@@ -193,9 +193,9 @@
           "Bellbottom"
         ],
         "roles": {
-          "{X}": "Wolf, Deeply Unimpressed"
+          "{X}": "Spider, Overfamiliar"
         },
-        "monsterID": "forest_wolf",
+        "monsterID": "forest_spider",
         "at": 1,
         "have": 0
       }
@@ -216,26 +216,26 @@
   },
   "quests": [
     {
-      "id": "delve-0-2208660",
-      "kind": "delve",
+      "id": "fetch-0-8425334",
+      "kind": "fetch",
       "state": "active",
-      "title": "Clear out Gorse Ruin",
-      "ask": "\"Clear out Gorse Ruin. My brother went in. I'd like the place emptied and, if convenient, him back.\"",
-      "nag": "\"{P} is still there. Still full. Still nobody's problem but yours, apparently.\"",
-      "thank": "\"You went in and came out. That puts you ahead of everyone else who tried.\"",
+      "title": "Gather Greasy Haunch",
+      "ask": "\"Bring me 4 Greasy Haunch from the woods outside Crown of the Sunken Barge and I'll make it worth your while. Modestly worth. Let's not oversell it.\"",
+      "nag": "\"{I}. {R} more of them, out of {W}. I'm not going anywhere, worse luck.\"",
+      "thank": "\"Lovely. Don't tell me where you got them. I mean it. Don't.\"",
       "giver": "Person",
       "giverPOI": 0,
-      "targetPOI": 26,
-      "targetName": "Gorse Ruin",
       "targetAt": {
         "X": 0,
         "Y": 0
       },
+      "item": "Greasy Haunch",
+      "where": "the woods outside Crown of the Sunken Barge",
       "giverPlace": "Crown of the Sunken Barge",
-      "need": 1,
+      "need": 4,
       "have": 0,
-      "rewardCoins": 225,
-      "rewardXP": 144
+      "rewardCoins": 88,
+      "rewardXP": 48
     }
   ]
 }

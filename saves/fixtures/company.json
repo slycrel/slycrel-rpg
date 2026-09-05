@@ -311,27 +311,26 @@
   },
   "quests": [
     {
-      "id": "cull-0-11611265",
-      "kind": "cull",
+      "id": "delve-0-11611265",
+      "kind": "delve",
       "state": "active",
-      "title": "Cull the Goblin, Middle Management",
-      "ask": "\"Go to the woods outside Crown of the Sunken Barge and kill 4 Goblin. I'd do it myself but I've got a bad back and a good excuse.\"",
-      "nag": "\"Still {R} of them out in {W}. I can hear them from here.\"",
-      "thank": "\"That's the Goblin dealt with. The village will be insufferable about it for weeks.\"",
+      "title": "Clear out Gorse Ruin",
+      "ask": "\"Gorse Ruin. Nobody's come back from it. That's not a warning, that's a job opening.\"",
+      "nag": "\"Have you been out to {P} yet? No? It hasn't improved.\"",
+      "thank": "\"Gorse Ruin is quiet. First time in years. Feels wrong, honestly.\"",
       "giver": "Person",
       "giverPOI": 0,
+      "targetPOI": 26,
+      "targetName": "Gorse Ruin",
       "targetAt": {
         "X": 0,
         "Y": 0
       },
-      "monsterID": "forest_goblin",
-      "monsterName": "Goblin, Middle Management",
-      "where": "the woods outside Crown of the Sunken Barge",
       "giverPlace": "Crown of the Sunken Barge",
-      "need": 4,
+      "need": 1,
       "have": 0,
-      "rewardCoins": 96,
-      "rewardXP": 40
+      "rewardCoins": 210,
+      "rewardXP": 189
     }
   ],
   "threads": [

@@ -376,9 +376,9 @@
           "Bellbottom"
         ],
         "roles": {
-          "{X}": "Goblin, Middle Management"
+          "{X}": "Spider, Overfamiliar"
         },
-        "monsterID": "forest_goblin",
+        "monsterID": "forest_spider",
         "at": 1,
         "have": 0
       }
@@ -399,27 +399,26 @@
   },
   "quests": [
     {
-      "id": "deliver-0-2901848",
-      "kind": "deliver",
+      "id": "fetch-0-7375119",
+      "kind": "fetch",
       "state": "active",
-      "title": "Deliver a parcel to the shepherd's hut",
-      "ask": "\"Carry this to the shepherd's hut. Don't open it. Don't shake it. Don't listen to it.\"",
-      "nag": "\"Still carrying that? {P}. Any day now.\"",
-      "thank": "\"Delivered, and you didn't open it. I can tell. You'd be different if you had.\"",
+      "title": "Gather Rank Pelt",
+      "ask": "\"I need 4 Rank Pelt, off whatever is in the woods outside Crown of the Sunken Barge. Don't ask what for. Actually do ask, later, when I've had a drink.\"",
+      "nag": "\"{R} {I} still to come, and they are still out in {W}. The number has not changed on its own.\"",
+      "thank": "\"All 4. You actually did it. I had a whole speech ready for if you didn't.\"",
       "giver": "Person",
       "giverPOI": 0,
-      "targetPOI": -1,
-      "targetName": "the shepherd's hut",
-      "made": true,
       "targetAt": {
-        "X": 71,
-        "Y": 47
+        "X": 0,
+        "Y": 0
       },
+      "item": "Rank Pelt",
+      "where": "the woods outside Crown of the Sunken Barge",
       "giverPlace": "Crown of the Sunken Barge",
-      "need": 1,
+      "need": 4,
       "have": 0,
-      "rewardCoins": 39,
-      "rewardXP": 18
+      "rewardCoins": 104,
+      "rewardXP": 48
     }
   ],
   "threads": [
