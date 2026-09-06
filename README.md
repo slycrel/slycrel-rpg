@@ -16,18 +16,20 @@ that nobody in the world ever acknowledges the joke.
 
 | | |
 |---|---|
-| ![The overworld: roads and terrain with locations marked](docs/screenshots/overworld.png) | ![A turn-based battle: the company standing in the field facing two creatures, with the transcript across the bottom](docs/screenshots/battle.png) |
+| ![The overworld: roads and terrain in the rain, with four locations named](docs/screenshots/overworld.png) | ![A turn-based battle: the company on the left, three creatures with names and epithets across the field, and the transcript along the bottom](docs/screenshots/battle.png) |
 | Overworld — roads, terrain, points of interest | Battle — the company, the field, the transcript |
-| ![A town of red-roofed buildings along a paved street](docs/screenshots/town.png) | ![A dungeon of rooms and corridors with lurking creatures](docs/screenshots/dungeon.png) |
-| Town — generated from the location's seed | Dungeon — rooms, foes, chests, a boss |
-| ![A parchment map showing explored terrain](docs/screenshots/map.png) | ![The blacksmith's stock, each weapon with an icon](docs/screenshots/shop.png) |
-| The map — only what you have walked past | A shop, with icons |
-| ![The character sheet and pack](docs/screenshots/character.png) | ![The quest log, showing a delivery errand and the line saying what to do next](docs/screenshots/quests.png) |
-| Character sheet and pack | Errands, generated from the world |
-| ![Someone outside an inn offering to join for coins](docs/screenshots/hire.png) | ![A hireling walking behind the player through a town](docs/screenshots/party.png) |
-| Hiring — cheaper, because she is part fey | The company, following you around |
-| ![A companion's sheet showing part-fey ancestry](docs/screenshots/lineage.png) | ![Choosing which party member an item is used on](docs/screenshots/targeting.png) |
-| A hireling's sheet, ancestry and all | Choosing who an effect lands on |
+| ![A town of red-roofed buildings along a paved street, with a coloured door on the blacksmith and another on the inn](docs/screenshots/town.png) | ![The inn's common room: a wooden bar with stools, trophies on the wall, a fire, and people drinking at round tables](docs/screenshots/taproom.png) |
+| Town — generated from the location's seed | Inside the inn, where the hirelings are |
+| ![A dungeon of rooms and corridors with lurking creatures](docs/screenshots/dungeon.png) | ![A parchment map showing explored terrain](docs/screenshots/map.png) |
+| Dungeon — rooms, foes, chests, a boss | The map — only what you have walked past |
+| ![The blacksmith's stock, each weapon with an icon](docs/screenshots/shop.png) | ![The character sheet and pack](docs/screenshots/character.png) |
+| A shop, with icons | Character sheet and pack |
+| ![The quest log, showing a delivery errand and the line saying what to do next](docs/screenshots/quests.png) | ![Someone at the end of the inn's bar offering to join for sixty-six coins and eleven per cent of the take](docs/screenshots/hire.png) |
+| Errands, generated from the world | Hiring — the cut quoted before it is charged |
+| ![A hireling walking behind the player through a town](docs/screenshots/party.png) | ![A companion's sheet: their cut of the coin, and the story they are in the middle of](docs/screenshots/companion.png) |
+| The company, following you around | A hireling's sheet, cut and story and all |
+| ![A companion asked how they are holding up, with five things to say to them](docs/screenshots/talk.png) | ![Choosing which party member an item is used on](docs/screenshots/targeting.png) |
+| Talking to the people you hired | Choosing who an effect lands on |
 
 ## Running it
 

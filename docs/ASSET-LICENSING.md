@@ -16,8 +16,11 @@ The repository as it stands is clean. No art, audio, or font file is tracked in
 git; `assets-raw/`, `shots/`, `saves/`, and the built binary are all ignored,
 and `assets/manifest.json` contains only file *paths*. The MIT `LICENSE` already
 carves art and audio out of its grant. The only bundle-derived pixels in version
-control are the six PNGs in `docs/screenshots/`, and every licence family below
-explicitly permits screenshots.
+control are the screenshots in `docs/screenshots/`, and every licence family
+below explicitly permits screenshots. The count used to be written down here as
+six and was fourteen by the time anybody looked; a number that has to be kept in
+step by hand is a number that will be wrong, and it was never the load-bearing
+half of the sentence.
 
 The runtime-load design exists because **the repository is public**, not because
 shipping the game is restricted. Distributing Slycrel with the art baked in, to
