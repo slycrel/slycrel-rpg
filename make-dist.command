@@ -172,6 +172,9 @@ PLAYING IT
 Arrows or WASD to move. Z or Enter to confirm, X to go back.
 M is the map, C the character sheet, J the journal, H the help screen.
 
+T talks to the people you have hired. They have opinions, a past, and a
+percentage.
+
 Everything else the game will tell you. Press H first if it does not.
 
 
