@@ -568,6 +568,13 @@ which event fires which trigger, and where it is safe to put a box on screen.
   `go test ./internal/...`, or pass any command (`./scripts/test-headless.command
   go run ./cmd/slycrel -demo`). First run is minutes, the rest are seconds.
   The host path is still faster when the screen is awake.
+- **The save format and world.UsedKey have to be kept in step by hand.**
+  `world.UsedKey` grew a `Floor` when interiors did; `save.UsedEntity` did not,
+  for two sessions, so every spent mark was written floorless and read back on
+  the ground floor. A chest upstairs refilled and the chest below it emptied.
+  Nothing could catch it: both structs compile, both round-trip, and the loss
+  only shows after a save. `TestWhatWasSpentUpstairsStaysSpentUpstairs` is the
+  guard. Anything else that grows a field on one side needs one too.
 - **One unreproduced segfault, 5 Sep 2026.** `-demo` died once with a nil
   dereference in the draw path, immediately after the conversation step was
   added to the tour. It has not recurred in 15 further runs or a sweep of 20

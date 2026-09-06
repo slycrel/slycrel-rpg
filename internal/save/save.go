@@ -165,6 +165,21 @@ type UsedEntity struct {
 	Kind string `json:"kind"`
 	X    int    `json:"x"`
 	Y    int    `json:"y"`
+	// Floor is which level of a many-levelled place this was on, mirroring
+	// world.UsedKey.
+	//
+	// It was missing here for as long as it has existed there, which meant the
+	// invariant that field is for -- a chest at (10,10) on the second storey is
+	// not the chest at (10,10) on the first -- held right up until the player
+	// saved, and then both halves of the round trip flattened every mark onto
+	// the ground floor. Upstairs refilled and downstairs emptied.
+	//
+	// Omitted when it is nought, which is what every save written before floors
+	// existed is saying, and it is saying it correctly: those places had one
+	// level. A save written in the window between floors shipping and this
+	// being fixed has genuinely lost the information, and reads as the ground
+	// floor, which is the same answer it was already giving.
+	Floor int `json:"floor,omitempty"`
 }
 
 // PackFog compresses a per-tile explored flag list into base64.

@@ -40,7 +40,9 @@ func (g *Game) Snapshot() *save.File {
 			Cleared:    p.Cleared,
 		}
 		for _, u := range p.Used {
-			st.Used = append(st.Used, save.UsedEntity{Kind: u.Kind, X: u.X, Y: u.Y})
+			st.Used = append(st.Used, save.UsedEntity{
+				Kind: u.Kind, X: u.X, Y: u.Y, Floor: u.Floor,
+			})
 		}
 		f.POIs[i] = st
 	}
@@ -103,6 +105,35 @@ func (g *Game) poiIndex(target *world.POI) int {
 	return -1
 }
 
+// present drops the rows of a save that are not there.
+//
+// Three of the lists in a save file are slices of pointers -- the hirelings,
+// the errands and the backstories -- and a null in any of them unmarshals to a
+// nil that nothing was checking. The allies went straight through to g.Allies,
+// and the first thing Restore does afterwards is walk them to catch up their
+// threads, which dereferences the lot: one bad row in a file took the whole run
+// down on load, with a segfault rather than a message. The player has been
+// checked since the format existed; these three had not.
+//
+// Dropped rather than refused, for the reason save.List already gives about
+// files it cannot parse: a corrupt save should not make the game unusable. A
+// hireling who is a null is a hireling who is gone, and that is a state the
+// game already has a word for.
+// A fresh slice rather than a compaction in place. Snapshot hands out the live
+// slice header, so filtering over in[:0] would shuffle the caller's own array
+// under it -- which is harmless today, because the only caller is discarding a
+// freshly-unmarshalled file, and is exactly the sort of thing that stops being
+// harmless without anybody editing this function.
+func present[T any](in []*T) []*T {
+	var out []*T
+	for _, p := range in {
+		if p != nil {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
 // Restore rebuilds a run from a save and leaves the scene stack pointing at
 // wherever the player was standing.
 func (g *Game) Restore(f *save.File) error {
@@ -113,7 +144,7 @@ func (g *Game) Restore(f *save.File) error {
 	g.Seed = f.Seed
 	g.RNG = core.NewRNG(f.Seed)
 	g.Player = f.Player
-	g.Allies = f.Allies
+	g.Allies = present(f.Allies)
 	// A save written before the party existed carries no marching order and no
 	// list; both are already zero, so nothing needs converting.
 	g.World = world.Generate(f.Seed, g.Write)
@@ -123,8 +154,8 @@ func (g *Game) Restore(f *save.File) error {
 	g.Sagas, g.pendingLegs = f.Sagas, nil
 	g.Track = Track(f.Track)
 	g.LastSpell = f.LastSpell
-	g.Quests = quest.Log{Quests: f.Quests}
-	g.Threads = thread.Log{Threads: f.Threads}
+	g.Quests = quest.Log{Quests: present(f.Quests)}
+	g.Threads = thread.Log{Threads: present(f.Threads)}
 	g.pendingBeats, g.remindEndings = nil, false
 
 	// The location list is generated from the seed, so it is stable — but a
@@ -142,7 +173,9 @@ func (g *Game) Restore(f *save.File) error {
 		p.Cleared = st.Cleared
 		p.Used = nil
 		for _, u := range st.Used {
-			p.Used = append(p.Used, world.UsedKey{Kind: u.Kind, X: u.X, Y: u.Y})
+			p.Used = append(p.Used, world.UsedKey{
+				Kind: u.Kind, X: u.X, Y: u.Y, Floor: u.Floor,
+			})
 		}
 	}
 
